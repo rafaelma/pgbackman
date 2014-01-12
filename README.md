@@ -1,0 +1,4 @@
+pgbackman
+=========
+
+PostgreSQL backup manager
