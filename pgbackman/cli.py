@@ -26,7 +26,7 @@ import os
 import time
 import signal
 
-sys.path.append('/home/rafael/Devel/GIT/pgbck')
+sys.path.append('/home/rafael/Devel/GIT/pgbackman')
 from pgbackman.database import * 
 
 # ############################################
@@ -63,7 +63,7 @@ class pgbackman_cli(cmd.Cmd):
     def do_test(self,arg):
         """Command test"""
 
-        db = pgbckman_db(self.dsn)
+        db = pgbackman_db(self.dsn)
         db.pg_close()
 
 
@@ -87,7 +87,7 @@ class pgbackman_cli(cmd.Cmd):
         arg_list = arg.split()
         
         if len(arg_list) == 0:
-            db = pgbckman_db(self.dsn)
+            db = pgbackman_db(self.dsn)
             db.show_backup_servers()
             db.pg_close()
         else:
@@ -114,7 +114,7 @@ class pgbackman_cli(cmd.Cmd):
 
         """
 
-        db = pgbckman_db(self.dsn)
+        db = pgbackman_db(self.dsn)
         arg_list = arg.split()
 
         #
@@ -191,7 +191,7 @@ class pgbackman_cli(cmd.Cmd):
 
         """
         
-        db = pgbckman_db(self.dsn)
+        db = pgbackman_db(self.dsn)
         arg_list = arg.split()
         
         if len(arg_list) == 0:
@@ -245,7 +245,7 @@ class pgbackman_cli(cmd.Cmd):
         arg_list = arg.split()
         
         if len(arg_list) == 0:
-            db = pgbckman_db(self.dsn)
+            db = pgbackman_db(self.dsn)
             db.show_pgsql_nodes()
             db.pg_close()
         else:
@@ -275,7 +275,7 @@ class pgbackman_cli(cmd.Cmd):
 
         """
         
-        db = pgbckman_db(self.dsn)
+        db = pgbackman_db(self.dsn)
         arg_list = arg.split()
         
         #
@@ -366,7 +366,7 @@ class pgbackman_cli(cmd.Cmd):
         
         """
 
-        db = pgbckman_db(self.dsn)
+        db = pgbackman_db(self.dsn)
         arg_list = arg.split()
         
         if len(arg_list) == 0:

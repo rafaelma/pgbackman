@@ -1,23 +1,23 @@
 #!/usr/bin/env python
 #
-# Copyright (c) 2013 Rafael Martinez Guerrero (PostgreSQL-es)
+# Copyright (c) 2014 Rafael Martinez Guerrero (PostgreSQL-es)
 # rafael@postgresql.org.es / http://www.postgresql.org.es/
 #
-# This file is part of PgBck
-# https://github.com/rafaelma/pgbck
+# This file is part of PgBackMan
+# https://github.com/rafaelma/pgbackman
 #
-# PgBck is free software: you can redistribute it and/or modify
+# PgBackMan is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# PgBck is distributed in the hope that it will be useful,
+# PgBackMan is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with PgBck.  If not, see <http://www.gnu.org/licenses/>.
+# along with Pgbackman.  If not, see <http://www.gnu.org/licenses/>.
 
 import psycopg2
 import psycopg2.extensions
@@ -33,7 +33,7 @@ psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
 # and to set/get some information for/of the connection.
 # 
 
-class pgbckman_db():
+class pgbackman_db():
     """This class is used to interact with a postgreSQL database"""
 
     # ############################################
