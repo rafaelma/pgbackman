@@ -254,6 +254,37 @@ class pgbackman_db():
                 print "\n* WARNING - Could not delete pgsql node: \n* %s" % warn
                 self.conn.rollback()
                         
+    # ############################################
+    # Method 
+    # ############################################
+
+    def register_backup_job(self,backup_server,pgsql_node,dbname,minutes_cron,hours_cron, \
+                                weekday_cron,month_cron,day_month_cron,backup_code,encryption, \
+                                retention_period,retention_redundancy,extra_parameters,job_status,remarks):
+        """A function to register a backup job"""
+
+        if self.conn:
+            
+            cur = self.conn.cursor()
+            
+            try:
+                cur.execute('SELECT register_backup_job(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',(backup_server,pgsql_node,dbname,minutes_cron,hours_cron, \
+                                                                                                            weekday_cron,month_cron,day_month_cron,backup_code,encryption, \
+                                                                                                            retention_period,retention_redundancy,extra_parameters,job_status,remarks))
+                self.conn.commit()                        
+                cur.close()
+                
+                return True
+                
+            except psycopg2.Error as err:
+                print "\n* ERROR - Could not register backup job: \n* %s" % err
+                self.conn.rollback()
+            except psycopg2.Warning as warn:
+                print "\n* WARNING - Could not register backup job: \n* %s" % warn
+                self.conn.rollback()
+                
+
+
 
     # ############################################
     # Method 
@@ -301,3 +332,49 @@ class pgbackman_db():
                 print "\n* ERROR - Could not get default value for parameter: \n* %s" % e
                 
          
+    # ############################################
+    # Method 
+    # ############################################
+           
+    def get_minute_from_interval(self,param):
+        """A function to get a minute from an interval"""
+
+        if self.conn:
+            try:
+                cur = self.conn.cursor()
+                
+                if cur:
+                    cur.execute('SELECT get_minute_from_interval(%s)',(param,))
+                    
+                    data = cur.fetchone()[0]
+                    cur.close()
+                    
+                    return data
+
+            except psycopg2.Error as e:
+                print "\n* ERROR - Could not get minute from interval: \n* %s" % e
+         
+       
+    # ############################################
+    # Method 
+    # ############################################
+           
+    def get_hour_from_interval(self,param):
+        """A function to get an hour from an interval"""
+
+        if self.conn:
+            try:
+                cur = self.conn.cursor()
+                
+                if cur:
+                    cur.execute('SELECT get_hour_from_interval(%s)',(param,))
+                    
+                    data = cur.fetchone()[0]
+                    cur.close()
+                    
+                    return data
+
+            except psycopg2.Error as e:
+                print "\n* ERROR - Could not get minute from interval: \n* %s" % e
+                
+                  

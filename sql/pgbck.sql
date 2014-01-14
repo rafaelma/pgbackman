@@ -4,15 +4,12 @@
 --
 
 \echo '# [Creating user: pgbackman_user_rw]\n'
-
 CREATE USER pgbackman_user_rw;
 
 \echo '# [Creating user: pgbackman_user_ro]\n'
-
 CREATE USER pgbackman_user_ro;
 
 \echo '# [Creating database: pgbackman]\n'
-
 CREATE DATABASE pgbackman OWNER pgbackman_user_rw;
 
 \c pgbackman
@@ -272,11 +269,11 @@ ALTER TABLE job_queue OWNER TO pgbackman_user_rw;
 -- @pgsql_node
 -- @pg_version
 -- @dbname
--- @minutes_spec
--- @hours_spec
--- @weekday_spec
--- @month_spec
--- @day_month
+-- @minutes_cron
+-- @hours_cron
+-- @weekday_cron
+-- @month_cron
+-- @day_month_cron
 -- @backup_code
 -- @encryption: NOT IMPLEMENTED
 -- @retention_period
@@ -295,11 +292,11 @@ CREATE TABLE backup_job_definition(
   backup_server_id INTEGER NOT NULL,
   pgsql_node_id INTEGER NOT NULL,
   dbname TEXT NOT NULL,
-  minutes_spec CHARACTER VARYING(255) DEFAULT '*',
-  hours_spec CHARACTER VARYING(255) DEFAULT '*',
-  weekday_spec CHARACTER VARYING(255) DEFAULT '*',
-  month_spec CHARACTER VARYING(255) DEFAULT '*',
-  day_month CHARACTER VARYING(255) DEFAULT '*',
+  minutes_cron CHARACTER VARYING(255) DEFAULT '*',
+  hours_cron CHARACTER VARYING(255) DEFAULT '*',
+  weekday_cron CHARACTER VARYING(255) DEFAULT '*',
+  month_cron CHARACTER VARYING(255) DEFAULT '*',
+  day_month_cron CHARACTER VARYING(255) DEFAULT '*',
   backup_code CHARACTER VARYING(10) NOT NULL,
   encryption boolean DEFAULT false NOT NULL,
   retention_period interval DEFAULT '7 days'::interval NOT NULL,
@@ -309,7 +306,7 @@ CREATE TABLE backup_job_definition(
   remarks TEXT
 );
 
-ALTER TABLE backup_job_definition ADD PRIMARY KEY (pgsql_node_id, dbname,minutes_spec,hours_spec,weekday_spec,month_spec,day_month,backup_code,encryption,retention_period,retention_redundancy,extra_parameters);
+ALTER TABLE backup_job_definition ADD PRIMARY KEY (pgsql_node_id,dbname,backup_code,extra_parameters);
 
 ALTER TABLE backup_job_definition OWNER TO pgbackman_user_rw;
 
@@ -489,7 +486,7 @@ INSERT INTO job_execution_status (code,description) VALUES ('WARNING','Job finni
 INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('root_backup_partition','/srv/pgbackman','Main partition used by pgbackman');
 INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('root_cron_file','/etc/cron.d/pgbackman','Crontab file used by pgbackman');
 INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('domain','example.org','Default domain');
-INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('server_status','RUNNING','Default backup server status');
+INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('backup_server_status','RUNNING','Default backup server status');
 
 
 \echo '# [Init: pgsql_node_default_config]\n'
@@ -502,11 +499,15 @@ INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('ret
 INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('pgport','5432','postgreSQL port');
 INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('admin_user','postgres','postgreSQL admin user');
 INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('domain','example.org','Default domain');
-INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('pgnode_status','RUNNING','pgsql node status');
+INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('pgsql_node_status','RUNNING','pgsql node status');
 INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('backup_job_status','ACTIVE','Backup job status');
 INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('backup_code','FULL','Backup job code');
-INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('backup_hours','01-06','Backup hours interval');
-INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('extra_params','','Extra backup parameters');
+INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('backup_minutes_interval','01-59','Backup minutes interval');
+INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('backup_hours_interval','01-06','Backup hours interval');
+INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('backup_weekday_cron','*','Backup weekday cron default');
+INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('backup_month_cron','*','Backup month cron default');
+INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('backup_day_month_cron','*','Backup day_month cron default');
+INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('extra_parameters','','Extra backup parameters');
 
 
 
@@ -747,7 +748,7 @@ CREATE OR REPLACE FUNCTION register_backup_server(TEXT,TEXT,CHARACTER VARYING,TE
    END IF;
 
    IF status_ = '' OR status_ IS NULL THEN
-     SELECT value FROM backup_server_default_config WHERE parameter = 'status' INTO domain_name_;
+     SELECT value FROM backup_server_default_config WHERE parameter = 'backup_server_status' INTO domain_name_;
    END IF;
 
    SELECT count(*) AS cnt FROM backup_server WHERE hostname = hostname_ AND domain_name = domain_name_ INTO server_cnt;
@@ -937,7 +938,7 @@ CREATE OR REPLACE FUNCTION register_pgsql_node(TEXT,TEXT,INTEGER,TEXT,CHARACTER 
    END IF;
 
    IF status_ = '' OR status_ IS NULL THEN
-    SELECT value FROM pgsql_node_default_config WHERE parameter = 'status' INTO admin_user_;
+    SELECT value FROM pgsql_node_default_config WHERE parameter = 'pgsql_node_status' INTO admin_user_;
    END IF;
 
    SELECT count(*) AS cnt FROM pgsql_node WHERE hostname = hostname_ AND domain_name = domain_name_ AND pgport = pgport_ AND admin_user = admin_user_ INTO node_cnt;
@@ -1106,6 +1107,188 @@ $$;
 
 ALTER FUNCTION show_pgsql_nodes() OWNER TO pgbackman_user_rw;
 
+
+-- ------------------------------------------------------------
+-- Function: register_backup_job()
+--
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION register_backup_job(TEXT,TEXT,TEXT,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,BOOLEAN,INTERVAL,INTEGER,TEXT,CHARACTER VARYING,TEXT) RETURNS BOOLEAN
+ LANGUAGE plpgsql 
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ DECLARE
+ 
+  backup_server_ ALIAS FOR $1;
+  pgsql_node_ ALIAS FOR $2;
+  dbname_ ALIAS FOR $3; 
+  minutes_cron_ ALIAS FOR $4;
+  hours_cron_ ALIAS FOR $5;
+  weekday_cron_ ALIAS FOR $6;  
+  month_cron_ ALIAS FOR $7;
+  day_month_cron_ ALIAS FOR $8;	  
+  backup_code_ ALIAS FOR $9;
+  encryption_ ALIAS FOR $10;
+  retention_period_ ALIAS FOR $11;
+  retention_redundancy_ ALIAS FOR $12;
+  extra_parameters_ ALIAS FOR $13;
+  job_status_ ALIAS FOR $14;
+  remarks_ ALIAS FOR $15;
+
+  backup_server_id_ INTEGER;
+  pgsql_node_id_ INTEGER;
+
+  backup_job_cnt INTEGER;
+
+  backup_hours_interval TEXT;
+  backup_minutes_interval TEXT;
+
+ BEGIN
+
+   IF hours_cron_ = '' OR hours_cron_ IS NULL THEN
+    SELECT value FROM pgsql_node_default_config WHERE parameter = 'backup_hours_interval' INTO backup_hours_interval; 
+    SELECT get_hour_from_interval(backup_hours_interval)::TEXT INTO hours_cron_;
+   END IF;  
+
+   IF minutes_cron_ = '' OR minutes_cron_ IS NULL THEN
+    SELECT value FROM pgsql_node_default_config WHERE parameter = 'backup_minutes_interval' INTO backup_minutes_interval;   
+    SELECT get_minutes_from_interval(backup_minutes_interval)::TEXT INTO minutes_cron_;
+   END IF;
+
+   IF backup_code_ = '' OR backup_code_ IS NULL THEN
+    SELECT value FROM pgsql_node_default_config WHERE parameter = 'backup_code' INTO backup_code_;
+   END IF;
+
+   IF encryption_ IS NULL THEN
+    SELECT value::BOOLEAN FROM pgsql_node_default_config WHERE parameter = 'encryption' INTO encryption_;
+   END IF;
+
+   IF retention_period_ IS NULL THEN
+     SELECT value::INTERVAL FROM pgsql_node_default_config WHERE parameter = 'retention_period' INTO retention_period_;
+   END IF;
+ 
+   IF retention_redundancy_ = 0 OR retention_redundancy_ IS NULL THEN
+     SELECT value::INTEGER FROM pgsql_node_default_config WHERE parameter = 'retention_redundancy' INTO retention_redundancy_;
+   END IF;
+
+   IF extra_parameters_ = '' OR extra_parameters_ IS NULL THEN
+     SELECT value FROM pgsql_node_default_config WHERE parameter = 'extra_parameters' INTO extra_parameters_;
+   END IF;
+   
+   IF job_status_ = '' OR job_status_ IS NULL THEN
+     SELECT value FROM pgsql_node_default_config WHERE parameter = 'backup_job_status' INTO job_status_;
+   END IF;
+
+   SELECT server_id FROM backup_server WHERE hostname || '.' || domain_name = backup_server_ INTO backup_server_id_;
+   SELECT node_id FROM pgsql_node WHERE hostname || '.' || domain_name = pgsql_node_ INTO pgsql_node_id_;   
+
+   IF backup_server_id_ IS NULL THEN
+     RAISE EXCEPTION 'Backup server % does not exist',backup_server_ ;
+     RETURN FALSE;
+   ELSIF pgsql_node_id_ IS NULL THEN
+     RAISE EXCEPTION 'pgsql node % does not exist',backup_server_ ;
+     RETURN FALSE;
+   END IF;
+
+   SELECT count(*) AS cnt 
+   FROM backup_job_definition 
+   WHERE pgsql_node_id = pgsql_node_id_ 
+   AND dbname = dbname_ 
+   AND backup_code = backup_code_ 
+   AND extra_parameters = extra_parameters_ 
+   INTO backup_job_cnt;
+
+   IF backup_job_cnt = 0 THEN     
+
+    EXECUTE 'INSERT INTO backup_job_definition (backup_server_id,
+						pgsql_node_id,
+						dbname,
+						minutes_cron,
+						hours_cron,
+						weekday_cron,
+						month_cron,
+						day_month_cron,
+						backup_code,
+						encryption,
+						retention_period,
+						retention_redundancy,
+						extra_parameters,
+						job_status,
+						remarks)
+	     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)'
+    USING backup_server_id_,
+	  pgsql_node_id_,
+	  dbname_,
+	  minutes_cron_,
+	  hours_cron_,
+	  weekday_cron_,
+	  month_cron_,
+	  day_month_cron_,
+	  backup_code_,
+	  encryption_,
+	  retention_period_,
+	  retention_redundancy_,
+	  extra_parameters_,
+	  job_status_,
+	  remarks_;         
+
+   ELSIF backup_job_cnt > 0 THEN
+
+    EXECUTE 'UPDATE backup_job_definition 
+    	     SET minutes_cron = $4, 
+	     	 hours_cron = $5,
+		 weekday_cron = $6,
+		 month_cron = $7,
+		 day_month_cron = $8,
+		 encryption = $10,
+		 retention_period = $11,
+		 retention_redundancy = $12,
+		 job_status = $14,
+		 remarks = $15
+	     WHERE  backup_server_id = $1
+	     AND pgsql_node_id = $2
+	     AND dbname = $3
+	     AND backup_code = $9 
+	     AND extra_parameters = $13'
+    USING backup_server_id_,
+	  pgsql_node_id_,
+	  dbname_,
+	  minutes_cron_,
+	  hours_cron_,
+	  weekday_cron_,
+	  month_cron_,
+	  day_month_cron_,
+	  backup_code_,
+	  encryption_,
+	  retention_period_,
+	  retention_redundancy_,
+	  extra_parameters_,
+	  job_status_,
+	  remarks_;         
+
+   END IF;
+
+   RETURN TRUE;
+ EXCEPTION
+  WHEN transaction_rollback THEN
+   RAISE EXCEPTION 'Transaction rollback when updating pgsql_node';
+   RETURN FALSE;
+  WHEN syntax_error_or_access_rule_violation THEN
+   RAISE EXCEPTION 'Syntax or access error when updating pgsql_node';
+   RETURN FALSE;
+  WHEN foreign_key_violation THEN
+   RAISE EXCEPTION 'Caught foreign_key_violation when updating pgsql_node';
+   RETURN FALSE;
+  WHEN unique_violation THEN
+   RAISE EXCEPTION 'Duplicate key value violates unique constraint when updating pgsql_node';
+   RETURN FALSE;
+END;
+$$;
+
+ALTER FUNCTION register_backup_job(TEXT,TEXT,TEXT,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,BOOLEAN,INTERVAL,INTEGER,TEXT,CHARACTER VARYING,TEXT) OWNER TO pgbackman_user_rw;
+
+
 -- ------------------------------------------------------------
 -- Function: get_default_backup_server_parameter()
 --
@@ -1159,5 +1342,88 @@ CREATE OR REPLACE FUNCTION get_default_pgsql_node_parameter(TEXT) RETURNS TEXT
 $$;
 
 ALTER FUNCTION get_default_pgsql_node_parameter(TEXT) OWNER TO pgbackman_user_rw;
+
+
+-- ------------------------------------------------------------
+-- Function: get_hour_from_interval()
+--
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION get_hour_from_interval(TEXT) RETURNS INTEGER 
+ LANGUAGE plpgsql 
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ DECLARE
+ hour_interval_ ALIAS FOR $1; 
+ 
+ hour_from INTEGER;
+ hour_to INTEGER;
+ value_ INTEGER;
+
+ BEGIN
+  --
+  -- This function returns a value from an interval defined as 'Num1-Num2'
+  --
+
+   SELECT substr(hour_interval_,1,strpos(hour_interval_,'-')-1)::integer INTO hour_from;
+   SELECT substr(hour_interval_,strpos(hour_interval_,'-')+1,length(hour_interval_)-strpos(hour_interval_,'-'))::INTEGER INTO hour_to;
+
+   IF hour_from < 0 OR hour_from > 23 THEN
+     RAISE EXCEPTION 'Hour % is not an allowed value',hour_from USING HINT = 'Allowed values: 00 to 23';
+   ELSIF hour_to < 0 OR hour_to > 23 THEN
+     RAISE EXCEPTION 'Hour % is not an allowed value',hour_to USING HINT = 'Allowed values: 00 to 23';
+   END IF;
+
+   SELECT round(random()*(hour_to-hour_from))+hour_from::INTEGER INTO value_;
+
+   RETURN value_;
+
+ END;
+$$;
+
+ALTER FUNCTION get_hour_from_interval(TEXT) OWNER TO pgbackman_user_rw;
+
+
+-- ------------------------------------------------------------
+-- Function: get_minute_from_interval()
+--
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION get_minute_from_interval(TEXT) RETURNS INTEGER 
+ LANGUAGE plpgsql 
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ DECLARE
+ minute_interval_ ALIAS FOR $1; 
+ 
+ minute_from INTEGER;
+ minute_to INTEGER;
+ value_ INTEGER;
+
+ BEGIN
+  --
+  -- This function returns value from an interval defined as 'Num1-Num2'
+  --
+
+   SELECT substr(minute_interval_,1,strpos(minute_interval_,'-')-1)::integer INTO minute_from;
+   SELECT substr(minute_interval_,strpos(minute_interval_,'-')+1,length(minute_interval_)-strpos(minute_interval_,'-'))::INTEGER INTO minute_to;
+
+   IF minute_from < 0 OR minute_from > 59 THEN
+     RAISE EXCEPTION 'Minute % is not an allowed value',minute_from USING HINT = 'Allowed values: 00 to 59';
+   ELSIF minute_to < 0 OR minute_to > 59 THEN
+     RAISE EXCEPTION 'Minute % is not an allowed value',minute_to USING HINT = 'Allowed values: 00 to 59';
+   END IF;
+
+   SELECT round(random()*(minute_to-minute_from))+minute_from::INTEGER INTO value_;
+
+   RETURN value_;
+
+ END;
+$$;
+
+ALTER FUNCTION get_minute_from_interval(TEXT) OWNER TO pgbackman_user_rw;
+
 
 COMMIT;

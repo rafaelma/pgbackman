@@ -125,7 +125,7 @@ class pgbackman_cli(cmd.Cmd):
      
             ack = "n"
             domain_default = db.get_default_backup_server_parameter("domain")
-            status_default = db.get_default_backup_server_parameter("status")
+            status_default = db.get_default_backup_server_parameter("backup_server_status")
 
             print "--------------------------------------------------------"
             hostname = raw_input("# Hostname []: ")
@@ -288,7 +288,7 @@ class pgbackman_cli(cmd.Cmd):
             domain_default = db.get_default_pgsql_node_parameter("domain")
             port_default = db.get_default_pgsql_node_parameter("pgport")
             admin_user_default = db.get_default_pgsql_node_parameter("admin_user")
-            status_default = db.get_default_pgsql_node_parameter("status")
+            status_default = db.get_default_pgsql_node_parameter("pgsql_node_status")
             
             print "--------------------------------------------------------"
             hostname = raw_input("# Hostname []: ")
@@ -443,6 +443,140 @@ class pgbackman_cli(cmd.Cmd):
         FALSE: GnuPG encryption NOT activated.
 
         """
+
+        db = pgbackman_db(self.dsn)
+        arg_list = arg.split()
+        
+        #
+        # Command without parameters
+        #
+
+        if len(arg_list) == 0:
+     
+            ack = "n"
+         
+            minutes_cron_default = hours_cron_default = weekday_cron_default = month_cron_default = day_month_cron_default = \
+                backup_code_default = encryption_default = retention_period_default = retention_redundancy_default = \
+                extra_parameters_default = backup_job_status_default = ""
+
+            minutes_cron_default = db.get_minute_from_interval(db.get_default_pgsql_node_parameter("backup_minutes_interval"))
+            hours_cron_default = db.get_hour_from_interval(db.get_default_pgsql_node_parameter("backup_hours_interval"))
+            weekday_cron_default = db.get_default_pgsql_node_parameter("backup_weekday_cron")
+            month_cron_default = db.get_default_pgsql_node_parameter("backup_month_cron")
+            day_month_cron_default = db.get_default_pgsql_node_parameter("backup_day_month_cron")
+            backup_code_default = db.get_default_pgsql_node_parameter("backup_code")
+            encryption_default = db.get_default_pgsql_node_parameter("encryption")
+            retention_period_default = db.get_default_pgsql_node_parameter("retention_period")
+            retention_redundancy_default = db.get_default_pgsql_node_parameter("retention_redundancy")
+            extra_parameters_default = db.get_default_pgsql_node_parameter("extra_parameters")
+            backup_job_status_default = db.get_default_pgsql_node_parameter("backup_job_status")
+
+            
+            print "--------------------------------------------------------"
+            backup_server = raw_input("# Backup server FQDN []: ")
+            pgsql_node = raw_input("# PgSQL node FQDN  []: ")
+            dbname = raw_input("# DBname []: ")
+            minutes_cron = raw_input("# Minutes cron [" + str(minutes_cron_default) + "]: ")
+            hours_cron = raw_input("# Hours cron [" + str(hours_cron_default) + "]: ")
+            weekday_cron = raw_input("# Weekday cron [" + weekday_cron_default + "]: ")
+            month_cron = raw_input("# Month cron [" + month_cron_default + "]: ")
+            day_month_cron = raw_input("# Day-month cron [" + day_month_cron_default + "]: ")
+            backup_code = raw_input("# Backup code [" + backup_code_default + "]: ")
+            encryption = raw_input("# Encryption [" + encryption_default + "]: ")
+            retention_period = raw_input("# Retention period [" + retention_period_default + "]: ")
+            retention_redundancy = raw_input("# Retention redundancy [" + retention_redundancy_default + "]: ")
+            extra_parameters = raw_input("# Extra parameters [" + extra_parameters_default + "]: ")
+            backup_job_status = raw_input("# Job status [" + backup_job_status_default + "]: ")
+            remarks = raw_input("# Remarks []: ")
+            print
+            ack = raw_input("# Are all values correct (y/n): ")
+            print "--------------------------------------------------------"
+
+            if minutes_cron == "":
+                minutes_cron = str(minutes_cron_default)
+
+            if hours_cron == "":
+                hours_cron = str(hours_cron_default)
+
+            if weekday_cron == "":
+                weekday_cron = weekday_cron_default
+
+            if month_cron == "":
+                month_cron = month_cron_default
+
+            if day_month_cron == "":
+                day_month_cron = day_month_cron_default
+
+            if backup_code == "":
+                backup_code = backup_code_default
+
+            if encryption == "":
+                encryption = encryption_default
+
+            if retention_period == "":
+                retention_period = retention_period_default
+
+            if retention_redundancy == "":
+                retention_redundancy = retention_redundancy_default
+
+            if extra_parameters == "":
+                extra_parameters = extra_parameters_default
+
+            if backup_job_status == "":
+                backup_job_status = backup_job_status_default
+            
+
+            print ((backup_server,pgsql_node,dbname,minutes_cron,hours_cron, \
+                                              weekday_cron,month_cron,day_month_cron,backup_code,encryption, \
+                                              retention_period,retention_redundancy,extra_parameters,backup_job_status,remarks))
+
+            if ack.lower() == "y":
+                if db.register_backup_job(backup_server.lower().strip(),pgsql_node.lower().strip(),dbname.strip(),minutes_cron,hours_cron, \
+                                              weekday_cron.strip(),month_cron.strip(),day_month_cron.strip(),backup_code.upper().strip(),encryption.lower().strip(), \
+                                              retention_period.lower().strip(),retention_redundancy.strip(),extra_parameters.lower().strip(),backup_job_status.upper().strip(),remarks.strip()):
+                    print "\n* Done\n"
+        
+        #
+        # Command with the 6 parameters that can be defined.
+        # Hostname, domain, pgport, admin_user, status and remarks
+        #
+
+        elif len(arg_list) >= 15:
+
+            backup_server = arg_list[0]
+            pgsql_node = arg_list[1]
+            dbname = arg_list[2]
+            minutes_cron = arg_list[3]
+            hours_cron = arg_list[4]
+            weekday_cron = arg_list[5]
+            month_day_cron = arg_list[6]
+            backup_code = arg_list[7]
+            encryption = arg_list[8]
+            retention_period = arg_list[9]
+            retention_redundancy = arg_list[10]
+            extra_parameters = arg_list[11]
+            backup_job_status = arg_list[12]
+            remarks = arg_list[13]
+
+            for i in range(14,len(arg_list)):
+                remarks = remarks + " " + arg_list[i]
+
+                
+            if db.register_backup_job(backup_server.lower().strip(),pgsql_node.lower().strip(),dbname.strip(),minutes_cron,hours_cron, \
+                                          weekday_cron.strip(),month_cron.strip(),day_month_cron.strip(),backup_code.upper().strip(),encryption.lower().strip(), \
+                                          retention_period.lower().strip(),retention_redundancy.strip(),extra_parameters.lower().strip(),backup_job_status.upper().strip(),remarks.strip()):
+                print "\n* Done\n"
+
+        #
+        # Command with the wrong number of parameters
+        #
+
+        else:
+            print "\n* ERROR - Wrong number of parameters used.\n* Type help or ? to list commands\n"
+
+        db.pg_close()
+
+
 
 
     # ############################################
