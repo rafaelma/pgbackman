@@ -284,6 +284,77 @@ class pgbackman_db():
                 self.conn.rollback()
                 
 
+    # ############################################
+    # Method 
+    # ############################################
+
+    def show_backup_server_job_definitions(self,backup_server):
+        """A function to get a list with all backup job definitions for a backup server"""
+
+        if self.conn:
+            try:
+                cur = self.conn.cursor()
+                    
+                if cur:
+                    cur.execute('SELECT show_backup_server_job_definitions(%s)',(backup_server,))
+                    
+                    data = cur.fetchone()[0]
+                    print data
+                    
+                    cur.close()
+                    
+            except psycopg2.Error as e:
+                print "\n* ERROR - Could not get the list of backup job definitions for this backup server \n* %s" % e
+
+
+    # ############################################
+    # Method 
+    # ############################################
+
+    def show_pgsql_node_job_definitions(self,pgsql_node):
+        """A function to get a list with all backup job definitions for a PgSQL node"""
+
+        if self.conn:
+            try:
+                cur = self.conn.cursor()
+                    
+                if cur:
+                    cur.execute('SELECT show_pgsql_node_job_definitions(%s)',(pgsql_node,))
+                    
+                    data = cur.fetchone()[0]
+                    print data
+                    
+                    cur.close()
+                    
+            except psycopg2.Error as e:
+                print "\n* ERROR - Could not get the list of backup job definitions for this PgSQL node\n* %s" % e
+
+     
+    # ############################################
+    # Method 
+    # ############################################
+
+    def show_database_job_definitions(self,dbname):
+        """A function to get a list with all backup job definitions for a database"""
+
+        if self.conn:
+            try:
+                cur = self.conn.cursor()
+                    
+                if cur:
+                    cur.execute('SELECT show_database_job_definitions(%s)',(dbname,))
+                    
+                    data = cur.fetchone()[0]
+                    print data
+                    
+                    cur.close()
+                    
+            except psycopg2.Error as e:
+                print "\n* ERROR - Could not get the list of backup job definitions for this database\n* %s" % e
+     
+
+
+
 
 
     # ############################################
@@ -376,5 +447,53 @@ class pgbackman_db():
 
             except psycopg2.Error as e:
                 print "\n* ERROR - Could not get minute from interval: \n* %s" % e
+                
+                  
+    # ############################################
+    # Method 
+    # ############################################
+           
+    def get_backup_server_fqdn(self,param):
+        """A function to get the FQDN for a backup server"""
+
+        if self.conn:
+            try:
+                cur = self.conn.cursor()
+                
+                if cur:
+                    cur.execute('SELECT get_backup_server_fqdn(%s)',(param,))
+                    
+                    data = cur.fetchone()[0]
+                    cur.close()
+                    
+                    return data
+
+            except psycopg2.Error as e:
+                print "\n* ERROR - Could not get the FQDN for this backup server \n* %s" % e
+                
+                  
+
+
+    # ############################################
+    # Method 
+    # ############################################
+           
+    def get_pgsql_node_fqdn(self,param):
+        """A function to get the FQDN for a PgSQL node"""
+
+        if self.conn:
+            try:
+                cur = self.conn.cursor()
+                
+                if cur:
+                    cur.execute('SELECT get_pgsql_node_fqdn(%s)',(param,))
+                    
+                    data = cur.fetchone()[0]
+                    cur.close()
+                    
+                    return data
+
+            except psycopg2.Error as e:
+                print "\n* ERROR - Could not get the FQDN for this PgSQL node \n* %s" % e
                 
                   

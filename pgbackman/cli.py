@@ -57,17 +57,6 @@ class pgbackman_cli(cmd.Cmd):
 
 
     # ############################################
-    # Method do_test
-    # ############################################
-    
-    def do_test(self,arg):
-        """Command test"""
-
-        db = pgbackman_db(self.dsn)
-        db.pg_close()
-
-
-    # ############################################
     # Method do_show_backup_servers
     #
     # It Implements the command show_backup_servers
@@ -187,7 +176,7 @@ class pgbackman_cli(cmd.Cmd):
         This command can be used to delete a backup 
         server registered in PgBackMan.
 
-        delete_backup_server [SrvID]
+        delete_backup_server [SrvID | FQDN]
 
         """
         
@@ -199,24 +188,30 @@ class pgbackman_cli(cmd.Cmd):
             ack = "n"
             
             print "--------------------------------------------------------"
-            server_id = raw_input("# SrvID: ")
+            server_id = raw_input("# SrvID / FQDN: ")
             print
             ack = raw_input("# Are you sure you want to delete this server? (y/n): ")
             print "--------------------------------------------------------"
 
             if ack.lower() == "y":
-                if self.check_digit(server_id):
-                    if db.delete_backup_server(server_id.lower().strip()):
+                if server_id.isdigit():
+                    if db.delete_backup_server(db.get_backup_server_fqdn(server_id)):
+                        print "\n* Done\n"
+                else:
+                    if db.delete_backup_server(server_id):
                         print "\n* Done\n"
                     
         elif len(arg_list) == 1:
 
             server_id = arg_list[0]
             
-            if self.chech_digit(server_id):
-                if db.delete_backup_server(server_id.lower().strip()):
+            if server_id.isdigit():
+                if db.delete_backup_server(db.get_backup_server_fqdn(server_id)):
                     print "\n* Done\n"
-                
+            else:
+                if db.delete_backup_server(server_id):
+                    print "\n* Done\n"
+                    
         else:
             print "\n* ERROR - Wrong number of parameters used.\n* Type help or ? to list commands\n"
 
@@ -362,7 +357,7 @@ class pgbackman_cli(cmd.Cmd):
         This command can be used to delete a postgreSQL 
         node defined in PgBackMan.
         
-        delete_pgsql_node [NodeID]
+        delete_pgsql_node [NodeID | FQDN]
         
         """
 
@@ -374,14 +369,17 @@ class pgbackman_cli(cmd.Cmd):
             ack = "n"
             
             print "--------------------------------------------------------"
-            node_id = raw_input("# NodeID: ")
+            node_id = raw_input("# NodeID / FQDN: ")
             print
             ack = raw_input("# Are you sure you want to delete this \n# postgreSQL node? (y/n): ")
             print "--------------------------------------------------------"
 
             if ack.lower() == "y":
-                if self.check_digit(node_id):
-                    if db.delete_pgsql_node(node_id.lower().strip()):
+                if node_id.isdigit():
+                    if db.delete_pgsql_node(db.get_pgsql_node_fqdn(node_id)):
+                        print "\n* Done\n"
+                else:
+                    if db.delete_pgsql_node(node_id):
                         print "\n* Done\n"
                     
         elif len(arg_list) == 1:
@@ -400,31 +398,149 @@ class pgbackman_cli(cmd.Cmd):
         
 
     # ############################################
-    # Method do_show_backup_jobs
+    # Method do_show_backup_server_job_definitions
     # ############################################
 
-    def do_show_backup_jobs(self,arg):
+    def do_show_backup_server_job_definitions(self,arg):
         """
-        show_backup_jobs [dbname]|[NodeID]|[SrvID]
+        show_backup_server_job_definitions [SrvID | FQDN]
 
 
         """
+        
+        db = pgbackman_db(self.dsn)
+        arg_list = arg.split()
+        
+        if len(arg_list) == 0:
+            
+            ack = "n"
+            
+            print "--------------------------------------------------------"
+            server_id = raw_input("# SrvID / FQDN: ")
+            print "--------------------------------------------------------"
+
+            if server_id.isdigit():
+                if db.show_backup_server_job_definitions(db.get_backup_server_fqdn(server_id)):
+                    print "\n* Done\n"
+            else:
+                if db.show_backup_server_job_definitions(server_id):
+                        print "\n* Done\n"
+                    
+        elif len(arg_list) == 1:
+
+            server_id = arg_list[0]
+            
+            if server_id.isdigit():
+                if db.show_backup_server_job_definitions(db.get_backup_server_fqdn(server_id)):
+                    print "\n* Done\n"
+            else:
+                if db.show_backup_server_job_definitions(server_id):
+                    print "\n* Done\n"
+                    
+        else:
+            print "\n* ERROR - Wrong number of parameters used.\n* Type help or ? to list commands\n"
+
+        db.pg_close()
+
+
+    # ############################################
+    # Method do_show_pgsql_node_job_definitions
+    # ############################################
+
+    def do_show_pgsql_node_job_definitions(self,arg):
+        """
+        show_pgsql_node_job_definitions [NodeID | FQDN]
+
+
+        """
+        db = pgbackman_db(self.dsn)
+        arg_list = arg.split()
+        
+        if len(arg_list) == 0:
+            
+            ack = "n"
+            
+            print "--------------------------------------------------------"
+            node_id = raw_input("# NodeID / FQDN: ")
+            print "--------------------------------------------------------"
+
+            if node_id.isdigit():
+                if db.show_pgsql_node_job_definitions(db.get_pgsql_node_fqdn(node_id)):
+                    print "\n* Done\n"
+            else:
+                if db.show_pgsql_node_job_definitions(node_id):
+                        print "\n* Done\n"
+                    
+        elif len(arg_list) == 1:
+
+            node_id = arg_list[0]
+            
+            if node_id.isdigit():
+                if db.show_pgsql_node_job_definitions(db.get_pgsql_node_fqdn(node_id)):
+                    print "\n* Done\n"
+            else:
+                if db.show_pgsql_node_job_definitions(node_id):
+                    print "\n* Done\n"
+                    
+        else:
+            print "\n* ERROR - Wrong number of parameters used.\n* Type help or ? to list commands\n"
+
+        db.pg_close()
+
+
+    # ############################################
+    # Method do_show_database_job_definitions
+    # ############################################
+
+    def do_show_database_job_definitions(self,arg):
+        """
+        show_database_job_definitions [DBname]
+
+
+        """
+
+        db = pgbackman_db(self.dsn)
+        arg_list = arg.split()
+        
+        if len(arg_list) == 0:
+            
+            ack = "n"
+            
+            print "--------------------------------------------------------"
+            dbname = raw_input("# DBname: ")
+            print "--------------------------------------------------------"
+            
+            if db.show_database_job_definitions(dbname):
+                print "\n* Done\n"
+                
+                    
+        elif len(arg_list) == 1:
+
+            dbname = arg_list[0]
+            
+            if db.show_database_job_definitions(dbname):
+                print "\n* Done\n"
+                
+        else:
+            print "\n* ERROR - Wrong number of parameters used.\n* Type help or ? to list commands\n"
+
+        db.pg_close()
 
 
     # ############################################
     # Method do_register_backup_job
     # ############################################
 
-    def do_register_backup_job(self,arg):
+    def do_register_backup_job_definition(self,arg):
         """
         This command can be used to register or update 
-        a backup job in PgBackMan.
+        a backup job definition in PgBackMan.
 
-        register_backup_job [SrvID] [NodeID] [DBname] 
-                            [mincron] [hourcron] [weekdaycron] [monthcron] [daymonthcron] 
-                            [backup code] [encryption] 
-                            [retention period] [retention redundancy] 
-                            [extra params] [job status] [remarks] 
+        register_backup_job_definition [SrvID | FQDN] [NodeID | FQDN] [DBname] 
+                                       [mincron] [hourcron] [weekdaycron] [monthcron] [daymonthcron] 
+                                       [backup code] [encryption] 
+                                       [retention period] [retention redundancy] 
+                                       [extra params] [job status] [remarks] 
 
         Backup code: 
         ------------
@@ -583,31 +699,50 @@ class pgbackman_cli(cmd.Cmd):
     # Method do_delete_backup_job
     # ############################################
 
-    def do_delete_backup_job(self,arg):
+    def do_delete_backup_job_definition(self,arg):
         """
-        delete_backup_job [BckID]
-
-        """
-
-
-    # ############################################
-    # Method do_show_backup_catalog
-    # ############################################
-
-    def do_show_backup_catalog(self,arg):
-        """
-        show_backup_catalog [dbname] [NodeID] [SrvID]
+        delete_backup_job_definition [BckID]
 
         """
 
 
     # ############################################
-    # Method do_show_backup_catalog
+    # Method do_show_backup_server_catalog
     # ############################################
 
-    def do_show_backup_details(self,arg):
+    def do_show_backup_server_catalog(self,arg):
         """
-        show_backup_details [BckID]
+        show_backup_server_catalog [SrvID]
+
+        """
+
+    # ############################################
+    # Method do_show_pgsql_node_catalog
+    # ############################################
+
+    def do_show_pgsql_node_catalog(self,arg):
+        """
+        show_pgsql_node_catalog [NodeID | FQDN]
+
+        """
+
+    # ############################################
+    # Method do_show_database_catalog
+    # ############################################
+
+    def do_show_database_catalog(self,arg):
+        """
+        show_database_catalog [DBname]
+
+        """
+
+    # ############################################
+    # Method do_show_backup_job_details
+    # ############################################
+
+    def do_show_database_catalog_details(self,arg):
+        """
+        show_database_catalog_details [BckID]
 
         """
 
@@ -662,22 +797,22 @@ class pgbackman_cli(cmd.Cmd):
         """   
  
     # ############################################
-    # Method do_show_backup_servers_default
+    # Method do_show_backup_server_default_config
     # ############################################
 
-    def do_show_backup_servers_default(self,arg):
+    def do_show_backup_server_default_config(self,arg):
         """
-        show_backup_servers_default
+        show_backup_server_default_config [SrvID | FQDN]
 
         """    
 
     # ############################################
-    # Method do_show_pgsql_node_default
+    # Method do_show_pgsql_node_default_config
     # ############################################
 
-    def do_show_pgsql_node_default(self,arg):
+    def do_show_pgsql_node_default_config(self,arg):
         """
-        show_pgsql_node_default [NodeID]
+        show_pgsql_node_default_config [NodeID | FQDN]
 
         """    
 
@@ -775,7 +910,7 @@ class pgbackman_cli(cmd.Cmd):
     # Method do_hist
     # ############################################
 
-    def do_hist(self, args):
+    def do_show_history(self, args):
         """Print a list of commands that have been entered"""
 
         print self._hist
