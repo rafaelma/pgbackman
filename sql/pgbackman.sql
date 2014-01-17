@@ -201,11 +201,12 @@ CREATE TABLE backup_server_default_config(
 ALTER TABLE backup_server_default_config ADD PRIMARY KEY (parameter);
 ALTER TABLE backup_server_default_config OWNER TO pgbackman_user_rw;
 
+
 -- ------------------------------------------------------
 -- Table: pgsql_node_default_config
 --
 -- @Description: Default configuration values for 
---               postgrersql servers.
+--               postgresql servers.
 --
 -- Attributes:
 --
@@ -226,13 +227,10 @@ CREATE TABLE pgsql_node_default_config(
 ALTER TABLE pgsql_node_default_config ADD PRIMARY KEY (parameter);
 ALTER TABLE pgsql_node_default_config OWNER TO pgbackman_user_rw;
 
-
-
 -- ------------------------------------------------------
--- Table: pgsql_node_default_config
+-- Table: job_queue
 --
--- @Description: Default configuration values for 
---               postgrersql servers.
+-- @Description: 
 --
 -- Attributes:
 --
@@ -241,7 +239,7 @@ ALTER TABLE pgsql_node_default_config OWNER TO pgbackman_user_rw;
 -- @description:
 -- ------------------------------------------------------
 
-\echo '# [Creating table: pgsql_node_default_config]\n'
+\echo '# [Creating table: job_queue]\n'
 
 CREATE TABLE job_queue(
   id BIGSERIAL,
@@ -265,8 +263,8 @@ ALTER TABLE job_queue OWNER TO pgbackman_user_rw;
 --
 -- @job_id
 -- @registered
--- @backup_server
--- @pgsql_node
+-- @backup_server_id
+-- @pgsql_node_id
 -- @pg_version
 -- @dbname
 -- @minutes_cron
@@ -379,7 +377,8 @@ CREATE TABLE backup_server_config(
 
   server_id INTEGER NOT NULL REFERENCES backup_server (server_id),
   parameter TEXT NOT NULL,
-  value TEXT NOT NULL
+  value TEXT NOT NULL,
+  description TEXT
 );
 
 ALTER TABLE backup_server_config ADD PRIMARY KEY (server_id,parameter);
@@ -403,7 +402,8 @@ CREATE TABLE pgsql_node_config(
 
   node_id INTEGER NOT NULL NOT NULL REFERENCES pgsql_node (node_id),
   parameter TEXT NOT NULL,
-  value TEXT NOT NULL
+  value TEXT NOT NULL,
+  description TEXT
 );
 
 ALTER TABLE pgsql_node_config ADD PRIMARY KEY (node_id,parameter);
@@ -530,7 +530,89 @@ INNER JOIN pgsql_node c ON a.pgsql_node_id = c.node_id
 ORDER BY a.registered ASC;
 
 
+-- ------------------------------------------------------------
+-- Function: update_backup_server_configuration()
+--
+-- ------------------------------------------------------------
 
+CREATE OR REPLACE FUNCTION update_backup_server_configuration() RETURNS TRIGGER
+ LANGUAGE plpgsql 
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ DECLARE
+
+ BEGIN
+
+  EXECUTE 'INSERT INTO backup_server_config (server_id,parameter,value,description) 
+  	   SELECT $1,parameter,value,description FROM backup_server_default_config'
+  USING NEW.server_id;
+
+RETURN NULL;
+
+EXCEPTION
+  WHEN transaction_rollback THEN
+   RAISE EXCEPTION 'Transaction rollback when updating backup_server_config';
+   RETURN NULL;
+  WHEN syntax_error_or_access_rule_violation THEN
+   RAISE EXCEPTION 'Syntax or access error when updating backup_server_config';
+   RETURN NULL;
+  WHEN foreign_key_violation THEN
+   RAISE EXCEPTION 'Caught foreign_key_violation when updating backup_server_config';
+   RETURN NULL;
+  WHEN unique_violation THEN
+   RAISE EXCEPTION 'Duplicate key value violates unique constraint when updating backup_server_config';
+   RETURN NULL;
+END;
+$$;
+
+ALTER FUNCTION update_backup_server_configuration() OWNER TO pgbackman_user_rw;
+
+CREATE TRIGGER update_backup_server_configuration AFTER INSERT
+    ON backup_server FOR EACH ROW
+    EXECUTE PROCEDURE update_backup_server_configuration();
+
+
+-- ------------------------------------------------------------
+-- Function: update_pgsql_node_configuration()
+--
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION update_pgsql_node_configuration() RETURNS TRIGGER
+ LANGUAGE plpgsql 
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ BEGIN
+
+  EXECUTE 'INSERT INTO pgsql_node_config (node_id,parameter,value,description) 
+  	   SELECT $1,parameter,replace(replace(value,''%%pgnode%%'',$2),''.'',''_''),description FROM pgsql_node_default_config'
+  USING NEW.node_id,
+  	NEW.hostname || '.' || NEW.domain_name;
+
+RETURN NULL;
+
+EXCEPTION
+  WHEN transaction_rollback THEN
+   RAISE EXCEPTION 'Transaction rollback when updating pgsql_node_config';
+   RETURN NULL;
+  WHEN syntax_error_or_access_rule_violation THEN
+   RAISE EXCEPTION 'Syntax or access error when updating pgsql_node_config';
+   RETURN NULL;
+  WHEN foreign_key_violation THEN
+   RAISE EXCEPTION 'Caught foreign_key_violation when updating pgsql_node_config';
+   RETURN NULL;
+  WHEN unique_violation THEN
+   RAISE EXCEPTION 'Duplicate key value violates unique constraint when updating pgsql_node_config';
+   RETURN NULL;
+END;
+$$;
+
+ALTER FUNCTION update_backup_server_configuration() OWNER TO pgbackman_user_rw;
+
+CREATE TRIGGER update_pgsql_node_configuration AFTER INSERT
+    ON pgsql_node FOR EACH ROW
+    EXECUTE PROCEDURE update_pgsql_node_configuration();
 
 -- ------------------------------------------------------------
 -- Function: update_job_queue()
@@ -823,7 +905,7 @@ CREATE OR REPLACE FUNCTION delete_backup_server(TEXT) RETURNS BOOLEAN
 END;
 $$;
 
-ALTER FUNCTION delete_backup_server(INTEGER) OWNER TO pgbackman_user_rw;
+ALTER FUNCTION delete_backup_server(TEXT) OWNER TO pgbackman_user_rw;
 
 
 -- ------------------------------------------------------------
@@ -1017,7 +1099,7 @@ CREATE OR REPLACE FUNCTION delete_pgsql_node(TEXT) RETURNS BOOLEAN
 END;
 $$;
 
-ALTER FUNCTION delete_pgsql_node(INTEGER) OWNER TO pgbackman_user_rw;
+ALTER FUNCTION delete_pgsql_node(TEXT) OWNER TO pgbackman_user_rw;
 
 
 -- ------------------------------------------------------------
@@ -1683,7 +1765,7 @@ CREATE OR REPLACE FUNCTION show_database_job_definitions (TEXT) RETURNS TEXT
  END;
 $$;
 
-ALTER FUNCTION show_dbname_job_definitions(TEXT) OWNER TO pgbackman_user_rw;
+ALTER FUNCTION show_database_job_definitions(TEXT) OWNER TO pgbackman_user_rw;
 
 
 
@@ -1718,6 +1800,39 @@ $$;
 
 ALTER FUNCTION get_default_backup_server_parameter(TEXT) OWNER TO pgbackman_user_rw;
 
+
+-- ------------------------------------------------------------
+-- Function: get_default_backup_server_parameter()
+--
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION get_backup_server_parameter(INTEGER,TEXT) RETURNS TEXT 
+ LANGUAGE plpgsql 
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ DECLARE
+ server_id_ ALIAS FOR $1;
+ parameter_ ALIAS FOR $2; 
+ value_ TEXT := '';
+
+ BEGIN
+  --
+  -- This function returns the default value for a configuration parameter
+  --
+
+  SELECT value from backup_server_config WHERE server_id = server_id_ AND parameter = parameter_ INTO value_;
+
+  IF value_ IS NULL THEN
+    RAISE EXCEPTION 'Parameter: % for server % does not exist in this system',parameter_,server_id_;
+  END IF;
+
+  RETURN value_;
+ END;
+$$;
+
+ALTER FUNCTION get_backup_server_parameter(INTEGER,TEXT) OWNER TO pgbackman_user_rw;
+
 -- ------------------------------------------------------------
 -- Function: get_default_pgsql_node_parameter()
 --
@@ -1749,6 +1864,37 @@ $$;
 
 ALTER FUNCTION get_default_pgsql_node_parameter(TEXT) OWNER TO pgbackman_user_rw;
 
+-- ------------------------------------------------------------
+-- Function: get_pgsql_node_parameter()
+--
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION get_pgsql_node_parameter(INTEGER,TEXT) RETURNS TEXT 
+ LANGUAGE plpgsql 
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ DECLARE
+ node_id_ ALIAS FOR $1;
+ parameter_ ALIAS FOR $2; 
+ value_ TEXT := '';
+
+ BEGIN
+  --
+  -- This function returns the value for a configuration parameter for a pgsql_node
+  --
+
+  SELECT value from pgsql_node_config WHERE node_id = node_id_ AND parameter = parameter_ INTO value_;
+
+  IF value_ IS NULL THEN
+    RAISE EXCEPTION 'Parameter: % for server % does not exist in this system',parameter_,node_id_;
+  END IF;
+
+  RETURN value_;
+ END;
+$$;
+
+ALTER FUNCTION get_pgsql_node_parameter(INTEGER,TEXT) OWNER TO pgbackman_user_rw;
 
 -- ------------------------------------------------------------
 -- Function: get_hour_from_interval()
