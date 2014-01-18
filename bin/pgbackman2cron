@@ -21,12 +21,32 @@
 
 import sys
 import os
-import argparse
+import time
+
 sys.path.append('/home/rafael/Devel/GIT/pgbackman')
 
 from pgbackman.cli import * 
+from pgbackman.database import * 
 
 __version__ = "1.0.0"
 
 if __name__ == '__main__':
-    print "pgbackman2cron\n"
+    
+    dsn = "dbname='pgbackman' user='rafael'"
+    db = pgbackman_db(dsn)
+    db.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
+
+    db.add_listen('testing-listen.notify')
+    db.add_listen('testing-listen.notify2')
+    db.add_listen('testing-listen.notify3')
+
+    while True:
+        db.wait_select()
+        
+        while db.conn.notifies:
+            print("notify: %s" % db.conn.notifies.pop().channel)
+
+            time.sleep(5)
+            
+    db.pg_close()
+            

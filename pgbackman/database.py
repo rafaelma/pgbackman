@@ -21,6 +21,7 @@
 
 import psycopg2
 import psycopg2.extensions
+from psycopg2.extras import wait_select
 
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
@@ -48,23 +49,24 @@ class pgbackman_db():
         self.server_version = None
 
         self.pg_connect()
+        self.wait_select()
+
+        self.cur = self.conn.cursor()
 
         if self.conn:
 
             self.server_version = self.conn.server_version
 
             if (self.server_version >= 90000 and 'application_name=' not in self.dsn):
-                cur = self.conn.cursor()
-
+              
                 try:
-                    cur.execute('SET application_name TO pgbackman')
-                    cur.close()
+                    self.cur.execute('SET application_name TO pgbackman')
                 except psycopg2.Error as e:
                     print "\n* ERROR - Could not define the application_name parameter: \n%s" % e
 
 
     # ############################################
-    # pg_connect
+    # Method pg_connect()
     #
     # A generic function to connect to PostgreSQL using Psycopg2
     # We will define the application_name parameter if it is not
@@ -82,20 +84,67 @@ class pgbackman_db():
 
 
     # ############################################
-    # Method 
+    # Method pg_close()
     # ############################################
 
     def pg_close(self):
         """A generic function to close a postgreSQL connection using Psycopg2"""
+
+        if self.cur:
+            try:
+                self.cur.close()
+            except psycopg2.Error as e:
+                print "\n* ERROR - Could not close the cursor used in this connection: \n%s" % e    
 
         if self.conn:
             try:
                 self.conn.close() 
             except psycopg2.Error as e:
                 print "\n* ERROR - Could not close the connection to the database: \n%s" % e    
+                
+    # ############################################
+    # Method 
+    # ############################################
+
+    def set_isolation_level(self,param):
+        """ set isolation level"""
+
+        if self.conn:
+            self.conn.set_isolation_level(param)
+
+    # ############################################
+    # Method 
+    # ############################################
+
+    def wait_select(self):
+        """ run wait_select"""
+
+        if self.conn:
+            wait_select(self.conn)
 
 
     # ############################################
+    # Method 
+    # ############################################
+
+    def add_listen(self,channel):
+        '''Subscribe to a PostgreSQL NOTIFY'''
+
+        replace_list = ['.','-']
+
+        if self.conn:
+            if self.cur:
+                
+                for i,j in enumerate(replace_list):
+                    channel = channel.replace(j, '_')
+                
+                sql = "LISTEN %s" % channel
+                print sql
+                self.cur.execute(sql)
+                self.wait_select()
+ 
+
+   # ############################################
     # Method 
     # ############################################
 
@@ -114,21 +163,19 @@ class pgbackman_db():
         """A function to get a list with all backup servers available"""
 
         if self.conn:
-            try:
-                cur = self.conn.cursor()
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT show_backup_servers()')
+                    self.conn.commit()
                     
-                if cur:
-                    cur.execute('SELECT show_backup_servers()')
-                    
-                    data = cur.fetchone()[0]
+                    data = self.cur.fetchone()[0]
                     print data
                     
-                    cur.close()
+                except psycopg2.Error as e:
+                    print "\n* ERROR - Could not get the list with backup servers: \n* %s" % e
+                    self.conn.rollback()
                     
-            except psycopg2.Error as e:
-                print "\n* ERROR - Could not get the list with backup servers: \n* %s" % e
-     
-
+                    
     # ############################################
     # Method 
     # ############################################
@@ -137,16 +184,13 @@ class pgbackman_db():
         """A function to register a backup server"""
 
         if self.conn:
-            
-                cur = self.conn.cursor()
-             
+            if self.cur:
                 try:
-                    cur.execute('SELECT register_backup_server(%s,%s,%s,%s)',(hostname,domain,status,remarks))
+                    self.cur.execute('SELECT register_backup_server(%s,%s,%s,%s)',(hostname,domain,status,remarks))
                     self.conn.commit()                        
-                    cur.close()
-                    
-                    return True
 
+                    return True
+                
                 except psycopg2.Error as err:
                     print "\n* ERROR - Could not register backup server: \n* %s" % err
                     self.conn.rollback()
@@ -163,23 +207,20 @@ class pgbackman_db():
         """A function to delete a backup server"""
 
         if self.conn:
-            
-            cur = self.conn.cursor()
-            
-            try:
-                cur.execute('SELECT delete_backup_server(%s)',(server_id,))
-                self.conn.commit()                        
-                cur.close()
-                
-                return True
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT delete_backup_server(%s)',(server_id,))
+                    self.conn.commit()                        
+                    
+                    return True
 
-            except psycopg2.Error as err:
-                print "\n* ERROR - Could not delete backup server: \n* %s" % err
-                self.conn.rollback()
-            except psycopg2.Warning as warn:
-                print "\n* WARNING - Could not delete backup server: \n* %s" % warn
-                self.conn.rollback()
-
+                except psycopg2.Error as err:
+                    print "\n* ERROR - Could not delete backup server: \n* %s" % err
+                    self.conn.rollback()
+                except psycopg2.Warning as warn:
+                    print "\n* WARNING - Could not delete backup server: \n* %s" % warn
+                    self.conn.rollback()
+                    
           
     # ############################################
     # Method 
@@ -189,19 +230,15 @@ class pgbackman_db():
         """A function to get a list with all pgnodes defined in pgbackman"""
 
         if self.conn:
-            try:
-                cur = self.conn.cursor()
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT show_pgsql_nodes()')
                     
-                if cur:
-                    cur.execute('SELECT show_pgsql_nodes()')
-                    
-                    data = cur.fetchone()[0]
+                    data = self.cur.fetchone()[0]
                     print data
                     
-                    cur.close()
-                    
-            except psycopg2.Error as e:
-                print "\n* ERROR - Could not get the list with backup servers: \n* %s" % e
+                except psycopg2.Error as e:
+                    print "\n* ERROR - Could not get the list with backup servers: \n* %s" % e
 
                 
     # ############################################
@@ -212,22 +249,19 @@ class pgbackman_db():
         """A function to register a pgsql node"""
 
         if self.conn:
-            
-            cur = self.conn.cursor()
-            
-            try:
-                cur.execute('SELECT register_pgsql_node(%s,%s,%s,%s,%s,%s)',(hostname,domain,port,admin_user,status,remarks))
-                self.conn.commit()                        
-                cur.close()
-
-                return True
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT register_pgsql_node(%s,%s,%s,%s,%s,%s)',(hostname,domain,port,admin_user,status,remarks))
+                    self.conn.commit()                        
+                    
+                    return True
                 
-            except psycopg2.Error as err:
-                print "\n* ERROR - Could not register pgsql node: \n* %s" % err
-                self.conn.rollback()
-            except psycopg2.Warning as warn:
-                print "\n* WARNING - Could not register pgsql_node: \n* %s" % warn
-                self.conn.rollback()
+                except psycopg2.Error as err:
+                    print "\n* ERROR - Could not register pgsql node: \n* %s" % err
+                    self.conn.rollback()
+                except psycopg2.Warning as warn:
+                    print "\n* WARNING - Could not register pgsql_node: \n* %s" % warn
+                    self.conn.rollback()
                 
            
     # ############################################
@@ -238,21 +272,19 @@ class pgbackman_db():
         """A function to delete a pgsql node"""
 
         if self.conn:
-            cur = self.conn.cursor()
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT delete_pgsql_node(%s)',(node_id,))
+                    self.conn.commit()                        
+                    
+                    return True
             
-            try:
-                cur.execute('SELECT delete_pgsql_node(%s)',(node_id,))
-                self.conn.commit()                        
-                cur.close()
-                
-                return True
-            
-            except psycopg2.Error as err:
-                print "\n* ERROR - Could not delete pgsql node: \n* %s" % err
-                self.conn.rollback()
-            except psycopg2.Warning as warn:
-                print "\n* WARNING - Could not delete pgsql node: \n* %s" % warn
-                self.conn.rollback()
+                except psycopg2.Error as err:
+                    print "\n* ERROR - Could not delete pgsql node: \n* %s" % err
+                    self.conn.rollback()
+                except psycopg2.Warning as warn:
+                    print "\n* WARNING - Could not delete pgsql node: \n* %s" % warn
+                    self.conn.rollback()
                         
     # ############################################
     # Method 
@@ -264,24 +296,21 @@ class pgbackman_db():
         """A function to register a backup job"""
 
         if self.conn:
-            
-            cur = self.conn.cursor()
-            
-            try:
-                cur.execute('SELECT register_backup_job(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',(backup_server,pgsql_node,dbname,minutes_cron,hours_cron, \
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT register_backup_job(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',(backup_server,pgsql_node,dbname,minutes_cron,hours_cron, \
                                                                                                             weekday_cron,month_cron,day_month_cron,backup_code,encryption, \
                                                                                                             retention_period,retention_redundancy,extra_parameters,job_status,remarks))
-                self.conn.commit()                        
-                cur.close()
+                    self.conn.commit()                        
+                    
+                    return True
                 
-                return True
-                
-            except psycopg2.Error as err:
-                print "\n* ERROR - Could not register backup job: \n* %s" % err
-                self.conn.rollback()
-            except psycopg2.Warning as warn:
-                print "\n* WARNING - Could not register backup job: \n* %s" % warn
-                self.conn.rollback()
+                except psycopg2.Error as err:
+                    print "\n* ERROR - Could not register backup job: \n* %s" % err
+                    self.conn.rollback()
+                except psycopg2.Warning as warn:
+                    print "\n* WARNING - Could not register backup job: \n* %s" % warn
+                    self.conn.rollback()
                 
 
     # ############################################
@@ -292,19 +321,15 @@ class pgbackman_db():
         """A function to get a list with all backup job definitions for a backup server"""
 
         if self.conn:
-            try:
-                cur = self.conn.cursor()
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT show_backup_server_job_definitions(%s)',(backup_server,))
                     
-                if cur:
-                    cur.execute('SELECT show_backup_server_job_definitions(%s)',(backup_server,))
-                    
-                    data = cur.fetchone()[0]
+                    data = self.cur.fetchone()[0]
                     print data
-                    
-                    cur.close()
-                    
-            except psycopg2.Error as e:
-                print "\n* ERROR - Could not get the list of backup job definitions for this backup server \n* %s" % e
+            
+                except psycopg2.Error as e:
+                    print "\n* ERROR - Could not get the list of backup job definitions for this backup server \n* %s" % e
 
 
     # ############################################
@@ -315,19 +340,15 @@ class pgbackman_db():
         """A function to get a list with all backup job definitions for a PgSQL node"""
 
         if self.conn:
-            try:
-                cur = self.conn.cursor()
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT show_pgsql_node_job_definitions(%s)',(pgsql_node,))
                     
-                if cur:
-                    cur.execute('SELECT show_pgsql_node_job_definitions(%s)',(pgsql_node,))
-                    
-                    data = cur.fetchone()[0]
+                    data = self.cur.fetchone()[0]
                     print data
                     
-                    cur.close()
-                    
-            except psycopg2.Error as e:
-                print "\n* ERROR - Could not get the list of backup job definitions for this PgSQL node\n* %s" % e
+                except psycopg2.Error as e:
+                    print "\n* ERROR - Could not get the list of backup job definitions for this PgSQL node\n* %s" % e
 
      
     # ############################################
@@ -338,25 +359,16 @@ class pgbackman_db():
         """A function to get a list with all backup job definitions for a database"""
 
         if self.conn:
-            try:
-                cur = self.conn.cursor()
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT show_database_job_definitions(%s)',(dbname,))
                     
-                if cur:
-                    cur.execute('SELECT show_database_job_definitions(%s)',(dbname,))
-                    
-                    data = cur.fetchone()[0]
+                    data = self.cur.fetchone()[0]
                     print data
                     
-                    cur.close()
-                    
-            except psycopg2.Error as e:
-                print "\n* ERROR - Could not get the list of backup job definitions for this database\n* %s" % e
+                except psycopg2.Error as e:
+                    print "\n* ERROR - Could not get the list of backup job definitions for this database\n* %s" % e
      
-
-
-
-
-
     # ############################################
     # Method 
     # ############################################
@@ -365,19 +377,15 @@ class pgbackman_db():
         """A function to get the default value of a configuration parameter"""
 
         if self.conn:
-            try:
-                cur = self.conn.cursor()
-                
-                if cur:
-                    cur.execute('SELECT get_default_backup_server_parameter(%s)',(param,))
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT get_default_backup_server_parameter(%s)',(param,))
                     
-                    data = cur.fetchone()[0]
-                    cur.close()
-                    
+                    data = self.cur.fetchone()[0]
                     return data
 
-            except psycopg2.Error as e:
-                print "\n* ERROR - Could not get default value for parameter: \n* %s" % e
+                except psycopg2.Error as e:
+                    print "\n* ERROR - Could not get default value for parameter: \n* %s" % e
 
      
     # ############################################
@@ -388,19 +396,15 @@ class pgbackman_db():
         """A function to get the default value of a configuration parameter"""
 
         if self.conn:
-            try:
-                cur = self.conn.cursor()
-                
-                if cur:
-                    cur.execute('SELECT get_default_pgsql_node_parameter(%s)',(param,))
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT get_default_pgsql_node_parameter(%s)',(param,))
                     
-                    data = cur.fetchone()[0]
-                    cur.close()
-                    
+                    data = self.cur.fetchone()[0]
                     return data
 
-            except psycopg2.Error as e:
-                print "\n* ERROR - Could not get default value for parameter: \n* %s" % e
+                except psycopg2.Error as e:
+                    print "\n* ERROR - Could not get default value for parameter: \n* %s" % e
                 
          
     # ############################################
@@ -411,20 +415,16 @@ class pgbackman_db():
         """A function to get a minute from an interval"""
 
         if self.conn:
-            try:
-                cur = self.conn.cursor()
-                
-                if cur:
-                    cur.execute('SELECT get_minute_from_interval(%s)',(param,))
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT get_minute_from_interval(%s)',(param,))
                     
-                    data = cur.fetchone()[0]
-                    cur.close()
-                    
+                    data = self.cur.fetchone()[0]
                     return data
-
-            except psycopg2.Error as e:
-                print "\n* ERROR - Could not get minute from interval: \n* %s" % e
-         
+                
+                except psycopg2.Error as e:
+                    print "\n* ERROR - Could not get minute from interval: \n* %s" % e
+                    
        
     # ############################################
     # Method 
@@ -434,19 +434,15 @@ class pgbackman_db():
         """A function to get an hour from an interval"""
 
         if self.conn:
-            try:
-                cur = self.conn.cursor()
-                
-                if cur:
-                    cur.execute('SELECT get_hour_from_interval(%s)',(param,))
+            if self.cur:
+                try:
+                    selef.cur.execute('SELECT get_hour_from_interval(%s)',(param,))
                     
-                    data = cur.fetchone()[0]
-                    cur.close()
-                    
+                    data = self.cur.fetchone()[0]
                     return data
 
-            except psycopg2.Error as e:
-                print "\n* ERROR - Could not get minute from interval: \n* %s" % e
+                except psycopg2.Error as e:
+                    print "\n* ERROR - Could not get minute from interval: \n* %s" % e
                 
                   
     # ############################################
@@ -457,23 +453,17 @@ class pgbackman_db():
         """A function to get the FQDN for a backup server"""
 
         if self.conn:
-            try:
-                cur = self.conn.cursor()
-                
-                if cur:
-                    cur.execute('SELECT get_backup_server_fqdn(%s)',(param,))
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT get_backup_server_fqdn(%s)',(param,))
                     
-                    data = cur.fetchone()[0]
-                    cur.close()
-                    
+                    data = self.cur.fetchone()[0]
                     return data
 
-            except psycopg2.Error as e:
-                print "\n* ERROR - Could not get the FQDN for this backup server \n* %s" % e
+                except psycopg2.Error as e:
+                    print "\n* ERROR - Could not get the FQDN for this backup server \n* %s" % e
                 
                   
-
-
     # ############################################
     # Method 
     # ############################################
@@ -482,18 +472,14 @@ class pgbackman_db():
         """A function to get the FQDN for a PgSQL node"""
 
         if self.conn:
-            try:
-                cur = self.conn.cursor()
-                
-                if cur:
-                    cur.execute('SELECT get_pgsql_node_fqdn(%s)',(param,))
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT get_pgsql_node_fqdn(%s)',(param,))
                     
-                    data = cur.fetchone()[0]
-                    cur.close()
-                    
+                    data = self.cur.fetchone()[0]
                     return data
 
-            except psycopg2.Error as e:
-                print "\n* ERROR - Could not get the FQDN for this PgSQL node \n* %s" % e
+                except psycopg2.Error as e:
+                    print "\n* ERROR - Could not get the FQDN for this PgSQL node \n* %s" % e
                 
                   
