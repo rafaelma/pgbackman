@@ -645,7 +645,7 @@ CREATE OR REPLACE FUNCTION update_job_queue() RETURNS TRIGGER
    USING NEW.backup_server_id,
          NEW.pgsql_node_id;
 
-   PERFORM pg_notify('channel_BS' || NEW.backup_server_id || '_PG' || NEW.pgsql_node_id,'Backup jobs for ' || pgsql_node_ || ' updated on ' || backup_server_);
+   PERFORM pg_notify('channel_bs' || NEW.backup_server_id || '_pg' || NEW.pgsql_node_id,'Backup jobs for ' || pgsql_node_ || ' updated on ' || backup_server_);
   END IF;  
 
 -- --------------------------
@@ -669,7 +669,7 @@ CREATE OR REPLACE FUNCTION update_job_queue() RETURNS TRIGGER
      USING NEW.backup_server_id,
            NEW.pgsql_node_id;
 
-     PERFORM pg_notify('channel_BS' || NEW.backup_server_id || '_PG' || NEW.pgsql_node_id,'Backup jobs for ' || pgsql_node_ || ' updated on ' || backup_server_);
+     PERFORM pg_notify('channel_bs' || NEW.backup_server_id || '_pg' || NEW.pgsql_node_id,'Backup jobs for ' || pgsql_node_ || ' updated on ' || backup_server_);
     END IF;  
 
   --
@@ -687,7 +687,7 @@ CREATE OR REPLACE FUNCTION update_job_queue() RETURNS TRIGGER
      USING NEW.backup_server_id,
            NEW.pgsql_node_id;
 
-     PERFORM pg_notify('channel_BS' || NEW.backup_server_id || '_PG' || NEW.pgsql_node_id,'Backup jobs for ' || pgsql_node_ || ' updated on ' || backup_server_);
+     PERFORM pg_notify('channel_bs' || NEW.backup_server_id || '_pg' || NEW.pgsql_node_id,'Backup jobs for ' || pgsql_node_ || ' updated on ' || backup_server_);
     END IF;  
 
     SELECT count(*) FROM job_queue WHERE backup_server_id = OLD.backup_server_id AND pgsql_node_id = NEW.pgsql_node_id AND is_assigned IS FALSE INTO srv_cnt;
@@ -699,7 +699,7 @@ CREATE OR REPLACE FUNCTION update_job_queue() RETURNS TRIGGER
      USING OLD.backup_server_id,
            NEW.pgsql_node_id;
 
-     PERFORM pg_notify('channel_BS' || OLD.backup_server_id || '_PG' || NEW.pgsql_node_id,'Backup jobs for ' || pgsql_node_ || ' updated on ' || backup_server_);
+     PERFORM pg_notify('channel_bs' || OLD.backup_server_id || '_pg' || NEW.pgsql_node_id,'Backup jobs for ' || pgsql_node_ || ' updated on ' || backup_server_);
     END IF;  
 
   END IF;
@@ -719,7 +719,7 @@ CREATE OR REPLACE FUNCTION update_job_queue() RETURNS TRIGGER
    USING OLD.backup_server_id,
          OLD.pgsql_node_id;
 
-   PERFORM pg_notify('channel_BS' || OLD.backup_server_id || '_PG' || OLD.pgsql_node_id,'Backup jobs for ' || pgsql_node_ || ' updated on ' || backup_server_);
+   PERFORM pg_notify('channel_bs' || OLD.backup_server_id || '_pg' || OLD.pgsql_node_id,'Backup jobs for ' || pgsql_node_ || ' updated on ' || backup_server_);
   END IF;         
 
  END IF;
@@ -754,13 +754,13 @@ CREATE TRIGGER update_job_queue AFTER INSERT OR UPDATE OR DELETE
 --
 -- ------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION get_next_job(TEXT) RETURNS SETOF job_queue
+CREATE OR REPLACE FUNCTION get_next_job(INTEGER) RETURNS SETOF job_queue
  LANGUAGE plpgsql 
  SECURITY INVOKER 
  SET search_path = public, pg_temp
  AS $$
  DECLARE
-  backup_server_ ALIAS FOR $1;
+  backup_server_id_ ALIAS FOR $1;
   assigned_id BIGINT;
  BEGIN
 
@@ -777,13 +777,13 @@ CREATE OR REPLACE FUNCTION get_next_job(TEXT) RETURNS SETOF job_queue
   LOOP
     BEGIN
       EXECUTE 'SELECT id' 
-        || ' FROM jobs_queue'
-        || ' WHERE backup_server = $1'
+        || ' FROM job_queue'
+        || ' WHERE backup_server_id = $1'
         || ' AND is_assigned IS FALSE'
         || ' LIMIT 1'
         || ' FOR UPDATE NOWAIT'
       INTO assigned_id
-      USING backup_server_;
+      USING backup_server_id_;
       EXIT;
     EXCEPTION
       WHEN lock_not_available THEN
@@ -889,9 +889,12 @@ CREATE OR REPLACE FUNCTION delete_backup_server(TEXT) RETURNS BOOLEAN
   server_id_ INTEGER;
  BEGIN
 
- SELECT server_id FROM backup_server WHERE backup_server_ = hostname || '.' || domain_name  INTO server_id_;
+ SELECT get_backup_server_id(backup_server_) INTO server_id_;
 
    IF server_id_ IS NOT NULL THEN    
+
+    EXECUTE 'DELETE FROM backup_server_config WHERE server_id = $1'
+    USING server_id_;
    
     EXECUTE 'DELETE FROM backup_server WHERE server_id = $1'
     USING server_id_;
@@ -1083,9 +1086,12 @@ CREATE OR REPLACE FUNCTION delete_pgsql_node(TEXT) RETURNS BOOLEAN
   node_id_ INTEGER;
  BEGIN
 
- SELECT node_id FROM pgsql_node WHERE pgsql_node_ = hostname || '.' || domain_name  INTO node_id_;
+ SELECT get_pgsql_node_id(pgsql_node_) INTO node_id_;
 
    IF node_id_ IS NOT NULL THEN    
+
+    EXECUTE 'DELETE FROM pgsql_node_config WHERE node_id = $1'
+    USING node_id_;
 
     EXECUTE 'DELETE FROM pgsql_node WHERE node_id = $1'
     USING node_id_;
@@ -1274,8 +1280,8 @@ CREATE OR REPLACE FUNCTION register_backup_job(TEXT,TEXT,TEXT,CHARACTER VARYING,
     job_status_ := get_default_pgsql_node_parameter('backup_job_status');
    END IF;
 
-   SELECT server_id FROM backup_server WHERE hostname || '.' || domain_name = backup_server_ INTO backup_server_id_;
-   SELECT node_id FROM pgsql_node WHERE hostname || '.' || domain_name = pgsql_node_ INTO pgsql_node_id_;   
+   SELECT get_backup_server_id(backup_server_) INTO backup_server_id_;
+   SELECT get_pgsql_node_id(pgsql_node_) INTO pgsql_node_id_;
 
    IF backup_server_id_ IS NULL THEN
      RAISE EXCEPTION 'Backup server % does not exist',backup_server_ ;
@@ -1366,16 +1372,16 @@ CREATE OR REPLACE FUNCTION register_backup_job(TEXT,TEXT,TEXT,CHARACTER VARYING,
    RETURN TRUE;
  EXCEPTION
   WHEN transaction_rollback THEN
-   RAISE EXCEPTION 'Transaction rollback when updating pgsql_node';
+   RAISE EXCEPTION 'Transaction rollback when updating backup_job_definition';
    RETURN FALSE;
   WHEN syntax_error_or_access_rule_violation THEN
-   RAISE EXCEPTION 'Syntax or access error when updating pgsql_node';
+   RAISE EXCEPTION 'Syntax or access error when updating backup_job_definition';
    RETURN FALSE;
   WHEN foreign_key_violation THEN
-   RAISE EXCEPTION 'Caught foreign_key_violation when updating pgsql_node';
+   RAISE EXCEPTION 'Caught foreign_key_violation when updating backup_job_definition';
    RETURN FALSE;
   WHEN unique_violation THEN
-   RAISE EXCEPTION 'Duplicate key value violates unique constraint when updating pgsql_node';
+   RAISE EXCEPTION 'Duplicate key value violates unique constraint when updating backup_job_definition';
    RETURN FALSE;
 END;
 $$;
@@ -1422,7 +1428,7 @@ CREATE OR REPLACE FUNCTION show_backup_server_job_definitions (TEXT) RETURNS TEX
   -- for a backup server.
   --
 
-  SELECT server_id FROM backup_server WHERE backup_server_ = hostname || '.' || domain_name INTO server_id_;
+  SELECT get_backup_server_id(backup_server_) INTO server_id_;
 
   IF server_id_ IS NULL THEN
     RAISE EXCEPTION 'Backup server: % does not exist in this system', backup_server_;
@@ -1550,7 +1556,7 @@ CREATE OR REPLACE FUNCTION show_pgsql_node_job_definitions (TEXT) RETURNS TEXT
   -- for a backup server.
   --
 
-  SELECT node_id FROM pgsql_node WHERE pgsql_node_ = hostname || '.' || domain_name INTO pgsql_node_id_;
+  SELECT get_pgsql_node_id(pgsql_node_) INTO pgsql_node_id_;
 
   IF pgsql_node_id_ IS NULL THEN
     RAISE EXCEPTION 'PgSQL node: % does not exist in this system', pgsql_node_;
@@ -2009,6 +2015,39 @@ $$;
 
 ALTER FUNCTION get_backup_server_fqdn(INTEGER) OWNER TO pgbackman_user_rw;
 
+
+-- ------------------------------------------------------------
+-- Function: get_backup_server_id()
+--
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION get_backup_server_id(TEXT) RETURNS INTEGER 
+ LANGUAGE plpgsql 
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ DECLARE
+ backup_server_fqdn ALIAS FOR $1; 
+ value_ TEXT := '';
+
+ BEGIN
+  --
+  -- This function returns the server_id of a backup server
+  --
+
+  SELECT server_id FROM backup_server WHERE hostname || '.' || domain_name = backup_server_fqdn INTO value_;
+
+  IF value_ IS NULL THEN
+    RAISE EXCEPTION 'Backup server with FQDN: % does not exist in this system',backup_server_fqdn;
+  END IF;
+
+  RETURN value_;
+ END;
+$$;
+
+ALTER FUNCTION get_backup_server_id(TEXT) OWNER TO pgbackman_user_rw;
+
+
 -- ------------------------------------------------------------
 -- Function: get_pgsql_node_fqdn()
 --
@@ -2041,13 +2080,52 @@ $$;
 ALTER FUNCTION get_pgsql_node_fqdn(INTEGER) OWNER TO pgbackman_user_rw;
 
 
+-- ------------------------------------------------------------
+-- Function: get_pgsql_node_id()
+--
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION get_pgsql_node_id(TEXT) RETURNS INTEGER 
+ LANGUAGE plpgsql 
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ DECLARE
+ pgsql_node_fqdn ALIAS FOR $1; 
+ value_ TEXT := '';
+
+ BEGIN
+  --
+  -- This function returns the server_id of a backup server
+  --
+
+  SELECT node_id FROM pgsql_node WHERE hostname || '.' || domain_name = pgsql_node_fqdn INTO value_;
+
+  IF value_ IS NULL THEN
+    RAISE EXCEPTION 'PgSQL node with FQDN: % does not exist in this system',pgsql_node_fqdn;
+  END IF;
+
+  RETURN value_;
+ END;
+$$;
+
+ALTER FUNCTION get_pgsql_node_id(TEXT) OWNER TO pgbackman_user_rw;
+
+
+-- ------------------------------------------------------------
+-- Function: get_listen_channel_names()
+--
+-- ------------------------------------------------------------
+
 CREATE OR REPLACE FUNCTION get_listen_channel_names(INTEGER) RETURNS SETOF TEXT 
  LANGUAGE sql
  SECURITY INVOKER 
  SET search_path = public, pg_temp
  AS $$
-  SELECT 'channel_BS' || $1 || '_PG' || node_id from pgsql_node
+  SELECT 'channel_bs' || $1 || '_pg' || node_id from pgsql_node
 $$;
+
+ALTER FUNCTION get_listen_channel_names(INTEGER) OWNER TO pgbackman_user_rw;
 
 
 COMMIT;

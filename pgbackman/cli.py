@@ -665,16 +665,17 @@ class pgbackman_cli(cmd.Cmd):
             minutes_cron = arg_list[3]
             hours_cron = arg_list[4]
             weekday_cron = arg_list[5]
-            month_day_cron = arg_list[6]
-            backup_code = arg_list[7]
-            encryption = arg_list[8]
-            retention_period = arg_list[9]
-            retention_redundancy = arg_list[10]
-            extra_parameters = arg_list[11]
-            backup_job_status = arg_list[12]
-            remarks = arg_list[13]
+            month_cron = arg_list[6]
+            day_month_cron = arg_list[7]
+            backup_code = arg_list[8]
+            encryption = arg_list[9]
+            retention_period = arg_list[10]
+            retention_redundancy = arg_list[11]
+            extra_parameters = arg_list[12]
+            backup_job_status = arg_list[13]
+            remarks = arg_list[14]
 
-            for i in range(14,len(arg_list)):
+            for i in range(15,len(arg_list)):
                 remarks = remarks + " " + arg_list[i]
 
                 

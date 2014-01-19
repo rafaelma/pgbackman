@@ -22,6 +22,7 @@
 import sys
 import os
 import time
+import socket
 
 sys.path.append('/home/rafael/Devel/GIT/pgbackman')
 
@@ -31,11 +32,42 @@ from pgbackman.database import *
 __version__ = "1.0.0"
 
 
+# ############################################
+# Method
+# ############################################
+
 def check_directories():
     """Check the directories needed"""
 
+
+# ############################################
+# Method
+# ############################################
+
 def generate_crontab_file(filename):
     """Generate the crontab file for a PgSQL node"""
+
+
+# ############################################
+# Method
+# ############################################
+
+def add_listen_channels(backup_server_id):
+    """Define all channels where we are goint to listen for notification"""
+
+    for channel in db.get_listen_channel_names(backup_server_id): 
+        db.add_listen(channel)
+
+
+# ############################################
+# Method
+# ############################################
+
+def get_backup_server_id(backup_server_fqdn):
+    """Get the server ID for this backup server"""
+
+    return db.get_backup_server_id(backup_server_fqdn)
+
 
 
 if __name__ == '__main__':
@@ -45,9 +77,10 @@ if __name__ == '__main__':
     db.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
 
 
-    for channel in db.get_listen_channel_names(1): 
-        db.add_listen(channel)
+    print socket.getfqdn()
 
+    add_listen_channels(get_backup_server_id(socket.getfqdn()))
+  
     while True:
         db.wait_select()
         

@@ -435,7 +435,7 @@ class pgbackman_db():
         if self.conn:
             if self.cur:
                 try:
-                    selef.cur.execute('SELECT get_hour_from_interval(%s)',(param,))
+                    self.cur.execute('SELECT get_hour_from_interval(%s)',(param,))
                     
                     data = self.cur.fetchone()[0]
                     return data
@@ -461,6 +461,24 @@ class pgbackman_db():
 
                 except psycopg2.Error as e:
                     print "\n* ERROR - Could not get the FQDN for this backup server \n* %s" % e
+
+    # ############################################
+    # Method 
+    # ############################################
+           
+    def get_backup_server_id(self,param):
+        """A function to get the ID of a backup server"""
+
+        if self.conn:
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT get_backup_server_id(%s)',(param,))
+                    
+                    data = self.cur.fetchone()[0]
+                    return data
+
+                except psycopg2.Error as e:
+                    print "\n* ERROR - Could not get the server ID for this backup server \n* %s" % e
                 
                   
     # ############################################
@@ -481,7 +499,26 @@ class pgbackman_db():
                 except psycopg2.Error as e:
                     print "\n* ERROR - Could not get the FQDN for this PgSQL node \n* %s" % e
                 
-                  
+
+    # ############################################
+    # Method 
+    # ############################################
+           
+    def get_pgsql_node_id(self,param):
+        """A function to get the ID of a PgSQL node"""
+
+        if self.conn:
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT get_pgsql_node_id(%s)',(param,))
+                    
+                    data = self.cur.fetchone()[0]
+                    return data
+
+                except psycopg2.Error as e:
+                    print "\n* ERROR - Could not get the node ID for this PgSQL node \n* %s" % e
+                                 
+
     # ############################################
     # Method 
     # ############################################
