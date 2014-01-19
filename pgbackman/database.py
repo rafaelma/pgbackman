@@ -134,7 +134,6 @@ class pgbackman_db():
 
         if self.conn:
             if self.cur:
-                
                 for i,j in enumerate(replace_list):
                     channel = channel.replace(j, '_')
                 
@@ -406,7 +405,7 @@ class pgbackman_db():
                 except psycopg2.Error as e:
                     print "\n* ERROR - Could not get default value for parameter: \n* %s" % e
                 
-         
+
     # ############################################
     # Method 
     # ############################################
@@ -483,3 +482,33 @@ class pgbackman_db():
                     print "\n* ERROR - Could not get the FQDN for this PgSQL node \n* %s" % e
                 
                   
+    # ############################################
+    # Method 
+    # ############################################
+           
+    def get_listen_channel_names(self,param):
+        """A function to get a list of channels to LISTEN for a backup_server"""
+
+        if self.conn:
+            if self.cur:
+                try:
+                    list = []
+                    
+                    self.cur.execute('SELECT get_listen_channel_names(%s)',(param,))
+                    
+                    for row in self.cur.fetchall():
+                        list.append(row[0])
+
+                    return list
+                
+                except psycopg2.Error as e:
+                    print "\n* ERROR - Could not get the listen channel names\n* %s" % e
+
+
+
+    # ############################################
+    # Method 
+    # ############################################
+           
+    def get_crontab_file(self,pgsql_node):
+        """A function to get the crontab file for a PgSQL node"""

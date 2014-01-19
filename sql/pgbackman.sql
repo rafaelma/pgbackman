@@ -645,7 +645,7 @@ CREATE OR REPLACE FUNCTION update_job_queue() RETURNS TRIGGER
    USING NEW.backup_server_id,
          NEW.pgsql_node_id;
 
-   PERFORM pg_notify('channel_' || backup_server_,'Backup jobs for ' || pgsql_node_ || ' updated on ' || backup_server_);
+   PERFORM pg_notify('channel_BS' || NEW.backup_server_id || '_PG' || NEW.pgsql_node_id,'Backup jobs for ' || pgsql_node_ || ' updated on ' || backup_server_);
   END IF;  
 
 -- --------------------------
@@ -669,7 +669,7 @@ CREATE OR REPLACE FUNCTION update_job_queue() RETURNS TRIGGER
      USING NEW.backup_server_id,
            NEW.pgsql_node_id;
 
-     PERFORM pg_notify('channel_' || backup_server_,'Backup jobs for ' || pgsql_node_ || ' updated on ' || backup_server_);
+     PERFORM pg_notify('channel_BS' || NEW.backup_server_id || '_PG' || NEW.pgsql_node_id,'Backup jobs for ' || pgsql_node_ || ' updated on ' || backup_server_);
     END IF;  
 
   --
@@ -687,7 +687,7 @@ CREATE OR REPLACE FUNCTION update_job_queue() RETURNS TRIGGER
      USING NEW.backup_server_id,
            NEW.pgsql_node_id;
 
-     PERFORM pg_notify('channel_' || backup_server_,'Backup jobs for ' || pgsql_node_ || ' updated on ' || backup_server_);
+     PERFORM pg_notify('channel_BS' || NEW.backup_server_id || '_PG' || NEW.pgsql_node_id,'Backup jobs for ' || pgsql_node_ || ' updated on ' || backup_server_);
     END IF;  
 
     SELECT count(*) FROM job_queue WHERE backup_server_id = OLD.backup_server_id AND pgsql_node_id = NEW.pgsql_node_id AND is_assigned IS FALSE INTO srv_cnt;
@@ -699,7 +699,7 @@ CREATE OR REPLACE FUNCTION update_job_queue() RETURNS TRIGGER
      USING OLD.backup_server_id,
            NEW.pgsql_node_id;
 
-     PERFORM pg_notify('channel_' || backup_server_,'Backup jobs for ' || pgsql_node_ || ' updated on ' || backup_server_);
+     PERFORM pg_notify('channel_BS' || OLD.backup_server_id || '_PG' || NEW.pgsql_node_id,'Backup jobs for ' || pgsql_node_ || ' updated on ' || backup_server_);
     END IF;  
 
   END IF;
@@ -719,7 +719,7 @@ CREATE OR REPLACE FUNCTION update_job_queue() RETURNS TRIGGER
    USING OLD.backup_server_id,
          OLD.pgsql_node_id;
 
-   PERFORM pg_notify('channel_' || backup_server_,'Backup jobs for ' || pgsql_node_ || ' updated on ' || backup_server_);
+   PERFORM pg_notify('channel_BS' || OLD.backup_server_id || '_PG' || OLD.pgsql_node_id,'Backup jobs for ' || pgsql_node_ || ' updated on ' || backup_server_);
   END IF;         
 
  END IF;
@@ -1864,6 +1864,7 @@ $$;
 
 ALTER FUNCTION get_default_pgsql_node_parameter(TEXT) OWNER TO pgbackman_user_rw;
 
+
 -- ------------------------------------------------------------
 -- Function: get_pgsql_node_parameter()
 --
@@ -2038,6 +2039,15 @@ CREATE OR REPLACE FUNCTION get_pgsql_node_fqdn(INTEGER) RETURNS TEXT
 $$;
 
 ALTER FUNCTION get_pgsql_node_fqdn(INTEGER) OWNER TO pgbackman_user_rw;
+
+
+CREATE OR REPLACE FUNCTION get_listen_channel_names(INTEGER) RETURNS SETOF TEXT 
+ LANGUAGE sql
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+  SELECT 'channel_BS' || $1 || '_PG' || node_id from pgsql_node
+$$;
 
 
 COMMIT;

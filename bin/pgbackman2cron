@@ -30,15 +30,23 @@ from pgbackman.database import *
 
 __version__ = "1.0.0"
 
+
+def check_directories():
+    """Check the directories needed"""
+
+def generate_crontab_file(filename):
+    """Generate the crontab file for a PgSQL node"""
+
+
 if __name__ == '__main__':
     
     dsn = "dbname='pgbackman' user='rafael'"
     db = pgbackman_db(dsn)
     db.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
 
-    db.add_listen('testing-listen.notify')
-    db.add_listen('testing-listen.notify2')
-    db.add_listen('testing-listen.notify3')
+
+    for channel in db.get_listen_channel_names(1): 
+        db.add_listen(channel)
 
     while True:
         db.wait_select()
@@ -46,7 +54,7 @@ if __name__ == '__main__':
         while db.conn.notifies:
             print("notify: %s" % db.conn.notifies.pop().channel)
 
-            time.sleep(5)
+            time.sleep(60)
             
     db.pg_close()
             
