@@ -52,11 +52,35 @@ def generate_crontab_file(filename):
 # Method
 # ############################################
 
-def add_listen_channels(backup_server_id):
+def add_to_listen_channels(backup_server_id):
     """Define all channels where we are goint to listen for notification"""
 
+    global listen_list
+    listen_list = []
+
     for channel in db.get_listen_channel_names(backup_server_id): 
+        listen_list.append(channel)
         db.add_listen(channel)
+
+    print listen_list # debug
+
+# ############################################
+# Method
+# ############################################
+
+def delete_from_listen_channels(backup_server_id):
+    """Unlisten a channel"""
+
+    new_listen_list = []
+    delete_listen_list = []
+
+    for channel in db.get_listen_channel_names(backup_server_id): 
+        new_listen_list.append(channel)
+        
+    delete_listen_list = set(listen_list)-set(new_listen_list)
+
+    for channel in delete_listen_list:
+        db.delete_listen(channel)
 
 
 # ############################################
@@ -69,25 +93,46 @@ def get_backup_server_id(backup_server_fqdn):
     return db.get_backup_server_id(backup_server_fqdn)
 
 
+# ############################################
+# Method
+# ############################################
 
-if __name__ == '__main__':
-    
-    dsn = "dbname='pgbackman' user='rafael'"
-    db = pgbackman_db(dsn)
+def main():
+
     db.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
 
-
     print socket.getfqdn()
-
-    add_listen_channels(get_backup_server_id(socket.getfqdn()))
+    add_to_listen_channels(get_backup_server_id(socket.getfqdn()))
+    print listen_list # debug
   
     while True:
+        channels = []
         db.wait_select()
         
         while db.conn.notifies:
-            print("notify: %s" % db.conn.notifies.pop().channel)
-
-            time.sleep(60)
+            channel = db.conn.notifies.pop().channel
+            channels.append(channel)
+    
+        for channel in set(channels):
+            if channel == 'channel_pgsql_nodes_updated':
+                delete_from_listen_channels(get_backup_server_id(socket.getfqdn()))
+                add_to_listen_channels(get_backup_server_id(socket.getfqdn()))
+            else:
+                print channel
+                
+        # We check and receive all new notifications every 60 seconds.
+        time.sleep(60)
             
     db.pg_close()
             
+
+if __name__ == '__main__':
+
+    listen_list = []
+
+    dsn = "dbname='pgbackman' user='rafael'"
+    db = pgbackman_db(dsn)
+    
+    main()
+
+

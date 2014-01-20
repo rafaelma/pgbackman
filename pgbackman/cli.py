@@ -371,24 +371,37 @@ class pgbackman_cli(cmd.Cmd):
             print "--------------------------------------------------------"
             node_id = raw_input("# NodeID / FQDN: ")
             print
-            ack = raw_input("# Are you sure you want to delete this \n# postgreSQL node? (y/n): ")
-            print "--------------------------------------------------------"
+            ack = raw_input("# This action will also DELETE ALL BACKUP JOBS definitions for this PgSQL node.\n# Are you sure you want to delete this PgSQL node? (y/n): ")
+           
 
             if ack.lower() == "y":
+
+                ack2= raw_input("\n# Are you 110% sure you want to do this?\n# There is no way back after this point (yes/no): ") 
+                print "--------------------------------------------------------"
+
+                if ack2.lower() == "yes":
+                    if node_id.isdigit():
+                        if db.delete_pgsql_node(db.get_pgsql_node_fqdn(node_id)):
+                            print "\n* Done\n"
+                    else:
+                        if db.delete_pgsql_node(node_id):
+                            print "\n* Done\n"
+            else:
+                print "--------------------------------------------------------"
+
+        elif len(arg_list) == 3:
+
+            node_id = arg_list[0]
+            ack =  arg_list[1]
+            ack2 =  arg_list[2]
+            
+            if ack.lower() == "y" and ack2.lower() == "yes":
                 if node_id.isdigit():
                     if db.delete_pgsql_node(db.get_pgsql_node_fqdn(node_id)):
                         print "\n* Done\n"
                 else:
                     if db.delete_pgsql_node(node_id):
                         print "\n* Done\n"
-                    
-        elif len(arg_list) == 1:
-
-            node_id = arg_list[0]
-            
-            if self.check_digit(node_id):
-                if db.delete_pgsql_node(node_id.lower().strip()) == True:
-                    print "\n* Done\n"
                 
         else:
             print "\n* ERROR - Wrong number of parameters used.\n* Type help or ? to list commands\n"

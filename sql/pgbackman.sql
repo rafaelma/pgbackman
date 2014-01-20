@@ -535,6 +535,29 @@ ORDER BY a.registered ASC;
 --
 -- ------------------------------------------------------------
 
+CREATE OR REPLACE FUNCTION notify_pgsql_nodes_updated() RETURNS TRIGGER
+ LANGUAGE plpgsql 
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ BEGIN
+  PERFORM pg_notify('channel_pgsql_nodes_updated','PgSQL node changed');
+  RETURN NULL;
+END;
+$$;
+
+ALTER FUNCTION notify_pgsql_nodes_updated() OWNER TO pgbackman_user_rw;
+
+CREATE TRIGGER notify_pgsql_nodes_updated AFTER INSERT OR DELETE
+    ON pgsql_node FOR EACH ROW
+    EXECUTE PROCEDURE notify_pgsql_nodes_updated();
+
+
+-- ------------------------------------------------------------
+-- Function: update_backup_server_configuration()
+--
+-- ------------------------------------------------------------
+
 CREATE OR REPLACE FUNCTION update_backup_server_configuration() RETURNS TRIGGER
  LANGUAGE plpgsql 
  SECURITY INVOKER 
@@ -803,7 +826,7 @@ CREATE OR REPLACE FUNCTION get_next_job(INTEGER) RETURNS SETOF job_queue
  END;
 $$;
 
-ALTER FUNCTION get_next_job(TEXT) OWNER TO pgbackman_user_rw;
+ALTER FUNCTION get_next_job(INTEGER) OWNER TO pgbackman_user_rw;
 
 -- ------------------------------------------------------------
 -- Function: register_backup_server()
@@ -987,7 +1010,6 @@ $$;
 ALTER FUNCTION show_backup_servers() OWNER TO pgbackman_user_rw;
 
 
-
 -- ------------------------------------------------------------
 -- Function: register_pgsql_node()
 --
@@ -1090,7 +1112,13 @@ CREATE OR REPLACE FUNCTION delete_pgsql_node(TEXT) RETURNS BOOLEAN
 
    IF node_id_ IS NOT NULL THEN    
 
+    EXECUTE 'DELETE FROM backup_job_definition WHERE pgsql_node_id = $1'
+    USING node_id_;
+    
     EXECUTE 'DELETE FROM pgsql_node_config WHERE node_id = $1'
+    USING node_id_;
+
+    EXECUTE 'DELETE FROM job_queue WHERE pgsql_node_id = $1'
     USING node_id_;
 
     EXECUTE 'DELETE FROM pgsql_node WHERE node_id = $1'
@@ -2122,7 +2150,9 @@ CREATE OR REPLACE FUNCTION get_listen_channel_names(INTEGER) RETURNS SETOF TEXT
  SECURITY INVOKER 
  SET search_path = public, pg_temp
  AS $$
-  SELECT 'channel_bs' || $1 || '_pg' || node_id from pgsql_node
+  SELECT 'channel_pgsql_nodes_updated' AS channel
+  UNION
+  SELECT 'channel_bs' || $1 || '_pg' || node_id AS channel FROM pgsql_node ORDER BY channel DESC
 $$;
 
 ALTER FUNCTION get_listen_channel_names(INTEGER) OWNER TO pgbackman_user_rw;

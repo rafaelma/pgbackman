@@ -138,10 +138,30 @@ class pgbackman_db():
                     channel = channel.replace(j, '_')
                 
                 sql = "LISTEN %s" % channel
-                print sql
+                print sql # debug
                 self.cur.execute(sql)
                 self.wait_select()
  
+
+    # ############################################
+    # Method 
+    # ############################################
+
+    def delete_listen(self,channel):
+        '''Unsubscribe to a PostgreSQL NOTIFY'''
+
+        replace_list = ['.','-']
+
+        if self.conn:
+            if self.cur:
+                for i,j in enumerate(replace_list):
+                    channel = channel.replace(j, '_')
+                
+                sql = "UNLISTEN %s" % channel
+                print sql # debug
+                self.cur.execute(sql)
+                self.wait_select()
+     
 
    # ############################################
     # Method 
