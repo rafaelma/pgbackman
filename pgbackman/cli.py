@@ -28,6 +28,7 @@ import signal
 
 sys.path.append('/home/rafael/Devel/GIT/pgbackman')
 from pgbackman.database import * 
+from pgbackman.config import *
 
 # ############################################
 # class pgbackman_cli
@@ -53,7 +54,8 @@ class pgbackman_cli(cmd.Cmd):
         self.prompt = '[pgbackman]$ '
         self.file = None
 
-        self.dsn = "dbname='pgbackman' user='rafael'"
+        self.conf = configuration() 
+        self.dsn = self.conf.dsn
 
 
     # ############################################

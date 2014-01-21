@@ -499,7 +499,7 @@ class pgbackman_db():
 
                 except psycopg2.Error as e:
                     print "\n* ERROR - Could not get the server ID for this backup server \n* %s" % e
-                
+                    return False
                   
     # ############################################
     # Method 
