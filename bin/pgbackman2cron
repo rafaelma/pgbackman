@@ -39,18 +39,12 @@ class listen_channels():
     # Constructor
     # ############################################
     
-    def __init__(self,db,backup_server):
+    def __init__(self,db,backup_server_id):
         """ The Constructor."""
         
         self.listen_list = []
         self.db = db
-        
-        if self.db.get_backup_server_id(backup_server):
-            self.backup_server_id = self.db.get_backup_server_id(backup_server)
-        else:
-            sys.exit()
-            
-       
+        self.backup_server_id = backup_server_id
 
 
     # ############################################
@@ -96,13 +90,28 @@ class listen_channels():
 def check_directories():
     """Check the directories needed"""
 
+# ############################################
+# Method
+# ############################################
+
+def generate_crontab_file(pgsql_node_id):
+    """Check the directories needed"""
+
+    print 'Generating crontab file for: ' + str(pgsql_node_id)
+
 
 # ############################################
 # Method
 # ############################################
 
-def generate_crontab_file(filename):
-    """Generate the crontab file for a PgSQL node"""
+def get_next_crontab_id_to_generate(db,backup_server_id):
+    """Get all the PgSQL node IDs some need to get a new crontab file installed"""
+    
+    node_id = db.get_next_crontab_id_to_generate(backup_server_id)
+
+    while node_id != None:
+        generate_crontab_file(node_id)
+        node_id = db.get_next_crontab_id_to_generate(backup_server_id)
 
 
 
@@ -113,8 +122,8 @@ def generate_crontab_file(filename):
 def main():
     
     conf = configuration()
-
     dsn = conf.dsn
+
     db = pgbackman_db(dsn)
     db.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
 
@@ -123,11 +132,22 @@ def main():
     print conf.dsn # debug
 
     if conf.backup_server != '':
-        ch = listen_channels(db,conf.backup_server)
+        backup_server_id = db.get_backup_server_id(conf.backup_server)
     else:
-        ch = listen_channels(db,socket.getfqdn())
+        backup_server_id = db.get_backup_server_id(socket.getfqdn())
+        
+    if backup_server_id == False:
+        sys.exit()     
 
+    ch = listen_channels(db,backup_server_id)
     ch.add_to_listen_channels()
+    
+    # We check if there are some crontab files to generate when
+    # we start pgbackman2cron. This is nesessary just in case 
+    # pgbackman2cron has been down and missed some NOTIFYs 
+    # from the central database.
+
+    get_next_crontab_id_to_generate(db,backup_server_id)
     
     print ch.listen_list # debug
     print conf.channels_check_interval # debug
@@ -145,8 +165,8 @@ def main():
                 ch.delete_from_listen_channels()
                 ch.add_to_listen_channels()
             else:
-                print channel
-                
+                get_next_crontab_id_to_generate(db,backup_server_id)
+        print 'LOOP'        
         # We check and receive all new notifications every 60 seconds.
         time.sleep(conf.channels_check_interval)
             

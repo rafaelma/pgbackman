@@ -562,10 +562,42 @@ class pgbackman_db():
                     print "\n* ERROR - Could not get the listen channel names\n* %s" % e
 
 
+    # ############################################
+    # Method 
+    # ############################################
+           
+    def get_next_crontab_id_to_generate(self,param):
+        """A function to get the next PgSQL node ID to generate a crontab file for"""
+
+        if self.conn:
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT get_next_crontab_id_to_generate(%s)',(param,))
+                    
+                    data = self.cur.fetchone()[0]
+                    return data
+
+                except psycopg2.Error as e:
+                    print "\n* ERROR - Could not get the next job in the queue\n* %s" % e
+
+
+
+
 
     # ############################################
     # Method 
     # ############################################
            
-    def get_crontab_file(self,pgsql_node):
+    def generate_crontab_file(self,pgsql_node_id):
         """A function to get the crontab file for a PgSQL node"""
+
+        if self.conn:
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT generate_crontab_file(%s)',(pgsql_node_id,))
+                    
+                    data = self.cur.fetchone()[0]
+                    print data
+                    
+                except psycopg2.Error as e:
+                    print "\n* ERROR - Could not generate the crontab file for this PgSQL node\n* %s" % e

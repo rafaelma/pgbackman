@@ -777,13 +777,14 @@ CREATE TRIGGER update_job_queue AFTER INSERT OR UPDATE OR DELETE
 --
 -- ------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION get_next_job(INTEGER) RETURNS SETOF job_queue
+CREATE OR REPLACE FUNCTION get_next_crontab_id_to_generate(INTEGER) RETURNS INTEGER
  LANGUAGE plpgsql 
  SECURITY INVOKER 
  SET search_path = public, pg_temp
  AS $$
  DECLARE
   backup_server_id_ ALIAS FOR $1;
+  pgsql_node_id INTEGER;
   assigned_id BIGINT;
  BEGIN
 
@@ -817,11 +818,14 @@ CREATE OR REPLACE FUNCTION get_next_job(INTEGER) RETURNS SETOF job_queue
 
   END LOOP;
 
-  RETURN QUERY EXECUTE 'UPDATE job_queue'
+  EXECUTE 'UPDATE job_queue'
     || ' SET is_assigned = TRUE'
     || ' WHERE id = $1'
-    || ' RETURNING *'
-  USING assigned_id;
+    || ' RETURNING pgsql_node_id'
+  USING assigned_id
+  INTO pgsql_node_id;
+
+  RETURN pgsql_node_id;
 
  END;
 $$;
