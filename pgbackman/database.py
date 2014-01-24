@@ -430,6 +430,25 @@ class pgbackman_db():
     # Method 
     # ############################################
            
+    def get_pgsql_node_parameter(self,pgsql_node_id,param):
+        """A function to get the value of a configuration parameter for a PgSQL node"""
+
+        if self.conn:
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT get_pgsql_node_parameter(%s,%s)',(pgsql_node_id,param))
+                    
+                    data = self.cur.fetchone()[0]
+                    return data
+
+                except psycopg2.Error as e:
+                    print "\n* ERROR - Could not get default value for parameter: \n* %s" % e
+                
+
+    # ############################################
+    # Method 
+    # ############################################
+           
     def get_minute_from_interval(self,param):
         """A function to get a minute from an interval"""
 
@@ -588,16 +607,16 @@ class pgbackman_db():
     # Method 
     # ############################################
            
-    def generate_crontab_file(self,pgsql_node_id):
-        """A function to get the crontab file for a PgSQL node"""
+    def generate_crontab_backup_jobs(self,backup_server_id,pgsql_node_id):
+        """A function to get the crontab file for a PgSQL node in a backup server"""
 
         if self.conn:
             if self.cur:
                 try:
-                    self.cur.execute('SELECT generate_crontab_file(%s)',(pgsql_node_id,))
+                    self.cur.execute('SELECT generate_crontab_backup_jobs(%s,%s)',(backup_server_id,pgsql_node_id))
                     
                     data = self.cur.fetchone()[0]
-                    print data
+                    return data
                     
                 except psycopg2.Error as e:
                     print "\n* ERROR - Could not generate the crontab file for this PgSQL node\n* %s" % e

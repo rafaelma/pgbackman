@@ -487,7 +487,8 @@ INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('
 INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('root_cron_file','/etc/cron.d/pgbackman','Crontab file used by pgbackman');
 INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('domain','example.org','Default domain');
 INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('backup_server_status','RUNNING','Default backup server status');
-
+INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('pgbackman_dump','/usr/bin/pgbackman_dump','Program used to take backup dumps');
+INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('admin_user','postgres','postgreSQL admin user');
 
 \echo '# [Init: pgsql_node_default_config]\n'
 
@@ -508,6 +509,7 @@ INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('bac
 INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('backup_month_cron','*','Backup month cron default');
 INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('backup_day_month_cron','*','Backup day_month cron default');
 INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('extra_parameters','','Extra backup parameters');
+INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('logs_email','example@example.org','E-mail to send logs');
 
 
 
@@ -609,7 +611,7 @@ CREATE OR REPLACE FUNCTION update_pgsql_node_configuration() RETURNS TRIGGER
  BEGIN
 
   EXECUTE 'INSERT INTO pgsql_node_config (node_id,parameter,value,description) 
-  	   SELECT $1,parameter,replace(replace(value,''%%pgnode%%'',$2),''.'',''_''),description FROM pgsql_node_default_config'
+  	   SELECT $1,parameter,replace(replace(replace(value,''%%pgnode%%'',$2),''.'',''_''),''cron_d'',''cron.d''),description FROM pgsql_node_default_config'
   USING NEW.node_id,
   	NEW.hostname || '.' || NEW.domain_name;
 
@@ -773,7 +775,7 @@ CREATE TRIGGER update_job_queue AFTER INSERT OR UPDATE OR DELETE
 
 
 -- ------------------------------------------------------------
--- Function: get_next_job()
+-- Function: get_next_crontab_id_to_generate()
 --
 -- ------------------------------------------------------------
 
@@ -818,8 +820,7 @@ CREATE OR REPLACE FUNCTION get_next_crontab_id_to_generate(INTEGER) RETURNS INTE
 
   END LOOP;
 
-  EXECUTE 'UPDATE job_queue'
-    || ' SET is_assigned = TRUE'
+  EXECUTE 'DELETE FROM job_queue'
     || ' WHERE id = $1'
     || ' RETURNING pgsql_node_id'
   USING assigned_id
@@ -830,7 +831,7 @@ CREATE OR REPLACE FUNCTION get_next_crontab_id_to_generate(INTEGER) RETURNS INTE
  END;
 $$;
 
-ALTER FUNCTION get_next_job(INTEGER) OWNER TO pgbackman_user_rw;
+ALTER FUNCTION get_next_crontab_id_to_generate(INTEGER) OWNER TO pgbackman_user_rw;
 
 -- ------------------------------------------------------------
 -- Function: register_backup_server()
@@ -2161,5 +2162,86 @@ $$;
 
 ALTER FUNCTION get_listen_channel_names(INTEGER) OWNER TO pgbackman_user_rw;
 
+
+-- ------------------------------------------------------------
+-- Function: generate_crontab_file()
+--
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION generate_crontab_backup_jobs(INTEGER,INTEGER) RETURNS TEXT 
+ LANGUAGE plpgsql
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ DECLARE
+  backup_server_id_ ALIAS FOR $1;
+  pgsql_node_id_ ALIAS FOR $2;
+  backup_server_fqdn TEXT;
+  pgsql_node_fqdn TEXT;
+  job_row RECORD;
+
+  logs_email TEXT := '';
+  pg_node_cron_file TEXT := '';
+  admin_user TEXT := '';
+  pgbackman_dump TEXT := '';
+
+  output TEXT := '';
+BEGIN
+
+ logs_email := get_pgsql_node_parameter(pgsql_node_id_,'logs_email');
+ pg_node_cron_file := get_pgsql_node_parameter(pgsql_node_id_,'pg_node_cron_file');
+ backup_server_fqdn := get_backup_server_fqdn(backup_server_id_);
+ pgsql_node_fqdn := get_pgsql_node_fqdn(pgsql_node_id_);
+ admin_user := get_pgsql_node_parameter(pgsql_node_id_,'admin_user');
+ pgbackman_dump := get_backup_server_parameter(backup_server_id_,'pgbackman_dump');
+
+ output := output || '# File: ' || COALESCE(pg_node_cron_file,'') || E'\n';
+ output := output || '# ' || E'\n';
+ output := output || '# This crontab file is generated automatically' || E'\n';
+ output := output || '# and contains the backup jobs to be run' || E'\n';
+ output := output || '# for the PgSQL node ' || COALESCE(pgsql_node_fqdn,'') || E'\n';
+ output := output || '# in the backup server ' || COALESCE(backup_server_fqdn,'') || E'\n';
+ output := output || '# ' || E'\n';
+ output := output || '# Generated: ' || now() || E'\n';
+ output := output || '#' || E'\n';
+
+ output := output || 'SHELL=/bin/bash' || E'\n';
+ output := output || 'PATH=/sbin:/bin:/usr/sbin:/usr/bin' || E'\n';
+ output := output || 'MAILTO=' || COALESCE(logs_email,'') || E'\n';
+ output := output || E'\n';     
+
+ --
+ -- Generating backup jobs output for jobs
+ -- with job_status = ACTIVE for a backup server
+ -- and a PgSQL node 
+ --
+
+ FOR job_row IN (
+ SELECT *
+ FROM backup_job_definition
+ WHERE backup_server_id = backup_server_id_
+ AND pgsql_node_id = pgsql_node_id_
+ AND job_status IN ('ACTIVE')
+ ORDER BY dbname,month_cron,weekday_cron,hours_cron,minutes_cron,backup_code
+ ) LOOP
+
+  output := output || COALESCE(job_row.minutes_cron, '*') || ' ' || COALESCE(job_row.hours_cron, '*') || ' ' || COALESCE(job_row.day_month_cron, '*') || ' ' || COALESCE(job_row.month_cron, '*') || ' ' || COALESCE(job_row.weekday_cron, '*');
+
+  output := output || ' ' || admin_user;
+  output := output || ' ' || pgbackman_dump || ' -H ' || pgsql_node_fqdn || ' -j ' || job_row.job_id || ' -d ' || job_row.dbname || ' -e ' || job_row.encryption::TEXT || ' -c ' || job_row.backup_code;
+
+  IF job_row.extra_parameters != '' AND job_row.extra_parameters IS NOT NULL THEN
+    output := output || ' -p ' || job_row.extra_parameters;
+  END IF;
+ 
+  output := output || E'\n';
+
+ END LOOP;
+
+ RETURN output;
+END;
+$$;
+
+ALTER FUNCTION generate_crontab_backup_jobs(INTEGER,INTEGER) OWNER TO pgbackman_user_rw;
 
 COMMIT;

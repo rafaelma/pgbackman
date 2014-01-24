@@ -23,6 +23,7 @@ import sys
 import os
 import time
 import socket
+import ntpath
 
 sys.path.append('/home/rafael/Devel/GIT/pgbackman')
 
@@ -87,17 +88,25 @@ class listen_channels():
 # Method
 # ############################################
 
-def check_directories():
-    """Check the directories needed"""
+def generate_crontab_backup_jobs(db,backup_server_id,pgsql_node_id):
+    """Generate a crontab file for a PgSQL node"""
 
-# ############################################
-# Method
-# ############################################
+    crontab_file = db.get_pgsql_node_parameter(pgsql_node_id,'pg_node_cron_file')
 
-def generate_crontab_file(pgsql_node_id):
-    """Check the directories needed"""
+    if os.path.exists(os.path.dirname(crontab_file)):
+        
+        try:
+            file = open(crontab_file,'w',1)
+            
+            if file:
+                data = db.generate_crontab_backup_jobs(backup_server_id,pgsql_node_id)
+                file.write(data)
 
-    print 'Generating crontab file for: ' + str(pgsql_node_id)
+                file.close()
+
+        except IOError as e:
+            print 'I/O error: %s' % e
+            
 
 
 # ############################################
@@ -107,11 +116,11 @@ def generate_crontab_file(pgsql_node_id):
 def get_next_crontab_id_to_generate(db,backup_server_id):
     """Get all the PgSQL node IDs some need to get a new crontab file installed"""
     
-    node_id = db.get_next_crontab_id_to_generate(backup_server_id)
+    pgsql_node_id = db.get_next_crontab_id_to_generate(backup_server_id)
 
-    while node_id != None:
-        generate_crontab_file(node_id)
-        node_id = db.get_next_crontab_id_to_generate(backup_server_id)
+    while pgsql_node_id != None:
+        generate_crontab_backup_jobs(db,backup_server_id,pgsql_node_id)
+        pgsql_node_id = db.get_next_crontab_id_to_generate(backup_server_id)
 
 
 
