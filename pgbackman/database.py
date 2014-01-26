@@ -620,3 +620,22 @@ class pgbackman_db():
                     
                 except psycopg2.Error as e:
                     print "\n* ERROR - Could not generate the crontab file for this PgSQL node\n* %s" % e
+
+
+    # ############################################
+    # Method 
+    # ############################################
+           
+    def update_job_queue(self,backup_server_id,pgsql_node_id):
+        """A function to update the backup job queue if the crontab generation fails"""
+
+        if self.conn:
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT update_job_queue(%s,%s)',(backup_server_id,pgsql_node_id))
+                    self.conn.commit()                        
+                    
+                    return True
+                except psycopg2.Error as e:
+                    print "\n* ERROR - Could not generate the crontab file for this PgSQL node\n* %s" % e
+                    

@@ -44,6 +44,8 @@ class configuration():
         self.dsn = ''
 
         self.channels_check_interval = 60
+        self.log_level = 'ERROR'
+        self.log_file = '/var/log/pgbackman/pgbackman_dump.log'
 
         self.set_configuration_file()
         self.set_configuration_parameters()
@@ -99,8 +101,12 @@ class configuration():
             if config.has_option('pgbackman_database','password'):
                 self.dbpassword = config.get('pgbackman_database','password')
 
-            if config.has_option('other_parameters','channels_check_interval'):
-                self.channels_check_interval = int(config.get('other_parameters','channels_check_interval'))
+            if config.has_option('pgbackman2cron','channels_check_interval'):
+                self.channels_check_interval = int(config.get('pgbackman2cron','channels_check_interval'))
+
+            if config.has_option('pgbackman2cron','log_level'):
+                self.log_level = config.get('pgbackman2cron','log_level')
+
 
         # Generate the DSN string 
 

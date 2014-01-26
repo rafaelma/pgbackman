@@ -639,6 +639,46 @@ CREATE TRIGGER update_pgsql_node_configuration AFTER INSERT
     ON pgsql_node FOR EACH ROW
     EXECUTE PROCEDURE update_pgsql_node_configuration();
 
+
+
+-- ------------------------------------------------------------
+-- Function: update_job_queue()
+--
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION update_job_queue(INTEGER,INTEGER) RETURNS BOOLEAN
+ LANGUAGE plpgsql 
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ DECLARE
+  backup_server_id_ ALIAS FOR $1;
+  pgsql_node_id_ ALIAS FOR $2;
+
+  srv_cnt INTEGER := -1;
+ BEGIN
+
+  SELECT count(*) FROM job_queue WHERE backup_server_id = backup_server_id_ AND pgsql_node_id = pgsql_node_id_ AND is_assigned IS FALSE INTO srv_cnt;
+ 
+  IF srv_cnt = 0 THEN
+
+   EXECUTE 'INSERT INTO job_queue (backup_server_id,pgsql_node_id,is_assigned) VALUES ($1,$2,FALSE)'
+   USING backup_server_id_,
+         pgsql_node_id_;
+
+   PERFORM pg_notify('channel_bs' || backup_server_id_ || '_pg' || pgsql_node_id_,'Backup job inserted after crontab generation error');
+   RETURN TRUE;  
+  ELSE
+   RETURN FALSE;
+  END IF;
+
+ END;
+$$;
+
+ALTER FUNCTION update_job_queue(INTEGER,INTEGER) OWNER TO pgbackman_user_rw;
+
+
+
 -- ------------------------------------------------------------
 -- Function: update_job_queue()
 --
