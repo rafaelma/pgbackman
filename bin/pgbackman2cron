@@ -24,10 +24,10 @@ import os
 import time
 import socket
 import logging
+import signal
 
 sys.path.append('/home/rafael/Devel/GIT/pgbackman')
 
-from pgbackman.cli import * 
 from pgbackman.database import * 
 from pgbackman.config import *
  
@@ -39,7 +39,7 @@ listen_list = []
 # Method
 # ############################################
 
-def add_to_listen_channels(db,logger,backup_server_id):
+def add_to_listen_channels(db,backup_server_id):
     """Listen to all active channels"""
     
     global listen_list
@@ -63,7 +63,7 @@ def add_to_listen_channels(db,logger,backup_server_id):
 # Method
 # ############################################
 
-def delete_from_listen_channels(db,logger,backup_server_id):
+def delete_from_listen_channels(db,backup_server_id):
     """Unlisten a channel"""
     
     new_listen_list = []
@@ -84,7 +84,7 @@ def delete_from_listen_channels(db,logger,backup_server_id):
 # Method
 # ############################################
 
-def generate_crontab_backup_jobs(db,logger,backup_server_id,pgsql_node_id):
+def generate_crontab_backup_jobs(db,backup_server_id,pgsql_node_id):
     """Generate a crontab file for a PgSQL node"""
 
     crontab_file = db.get_pgsql_node_parameter(pgsql_node_id,'pg_node_cron_file')
@@ -113,7 +113,7 @@ def generate_crontab_backup_jobs(db,logger,backup_server_id,pgsql_node_id):
 # Method
 # ############################################
                          
-def generate_all_crontab_jobs(db,logger,backup_server_id):
+def generate_all_crontab_jobs(db,backup_server_id):
     """Get all the PgSQL node IDs that need to get a new crontab file installed"""
     
     pgsql_node_id = db.get_next_crontab_id_to_generate(backup_server_id)
@@ -121,7 +121,9 @@ def generate_all_crontab_jobs(db,logger,backup_server_id):
     while pgsql_node_id != None:
         generate_crontab_backup_jobs(db,logger,backup_server_id,pgsql_node_id)
         pgsql_node_id = db.get_next_crontab_id_to_generate(backup_server_id)
-        
+ 
+    logger.info('All crontab jobs in queue processed')
+
 
 # ############################################
 # Method
@@ -135,7 +137,6 @@ def main():
     db = pgbackman_db(dsn)
     db.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
 
-    logger = logging.getLogger("pgbackman2cron")
     logger.setLevel(conf.log_level.upper())
     
     fh = logging.FileHandler("/tmp/pgbackman2cron.log")
@@ -145,7 +146,7 @@ def main():
     fh.setFormatter(formatter)
     logger.addHandler(fh)
 
-    logger.info('PgBackMan2cron started.')
+    logger.info('**** PgBackMan2cron started. ****')
     logger.debug('Backup server ID from config file: %s',conf.backup_server)
     logger.debug('Backup server FQDN: %s',socket.getfqdn())
     logger.debug('DSN: %s',conf.dsn)
@@ -164,16 +165,15 @@ def main():
             logger.critical('Backup server %s does not exist in pgbackman. Stopping pgbackman2cron.',socket.getfqdn())
             sys.exit()     
         
-    add_to_listen_channels(db,logger,backup_server_id)
+    add_to_listen_channels(db,backup_server_id)
 
     # We check if there are some crontab files to generate when
     # we start pgbackman2cron. This is nesessary just in case 
     # pgbackman2cron has been down and missed some NOTIFYs 
     # from the central database.
 
-    generate_all_crontab_jobs(db,logger,backup_server_id)
-    logger.info('All crontab jobs in queue processed')
-
+    generate_all_crontab_jobs(db,backup_server_id)
+ 
     print listen_list # debug
     print conf.channels_check_interval # debug
   
@@ -187,20 +187,32 @@ def main():
     
         for channel in set(channels):
             if channel == 'channel_pgsql_nodes_updated':
-                delete_from_listen_channels(db,logger,backup_server_id)
-                add_to_listen_channels(db,logger,backup_server_id)
+                delete_from_listen_channels(db,backup_server_id)
+                add_to_listen_channels(db,backup_server_id)
             else:
                 pgsql_node_id = db.get_next_crontab_id_to_generate(backup_server_id)
-                generate_crontab_backup_jobs(db,logger,backup_server_id,pgsql_node_id)
+                generate_crontab_backup_jobs(db,backup_server_id,pgsql_node_id)
 
         # We check and receive all new notifications every 60 seconds.
         time.sleep(conf.channels_check_interval)
             
     db.pg_close()
             
+# ############################################
+# Method handler
+# ############################################
+    
+def signal_handler(signum, frame):
+    logger.info('**** PgBackMan2cron stopped. ****')
+    sys.exit(0)
+
+
 
 if __name__ == '__main__':
-    
+
+    logger = logging.getLogger("pgbackman2cron")
+    signal.signal(signal.SIGINT,signal_handler)
+
     main()
 
 
