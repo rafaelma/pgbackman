@@ -544,6 +544,7 @@ CREATE OR REPLACE FUNCTION notify_pgsql_nodes_updated() RETURNS TRIGGER
  AS $$
  BEGIN
   PERFORM pg_notify('channel_pgsql_nodes_updated','PgSQL node changed');
+ 
   RETURN NULL;
 END;
 $$;
@@ -565,29 +566,14 @@ CREATE OR REPLACE FUNCTION update_backup_server_configuration() RETURNS TRIGGER
  SECURITY INVOKER 
  SET search_path = public, pg_temp
  AS $$
- DECLARE
-
  BEGIN
 
   EXECUTE 'INSERT INTO backup_server_config (server_id,parameter,value,description) 
   	   SELECT $1,parameter,value,description FROM backup_server_default_config'
   USING NEW.server_id;
 
-RETURN NULL;
+  RETURN NULL;
 
-EXCEPTION
-  WHEN transaction_rollback THEN
-   RAISE EXCEPTION 'Transaction rollback when updating backup_server_config';
-   RETURN NULL;
-  WHEN syntax_error_or_access_rule_violation THEN
-   RAISE EXCEPTION 'Syntax or access error when updating backup_server_config';
-   RETURN NULL;
-  WHEN foreign_key_violation THEN
-   RAISE EXCEPTION 'Caught foreign_key_violation when updating backup_server_config';
-   RETURN NULL;
-  WHEN unique_violation THEN
-   RAISE EXCEPTION 'Duplicate key value violates unique constraint when updating backup_server_config';
-   RETURN NULL;
 END;
 $$;
 
@@ -615,21 +601,7 @@ CREATE OR REPLACE FUNCTION update_pgsql_node_configuration() RETURNS TRIGGER
   USING NEW.node_id,
   	NEW.hostname || '.' || NEW.domain_name;
 
-RETURN NULL;
-
-EXCEPTION
-  WHEN transaction_rollback THEN
-   RAISE EXCEPTION 'Transaction rollback when updating pgsql_node_config';
-   RETURN NULL;
-  WHEN syntax_error_or_access_rule_violation THEN
-   RAISE EXCEPTION 'Syntax or access error when updating pgsql_node_config';
-   RETURN NULL;
-  WHEN foreign_key_violation THEN
-   RAISE EXCEPTION 'Caught foreign_key_violation when updating pgsql_node_config';
-   RETURN NULL;
-  WHEN unique_violation THEN
-   RAISE EXCEPTION 'Duplicate key value violates unique constraint when updating pgsql_node_config';
-   RETURN NULL;
+ RETURN NULL;
 END;
 $$;
 
@@ -789,21 +761,7 @@ CREATE OR REPLACE FUNCTION update_job_queue() RETURNS TRIGGER
 
  END IF;
 
-RETURN NULL;
-
-EXCEPTION
-  WHEN transaction_rollback THEN
-   RAISE EXCEPTION 'Transaction rollback when updating job_queue';
-   RETURN NULL;
-  WHEN syntax_error_or_access_rule_violation THEN
-   RAISE EXCEPTION 'Syntax or access error when updating job_queue';
-   RETURN NULL;
-  WHEN foreign_key_violation THEN
-   RAISE EXCEPTION 'Caught foreign_key_violation when updating job_queue';
-   RETURN NULL;
-  WHEN unique_violation THEN
-   RAISE EXCEPTION 'Duplicate key value violates unique constraint when updating job_queue';
-   RETURN NULL;
+ RETURN NULL;
 END;
 $$;
 
@@ -891,7 +849,15 @@ CREATE OR REPLACE FUNCTION register_backup_server(TEXT,TEXT,CHARACTER VARYING,TE
   remarks_ ALIAS FOR $4;  
 
   server_cnt INTEGER;
+
+  v_msg     TEXT;
+  v_detail  TEXT;
+  v_context TEXT;
  BEGIN
+
+   IF hostname_ = '' OR hostname_ IS NULL THEN
+      RAISE EXCEPTION 'Hostname value has not been defined';
+   END IF;
 
    IF domain_name_ = '' OR domain_name_ IS NULL THEN
     domain_name_ := get_default_backup_server_parameter('domain');
@@ -922,19 +888,13 @@ CREATE OR REPLACE FUNCTION register_backup_server(TEXT,TEXT,CHARACTER VARYING,TE
    END IF;
 
    RETURN TRUE;
- EXCEPTION
-  WHEN transaction_rollback THEN
-   RAISE EXCEPTION 'Transaction rollback when updating backup_server';
-   RETURN FALSE;
-  WHEN syntax_error_or_access_rule_violation THEN
-   RAISE EXCEPTION 'Syntax or access error when updating backup_server';
-   RETURN FALSE;
-  WHEN foreign_key_violation THEN
-   RAISE EXCEPTION 'Caught foreign_key_violation when updating backup_server';
-   RETURN FALSE;
-  WHEN unique_violation THEN
-   RAISE EXCEPTION 'Duplicate key value violates unique constraint when updating backup_server';
-   RETURN FALSE;
+ EXCEPTION WHEN others THEN
+   	GET STACKED DIAGNOSTICS	
+            v_msg     = MESSAGE_TEXT,
+            v_detail  = PG_EXCEPTION_DETAIL,
+            v_context = PG_EXCEPTION_CONTEXT;
+        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \nCONTEXT: % \n----------------------------------------------', v_msg, v_detail, v_context;
+  
 END;
 $$;
 
@@ -952,28 +912,36 @@ CREATE OR REPLACE FUNCTION delete_backup_server(TEXT) RETURNS BOOLEAN
  SET search_path = public, pg_temp
  AS $$
  DECLARE
- 
   backup_server_ ALIAS FOR $1;
   server_id_ INTEGER;
+
+  v_msg     TEXT;
+  v_detail  TEXT;
+  v_context TEXT;
  BEGIN
 
- SELECT get_backup_server_id(backup_server_) INTO server_id_;
+    SELECT get_backup_server_id(backup_server_) INTO server_id_;
 
-   IF server_id_ IS NOT NULL THEN    
+    IF server_id_ IS NOT NULL THEN
 
-    EXECUTE 'DELETE FROM backup_server_config WHERE server_id = $1'
-    USING server_id_;
+     EXECUTE 'DELETE FROM backup_server_config WHERE server_id = $1'
+     USING server_id_;
    
-    EXECUTE 'DELETE FROM backup_server WHERE server_id = $1'
-    USING server_id_;
+     EXECUTE 'DELETE FROM backup_server WHERE server_id = $1'
+     USING server_id_;
 
-    RETURN TRUE;
-   ELSE
-    RAISE EXCEPTION 'Backup server with SrvID = % does not exist',server_id_ USING HINT = 'Please check the SrvID value you want to delete';
-    RETURN FALSE;
-   END IF; 
-
-END;
+     RETURN TRUE;
+    ELSE
+      RAISE EXCEPTION 'Backup server % does not exist',backup_server_; 
+    END IF;
+	   
+   EXCEPTION WHEN others THEN
+   	GET STACKED DIAGNOSTICS	
+            v_msg     = MESSAGE_TEXT,
+            v_detail  = PG_EXCEPTION_DETAIL,
+            v_context = PG_EXCEPTION_CONTEXT;
+        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \nCONTEXT: % \n----------------------------------------------\n', v_msg, v_detail, v_context;
+  END;
 $$;
 
 ALTER FUNCTION delete_backup_server(TEXT) OWNER TO pgbackman_user_rw;
@@ -1075,7 +1043,15 @@ CREATE OR REPLACE FUNCTION register_pgsql_node(TEXT,TEXT,INTEGER,TEXT,CHARACTER 
   remarks_ ALIAS FOR $6;  
 
   node_cnt INTEGER;
+
+  v_msg     TEXT;
+  v_detail  TEXT;
+  v_context TEXT;
  BEGIN
+
+   IF hostname_ = '' OR hostname_ IS NULL THEN
+      RAISE EXCEPTION 'Hostname value has not been defined';
+   END IF;
 
    IF domain_name_ = '' OR domain_name_ IS NULL THEN
     domain_name_ := get_default_pgsql_node_parameter('domain');
@@ -1118,19 +1094,13 @@ CREATE OR REPLACE FUNCTION register_pgsql_node(TEXT,TEXT,INTEGER,TEXT,CHARACTER 
    END IF;
 
    RETURN TRUE;
- EXCEPTION
-  WHEN transaction_rollback THEN
-   RAISE EXCEPTION 'Transaction rollback when updating pgsql_node';
-   RETURN FALSE;
-  WHEN syntax_error_or_access_rule_violation THEN
-   RAISE EXCEPTION 'Syntax or access error when updating pgsql_node';
-   RETURN FALSE;
-  WHEN foreign_key_violation THEN
-   RAISE EXCEPTION 'Caught foreign_key_violation when updating pgsql_node';
-   RETURN FALSE;
-  WHEN unique_violation THEN
-   RAISE EXCEPTION 'Duplicate key value violates unique constraint when updating pgsql_node';
-   RETURN FALSE;
+ EXCEPTION WHEN others THEN
+   	GET STACKED DIAGNOSTICS	
+            v_msg     = MESSAGE_TEXT,
+            v_detail  = PG_EXCEPTION_DETAIL,
+            v_context = PG_EXCEPTION_CONTEXT;
+        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \nCONTEXT: % \n----------------------------------------------\n', v_msg, v_detail, v_context;
+  
 END;
 $$;
 
@@ -1148,9 +1118,12 @@ CREATE OR REPLACE FUNCTION delete_pgsql_node(TEXT) RETURNS BOOLEAN
  SET search_path = public, pg_temp
  AS $$
  DECLARE
- 
   pgsql_node_ ALIAS FOR $1;
   node_id_ INTEGER;
+
+  v_msg     TEXT;
+  v_detail  TEXT;
+  v_context TEXT;
  BEGIN
 
  SELECT get_pgsql_node_id(pgsql_node_) INTO node_id_;
@@ -1171,9 +1144,15 @@ CREATE OR REPLACE FUNCTION delete_pgsql_node(TEXT) RETURNS BOOLEAN
 
     RETURN TRUE;
    ELSE
-    RAISE EXCEPTION 'PgSQL node with NodeID = % does not exist',node_id_ USING HINT = 'Please check the NodeID value you want to delete';
-    RETURN FALSE;
+    RAISE EXCEPTION 'PgSQL node % does not exist',pgsql_node_;
    END IF; 
+
+  EXCEPTION WHEN others THEN
+   	GET STACKED DIAGNOSTICS	
+            v_msg     = MESSAGE_TEXT,
+            v_detail  = PG_EXCEPTION_DETAIL,
+            v_context = PG_EXCEPTION_CONTEXT;
+        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \nCONTEXT: % \n----------------------------------------------\n', v_msg, v_detail, v_context;
 
 END;
 $$;
@@ -1203,7 +1182,6 @@ CREATE OR REPLACE FUNCTION show_pgsql_nodes() RETURNS TEXT
  node_fqdn_len INTEGER;
  node_status_len INTEGER;
  node_admin_user_len INTEGER;
-
  BEGIN
   --
   -- This function generates a list with all backup servers
@@ -1305,6 +1283,9 @@ CREATE OR REPLACE FUNCTION register_backup_job(TEXT,TEXT,TEXT,CHARACTER VARYING,
   backup_hours_interval TEXT;
   backup_minutes_interval TEXT;
 
+  v_msg     TEXT;
+  v_detail  TEXT;
+  v_context TEXT;
  BEGIN
 
    IF hours_cron_ = '' OR hours_cron_ IS NULL THEN
@@ -1358,10 +1339,8 @@ CREATE OR REPLACE FUNCTION register_backup_job(TEXT,TEXT,TEXT,CHARACTER VARYING,
 
    IF backup_server_id_ IS NULL THEN
      RAISE EXCEPTION 'Backup server % does not exist',backup_server_ ;
-     RETURN FALSE;
    ELSIF pgsql_node_id_ IS NULL THEN
-     RAISE EXCEPTION 'pgsql node % does not exist',backup_server_ ;
-     RETURN FALSE;
+     RAISE EXCEPTION 'PgSQL node % does not exist',pgsql_node_ ;
    END IF;
 
    SELECT count(*) AS cnt 
@@ -1443,19 +1422,13 @@ CREATE OR REPLACE FUNCTION register_backup_job(TEXT,TEXT,TEXT,CHARACTER VARYING,
    END IF;
 
    RETURN TRUE;
- EXCEPTION
-  WHEN transaction_rollback THEN
-   RAISE EXCEPTION 'Transaction rollback when updating backup_job_definition';
-   RETURN FALSE;
-  WHEN syntax_error_or_access_rule_violation THEN
-   RAISE EXCEPTION 'Syntax or access error when updating backup_job_definition';
-   RETURN FALSE;
-  WHEN foreign_key_violation THEN
-   RAISE EXCEPTION 'Caught foreign_key_violation when updating backup_job_definition';
-   RETURN FALSE;
-  WHEN unique_violation THEN
-   RAISE EXCEPTION 'Duplicate key value violates unique constraint when updating backup_job_definition';
-   RETURN FALSE;
+ EXCEPTION WHEN others THEN
+   	GET STACKED DIAGNOSTICS	
+            v_msg     = MESSAGE_TEXT,
+            v_detail  = PG_EXCEPTION_DETAIL,
+            v_context = PG_EXCEPTION_CONTEXT;
+        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \nCONTEXT: % \n----------------------------------------------\n', v_msg, v_detail, v_context;
+
 END;
 $$;
 
@@ -1993,6 +1966,9 @@ CREATE OR REPLACE FUNCTION get_hour_from_interval(TEXT) RETURNS TEXT
  hour_to INTEGER;
  value_ INTEGER;
 
+ v_msg     TEXT;
+ v_detail  TEXT;
+ v_context TEXT; 
  BEGIN
   --
   -- This function returns a value from an interval defined as 'Num1-Num2'
@@ -2010,6 +1986,14 @@ CREATE OR REPLACE FUNCTION get_hour_from_interval(TEXT) RETURNS TEXT
    SELECT round(random()*(hour_to-hour_from))+hour_from::INTEGER INTO value_;
 
    RETURN lpad(value_::TEXT,2,'0');
+
+   EXCEPTION WHEN others THEN
+   	GET STACKED DIAGNOSTICS	
+            v_msg     = MESSAGE_TEXT,
+            v_detail  = PG_EXCEPTION_DETAIL,
+            v_context = PG_EXCEPTION_CONTEXT;
+        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \nCONTEXT: % \n----------------------------------------------\n', v_msg, v_detail, v_context;
+
 
  END;
 $$;
@@ -2034,6 +2018,9 @@ CREATE OR REPLACE FUNCTION get_minute_from_interval(TEXT) RETURNS TEXT
  minute_to INTEGER;
  value_ INTEGER;
 
+ v_msg     TEXT;
+ v_detail  TEXT;
+ v_context TEXT;
  BEGIN
   --
   -- This function returns value from an interval defined as 'Num1-Num2'
@@ -2052,6 +2039,13 @@ CREATE OR REPLACE FUNCTION get_minute_from_interval(TEXT) RETURNS TEXT
 
    RETURN lpad(value_::TEXT,2,'0');
 
+    EXCEPTION WHEN others THEN
+   	GET STACKED DIAGNOSTICS	
+            v_msg     = MESSAGE_TEXT,
+            v_detail  = PG_EXCEPTION_DETAIL,
+            v_context = PG_EXCEPTION_CONTEXT;
+        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \nCONTEXT: % \n----------------------------------------------\n', v_msg, v_detail, v_context;
+
  END;
 $$;
 
@@ -2069,20 +2063,20 @@ CREATE OR REPLACE FUNCTION get_backup_server_fqdn(INTEGER) RETURNS TEXT
  AS $$
  DECLARE
  parameter_ ALIAS FOR $1; 
- value_ TEXT := '';
+ backup_server_ TEXT := '';
 
  BEGIN
   --
   -- This function returns the fqdn of a backup server
   --
 
-  SELECT hostname || '.' || domain_name from backup_server WHERE server_id = parameter_ INTO value_;
+  SELECT hostname || '.' || domain_name from backup_server WHERE server_id = parameter_ INTO backup_server_;
 
-  IF value_ IS NULL THEN
+  IF backup_server_ IS NULL THEN
     RAISE EXCEPTION 'Backup server with ID: % does not exist in this system',parameter_;
   END IF;
 
-  RETURN value_;
+  RETURN backup_server_;
  END;
 $$;
 
@@ -2100,21 +2094,20 @@ CREATE OR REPLACE FUNCTION get_backup_server_id(TEXT) RETURNS INTEGER
  SET search_path = public, pg_temp
  AS $$
  DECLARE
- backup_server_fqdn ALIAS FOR $1; 
- value_ TEXT := '';
-
+  backup_server_fqdn ALIAS FOR $1; 
+  backup_server_id_ TEXT := '';
  BEGIN
   --
   -- This function returns the server_id of a backup server
   --
 
-  SELECT server_id FROM backup_server WHERE hostname || '.' || domain_name = backup_server_fqdn INTO value_;
+  SELECT server_id FROM backup_server WHERE hostname || '.' || domain_name = backup_server_fqdn INTO backup_server_id_;
 
-  IF value_ IS NULL THEN
+  IF backup_server_id_ IS NULL THEN
     RAISE EXCEPTION 'Backup server with FQDN: % does not exist in this system',backup_server_fqdn;
   END IF;
 
-  RETURN value_;
+  RETURN backup_server_id_;
  END;
 $$;
 
@@ -2133,20 +2126,20 @@ CREATE OR REPLACE FUNCTION get_pgsql_node_fqdn(INTEGER) RETURNS TEXT
  AS $$
  DECLARE
  parameter_ ALIAS FOR $1; 
- value_ TEXT := '';
+ pgsql_node_ TEXT := '';
 
  BEGIN
   --
   -- This function returns the fqdn of a pgsql node
   --
 
-  SELECT hostname || '.' || domain_name from pgsql_node WHERE node_id = parameter_ INTO value_;
+  SELECT hostname || '.' || domain_name from pgsql_node WHERE node_id = parameter_ INTO pgsql_node_;
 
-  IF value_ IS NULL THEN
+  IF pgsql_node_ IS NULL THEN
     RAISE EXCEPTION 'PgSQL node with ID: % does not exist in this system',parameter_;
   END IF;
 
-  RETURN value_;
+  RETURN pgsql_node_;
  END;
 $$;
 
@@ -2165,20 +2158,20 @@ CREATE OR REPLACE FUNCTION get_pgsql_node_id(TEXT) RETURNS INTEGER
  AS $$
  DECLARE
  pgsql_node_fqdn ALIAS FOR $1; 
- value_ TEXT := '';
+ pgsql_node_id_ TEXT := '';
 
  BEGIN
   --
   -- This function returns the server_id of a backup server
   --
 
-  SELECT node_id FROM pgsql_node WHERE hostname || '.' || domain_name = pgsql_node_fqdn INTO value_;
+  SELECT node_id FROM pgsql_node WHERE hostname || '.' || domain_name = pgsql_node_fqdn INTO pgsql_node_id_;
 
-  IF value_ IS NULL THEN
+  IF pgsql_node_id_ IS NULL THEN
     RAISE EXCEPTION 'PgSQL node with FQDN: % does not exist in this system',pgsql_node_fqdn;
   END IF;
 
-  RETURN value_;
+  RETURN pgsql_node_id_;
  END;
 $$;
 
@@ -2283,5 +2276,35 @@ END;
 $$;
 
 ALTER FUNCTION generate_crontab_backup_jobs(INTEGER,INTEGER) OWNER TO pgbackman_user_rw;
+
+
+-- ------------------------------------------------------------
+-- Function: get_pgsql_node_dsn()
+--
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION get_pgsql_node_dsn(INTEGER) RETURNS TEXT 
+ LANGUAGE plpgsql 
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ DECLARE
+ node_id_ ALIAS FOR $1;
+ value_ TEXT := '';
+
+ BEGIN
+  --
+  -- This function returns the DSN value for a pgsql_node
+  --
+
+  SELECT 'host=' || hostname || '.' || domain_name || ' port=' || pgport || ' dbname=' || admin_user || ' user=' || admin_user FROM pgsql_node WHERE node_id = node_id_ INTO value_;
+  RETURN value_;
+ END;
+$$;
+
+ALTER FUNCTION get_pgsql_node_dsn(INTEGER) OWNER TO pgbackman_user_rw;
+
+
+
 
 COMMIT;

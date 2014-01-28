@@ -29,6 +29,7 @@ import signal
 sys.path.append('/home/rafael/Devel/GIT/pgbackman')
 from pgbackman.database import * 
 from pgbackman.config import *
+from pgbackman.logs import *
 
 # ############################################
 # class pgbackman_cli
@@ -56,6 +57,8 @@ class pgbackman_cli(cmd.Cmd):
 
         self.conf = configuration() 
         self.dsn = self.conf.dsn
+        
+        self.logs = logs("pgbackman_cli")
 
 
     # ############################################
@@ -78,9 +81,8 @@ class pgbackman_cli(cmd.Cmd):
         arg_list = arg.split()
         
         if len(arg_list) == 0:
-            db = pgbackman_db(self.dsn)
+            db = pgbackman_db(self.dsn,self.logs)
             db.show_backup_servers()
-            db.pg_close()
         else:
             print "\n* ERROR - This command does not accept parameters.\n* Type help or ? to list commands\n"
             
@@ -105,7 +107,7 @@ class pgbackman_cli(cmd.Cmd):
 
         """
 
-        db = pgbackman_db(self.dsn)
+        db = pgbackman_db(self.dsn,self.logs)
         arg_list = arg.split()
 
         #
@@ -136,6 +138,8 @@ class pgbackman_cli(cmd.Cmd):
             if ack.lower() == "y":
                 if db.register_backup_server(hostname.lower().strip(),domain.lower().strip(),status.upper().strip(),remarks.strip()):
                     print "\n* Done\n"
+                else:
+                    print "* ERROR: Could not register this backup server\n"
     
         #
         # Command with the 4 parameters that can be defined.
@@ -154,6 +158,9 @@ class pgbackman_cli(cmd.Cmd):
 
             if db.register_backup_server(hostname.lower().strip(),domain.lower().strip(),status.upper().strip(),remarks.strip()):
                 print "\n* Done\n"
+            else:
+                print "* ERROR: Could not register this backup server\n"
+    
 
         #
         # Command with the wrong number of parameters
@@ -162,7 +169,7 @@ class pgbackman_cli(cmd.Cmd):
         else:
             print "\n* ERROR - Wrong number of parameters used.\n* Type help or ? to list commands\n"
 
-        db.pg_close()
+        
 
 
     # ############################################
@@ -182,7 +189,7 @@ class pgbackman_cli(cmd.Cmd):
 
         """
         
-        db = pgbackman_db(self.dsn)
+        db = pgbackman_db(self.dsn,self.logs)
         arg_list = arg.split()
         
         if len(arg_list) == 0:
@@ -199,9 +206,13 @@ class pgbackman_cli(cmd.Cmd):
                 if server_id.isdigit():
                     if db.delete_backup_server(db.get_backup_server_fqdn(server_id)):
                         print "\n* Done\n"
+                    else:
+                        print "* ERROR: Could not delete this backup server\n"
                 else:
                     if db.delete_backup_server(server_id):
                         print "\n* Done\n"
+                    else:
+                        print "* ERROR: Could not delete this backup server\n"
                     
         elif len(arg_list) == 1:
 
@@ -210,14 +221,18 @@ class pgbackman_cli(cmd.Cmd):
             if server_id.isdigit():
                 if db.delete_backup_server(db.get_backup_server_fqdn(server_id)):
                     print "\n* Done\n"
+                else:
+                    print "* ERROR: Could not delete this backup server\n"
             else:
                 if db.delete_backup_server(server_id):
                     print "\n* Done\n"
+                else:
+                    print "* ERROR: Could not delete this backup server\n"   
                     
         else:
             print "\n* ERROR - Wrong number of parameters used.\n* Type help or ? to list commands\n"
 
-        db.pg_close()
+        
 
         
 
@@ -242,9 +257,9 @@ class pgbackman_cli(cmd.Cmd):
         arg_list = arg.split()
         
         if len(arg_list) == 0:
-            db = pgbackman_db(self.dsn)
+            db = pgbackman_db(self.dsn,self.logs)
             db.show_pgsql_nodes()
-            db.pg_close()
+            
         else:
             print "\n* ERROR - This command does not accept parameters.\n* Type help or ? to list commands\n"
             
@@ -272,7 +287,7 @@ class pgbackman_cli(cmd.Cmd):
 
         """
         
-        db = pgbackman_db(self.dsn)
+        db = pgbackman_db(self.dsn,self.logs)
         arg_list = arg.split()
         
         #
@@ -314,6 +329,8 @@ class pgbackman_cli(cmd.Cmd):
                 if self.check_digit(port):
                     if db.register_pgsql_node(hostname.lower().strip(),domain.lower().strip(),port.strip(),admin_user.lower().strip(),status.upper().strip(),remarks.strip()):
                         print "\n* Done\n"
+                    else:
+                        print '* ERROR: Could not register this PgSQL node\n'
         
         #
         # Command with the 6 parameters that can be defined.
@@ -335,7 +352,10 @@ class pgbackman_cli(cmd.Cmd):
             if self.check_digit(port):   
                 if db.register_pgsql_node(hostname.lower().strip(),domain.lower().strip(),port.strip(),admin_user.lower().strip(),status.upper().strip(),remarks.strip()):
                     print "\n* Done\n"
-
+                else:
+                    print '* ERROR: Could not register this PgSQL node\n'
+        
+                    
         #
         # Command with the wrong number of parameters
         #
@@ -343,7 +363,7 @@ class pgbackman_cli(cmd.Cmd):
         else:
             print "\n* ERROR - Wrong number of parameters used.\n* Type help or ? to list commands\n"
 
-        db.pg_close()
+        
 
 
     # ############################################
@@ -363,7 +383,7 @@ class pgbackman_cli(cmd.Cmd):
         
         """
 
-        db = pgbackman_db(self.dsn)
+        db = pgbackman_db(self.dsn,self.logs)
         arg_list = arg.split()
         
         if len(arg_list) == 0:
@@ -385,9 +405,13 @@ class pgbackman_cli(cmd.Cmd):
                     if node_id.isdigit():
                         if db.delete_pgsql_node(db.get_pgsql_node_fqdn(node_id)):
                             print "\n* Done\n"
+                        else:
+                            print '* ERROR: Could not delete this PgSQL node\n'
                     else:
                         if db.delete_pgsql_node(node_id):
                             print "\n* Done\n"
+                        else:
+                            print '* ERROR: Could not delete this PgSQL node\n'    
             else:
                 print "--------------------------------------------------------"
 
@@ -401,16 +425,16 @@ class pgbackman_cli(cmd.Cmd):
                 if node_id.isdigit():
                     if db.delete_pgsql_node(db.get_pgsql_node_fqdn(node_id)):
                         print "\n* Done\n"
+                    else:
+                        print '* ERROR: Could not delete this PgSQL node\n'    
                 else:
                     if db.delete_pgsql_node(node_id):
                         print "\n* Done\n"
-                
+                    else:
+                        print '* ERROR: Could not delete this PgSQL node\n'
         else:
             print "\n* ERROR - Wrong number of parameters used.\n* Type help or ? to list commands\n"
 
-        db.pg_close()
-
-        
 
     # ############################################
     # Method do_show_backup_server_job_definitions
@@ -423,7 +447,7 @@ class pgbackman_cli(cmd.Cmd):
 
         """
         
-        db = pgbackman_db(self.dsn)
+        db = pgbackman_db(self.dsn,self.logs)
         arg_list = arg.split()
         
         if len(arg_list) == 0:
@@ -455,7 +479,7 @@ class pgbackman_cli(cmd.Cmd):
         else:
             print "\n* ERROR - Wrong number of parameters used.\n* Type help or ? to list commands\n"
 
-        db.pg_close()
+        
 
 
     # ############################################
@@ -468,7 +492,7 @@ class pgbackman_cli(cmd.Cmd):
 
 
         """
-        db = pgbackman_db(self.dsn)
+        db = pgbackman_db(self.dsn,self.logs)
         arg_list = arg.split()
         
         if len(arg_list) == 0:
@@ -500,7 +524,7 @@ class pgbackman_cli(cmd.Cmd):
         else:
             print "\n* ERROR - Wrong number of parameters used.\n* Type help or ? to list commands\n"
 
-        db.pg_close()
+        
 
 
     # ############################################
@@ -514,7 +538,7 @@ class pgbackman_cli(cmd.Cmd):
 
         """
 
-        db = pgbackman_db(self.dsn)
+        db = pgbackman_db(self.dsn,self.logs)
         arg_list = arg.split()
         
         if len(arg_list) == 0:
@@ -539,7 +563,7 @@ class pgbackman_cli(cmd.Cmd):
         else:
             print "\n* ERROR - Wrong number of parameters used.\n* Type help or ? to list commands\n"
 
-        db.pg_close()
+        
 
 
     # ############################################
@@ -575,7 +599,7 @@ class pgbackman_cli(cmd.Cmd):
 
         """
 
-        db = pgbackman_db(self.dsn)
+        db = pgbackman_db(self.dsn,self.logs)
         arg_list = arg.split()
         
         #
@@ -666,7 +690,8 @@ class pgbackman_cli(cmd.Cmd):
                                               weekday_cron.strip(),month_cron.strip(),day_month_cron.strip(),backup_code.upper().strip(),encryption.lower().strip(), \
                                               retention_period.lower().strip(),retention_redundancy.strip(),extra_parameters.lower().strip(),backup_job_status.upper().strip(),remarks.strip()):
                     print "\n* Done\n"
-        
+                else:
+                    print '* ERROR: Could not register this backup job definition\n'
         #
         # Command with the 6 parameters that can be defined.
         # Hostname, domain, pgport, admin_user, status and remarks
@@ -698,17 +723,15 @@ class pgbackman_cli(cmd.Cmd):
                                           weekday_cron.strip(),month_cron.strip(),day_month_cron.strip(),backup_code.upper().strip(),encryption.lower().strip(), \
                                           retention_period.lower().strip(),retention_redundancy.strip(),extra_parameters.lower().strip(),backup_job_status.upper().strip(),remarks.strip()):
                 print "\n* Done\n"
-
+            else:
+                print '* ERROR: Could not register this backup job definition\n'
+                
         #
         # Command with the wrong number of parameters
         #
 
         else:
             print "\n* ERROR - Wrong number of parameters used.\n* Type help or ? to list commands\n"
-
-        db.pg_close()
-
-
 
 
     # ############################################
@@ -720,7 +743,6 @@ class pgbackman_cli(cmd.Cmd):
         delete_backup_job_definition [BckID]
 
         """
-
 
     # ############################################
     # Method do_show_backup_server_catalog
@@ -994,5 +1016,6 @@ signal.signal(signal.SIGINT, pgbackman_cli().signal_handler)
 
 
 if __name__ == '__main__':
+
     pgbackman_cli().cmdloop()
 
