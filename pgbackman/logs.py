@@ -41,10 +41,10 @@ class logs(logging.Logger):
         self.logger = logging.getLogger(logger_name)
         self.logger.setLevel(self.conf.log_level.upper())
         
-        self.fh = logging.FileHandler("/tmp/pgbackman2cron.log")
+        self.fh = logging.FileHandler(self.conf.log_file)
         self.fh.setLevel(self.conf.log_level.upper())
 
-        self.formatter = logging.Formatter("%(asctime)s [%(name)s] %(levelname)s - %(message)s")
+        self.formatter = logging.Formatter("%(asctime)s [%(name)s][%(process)d][%(levelname)s]: %(message)s")
         self.fh.setFormatter(self.formatter)
         self.logger.addHandler(self.fh)
 

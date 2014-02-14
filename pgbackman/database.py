@@ -42,11 +42,12 @@ class pgbackman_db():
     # Constructor
     # ############################################
 
-    def __init__(self, dsn,logs):
+    def __init__(self, dsn,logs,application):
         """ The Constructor."""
 
         self.dsn = dsn
         self.logs = logs
+        self.application = application
         self.conn = None
         self.server_version = None
         self.cur = None
@@ -66,6 +67,9 @@ class pgbackman_db():
             self.conn = psycopg2.connect(self.dsn)
         
             if self.conn:
+                self.conn.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
+                wait_select(self.conn)
+
                 self.cur = self.conn.cursor()
 
                 self.server_version = self.conn.server_version
@@ -73,13 +77,13 @@ class pgbackman_db():
                 if (self.server_version >= 90000 and 'application_name=' not in self.dsn):
               
                     try:
-                        self.cur.execute('SET application_name TO pgbackman')
+                        self.cur.execute('SET application_name TO %s',(self.application,))
                         self.conn.commit()
                     except psycopg2.Error as e:
-                        print "\n* ERROR - Could not define the application_name parameter: \n%s" % e
+                        self.logs.logger.error('Could not define the application_name parameter: - %s', e)
      
         except psycopg2.Error as e:
-            print "\n* ERROR - Could not connect to the database: \n%s" % e
+            self.logs.logger.critical('Could not connect to the database with DSN: %s - %s',self.dsn,e)
             sys.exit();
 
     # ############################################
@@ -101,86 +105,15 @@ class pgbackman_db():
             except psycopg2.Error as e:
                 print "\n* ERROR - Could not close the connection to the database: \n%s" % e    
                 
-    # ############################################
-    # Method 
-    # ############################################
-
-    def set_isolation_level(self,param):
-        """ set isolation level"""
-
-        self.pg_connect()
-        self.wait_select()
         
-        if self.conn:
-            self.conn.set_isolation_level(param)
-
-    # ############################################
-    # Method 
-    # ############################################
-
-    def wait_select(self):
-        """ run wait_select"""
-
-        self.pg_connect()
-        
-        if self.conn:
-            wait_select(self.conn)
-
-
-    # ############################################
-    # Method 
-    # ############################################
-
-    def add_listen(self,channel):
-        '''Subscribe to a PostgreSQL NOTIFY'''
-
-        replace_list = ['.','-']
-        
-        self.pg_connect()
-        self.wait_select()
-
-        if self.conn:
-            if self.cur:
-                for i,j in enumerate(replace_list):
-                    channel = channel.replace(j, '_')
-                
-                sql = "LISTEN %s" % channel
-                self.cur.execute(sql)
-                self.wait_select()
-
-                self.pg_close()
-
-
-    # ############################################
-    # Method 
-    # ############################################
-
-    def delete_listen(self,channel):
-        '''Unsubscribe to a PostgreSQL NOTIFY'''
-
-        replace_list = ['.','-']
-
-        self.pg_connect()
-        self.wait_select()
-        
-        if self.conn:
-            if self.cur:
-                for i,j in enumerate(replace_list):
-                    channel = channel.replace(j, '_')
-                
-                sql = "UNLISTEN %s" % channel
-                self.cur.execute(sql)
-                self.wait_select()
-
-                self.pg_close()
-
-
    # ############################################
     # Method 
     # ############################################
 
     def get_server_version(self):
         """A function to get the postgresql version of the database connection"""
+
+        self.pg_connect()
 
         if self.conn:
             return  self.server_version
@@ -194,7 +127,6 @@ class pgbackman_db():
         """A function to get a list with all backup servers available"""
 
         self.pg_connect()
-        self.wait_select()      
 
         if self.conn:
             if self.cur:
@@ -219,7 +151,6 @@ class pgbackman_db():
         """A function to register a backup server"""
 
         self.pg_connect()
-        self.wait_select()
 
         if self.conn:
             if self.cur:
@@ -244,7 +175,6 @@ class pgbackman_db():
         """A function to delete a backup server"""
 
         self.pg_connect()
-        self.wait_select()
 
         if self.conn:
             if self.cur:
@@ -269,7 +199,6 @@ class pgbackman_db():
         """A function to get a list with all pgnodes defined in pgbackman"""
 
         self.pg_connect()
-        self.wait_select()
 
         if self.conn:
             if self.cur:
@@ -293,7 +222,6 @@ class pgbackman_db():
         """A function to register a pgsql node"""
 
         self.pg_connect()
-        self.wait_select()
 
         if self.conn:
             if self.cur:
@@ -318,7 +246,6 @@ class pgbackman_db():
         """A function to delete a pgsql node"""
 
         self.pg_connect()
-        self.wait_select()
 
         if self.conn:
             if self.cur:
@@ -345,7 +272,6 @@ class pgbackman_db():
         """A function to register a backup job"""
 
         self.pg_connect()
-        self.wait_select()
 
         if self.conn:
             if self.cur:
@@ -372,7 +298,6 @@ class pgbackman_db():
         """A function to get a list with all backup job definitions for a backup server"""
 
         self.pg_connect()
-        self.wait_select()
 
         if self.conn:
             if self.cur:
@@ -396,7 +321,6 @@ class pgbackman_db():
         """A function to get a list with all backup job definitions for a PgSQL node"""
 
         self.pg_connect()
-        self.wait_select()
 
         if self.conn:
             if self.cur:
@@ -420,7 +344,6 @@ class pgbackman_db():
         """A function to get a list with all backup job definitions for a database"""
 
         self.pg_connect()
-        self.wait_select()
 
         if self.conn:
             if self.cur:
@@ -444,7 +367,6 @@ class pgbackman_db():
         """A function to get the default value of a configuration parameter"""
 
         self.pg_connect()
-        self.wait_select()
 
         if self.conn:
             if self.cur:
@@ -468,7 +390,6 @@ class pgbackman_db():
         """A function to get the default value of a configuration parameter"""
 
         self.pg_connect()
-        self.wait_select()
 
         if self.conn:
             if self.cur:
@@ -483,6 +404,28 @@ class pgbackman_db():
             
             self.pg_close()
 
+    # ############################################
+    # Method 
+    # ############################################
+           
+    def get_backup_server_parameter(self,backup_server_id,param):
+        """A function to get the value of a configuration parameter for a backup server"""
+
+        self.pg_connect()
+
+        if self.conn:
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT get_backup_server_parameter(%s,%s)',(backup_server_id,param))
+                    
+                    data = self.cur.fetchone()[0]
+                    return data
+
+                except psycopg2.Error as e:
+                    return None
+                
+            self.pg_close()
+
 
     # ############################################
     # Method 
@@ -492,7 +435,6 @@ class pgbackman_db():
         """A function to get the value of a configuration parameter for a PgSQL node"""
 
         self.pg_connect()
-        self.wait_select()
 
         if self.conn:
             if self.cur:
@@ -516,7 +458,6 @@ class pgbackman_db():
         """A function to get a minute from an interval"""
 
         self.pg_connect()
-        self.wait_select()
 
         if self.conn:
             if self.cur:
@@ -540,7 +481,6 @@ class pgbackman_db():
         """A function to get an hour from an interval"""
 
         self.pg_connect()
-        self.wait_select()
 
         if self.conn:
             if self.cur:
@@ -564,7 +504,6 @@ class pgbackman_db():
         """A function to get the FQDN for a backup server"""
 
         self.pg_connect()
-        self.wait_select()
 
         if self.conn:
             if self.cur:
@@ -588,7 +527,6 @@ class pgbackman_db():
         """A function to get the ID of a backup server"""
 
         self.pg_connect()
-        self.wait_select()
 
         if self.conn:
             if self.cur:
@@ -599,7 +537,7 @@ class pgbackman_db():
                     return data
 
                 except psycopg2.Error as e:
-                    pass
+                    return False
             
             self.pg_close()
 
@@ -612,7 +550,6 @@ class pgbackman_db():
         """A function to get the FQDN for a PgSQL node"""
 
         self.pg_connect()
-        self.wait_select()
 
         if self.conn:
             if self.cur:
@@ -636,7 +573,6 @@ class pgbackman_db():
         """A function to get the ID of a PgSQL node"""
 
         self.pg_connect()
-        self.wait_select()
 
         if self.conn:
             if self.cur:
@@ -647,36 +583,8 @@ class pgbackman_db():
                     return data
 
                 except psycopg2.Error as e:
-                    pass
+                    return None
                                  
-            self.pg_close()
-
-
-    # ############################################
-    # Method 
-    # ############################################
-           
-    def get_listen_channel_names(self,param):
-        """A function to get a list of channels to LISTEN for a backup_server"""
-
-        self.pg_connect()
-        self.wait_select()
-
-        if self.conn:
-            if self.cur:
-                try:
-                    list = []
-                    
-                    self.cur.execute('SELECT get_listen_channel_names(%s)',(param,))
-                    
-                    for row in self.cur.fetchall():
-                        list.append(row[0])
-
-                    return list
-                
-                except psycopg2.Error as e:
-                    pass
-
             self.pg_close()
 
 
@@ -688,12 +596,12 @@ class pgbackman_db():
         """A function to get the next PgSQL node ID to generate a crontab file for"""
 
         self.pg_connect()
-        self.wait_select()
-
+ 
         if self.conn:
             if self.cur:
                 try:
                     self.cur.execute('SELECT get_next_crontab_id_to_generate(%s)',(param,))
+                    self.conn.commit()
                     
                     data = self.cur.fetchone()[0]
                     return data
@@ -712,8 +620,7 @@ class pgbackman_db():
         """A function to get the crontab file for a PgSQL node in a backup server"""
 
         self.pg_connect()
-        self.wait_select()
-
+ 
         if self.conn:
             if self.cur:
                 try:
@@ -736,8 +643,7 @@ class pgbackman_db():
         """A function to update the backup job queue if the crontab generation fails"""
 
         self.pg_connect()
-        self.wait_select()
-
+ 
         if self.conn:
             if self.cur:
                 try:
@@ -751,7 +657,7 @@ class pgbackman_db():
             self.pg_close() 
 
 
-   # ############################################
+    # ############################################
     # Method 
     # ############################################
            
@@ -759,8 +665,7 @@ class pgbackman_db():
         """A function to DSN value for a PgSQL node in a backup server"""
 
         self.pg_connect()
-        self.wait_select()
-
+ 
         if self.conn:
             if self.cur:
                 try:
@@ -770,6 +675,6 @@ class pgbackman_db():
                     return data
                     
                 except psycopg2.Error as e:
-                    pass
+                    return None
 
             self.pg_close()

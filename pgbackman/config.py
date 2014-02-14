@@ -45,7 +45,7 @@ class configuration():
 
         self.channels_check_interval = 60
         self.log_level = 'ERROR'
-        self.log_file = '/var/log/pgbackman/pgbackman_dump.log'
+        self.log_file = '/var/log/pgbackman/pgbackman.log'
 
         self.set_configuration_file()
         self.set_configuration_parameters()
@@ -58,7 +58,7 @@ class configuration():
     def set_configuration_file(self):
         """Set the pgbackman configuration file"""
         
-        config_file_list = (os.getenv('HOME') + '/.pgbackup/pgbackman.conf','/etc/pgbackman/pgbackman.conf','/etc/pgbackman.conf','/home/rafael/Devel/GIT/pgbackman/etc/pgbackman.conf')
+        config_file_list = (os.getenv('HOME') + '/.pgbackman/pgbackman.conf','/etc/pgbackman/pgbackman.conf','/etc/pgbackman.conf','/home/rafael/Devel/GIT/pgbackman/etc/pgbackman.conf')
         
         for file in config_file_list:
             if os.path.isfile(file):
@@ -104,9 +104,12 @@ class configuration():
             if config.has_option('pgbackman2cron','channels_check_interval'):
                 self.channels_check_interval = int(config.get('pgbackman2cron','channels_check_interval'))
 
-            if config.has_option('pgbackman2cron','log_level'):
-                self.log_level = config.get('pgbackman2cron','log_level')
+            if config.has_option('logging','log_level'):
+                self.log_level = config.get('logging','log_level')
 
+            if config.has_option('logging','log_file'):
+                self.log_file = config.get('logging','log_file')
+            
 
         # Generate the DSN string 
 

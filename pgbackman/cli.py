@@ -60,6 +60,7 @@ class pgbackman_cli(cmd.Cmd):
         
         self.logs = logs("pgbackman_cli")
 
+        self.db = pgbackman_db(self.dsn,self.logs,'pgbackman_cli')
 
     # ############################################
     # Method do_show_backup_servers
@@ -81,8 +82,8 @@ class pgbackman_cli(cmd.Cmd):
         arg_list = arg.split()
         
         if len(arg_list) == 0:
-            db = pgbackman_db(self.dsn,self.logs)
-            db.show_backup_servers()
+           
+            self.db.show_backup_servers()
         else:
             print "\n* ERROR - This command does not accept parameters.\n* Type help or ? to list commands\n"
             
@@ -107,7 +108,7 @@ class pgbackman_cli(cmd.Cmd):
 
         """
 
-        db = pgbackman_db(self.dsn,self.logs)
+       
         arg_list = arg.split()
 
         #
@@ -117,8 +118,8 @@ class pgbackman_cli(cmd.Cmd):
         if len(arg_list) == 0:
      
             ack = "n"
-            domain_default = db.get_default_backup_server_parameter("domain")
-            status_default = db.get_default_backup_server_parameter("backup_server_status")
+            domain_default = self.db.get_default_backup_server_parameter("domain")
+            status_default = self.db.get_default_backup_server_parameter("backup_server_status")
 
             print "--------------------------------------------------------"
             hostname = raw_input("# Hostname []: ")
@@ -136,7 +137,7 @@ class pgbackman_cli(cmd.Cmd):
                 status = status_default
             
             if ack.lower() == "y":
-                if db.register_backup_server(hostname.lower().strip(),domain.lower().strip(),status.upper().strip(),remarks.strip()):
+                if self.db.register_backup_server(hostname.lower().strip(),domain.lower().strip(),status.upper().strip(),remarks.strip()):
                     print "\n* Done\n"
                 else:
                     print "* ERROR: Could not register this backup server\n"
@@ -156,7 +157,7 @@ class pgbackman_cli(cmd.Cmd):
             for i in range(3,len(arg_list)):
                 remarks = remarks + " " + arg_list[i]
 
-            if db.register_backup_server(hostname.lower().strip(),domain.lower().strip(),status.upper().strip(),remarks.strip()):
+            if self.db.register_backup_server(hostname.lower().strip(),domain.lower().strip(),status.upper().strip(),remarks.strip()):
                 print "\n* Done\n"
             else:
                 print "* ERROR: Could not register this backup server\n"
@@ -189,7 +190,7 @@ class pgbackman_cli(cmd.Cmd):
 
         """
         
-        db = pgbackman_db(self.dsn,self.logs)
+       
         arg_list = arg.split()
         
         if len(arg_list) == 0:
@@ -204,12 +205,12 @@ class pgbackman_cli(cmd.Cmd):
 
             if ack.lower() == "y":
                 if server_id.isdigit():
-                    if db.delete_backup_server(db.get_backup_server_fqdn(server_id)):
+                    if self.db.delete_backup_server(self.db.get_backup_server_fqdn(server_id)):
                         print "\n* Done\n"
                     else:
                         print "* ERROR: Could not delete this backup server\n"
                 else:
-                    if db.delete_backup_server(server_id):
+                    if self.db.delete_backup_server(server_id):
                         print "\n* Done\n"
                     else:
                         print "* ERROR: Could not delete this backup server\n"
@@ -219,12 +220,12 @@ class pgbackman_cli(cmd.Cmd):
             server_id = arg_list[0]
             
             if server_id.isdigit():
-                if db.delete_backup_server(db.get_backup_server_fqdn(server_id)):
+                if self.db.delete_backup_server(self.db.get_backup_server_fqdn(server_id)):
                     print "\n* Done\n"
                 else:
                     print "* ERROR: Could not delete this backup server\n"
             else:
-                if db.delete_backup_server(server_id):
+                if self.db.delete_backup_server(server_id):
                     print "\n* Done\n"
                 else:
                     print "* ERROR: Could not delete this backup server\n"   
@@ -257,8 +258,8 @@ class pgbackman_cli(cmd.Cmd):
         arg_list = arg.split()
         
         if len(arg_list) == 0:
-            db = pgbackman_db(self.dsn,self.logs)
-            db.show_pgsql_nodes()
+           
+            self.db.show_pgsql_nodes()
             
         else:
             print "\n* ERROR - This command does not accept parameters.\n* Type help or ? to list commands\n"
@@ -287,7 +288,7 @@ class pgbackman_cli(cmd.Cmd):
 
         """
         
-        db = pgbackman_db(self.dsn,self.logs)
+       
         arg_list = arg.split()
         
         #
@@ -297,10 +298,10 @@ class pgbackman_cli(cmd.Cmd):
         if len(arg_list) == 0:
      
             ack = "n"
-            domain_default = db.get_default_pgsql_node_parameter("domain")
-            port_default = db.get_default_pgsql_node_parameter("pgport")
-            admin_user_default = db.get_default_pgsql_node_parameter("admin_user")
-            status_default = db.get_default_pgsql_node_parameter("pgsql_node_status")
+            domain_default = self.db.get_default_pgsql_node_parameter("domain")
+            port_default = self.db.get_default_pgsql_node_parameter("pgport")
+            admin_user_default = self.db.get_default_pgsql_node_parameter("admin_user")
+            status_default = self.db.get_default_pgsql_node_parameter("pgsql_node_status")
             
             print "--------------------------------------------------------"
             hostname = raw_input("# Hostname []: ")
@@ -327,7 +328,7 @@ class pgbackman_cli(cmd.Cmd):
             
             if ack.lower() == "y":
                 if self.check_digit(port):
-                    if db.register_pgsql_node(hostname.lower().strip(),domain.lower().strip(),port.strip(),admin_user.lower().strip(),status.upper().strip(),remarks.strip()):
+                    if self.db.register_pgsql_node(hostname.lower().strip(),domain.lower().strip(),port.strip(),admin_user.lower().strip(),status.upper().strip(),remarks.strip()):
                         print "\n* Done\n"
                     else:
                         print '* ERROR: Could not register this PgSQL node\n'
@@ -350,7 +351,7 @@ class pgbackman_cli(cmd.Cmd):
                 remarks = remarks + " " + arg_list[i]
 
             if self.check_digit(port):   
-                if db.register_pgsql_node(hostname.lower().strip(),domain.lower().strip(),port.strip(),admin_user.lower().strip(),status.upper().strip(),remarks.strip()):
+                if self.db.register_pgsql_node(hostname.lower().strip(),domain.lower().strip(),port.strip(),admin_user.lower().strip(),status.upper().strip(),remarks.strip()):
                     print "\n* Done\n"
                 else:
                     print '* ERROR: Could not register this PgSQL node\n'
@@ -383,7 +384,7 @@ class pgbackman_cli(cmd.Cmd):
         
         """
 
-        db = pgbackman_db(self.dsn,self.logs)
+       
         arg_list = arg.split()
         
         if len(arg_list) == 0:
@@ -403,12 +404,12 @@ class pgbackman_cli(cmd.Cmd):
 
                 if ack2.lower() == "yes":
                     if node_id.isdigit():
-                        if db.delete_pgsql_node(db.get_pgsql_node_fqdn(node_id)):
+                        if self.db.delete_pgsql_node(self.db.get_pgsql_node_fqdn(node_id)):
                             print "\n* Done\n"
                         else:
                             print '* ERROR: Could not delete this PgSQL node\n'
                     else:
-                        if db.delete_pgsql_node(node_id):
+                        if self.db.delete_pgsql_node(node_id):
                             print "\n* Done\n"
                         else:
                             print '* ERROR: Could not delete this PgSQL node\n'    
@@ -423,12 +424,12 @@ class pgbackman_cli(cmd.Cmd):
             
             if ack.lower() == "y" and ack2.lower() == "yes":
                 if node_id.isdigit():
-                    if db.delete_pgsql_node(db.get_pgsql_node_fqdn(node_id)):
+                    if self.db.delete_pgsql_node(self.db.get_pgsql_node_fqdn(node_id)):
                         print "\n* Done\n"
                     else:
                         print '* ERROR: Could not delete this PgSQL node\n'    
                 else:
-                    if db.delete_pgsql_node(node_id):
+                    if self.db.delete_pgsql_node(node_id):
                         print "\n* Done\n"
                     else:
                         print '* ERROR: Could not delete this PgSQL node\n'
@@ -447,7 +448,7 @@ class pgbackman_cli(cmd.Cmd):
 
         """
         
-        db = pgbackman_db(self.dsn,self.logs)
+       
         arg_list = arg.split()
         
         if len(arg_list) == 0:
@@ -459,10 +460,10 @@ class pgbackman_cli(cmd.Cmd):
             print "--------------------------------------------------------"
 
             if server_id.isdigit():
-                if db.show_backup_server_job_definitions(db.get_backup_server_fqdn(server_id)):
+                if self.db.show_backup_server_job_definitions(self.db.get_backup_server_fqdn(server_id)):
                     print "\n* Done\n"
             else:
-                if db.show_backup_server_job_definitions(server_id):
+                if self.db.show_backup_server_job_definitions(server_id):
                         print "\n* Done\n"
                     
         elif len(arg_list) == 1:
@@ -470,10 +471,10 @@ class pgbackman_cli(cmd.Cmd):
             server_id = arg_list[0]
             
             if server_id.isdigit():
-                if db.show_backup_server_job_definitions(db.get_backup_server_fqdn(server_id)):
+                if self.db.show_backup_server_job_definitions(self.db.get_backup_server_fqdn(server_id)):
                     print "\n* Done\n"
             else:
-                if db.show_backup_server_job_definitions(server_id):
+                if self.db.show_backup_server_job_definitions(server_id):
                     print "\n* Done\n"
                     
         else:
@@ -492,7 +493,7 @@ class pgbackman_cli(cmd.Cmd):
 
 
         """
-        db = pgbackman_db(self.dsn,self.logs)
+       
         arg_list = arg.split()
         
         if len(arg_list) == 0:
@@ -504,10 +505,10 @@ class pgbackman_cli(cmd.Cmd):
             print "--------------------------------------------------------"
 
             if node_id.isdigit():
-                if db.show_pgsql_node_job_definitions(db.get_pgsql_node_fqdn(node_id)):
+                if self.db.show_pgsql_node_job_definitions(self.db.get_pgsql_node_fqdn(node_id)):
                     print "\n* Done\n"
             else:
-                if db.show_pgsql_node_job_definitions(node_id):
+                if self.db.show_pgsql_node_job_definitions(node_id):
                         print "\n* Done\n"
                     
         elif len(arg_list) == 1:
@@ -515,10 +516,10 @@ class pgbackman_cli(cmd.Cmd):
             node_id = arg_list[0]
             
             if node_id.isdigit():
-                if db.show_pgsql_node_job_definitions(db.get_pgsql_node_fqdn(node_id)):
+                if self.db.show_pgsql_node_job_definitions(self.db.get_pgsql_node_fqdn(node_id)):
                     print "\n* Done\n"
             else:
-                if db.show_pgsql_node_job_definitions(node_id):
+                if self.db.show_pgsql_node_job_definitions(node_id):
                     print "\n* Done\n"
                     
         else:
@@ -538,7 +539,7 @@ class pgbackman_cli(cmd.Cmd):
 
         """
 
-        db = pgbackman_db(self.dsn,self.logs)
+       
         arg_list = arg.split()
         
         if len(arg_list) == 0:
@@ -549,7 +550,7 @@ class pgbackman_cli(cmd.Cmd):
             dbname = raw_input("# DBname: ")
             print "--------------------------------------------------------"
             
-            if db.show_database_job_definitions(dbname):
+            if self.db.show_database_job_definitions(dbname):
                 print "\n* Done\n"
                 
                     
@@ -557,7 +558,7 @@ class pgbackman_cli(cmd.Cmd):
 
             dbname = arg_list[0]
             
-            if db.show_database_job_definitions(dbname):
+            if self.db.show_database_job_definitions(dbname):
                 print "\n* Done\n"
                 
         else:
@@ -599,7 +600,7 @@ class pgbackman_cli(cmd.Cmd):
 
         """
 
-        db = pgbackman_db(self.dsn,self.logs)
+       
         arg_list = arg.split()
         
         #
@@ -614,17 +615,17 @@ class pgbackman_cli(cmd.Cmd):
                 backup_code_default = encryption_default = retention_period_default = retention_redundancy_default = \
                 extra_parameters_default = backup_job_status_default = ""
 
-            minutes_cron_default = db.get_minute_from_interval(db.get_default_pgsql_node_parameter("backup_minutes_interval"))
-            hours_cron_default = db.get_hour_from_interval(db.get_default_pgsql_node_parameter("backup_hours_interval"))
-            weekday_cron_default = db.get_default_pgsql_node_parameter("backup_weekday_cron")
-            month_cron_default = db.get_default_pgsql_node_parameter("backup_month_cron")
-            day_month_cron_default = db.get_default_pgsql_node_parameter("backup_day_month_cron")
-            backup_code_default = db.get_default_pgsql_node_parameter("backup_code")
-            encryption_default = db.get_default_pgsql_node_parameter("encryption")
-            retention_period_default = db.get_default_pgsql_node_parameter("retention_period")
-            retention_redundancy_default = db.get_default_pgsql_node_parameter("retention_redundancy")
-            extra_parameters_default = db.get_default_pgsql_node_parameter("extra_parameters")
-            backup_job_status_default = db.get_default_pgsql_node_parameter("backup_job_status")
+            minutes_cron_default = self.db.get_minute_from_interval(self.db.get_default_pgsql_node_parameter("backup_minutes_interval"))
+            hours_cron_default = self.db.get_hour_from_interval(self.db.get_default_pgsql_node_parameter("backup_hours_interval"))
+            weekday_cron_default = self.db.get_default_pgsql_node_parameter("backup_weekday_cron")
+            month_cron_default = self.db.get_default_pgsql_node_parameter("backup_month_cron")
+            day_month_cron_default = self.db.get_default_pgsql_node_parameter("backup_day_month_cron")
+            backup_code_default = self.db.get_default_pgsql_node_parameter("backup_code")
+            encryption_default = self.db.get_default_pgsql_node_parameter("encryption")
+            retention_period_default = self.db.get_default_pgsql_node_parameter("retention_period")
+            retention_redundancy_default = self.db.get_default_pgsql_node_parameter("retention_redundancy")
+            extra_parameters_default = self.db.get_default_pgsql_node_parameter("extra_parameters")
+            backup_job_status_default = self.db.get_default_pgsql_node_parameter("backup_job_status")
 
             
             print "--------------------------------------------------------"
@@ -686,7 +687,7 @@ class pgbackman_cli(cmd.Cmd):
                                               retention_period,retention_redundancy,extra_parameters,backup_job_status,remarks))
 
             if ack.lower() == "y":
-                if db.register_backup_job(backup_server.lower().strip(),pgsql_node.lower().strip(),dbname.strip(),minutes_cron,hours_cron, \
+                if self.db.register_backup_job(backup_server.lower().strip(),pgsql_node.lower().strip(),dbname.strip(),minutes_cron,hours_cron, \
                                               weekday_cron.strip(),month_cron.strip(),day_month_cron.strip(),backup_code.upper().strip(),encryption.lower().strip(), \
                                               retention_period.lower().strip(),retention_redundancy.strip(),extra_parameters.lower().strip(),backup_job_status.upper().strip(),remarks.strip()):
                     print "\n* Done\n"
@@ -719,7 +720,7 @@ class pgbackman_cli(cmd.Cmd):
                 remarks = remarks + " " + arg_list[i]
 
                 
-            if db.register_backup_job(backup_server.lower().strip(),pgsql_node.lower().strip(),dbname.strip(),minutes_cron,hours_cron, \
+            if self.db.register_backup_job(backup_server.lower().strip(),pgsql_node.lower().strip(),dbname.strip(),minutes_cron,hours_cron, \
                                           weekday_cron.strip(),month_cron.strip(),day_month_cron.strip(),backup_code.upper().strip(),encryption.lower().strip(), \
                                           retention_period.lower().strip(),retention_redundancy.strip(),extra_parameters.lower().strip(),backup_job_status.upper().strip(),remarks.strip()):
                 print "\n* Done\n"

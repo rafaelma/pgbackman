@@ -489,6 +489,12 @@ INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('
 INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('backup_server_status','RUNNING','Default backup server status');
 INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('pgbackman_dump','/usr/bin/pgbackman_dump','Program used to take backup dumps');
 INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('admin_user','postgres','postgreSQL admin user');
+INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('pgsql_bin_9.3','/usr/pgsql-9.3/bin','postgreSQL 9.3 bin directory');
+INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('pgsql_bin_9.2','/usr/pgsql-9.2/bin','postgreSQL 9.2 bin directory');
+INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('pgsql_bin_9.1','/usr/pgsql-9.1/bin','postgreSQL 9.1 bin directory');
+INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('pgsql_bin_9.0','/usr/pgsql-9.0/bin','postgreSQL 9.0 bin directory');
+INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('pgsql_bin_8.4','/usr/pgsql-8.4/bin','postgreSQL 8.4 bin directory');
+
 
 \echo '# [Init: pgsql_node_default_config]\n'
 
@@ -1854,7 +1860,7 @@ ALTER FUNCTION get_default_backup_server_parameter(TEXT) OWNER TO pgbackman_user
 
 
 -- ------------------------------------------------------------
--- Function: get_default_backup_server_parameter()
+-- Function: get_backup_server_parameter()
 --
 -- ------------------------------------------------------------
 
