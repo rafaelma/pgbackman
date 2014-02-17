@@ -445,7 +445,7 @@ class pgbackman_db():
                     return data
 
                 except psycopg2.Error as e:
-                    pass
+                    return None
                 
             self.pg_close()
 

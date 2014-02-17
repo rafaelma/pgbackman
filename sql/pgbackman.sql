@@ -2217,6 +2217,7 @@ CREATE OR REPLACE FUNCTION generate_crontab_backup_jobs(INTEGER,INTEGER) RETURNS
   pgsql_node_id_ ALIAS FOR $2;
   backup_server_fqdn TEXT;
   pgsql_node_fqdn TEXT;
+  pgsql_node_port TEXT;
   job_row RECORD;
 
   logs_email TEXT := '';
@@ -2231,7 +2232,8 @@ BEGIN
  pg_node_cron_file := get_pgsql_node_parameter(pgsql_node_id_,'pg_node_cron_file');
  backup_server_fqdn := get_backup_server_fqdn(backup_server_id_);
  pgsql_node_fqdn := get_pgsql_node_fqdn(pgsql_node_id_);
- admin_user := get_pgsql_node_parameter(pgsql_node_id_,'admin_user');
+ pgsql_node_port := get_pgsql_node_port(pgsql_node_id_);
+ admin_user := get_pgsql_node_admin_user(pgsql_node_id_);
  pgbackman_dump := get_backup_server_parameter(backup_server_id_,'pgbackman_dump');
 
  output := output || '# File: ' || COALESCE(pg_node_cron_file,'') || E'\n';
@@ -2267,10 +2269,17 @@ BEGIN
   output := output || COALESCE(job_row.minutes_cron, '*') || ' ' || COALESCE(job_row.hours_cron, '*') || ' ' || COALESCE(job_row.day_month_cron, '*') || ' ' || COALESCE(job_row.month_cron, '*') || ' ' || COALESCE(job_row.weekday_cron, '*');
 
   output := output || ' ' || admin_user;
-  output := output || ' ' || pgbackman_dump || ' -H ' || pgsql_node_fqdn || ' -j ' || job_row.job_id || ' -d ' || job_row.dbname || ' -e ' || job_row.encryption::TEXT || ' -c ' || job_row.backup_code;
+  output := output || ' ' || pgbackman_dump || 
+  	    	   ' -H ' || pgsql_node_fqdn ||
+		   ' -p ' || pgsql_node_port ||
+		   ' -U ' || admin_user || 
+		   ' -j ' || job_row.job_id || 
+		   ' -d ' || job_row.dbname || 
+		   ' -e ' || job_row.encryption::TEXT || 
+		   ' -c ' || job_row.backup_code;
 
   IF job_row.extra_parameters != '' AND job_row.extra_parameters IS NOT NULL THEN
-    output := output || ' -p ' || job_row.extra_parameters;
+    output := output || ' -P ' || job_row.extra_parameters;
   END IF;
  
   output := output || E'\n';
@@ -2311,6 +2320,58 @@ $$;
 ALTER FUNCTION get_pgsql_node_dsn(INTEGER) OWNER TO pgbackman_user_rw;
 
 
+-- ------------------------------------------------------------
+-- Function: get_pgsql_node_port()
+--
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION get_pgsql_node_port(INTEGER) RETURNS TEXT 
+ LANGUAGE plpgsql 
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ DECLARE
+ node_id_ ALIAS FOR $1;
+ value_ TEXT := '';
+
+ BEGIN
+  --
+  -- This function returns the DSN value for a pgsql_node
+  --
+
+  SELECT pgport FROM pgsql_node WHERE node_id = node_id_ INTO value_;
+  RETURN value_;
+ END;
+$$;
+
+ALTER FUNCTION get_pgsql_node_port(INTEGER) OWNER TO pgbackman_user_rw;
+
+
+-- ------------------------------------------------------------
+-- Function: get_pgsql_node_admin_user()
+--
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION get_pgsql_node_admin_user(INTEGER) RETURNS TEXT 
+ LANGUAGE plpgsql 
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ DECLARE
+ node_id_ ALIAS FOR $1;
+ value_ TEXT := '';
+
+ BEGIN
+  --
+  -- This function returns the DSN value for a pgsql_node
+  --
+
+  SELECT admin_user FROM pgsql_node WHERE node_id = node_id_ INTO value_;
+  RETURN value_;
+ END;
+$$;
+
+ALTER FUNCTION get_pgsql_node_admin_user(INTEGER) OWNER TO pgbackman_user_rw;
 
 
 COMMIT;
