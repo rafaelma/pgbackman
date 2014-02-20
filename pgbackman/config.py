@@ -44,8 +44,11 @@ class configuration():
         self.dsn = ''
 
         self.channels_check_interval = 60
+
         self.log_level = 'ERROR'
         self.log_file = '/var/log/pgbackman/pgbackman.log'
+
+        self.tmp_dir = '/tmp'
 
         self.set_configuration_file()
         self.set_configuration_parameters()
@@ -110,6 +113,9 @@ class configuration():
             if config.has_option('logging','log_file'):
                 self.log_file = config.get('logging','log_file')
             
+            if config.has_option('pgbackman_dump','tmp_dir'):
+                self.tmp_dir = config.get('pgbackman_dump','tmp_dir')
+
 
         # Generate the DSN string 
 
