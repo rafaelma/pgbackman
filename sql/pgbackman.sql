@@ -345,13 +345,18 @@ CREATE TABLE backup_job_catalog(
   pgsql_node_id INTEGER NOT NULL,
   dbname TEXT NOT NULL,
   started TIMESTAMP WITH TIME ZONE,
-  finnished TIMESTAMP WITH TIME ZONE,
+  finished TIMESTAMP WITH TIME ZONE,
   duration INTERVAL,
+  pg_dump_file TEXT,
   pg_dump_file_size BIGINT,
-  pg_dump_file TEXT NOT NULL,
-  global_data_file TEXT,
-  db_parameters_file TEXT,
-  log_file TEXT NOT NULL,
+  pg_dump_log_file TEXT,
+  pg_dump_roles_file TEXT,
+  pg_dump_roles_file_size BIGINT,
+  pg_dump_roles_log_file TEXT,
+  pg_dump_dbconfig_file TEXT,
+  pg_dump_dbconfig_file_size BIGINT,
+  pg_dump_dbconfig_log_file TEXT,
+  global_log_file TEXT NOT NULL,
   execution_status TEXT
 );
 
@@ -467,6 +472,7 @@ INSERT INTO server_status (code,description) VALUES ('DOWN','Server is down');
 INSERT INTO backup_code (code,description) VALUES ('FULL','Full Backup of a database. Schema + data + owner globals + db_parameters');
 INSERT INTO backup_code (code,description) VALUES ('SCHEMA','Schema backup of a database. Schema + owner globals + db_parameters');
 INSERT INTO backup_code (code,description) VALUES ('DATA','Data backup of the database.');
+INSERT INTO backup_code (code,description) VALUES ('CLUSTER','Full backup of the database cluster.');
 INSERT INTO backup_code (code,description) VALUES ('CONFIG','Backup of the configuration files');
 
 \echo '# [Init: job_definition_status]\n'
@@ -2372,6 +2378,95 @@ CREATE OR REPLACE FUNCTION get_pgsql_node_admin_user(INTEGER) RETURNS TEXT
 $$;
 
 ALTER FUNCTION get_pgsql_node_admin_user(INTEGER) OWNER TO pgbackman_user_rw;
+
+
+-- ------------------------------------------------------------
+-- Function: register_backup_job_catalog()
+--
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION register_backup_job_catalog(INTEGER,INTEGER,INTEGER,TEXT,TIMESTAMP WITH TIME ZONE,TIMESTAMP WITH TIME ZONE,INTERVAL,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,TEXT) RETURNS BOOLEAN
+ LANGUAGE plpgsql 
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ DECLARE
+
+  job_id_ ALIAS FOR $1;
+  backup_server_id_ ALIAS FOR $2;
+  pgsql_node_id_ ALIAS FOR $3;
+  dbname_ ALIAS FOR $4;
+  started_ ALIAS FOR $5;
+  finished_ ALIAS FOR $6;
+  duration_ ALIAS FOR $7;
+  pg_dump_file_ ALIAS FOR $8;
+  pg_dump_file_size_ ALIAS FOR $9;
+  pg_dump_log_file_ ALIAS FOR $10;
+  pg_dump_roles_file_ ALIAS FOR $11;
+  pg_dump_roles_file_size_ ALIAS FOR $12;
+  pg_dump_roles_log_file_ ALIAS FOR $13;
+  pg_dump_dbconfig_file_ ALIAS FOR $14;
+  pg_dump_dbconfig_file_size_ ALIAS FOR $15;
+  pg_dump_dbconfig_log_file_ ALIAS FOR $16;
+  global_log_file_ ALIAS FOR $17;
+  execution_status_ ALIAS FOR $18;
+
+  v_msg     TEXT;
+  v_detail  TEXT;
+  v_context TEXT; 
+
+ BEGIN
+    EXECUTE 'INSERT INTO backup_job_catalog (job_id,
+					     backup_server_id,
+					     pgsql_node_id,
+					     dbname,
+					     started,
+					     finished,
+					     duration,
+					     pg_dump_file,
+					     pg_dump_file_size,
+					     pg_dump_log_file,
+					     pg_dump_roles_file,
+					     pg_dump_roles_file_size,
+					     pg_dump_roles_log_file,
+					     pg_dump_dbconfig_file,
+					     pg_dump_dbconfig_file_size,
+					     pg_dump_dbconfig_log_file,
+					     global_log_file,
+					     execution_status) 
+	     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)'
+    USING  job_id_,
+    	   backup_server_id_,
+  	   pgsql_node_id_,
+  	   dbname_,
+  	   started_,
+  	   finished_,
+  	   duration_,
+  	   pg_dump_file_,
+  	   pg_dump_file_size_,
+	   pg_dump_log_file_,
+  	   pg_dump_roles_file_,
+  	   pg_dump_roles_file_size_,
+  	   pg_dump_roles_log_file_,
+  	   pg_dump_dbconfig_file_,
+  	   pg_dump_dbconfig_file_size_,
+  	   pg_dump_dbconfig_log_file_,
+  	   global_log_file_,
+  	   execution_status_;
+
+   RETURN TRUE;
+ EXCEPTION WHEN others THEN
+   	GET STACKED DIAGNOSTICS	
+            v_msg     = MESSAGE_TEXT,
+            v_detail  = PG_EXCEPTION_DETAIL,
+            v_context = PG_EXCEPTION_CONTEXT;
+        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \nCONTEXT: % \n----------------------------------------------\n', v_msg, v_detail, v_context;
+  
+
+ END;
+$$;
+
+ALTER FUNCTION register_backup_job_catalog(INTEGER,INTEGER,INTEGER,TEXT,TIMESTAMP WITH TIME ZONE,TIMESTAMP WITH TIME ZONE,INTERVAL,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,TEXT) OWNER TO pgbackman_user_rw;
 
 
 COMMIT;

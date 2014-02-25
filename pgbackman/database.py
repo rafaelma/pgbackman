@@ -236,7 +236,7 @@ class pgbackman_db():
                     return False
                 
             self.pg_close()
-                  
+
            
     # ############################################
     # Method 
@@ -678,3 +678,33 @@ class pgbackman_db():
                     return None
 
             self.pg_close()
+
+
+    # ############################################
+    # Method 
+    # ############################################
+           
+    def register_backup_job_catalog(self,backup_job_id,backup_server_id,pgsql_node_id,dbname,started,finished,duration,pg_dump_file,
+                                  pg_dump_file_size,pg_dump_log_file,pg_dump_roles_file,pg_dump_roles_file_size,pg_dump_roles_log_file,
+                                  pg_dump_dbconfig_file,pg_dump_dbconfig_file_size,pg_dump_dbconfig_log_file,global_log_file,execution_status):
+        
+        """A function to update the backup job catalog"""
+
+        self.pg_connect()
+ 
+        if self.conn:
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT register_backup_job_catalog(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',(backup_job_id,backup_server_id,pgsql_node_id,dbname,
+                                                                                                                                  started,finished,duration,pg_dump_file,
+                                                                                                                                  pg_dump_file_size,pg_dump_log_file,pg_dump_roles_file,
+                                                                                                                                  pg_dump_roles_file_size,pg_dump_roles_log_file,
+                                                                                                                                  pg_dump_dbconfig_file,pg_dump_dbconfig_file_size,
+                                                                                                                                  pg_dump_dbconfig_log_file,global_log_file,execution_status))
+                    self.conn.commit()                        
+                    
+                    return True
+                except psycopg2.Error as e:
+                    pass
+
+            self.pg_close() 
