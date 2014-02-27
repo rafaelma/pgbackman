@@ -606,26 +606,59 @@ def register_backup_job_catalog(global_parameters,db):
     # Updating database
     #
 
-    db.register_backup_job_catalog(backup_job_id,
-                                   global_parameters['backup_server_id'],  
-                                   global_parameters['pgsql_node_id'],
-                                   dbname,
-                                   global_parameters['backup_start'],
-                                   global_parameters['backup_stop'],
-                                   duration,
-                                   pg_dump_file,
-                                   pg_dump_file_size,
-                                   pg_dump_log_file,
-                                   pg_dump_roles_file,
-                                   pg_dump_roles_file_size,
-                                   pg_dump_roles_log_file,
-                                   pg_dump_dbconfig_file,
-                                   pg_dump_dbconfig_file_size,
-                                   pg_dump_dbconfig_log_file,
-                                   global_parameters['global_log_file'],
-                                   global_parameters['execution_status']
-                                   )
+    return_code = db.register_backup_job_catalog(backup_job_id,
+                                                 global_parameters['backup_server_id'],  
+                                                 global_parameters['pgsql_node_id'],
+                                                 dbname,
+                                                 global_parameters['backup_start'],
+                                                 global_parameters['backup_stop'],
+                                                 duration,
+                                                 pg_dump_file,
+                                                 pg_dump_file_size,
+                                                 pg_dump_log_file,
+                                                 pg_dump_roles_file,
+                                                 pg_dump_roles_file_size,
+                                                 pg_dump_roles_log_file,
+                                                 pg_dump_dbconfig_file,
+                                                 pg_dump_dbconfig_file_size,
+                                                 pg_dump_dbconfig_log_file,
+                                                 global_parameters['global_log_file'],
+                                                 global_parameters['execution_status']
+                                                 )
+    
+    if return_code == True:
+        logs.logger.info('Backup job catalog for jobID: %s updated in the database',backup_job_id)
+    elif return_code == False:
+        logs.logger.info('Problems updating the backup job catalog for jobID: %s in the database',backup_job_id)
 
+        try:
+            pending_log_file = global_parameters['pgsql_node_backup_dir']+ '/log/backup_job_catalog_updates_pending.log'
+
+            with open(pending_log_file,'a+') as catalog_pending:
+                catalog_pending.write(str(backup_job_id) + ',' +
+                                      str(global_parameters['backup_server_id']) + ',' +   
+                                      str(global_parameters['pgsql_node_id']) + ',' +   
+                                      dbname + ',' +   
+                                      str(global_parameters['backup_start']) + ',' +   
+                                      str(global_parameters['backup_stop']) + ',' +   
+                                      str(duration) + ',' +   
+                                      pg_dump_file + ',' +   
+                                      str(pg_dump_file_size) + ',' +   
+                                      pg_dump_log_file + ',' +   
+                                      pg_dump_roles_file + ',' +   
+                                      str(pg_dump_roles_file_size) + ',' +   
+                                      pg_dump_roles_log_file + ',' +   
+                                      pg_dump_dbconfig_file + ',' +   
+                                      str(pg_dump_dbconfig_file_size) + ',' +   
+                                      pg_dump_dbconfig_log_file + ',' +   
+                                      global_parameters['global_log_file'] + ',' +   
+                                      global_parameters['execution_status'] +
+                                      '\n')
+                
+                logs.logger.info('Catalog pending log file updated: %s',pending_log_file)
+        
+        except IOError as e:
+            logs.logger.error('Could not generate the catalog pending log file: %s - %s',pending_log_file,e)
 
 
 # ############################################
