@@ -261,7 +261,7 @@ ALTER TABLE job_queue OWNER TO pgbackman_user_rw;
 --
 -- Attributes:
 --
--- @job_id
+-- @def_id
 -- @registered
 -- @backup_server_id
 -- @pgsql_node_id
@@ -285,7 +285,7 @@ ALTER TABLE job_queue OWNER TO pgbackman_user_rw;
 
 CREATE TABLE backup_job_definition(
 
-  job_id SERIAL UNIQUE,
+  def_id SERIAL UNIQUE,
   registered TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   backup_server_id INTEGER NOT NULL,
   pgsql_node_id INTEGER NOT NULL,
@@ -319,7 +319,7 @@ ALTER TABLE backup_job_definition OWNER TO pgbackman_user_rw;
 --
 -- @id
 -- @registered
--- @job_id
+-- @def_id
 -- @backup_server
 -- @pgsql_node
 -- @dbname
@@ -338,9 +338,9 @@ ALTER TABLE backup_job_definition OWNER TO pgbackman_user_rw;
 
 CREATE TABLE backup_job_catalog(
 
-  id BIGSERIAL,
+  bck_id BIGSERIAL,
   registered TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-  job_id INTEGER NOT NULL,
+  def_id INTEGER NOT NULL,
   backup_server_id INTEGER NOT NULL,
   pgsql_node_id INTEGER NOT NULL,
   dbname TEXT NOT NULL,
@@ -357,10 +357,11 @@ CREATE TABLE backup_job_catalog(
   pg_dump_dbconfig_file_size BIGINT,
   pg_dump_dbconfig_log_file TEXT,
   global_log_file TEXT NOT NULL,
+  backup_code CHARACTER VARYING(10) NOT NULL,
   execution_status TEXT
 );
 
-ALTER TABLE backup_job_catalog ADD PRIMARY KEY (id);
+ALTER TABLE backup_job_catalog ADD PRIMARY KEY (bck_id);
 ALTER TABLE backup_job_catalog OWNER TO pgbackman_user_rw;
 
 
@@ -446,13 +447,16 @@ ALTER TABLE ONLY backup_job_definition
 
 
 ALTER TABLE ONLY backup_job_catalog
-    ADD FOREIGN KEY (job_id) REFERENCES  backup_job_definition (job_id) MATCH FULL ON DELETE RESTRICT;
+    ADD FOREIGN KEY (def_id) REFERENCES  backup_job_definition (def_id) MATCH FULL ON DELETE RESTRICT;
 
 ALTER TABLE ONLY backup_job_catalog
     ADD FOREIGN KEY (backup_server_id) REFERENCES  backup_server (server_id) MATCH FULL ON DELETE RESTRICT;
 
 ALTER TABLE ONLY backup_job_catalog
     ADD FOREIGN KEY (pgsql_node_id) REFERENCES pgsql_node (node_id) MATCH FULL ON DELETE RESTRICT;
+
+ALTER TABLE ONLY backup_job_catalog
+    ADD FOREIGN KEY (backup_code) REFERENCES backup_code (code) MATCH FULL ON DELETE RESTRICT;
 
 ALTER TABLE ONLY backup_job_catalog
     ADD FOREIGN KEY (execution_status) REFERENCES job_execution_status (code) MATCH FULL ON DELETE RESTRICT;
@@ -523,25 +527,6 @@ INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('bac
 INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('extra_parameters','','Extra backup parameters');
 INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('logs_email','example@example.org','E-mail to send logs');
 
-
-
--- ------------------------------------------------------------
--- View: jobs_queue
---
--- ------------------------------------------------------------
-
-CREATE OR REPLACE VIEW jobs_queue AS 
-SELECT a.id,
-       a.registered,
-       a.backup_server_id,
-       b.hostname || '.' || b.domain_name AS backup_server,
-       a.pgsql_node_id,
-       c.hostname || '.' || b.domain_name AS pgsql_node,
-       a.is_assigned
-FROM job_queue a
-INNER JOIN backup_server b ON a.backup_server_id = b.server_id
-INNER JOIN pgsql_node c ON a.pgsql_node_id = c.node_id
-ORDER BY a.registered ASC;
 
 
 -- ------------------------------------------------------------
@@ -959,81 +944,6 @@ $$;
 ALTER FUNCTION delete_backup_server(TEXT) OWNER TO pgbackman_user_rw;
 
 
--- ------------------------------------------------------------
--- Function: show_backup_servers()
---
--- ------------------------------------------------------------
-
-CREATE OR REPLACE FUNCTION show_backup_servers() RETURNS TEXT 
- LANGUAGE plpgsql 
- SECURITY INVOKER 
- SET search_path = public, pg_temp
- AS $$
- DECLARE
- show_backup_servers TEXT := '';
- backup_server_row RECORD;
-
- spaces TEXT := '   ';
- line TEXT := '-';
- divisor TEXT := ' | ';
- divisor_line TEXT := '';
-
- srv_fqdn_len INTEGER;
- srv_status_len INTEGER;
-
- BEGIN
-  --
-  -- This function generates a list with all backup servers
-  -- defined in pgbackman
-  --
-
-  SELECT max(length(hostname))+max(length(domain_name))+1 AS len FROM backup_server INTO srv_fqdn_len;
-  SELECT max(length(status)) AS len FROM backup_server INTO srv_status_len;
-
-  divisor_line := rpad(line,5,line) || rpad(line,length(spaces),line) ||
-		  rpad(line,srv_fqdn_len,line) || rpad(line,length(spaces),line) ||
-  		  rpad(line,srv_status_len,line) || rpad(line,length(spaces),line) ||
-		  rpad(line,30,line) || rpad(line,length(spaces),line) ||
-                  E'\n';
-
-  show_backup_servers := show_backup_servers || divisor_line;
-  		     
-  show_backup_servers := show_backup_servers ||
-  		     	rpad('SrvID',5,' ') || divisor ||
-			rpad('FQDN',srv_fqdn_len,' ') || divisor ||
-			rpad('Status',srv_status_len,' ') || divisor ||
-			rpad('Remarks',30,' ') || 
-			E'\n';
-
-  show_backup_servers := show_backup_servers || divisor_line;
-  
-   FOR backup_server_row IN (
-   SELECT server_id,
-          hostname,
-          domain_name,
-          status,
-          remarks
-   FROM backup_server
-   ORDER BY hostname,domain_name,status
-  ) LOOP
- 
-     show_backup_servers := show_backup_servers ||
-     			   lpad(backup_server_row.server_id::text,5,'0') || divisor ||
-			   rpad(backup_server_row.hostname || '.' || backup_server_row.domain_name, srv_fqdn_len,' ')|| divisor ||
-			   rpad(backup_server_row.status, srv_status_len,' ')|| divisor ||
-			   rpad(backup_server_row.remarks, 30,' ')|| 
-			   E'\n';
-			      
-  END LOOP;
-
-  show_backup_servers := show_backup_servers || divisor_line;
-
-RETURN show_backup_servers;
- END;
-$$;
-
-ALTER FUNCTION show_backup_servers() OWNER TO pgbackman_user_rw;
-
 
 -- ------------------------------------------------------------
 -- Function: register_pgsql_node()
@@ -1171,92 +1081,6 @@ $$;
 
 ALTER FUNCTION delete_pgsql_node(TEXT) OWNER TO pgbackman_user_rw;
 
-
--- ------------------------------------------------------------
--- Function: show_pgsql_nodes()
---
--- ------------------------------------------------------------
-
-CREATE OR REPLACE FUNCTION show_pgsql_nodes() RETURNS TEXT 
- LANGUAGE plpgsql 
- SECURITY INVOKER 
- SET search_path = public, pg_temp
- AS $$
- DECLARE
- show_pgsql_nodes TEXT := E'\n';
- pgsql_node_row RECORD;
-
- spaces TEXT := '   ';
- line TEXT := '-';
- divisor TEXT := ' | ';
- divisor_line TEXT := '';
-
- node_fqdn_len INTEGER;
- node_status_len INTEGER;
- node_admin_user_len INTEGER;
- BEGIN
-  --
-  -- This function generates a list with all backup servers
-  -- defined in pgbackman
-  --
-
-  SELECT max(length(hostname || '.' || domain_name)) AS len FROM pgsql_node INTO node_fqdn_len;
-  SELECT max(length(status)) AS len FROM pgsql_node INTO node_status_len;
-  SELECT max(length(admin_user)) AS len FROM pgsql_node INTO node_admin_user_len;
-
-
-  divisor_line := rpad(line,6,line) ||  rpad(line,length(spaces),line) ||
-       		  rpad(line,node_fqdn_len,line) || rpad(line,length(spaces),line) ||
-		  rpad(line,6,line) ||  rpad(line,length(spaces),line) ||
-		  rpad(line,node_admin_user_len,line) ||  rpad(line,length(spaces),line) ||
-  		  rpad(line,node_status_len,line) ||  rpad(line,length(spaces),line) ||
-	          rpad(line,30,line) ||  rpad(line,length(spaces),line) ||
-                  E'\n';
-
-  show_pgsql_nodes := show_pgsql_nodes || divisor_line;
-  		     
-  show_pgsql_nodes := show_pgsql_nodes ||
-  		     	rpad('NodeID',6,' ') || divisor ||
-			rpad('FQDN',node_fqdn_len,' ') || divisor ||
-			rpad('Pgport',6,' ') || divisor ||
-			rpad('Admin',node_admin_user_len,' ') || divisor ||   
-			rpad('Status',node_status_len,' ') || divisor ||
-			rpad('Remarks',30,' ') || 
-			E'\n';
-
-  show_pgsql_nodes := show_pgsql_nodes || divisor_line;
-  
-   FOR pgsql_node_row IN (
-   SELECT node_id,
-          hostname,
-          domain_name,
-          pgport,
-          admin_user,
-          pg_version,
-          status,
-          remarks
-   FROM pgsql_node
-   ORDER BY hostname,domain_name,pgport,admin_user,status
-  ) LOOP
- 
-     show_pgsql_nodes := show_pgsql_nodes ||
-     			   lpad(pgsql_node_row.node_id::text,6,'0') || divisor ||
-			   rpad(pgsql_node_row.hostname || '.' || pgsql_node_row.domain_name, node_fqdn_len,' ')|| divisor ||
-			   rpad(pgsql_node_row.pgport::text, 6,' ')|| divisor ||
-			   rpad(pgsql_node_row.admin_user, node_admin_user_len,' ')|| divisor ||
-			   rpad(pgsql_node_row.status, node_status_len,' ')|| divisor ||
-			   rpad(pgsql_node_row.remarks, 30,' ') ||
-			   E'\n';
-			      
-  END LOOP;
-
-  show_pgsql_nodes := show_pgsql_nodes || divisor_line;
-
-RETURN show_pgsql_nodes;
- END;
-$$;
-
-ALTER FUNCTION show_pgsql_nodes() OWNER TO pgbackman_user_rw;
 
 
 -- ------------------------------------------------------------
@@ -1445,392 +1269,6 @@ END;
 $$;
 
 ALTER FUNCTION register_backup_job(TEXT,TEXT,TEXT,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,BOOLEAN,INTERVAL,INTEGER,TEXT,CHARACTER VARYING,TEXT) OWNER TO pgbackman_user_rw;
-
-
--- ############################################################3
---
--- Function show_backup_server_job_definitions()
---
--- ############################################################
-
-CREATE OR REPLACE FUNCTION show_backup_server_job_definitions (TEXT) RETURNS TEXT 
- LANGUAGE plpgsql 
- SECURITY DEFINER 
- SET search_path = public, pg_temp
- AS $$
- DECLARE
-  backup_server_ ALIAS FOR $1;
-  server_id_ INTEGER;
-  
-  show_backup_jobs_def TEXT := E'\n';
-  backup_def_row RECORD;
-
-  spaces TEXT := '   ';
-  line TEXT := '-';
-  divisor TEXT := ' | ';
-  divisor_line TEXT := '';
-
-  pgsql_node_len INTEGER := 0;
-  dbname_len INTEGER := 0;
-  time_schedule_len INTEGER := 0;
-  backup_code_len INTEGER := 0;
-  encryption_len INTEGER := 0;
-  retention_len INTEGER := 0;
-  extra_parameters_len INTEGER := 0;
-  job_status_len INTEGER := 0;
-
- BEGIN
-
-  --
-  -- This function generates a view of all backup definitions
-  -- for a backup server.
-  --
-
-  SELECT get_backup_server_id(backup_server_) INTO server_id_;
-
-  IF server_id_ IS NULL THEN
-    RAISE EXCEPTION 'Backup server: % does not exist in this system', backup_server_;
-  END IF;
-
-  SELECT max(length(get_pgsql_node_fqdn(pgsql_node_id))) FROM backup_job_definition WHERE backup_server_id = server_id_ INTO pgsql_node_len;
-  SELECT max(length(dbname)) FROM backup_job_definition WHERE backup_server_id = server_id_ INTO dbname_len;	
-  SELECT max(length(minutes_cron || ' ' || hours_cron || ' ' || 
-  	 weekday_cron || ' ' || month_cron || ' ' || 
-	 day_month_cron)) FROM backup_job_definition WHERE backup_server_id = server_id_ INTO time_schedule_len;
-
-  SELECT max(length(backup_code)) FROM backup_job_definition WHERE backup_server_id = server_id_ INTO backup_code_len;
-  SELECT max(length(encryption::text)) FROM backup_job_definition WHERE backup_server_id = server_id_ INTO encryption_len;
-  SELECT max(length(retention_period::text || ' (' || retention_redundancy::text || ')')) FROM backup_job_definition WHERE backup_server_id = server_id_ INTO retention_len;
-  SELECT max(length(extra_parameters)) FROM backup_job_definition WHERE backup_server_id = server_id_ INTO extra_parameters_len;
-  SELECT max(length(job_status)) FROM backup_job_definition WHERE backup_server_id = server_id_ INTO job_status_len;	
-
-  IF extra_parameters_len < 11 THEN
-   extra_parameters_len := 11;
-  END IF;
-
-  divisor_line := rpad(line,8,line) || rpad(line,length(spaces),line) ||
-  	       	  rpad(line,pgsql_node_len,line) || rpad(line,length(spaces),line) ||
-  	       	  rpad(line,dbname_len,line) || rpad(line,length(spaces),line) ||
-		  rpad(line,time_schedule_len,line) || rpad(line,length(spaces),line) ||
-		  rpad(line,backup_code_len,line) || rpad(line,length(spaces),line) ||
-		  rpad(line,10,line) || rpad(line,length(spaces),line) ||
-		  rpad(line,retention_len,line) || rpad(line,length(spaces),line) ||
-		  rpad(line,job_status_len,line) || rpad(line,length(spaces),line) ||
-		  rpad(line,extra_parameters_len,line) || rpad(line,length(spaces),line) ||
-                  E'\n';
-
-  show_backup_jobs_def := show_backup_jobs_def || divisor_line;
-  show_backup_jobs_def := show_backup_jobs_def || 'BACKUP SERVER: ' || '[' || server_id_ || '] ' || backup_server_ || E'\n';
-  show_backup_jobs_def := show_backup_jobs_def || divisor_line;  
-  
-  show_backup_jobs_def := show_backup_jobs_def || 
-  		       	  rpad('DefID',8,' ') || divisor ||
-			  rpad('PgSQL node',pgsql_node_len,' ') || divisor ||
-			  rpad('DBname',dbname_len,' ') || divisor ||
-			  rpad('Schedule',time_schedule_len,' ') || divisor ||   
-			  rpad('Code',backup_code_len,' ') || divisor ||
-			  rpad('Encryption',10,' ') ||  divisor ||
-			  rpad('Retention',retention_len,' ') || divisor ||
-			  rpad('status',job_status_len,' ') || divisor ||
-  			  rpad('Parameters',extra_parameters_len,' ') || 
-			  E'\n';
-
-  show_backup_jobs_def := show_backup_jobs_def || divisor_line;  
-
- FOR backup_def_row IN (
-   SELECT job_id,
-   	  get_pgsql_node_fqdn(pgsql_node_id) AS pgsql_node,
-          dbname,
-	  minutes_cron || ' ' || hours_cron || ' ' || weekday_cron || ' ' || month_cron || ' ' || day_month_cron As schedule,
-	  backup_code,
-	  encryption::TEXT,
-	  retention_period::TEXT || ' (' || retention_redundancy::TEXT || ')' AS retention,
-	  job_status,
-	  extra_parameters
-   FROM backup_job_definition
-   WHERE backup_server_id = server_id_
-   ORDER BY pgsql_node,dbname,backup_code,job_status
-  ) LOOP
- 
-     show_backup_jobs_def := show_backup_jobs_def ||
-     			   lpad(backup_def_row.job_id::text,8,'0') || divisor ||
-			   rpad(backup_def_row.pgsql_node,pgsql_node_len,' ') || divisor ||
-			   rpad(backup_def_row.dbname,dbname_len,' ')|| divisor ||
-			   rpad(backup_def_row.schedule,time_schedule_len,' ') || divisor ||
-			   rpad(backup_def_row.backup_code,backup_code_len,' ') || divisor ||
-			   rpad(backup_def_row.encryption,10,' ') || divisor ||
-			   rpad(backup_def_row.retention,retention_len,' ') || divisor ||
-			   rpad(backup_def_row.job_status,job_status_len,' ')|| divisor ||
-			   rpad(backup_def_row.extra_parameters,extra_parameters_len,' ') ||
-			   E'\n';
-			      
-  END LOOP;
-
-  show_backup_jobs_def := show_backup_jobs_def || divisor_line;  
-
- RETURN show_backup_jobs_def;
- END;
-$$;
-
-ALTER FUNCTION show_backup_server_job_definitions(TEXT) OWNER TO pgbackman_user_rw;
-
-
--- ############################################################3
---
--- Function show_pgsql_node_job_definitions()
---
--- ############################################################
-
-CREATE OR REPLACE FUNCTION show_pgsql_node_job_definitions (TEXT) RETURNS TEXT 
- LANGUAGE plpgsql 
- SECURITY DEFINER 
- SET search_path = public, pg_temp
- AS $$
- DECLARE
-  pgsql_node_ ALIAS FOR $1;
-  pgsql_node_id_ INTEGER;
-  
-  show_backup_jobs_def TEXT := E'\n';
-  backup_def_row RECORD;
-
-  spaces TEXT := '   ';
-  line TEXT := '-';
-  divisor TEXT := ' | ';
-  divisor_line TEXT := '';
-
-  backup_server_len INTEGER := 0;
-  dbname_len INTEGER := 0;
-  time_schedule_len INTEGER := 0;
-  backup_code_len INTEGER := 0;
-  encryption_len INTEGER := 0;
-  retention_len INTEGER := 0;
-  extra_parameters_len INTEGER := 0;
-  job_status_len INTEGER := 0;
-
- BEGIN
-
-  --
-  -- This function generates a view of all backup definitions
-  -- for a backup server.
-  --
-
-  SELECT get_pgsql_node_id(pgsql_node_) INTO pgsql_node_id_;
-
-  IF pgsql_node_id_ IS NULL THEN
-    RAISE EXCEPTION 'PgSQL node: % does not exist in this system', pgsql_node_;
-  END IF;
-
-  SELECT max(length(get_backup_server_fqdn(backup_server_id))) FROM backup_job_definition WHERE pgsql_node_id = pgsql_node_id_ INTO backup_server_len;
-  SELECT max(length(dbname)) FROM backup_job_definition WHERE pgsql_node_id = pgsql_node_id_ INTO dbname_len;	
-  SELECT max(length(minutes_cron || ' ' || hours_cron || ' ' || 
-  	 weekday_cron || ' ' || month_cron || ' ' || 
-	 day_month_cron)) FROM backup_job_definition WHERE pgsql_node_id = pgsql_node_id_ INTO time_schedule_len;
-
-  SELECT max(length(backup_code)) FROM backup_job_definition WHERE pgsql_node_id = pgsql_node_id_ INTO backup_code_len;
-  SELECT max(length(encryption::text)) FROM backup_job_definition WHERE pgsql_node_id = pgsql_node_id_ INTO encryption_len;
-  SELECT max(length(retention_period::text || ' (' || retention_redundancy::text || ')')) FROM backup_job_definition WHERE pgsql_node_id = pgsql_node_id_ INTO retention_len;
-  SELECT max(length(extra_parameters)) FROM backup_job_definition WHERE pgsql_node_id = pgsql_node_id_ INTO extra_parameters_len;
-  SELECT max(length(job_status)) FROM backup_job_definition WHERE pgsql_node_id = pgsql_node_id_ INTO job_status_len;	
-
-  IF extra_parameters_len < 11 THEN
-   extra_parameters_len := 11;
-  END IF;
-
-  divisor_line := rpad(line,8,line) || rpad(line,length(spaces),line) ||
-  	       	  rpad(line,backup_server_len,line) || rpad(line,length(spaces),line) ||
-  	       	  rpad(line,dbname_len,line) || rpad(line,length(spaces),line) ||
-		  rpad(line,time_schedule_len,line) || rpad(line,length(spaces),line) ||
-		  rpad(line,backup_code_len,line) || rpad(line,length(spaces),line) ||
-		  rpad(line,10,line) || rpad(line,length(spaces),line) ||
-		  rpad(line,retention_len,line) || rpad(line,length(spaces),line) ||
-		  rpad(line,job_status_len,line) || rpad(line,length(spaces),line) ||
-		  rpad(line,extra_parameters_len,line) || rpad(line,length(spaces),line) ||
-                  E'\n';
-
-  show_backup_jobs_def := show_backup_jobs_def || divisor_line;
-  show_backup_jobs_def := show_backup_jobs_def || 'PgSQL NODE: ' || '[' || pgsql_node_id_ || '] ' || pgsql_node_ || E'\n';
-  show_backup_jobs_def := show_backup_jobs_def || divisor_line;  
-  
-  show_backup_jobs_def := show_backup_jobs_def || 
-  		       	  rpad('DefID',8,' ') || divisor ||
-			  rpad('Backup server',backup_server_len,' ') || divisor ||
-			  rpad('DBname',dbname_len,' ') || divisor ||
-			  rpad('Schedule',time_schedule_len,' ') || divisor ||   
-			  rpad('Code',backup_code_len,' ') || divisor ||
-			  rpad('Encryption',10,' ') ||  divisor ||
-			  rpad('Retention',retention_len,' ') || divisor ||
-			  rpad('status',job_status_len,' ') || divisor ||
-  			  rpad('Parameters',extra_parameters_len,' ') || 
-			  E'\n';
-
-  show_backup_jobs_def := show_backup_jobs_def || divisor_line;  
-
- FOR backup_def_row IN (
-   SELECT job_id,
-   	  get_backup_server_fqdn(backup_server_id) AS backup_server,
-          dbname,
-	  minutes_cron || ' ' || hours_cron || ' ' || weekday_cron || ' ' || month_cron || ' ' || day_month_cron As schedule,
-	  backup_code,
-	  encryption::TEXT,
-	  retention_period::TEXT || ' (' || retention_redundancy::TEXT || ')' AS retention,
-	  job_status,
-	  extra_parameters
-   FROM backup_job_definition
-   WHERE pgsql_node_id = pgsql_node_id_
-   ORDER BY backup_server,dbname,backup_code,job_status
-  ) LOOP
- 
-     show_backup_jobs_def := show_backup_jobs_def ||
-     			   lpad(backup_def_row.job_id::text,8,'0') || divisor ||
-			   rpad(backup_def_row.backup_server,backup_server_len,' ') || divisor ||
-			   rpad(backup_def_row.dbname,dbname_len,' ')|| divisor ||
-			   rpad(backup_def_row.schedule,time_schedule_len,' ') || divisor ||
-			   rpad(backup_def_row.backup_code,backup_code_len,' ') || divisor ||
-			   rpad(backup_def_row.encryption,10,' ') || divisor ||
-			   rpad(backup_def_row.retention,retention_len,' ') || divisor ||
-			   rpad(backup_def_row.job_status,job_status_len,' ')|| divisor ||
-			   rpad(backup_def_row.extra_parameters,extra_parameters_len,' ') ||
-			   E'\n';
-			      
-  END LOOP;
-
-  show_backup_jobs_def := show_backup_jobs_def || divisor_line;  
-
- RETURN show_backup_jobs_def;
- END;
-$$;
-
-ALTER FUNCTION show_pgsql_node_job_definitions(TEXT) OWNER TO pgbackman_user_rw;
-
-
--- ############################################################3
---
--- Function show_database_job_definitions()
---
--- ############################################################
-
-CREATE OR REPLACE FUNCTION show_database_job_definitions (TEXT) RETURNS TEXT 
- LANGUAGE plpgsql 
- SECURITY DEFINER 
- SET search_path = public, pg_temp
- AS $$
- DECLARE
-  dbname_ ALIAS FOR $1;
- 
-  show_backup_jobs_def TEXT := E'\n';
-  backup_def_row RECORD;
-
-  spaces TEXT := '   ';
-  line TEXT := '-';
-  divisor TEXT := ' | ';
-  divisor_line TEXT := '';
-
-  backup_server_len INTEGER := 0;
-  pgsql_node_len INTEGER := 0;
-  time_schedule_len INTEGER := 0;
-  backup_code_len INTEGER := 0;
-  encryption_len INTEGER := 0;
-  retention_len INTEGER := 0;
-  extra_parameters_len INTEGER := 0;
-  job_status_len INTEGER := 0;
-
-  dbname_cnt INTEGER := 0;
-
- BEGIN
-
-  --
-  -- This function generates a view of all backup definitions
-  -- for a backup server.
-  --
-
-  SELECT count(*) FROM backup_job_definition WHERE dbname = dbname_ INTO dbname_cnt;
-
-  IF dbname_cnt = 0 THEN
-    RAISE EXCEPTION 'Database: % does not exist in this system', dbname_;
-  END IF;
-
-  SELECT max(length(get_backup_server_fqdn(backup_server_id))) FROM backup_job_definition WHERE dbname = dbname_ INTO backup_server_len;
-  SELECT max(length(get_pgsql_node_fqdn(pgsql_node_id))) FROM backup_job_definition WHERE dbname = dbname_ INTO pgsql_node_len;
-  SELECT max(length(minutes_cron || ' ' || hours_cron || ' ' || 
-  	 weekday_cron || ' ' || month_cron || ' ' || 
-	 day_month_cron)) FROM backup_job_definition WHERE dbname = dbname_ INTO time_schedule_len;
-
-  SELECT max(length(backup_code)) FROM backup_job_definition WHERE dbname = dbname_ INTO backup_code_len;
-  SELECT max(length(encryption::text)) FROM backup_job_definition WHERE dbname = dbname_ INTO encryption_len;
-  SELECT max(length(retention_period::text || ' (' || retention_redundancy::text || ')')) FROM backup_job_definition WHERE dbname = dbname_ INTO retention_len;
-  SELECT max(length(extra_parameters)) FROM backup_job_definition WHERE dbname = dbname_ INTO extra_parameters_len;
-  SELECT max(length(job_status)) FROM backup_job_definition WHERE dbname = dbname_ INTO job_status_len;	
-
-  IF extra_parameters_len < 11 THEN
-   extra_parameters_len := 11;
-  END IF;
-
-  divisor_line := rpad(line,8,line) || rpad(line,length(spaces),line) ||
-  	       	  rpad(line,backup_server_len,line) || rpad(line,length(spaces),line) ||
-  	       	  rpad(line,pgsql_node_len,line) || rpad(line,length(spaces),line) ||
-		  rpad(line,time_schedule_len,line) || rpad(line,length(spaces),line) ||
-		  rpad(line,backup_code_len,line) || rpad(line,length(spaces),line) ||
-		  rpad(line,10,line) || rpad(line,length(spaces),line) ||
-		  rpad(line,retention_len,line) || rpad(line,length(spaces),line) ||
-		  rpad(line,job_status_len,line) || rpad(line,length(spaces),line) ||
-		  rpad(line,extra_parameters_len,line) || rpad(line,length(spaces),line) ||
-                  E'\n';
-
-  show_backup_jobs_def := show_backup_jobs_def || divisor_line;
-  show_backup_jobs_def := show_backup_jobs_def || 'DATABASE: ' || dbname_ || E'\n';
-  show_backup_jobs_def := show_backup_jobs_def || divisor_line;  
-  
-  show_backup_jobs_def := show_backup_jobs_def || 
-  		       	  rpad('DefID',8,' ') || divisor ||
-			  rpad('Backup server',backup_server_len,' ') || divisor ||
-			  rpad('PgSQL node',pgsql_node_len,' ') || divisor ||
-			  rpad('Schedule',time_schedule_len,' ') || divisor ||   
-			  rpad('Code',backup_code_len,' ') || divisor ||
-			  rpad('Encryption',10,' ') ||  divisor ||
-			  rpad('Retention',retention_len,' ') || divisor ||
-			  rpad('status',job_status_len,' ') || divisor ||
-  			  rpad('Parameters',extra_parameters_len,' ') || 
-			  E'\n';
-
-  show_backup_jobs_def := show_backup_jobs_def || divisor_line;  
-
- FOR backup_def_row IN (
-   SELECT job_id,
-   	  get_backup_server_fqdn(backup_server_id) AS backup_server,
-          get_pgsql_node_fqdn(pgsql_node_id) AS pgsql_node,
-	  minutes_cron || ' ' || hours_cron || ' ' || weekday_cron || ' ' || month_cron || ' ' || day_month_cron As schedule,
-	  backup_code,
-	  encryption::TEXT,
-	  retention_period::TEXT || ' (' || retention_redundancy::TEXT || ')' AS retention,
-	  job_status,
-	  extra_parameters
-   FROM backup_job_definition
-   WHERE dbname = dbname_
-   ORDER BY backup_server,pgsql_node,backup_code,job_status
-  ) LOOP
- 
-     show_backup_jobs_def := show_backup_jobs_def ||
-     			   lpad(backup_def_row.job_id::text,8,'0') || divisor ||
-			   rpad(backup_def_row.backup_server,backup_server_len,' ') || divisor ||
-			   rpad(backup_def_row.pgsql_node,pgsql_node_len,' ')|| divisor ||
-			   rpad(backup_def_row.schedule,time_schedule_len,' ') || divisor ||
-			   rpad(backup_def_row.backup_code,backup_code_len,' ') || divisor ||
-			   rpad(backup_def_row.encryption,10,' ') || divisor ||
-			   rpad(backup_def_row.retention,retention_len,' ') || divisor ||
-			   rpad(backup_def_row.job_status,job_status_len,' ')|| divisor ||
-			   rpad(backup_def_row.extra_parameters,extra_parameters_len,' ') ||
-			   E'\n';
-			      
-  END LOOP;
-
-  show_backup_jobs_def := show_backup_jobs_def || divisor_line;  
-
- RETURN show_backup_jobs_def;
- END;
-$$;
-
-ALTER FUNCTION show_database_job_definitions(TEXT) OWNER TO pgbackman_user_rw;
-
 
 
 -- ------------------------------------------------------------
@@ -2084,7 +1522,7 @@ CREATE OR REPLACE FUNCTION get_backup_server_fqdn(INTEGER) RETURNS TEXT
 
   SELECT hostname || '.' || domain_name from backup_server WHERE server_id = parameter_ INTO backup_server_;
 
-  IF backup_server_ IS NULL THEN
+  IF backup_server_ IS NULL OR backup_server_ = '' THEN
     RAISE EXCEPTION 'Backup server with ID: % does not exist in this system',parameter_;
   END IF;
 
@@ -2115,7 +1553,7 @@ CREATE OR REPLACE FUNCTION get_backup_server_id(TEXT) RETURNS INTEGER
 
   SELECT server_id FROM backup_server WHERE hostname || '.' || domain_name = backup_server_fqdn INTO backup_server_id_;
 
-  IF backup_server_id_ IS NULL THEN
+  IF backup_server_id_ IS NULL OR backup_server_id_ = '' THEN
     RAISE EXCEPTION 'Backup server with FQDN: % does not exist in this system',backup_server_fqdn;
   END IF;
 
@@ -2147,7 +1585,7 @@ CREATE OR REPLACE FUNCTION get_pgsql_node_fqdn(INTEGER) RETURNS TEXT
 
   SELECT hostname || '.' || domain_name from pgsql_node WHERE node_id = parameter_ INTO pgsql_node_;
 
-  IF pgsql_node_ IS NULL THEN
+  IF pgsql_node_ IS NULL OR pgsql_node_ = '' THEN
     RAISE EXCEPTION 'PgSQL node with ID: % does not exist in this system',parameter_;
   END IF;
 
@@ -2179,7 +1617,7 @@ CREATE OR REPLACE FUNCTION get_pgsql_node_id(TEXT) RETURNS INTEGER
 
   SELECT node_id FROM pgsql_node WHERE hostname || '.' || domain_name = pgsql_node_fqdn INTO pgsql_node_id_;
 
-  IF pgsql_node_id_ IS NULL THEN
+  IF pgsql_node_id_ IS NULL OR pgsql_node_id_ = '' THEN
     RAISE EXCEPTION 'PgSQL node with FQDN: % does not exist in this system',pgsql_node_fqdn;
   END IF;
 
@@ -2279,7 +1717,7 @@ BEGIN
   	    	   ' -H ' || pgsql_node_fqdn ||
 		   ' -p ' || pgsql_node_port ||
 		   ' -U ' || admin_user || 
-		   ' -j ' || job_row.job_id || 
+		   ' -j ' || job_row.def_id || 
 		   ' -d ' || job_row.dbname || 
 		   ' -e ' || job_row.encryption::TEXT || 
 		   ' -c ' || job_row.backup_code;
@@ -2392,7 +1830,7 @@ CREATE OR REPLACE FUNCTION register_backup_job_catalog(INTEGER,INTEGER,INTEGER,T
  AS $$
  DECLARE
 
-  job_id_ ALIAS FOR $1;
+  def_id_ ALIAS FOR $1;
   backup_server_id_ ALIAS FOR $2;
   pgsql_node_id_ ALIAS FOR $3;
   dbname_ ALIAS FOR $4;
@@ -2416,7 +1854,7 @@ CREATE OR REPLACE FUNCTION register_backup_job_catalog(INTEGER,INTEGER,INTEGER,T
   v_context TEXT; 
 
  BEGIN
-    EXECUTE 'INSERT INTO backup_job_catalog (job_id,
+    EXECUTE 'INSERT INTO backup_job_catalog (def_id,
 					     backup_server_id,
 					     pgsql_node_id,
 					     dbname,
@@ -2435,7 +1873,7 @@ CREATE OR REPLACE FUNCTION register_backup_job_catalog(INTEGER,INTEGER,INTEGER,T
 					     global_log_file,
 					     execution_status) 
 	     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)'
-    USING  job_id_,
+    USING  def_id_,
     	   backup_server_id_,
   	   pgsql_node_id_,
   	   dbname_,
@@ -2467,6 +1905,113 @@ CREATE OR REPLACE FUNCTION register_backup_job_catalog(INTEGER,INTEGER,INTEGER,T
 $$;
 
 ALTER FUNCTION register_backup_job_catalog(INTEGER,INTEGER,INTEGER,TEXT,TIMESTAMP WITH TIME ZONE,TIMESTAMP WITH TIME ZONE,INTERVAL,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,TEXT) OWNER TO pgbackman_user_rw;
+
+
+
+-- ------------------------------------------------------------
+-- Views
+--
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE VIEW jobs_queue AS 
+SELECT a.id,
+       a.registered,
+       a.backup_server_id,
+       b.hostname || '.' || b.domain_name AS backup_server,
+       a.pgsql_node_id,
+       c.hostname || '.' || b.domain_name AS pgsql_node,
+       a.is_assigned
+FROM job_queue a
+INNER JOIN backup_server b ON a.backup_server_id = b.server_id
+INNER JOIN pgsql_node c ON a.pgsql_node_id = c.node_id
+ORDER BY a.registered ASC;
+
+
+CREATE OR REPLACE VIEW show_pgsql_nodes AS
+SELECT lpad(node_id::text,6,'0') AS "NodeID", 
+       hostname || '.' || domain_name AS "FQDN",
+       pgport AS "Pgport",
+       admin_user AS "Admin user",
+       status AS "Status",
+       remarks AS "Remarks" 
+       FROM pgsql_node
+       ORDER BY domain_name,hostname,"Pgport","Admin user","Status";
+
+CREATE OR REPLACE VIEW show_backup_servers AS
+SELECT lpad(server_id::text,5,'0') AS "SrvID", 
+       hostname || '.' || domain_name AS "FQDN",
+       status AS "Status",
+       remarks AS "Remarks" 
+       FROM backup_server
+       ORDER BY domain_name,hostname,"Status";
+
+CREATE OR REPLACE VIEW show_backup_definitions AS
+SELECT lpad(def_id::text,8,'0') AS "DefID",
+       backup_server_id,
+       get_backup_server_fqdn(backup_server_id) AS "Backup server",
+       pgsql_node_id,
+       get_pgsql_node_fqdn(pgsql_node_id) AS "PgSQL node",
+       dbname AS "DBname",
+       minutes_cron || ' ' || hours_cron || ' ' || weekday_cron || ' ' || month_cron || ' ' || day_month_cron AS "Schedule",
+       backup_code AS "Code",
+       encryption::TEXT AS "Encryption",
+       retention_period::TEXT || ' (' || retention_redundancy::TEXT || ')' AS "Retention",
+       job_status AS "Status",
+       extra_parameters AS "Parameters"
+FROM backup_job_definition
+ORDER BY backup_server_id,pgsql_node_id,"DBname","Code","Status";
+
+CREATE OR REPLACE VIEW show_backup_catalog AS
+   SELECT lpad(a.bck_id::text,12,'0') AS "BckID",
+       date_trunc('seconds',a.finished) AS "Finished",
+       a.backup_server_id,
+       get_backup_server_fqdn(a.backup_server_id) AS "Backup server",
+       a.pgsql_node_id,
+       get_pgsql_node_fqdn(a.pgsql_node_id) AS "PgSQL node",
+       a.dbname AS "DBname",
+       date_trunc('seconds',a.duration) AS "Duration",
+       pg_size_pretty(a.pg_dump_file_size+a.pg_dump_roles_file_size+a.pg_dump_dbconfig_file_size) AS "Size",
+       a.backup_code AS "Code",
+       a.execution_status AS "Status" 
+   FROM backup_job_catalog a 
+   JOIN backup_job_definition b ON a.def_id = b.def_id 
+   ORDER BY "Finished" DESC,backup_server_id,pgsql_node_id,"DBname","Code","Status";
+
+CREATE OR REPLACE VIEW show_backup_job_details AS
+   SELECT lpad(a.bck_id::text,12,'0') AS "BckID",
+       a.bck_id AS bck_id,
+       date_trunc('seconds',a.registered) AS "Registered",
+       date_trunc('seconds',a.started) AS "Started",
+       date_trunc('seconds',a.finished) AS "Finished",
+       date_trunc('seconds',a.finished+b.retention_period) AS "Valid until",
+       date_trunc('seconds',a.duration) AS "Duration",
+       lpad(a.def_id::text,8,'0') AS "DefID",
+       b.retention_period::TEXT || ' (' || b.retention_redundancy::TEXT || ')' AS "Retention",
+       b.minutes_cron || ' ' || b.hours_cron || ' ' || b.weekday_cron || ' ' || b.month_cron || ' ' || b.day_month_cron AS "Schedule",
+       b.encryption::TEXT AS "Encryption",
+       b.extra_parameters As "Extra parameters",
+       a.backup_server_id,
+       get_backup_server_fqdn(a.backup_server_id) AS "Backup server",
+       a.pgsql_node_id,
+       get_pgsql_node_fqdn(a.pgsql_node_id) AS "PgSQL node",
+       a.dbname AS "DBname",
+       a.pg_dump_file AS "DB dump file",
+       a.pg_dump_log_file AS "DB log file",
+       pg_size_pretty(a.pg_dump_file_size) AS "DB dump size",
+       a.pg_dump_roles_file AS "DB roles dump file",
+       a.pg_dump_roles_log_file AS "DB roles log file",
+       pg_size_pretty(a.pg_dump_roles_file_size) AS "DB roles dump size",
+       a.pg_dump_dbconfig_file AS "DB config dump file",
+       a.pg_dump_dbconfig_log_file AS "DB config log file",
+       pg_size_pretty(a.pg_dump_dbconfig_file_size) AS "DB config dump size",
+       pg_size_pretty(a.pg_dump_file_size+a.pg_dump_roles_file_size+a.pg_dump_dbconfig_file_size) AS "Total size",
+       b.backup_code AS "Code",
+       a.execution_status AS "Status" 
+   FROM backup_job_catalog a 
+   JOIN backup_job_definition b ON a.def_id = b.def_id 
+   ORDER BY "Finished" DESC,backup_server_id,pgsql_node_id,"DBname","Code","Status";
+
+
 
 
 COMMIT;

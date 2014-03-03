@@ -83,9 +83,13 @@ class pgbackman_cli(cmd.Cmd):
         
         if len(arg_list) == 0:
            
-            self.db.show_backup_servers()
+            try:
+                self.db.show_backup_servers()
+            except Exception as e:
+                print "\n[ERROR]: ",e
+                
         else:
-            print "\n* ERROR - This command does not accept parameters.\n* Type help or ? to list commands\n"
+            print "\n[ERROR] - This command does not accept parameters.\n          Type help or ? to list commands\n"
             
 
     # ############################################
@@ -259,12 +263,15 @@ class pgbackman_cli(cmd.Cmd):
         
         if len(arg_list) == 0:
            
-            self.db.show_pgsql_nodes()
+            try:
+                self.db.show_pgsql_nodes()
+                
+            except Exception as e:
+                print "\n[ERROR]: ",e
             
         else:
-            print "\n* ERROR - This command does not accept parameters.\n* Type help or ? to list commands\n"
-            
-            
+            print "\n[ERROR] - This command does not accept parameters.\n          Type help or ? to list commands\n"
+                        
             
     # ############################################
     # Method do_register_pgsql_node
@@ -438,58 +445,64 @@ class pgbackman_cli(cmd.Cmd):
 
 
     # ############################################
-    # Method do_show_backup_server_job_definitions
+    # Method do_show_backup_server_backup_definitions
     # ############################################
 
-    def do_show_backup_server_job_definitions(self,arg):
+    def do_show_backup_server_backup_definitions(self,arg):
         """
-        show_backup_server_job_definitions [SrvID | FQDN]
+        show_backup_server_backup_definitions [SrvID | FQDN]
 
 
         """
-        
-       
         arg_list = arg.split()
         
         if len(arg_list) == 0:
-            
-            ack = "n"
             
             print "--------------------------------------------------------"
             server_id = raw_input("# SrvID / FQDN: ")
             print "--------------------------------------------------------"
 
-            if server_id.isdigit():
-                if self.db.show_backup_server_job_definitions(self.db.get_backup_server_fqdn(server_id)):
-                    print "\n* Done\n"
-            else:
-                if self.db.show_backup_server_job_definitions(server_id):
-                        print "\n* Done\n"
-                    
+            try:
+
+                if server_id.isdigit():
+                    self.db.get_backup_server_fqdn(server_id)
+                    self.db.show_backup_server_backup_definitions(server_id)
+                else:
+                    self.db.show_backup_server_backup_definitions(self.db.get_backup_server_id(server_id))
+                                    
+            except Exception as e:
+                print "\n[ERROR]: ",e
+
         elif len(arg_list) == 1:
 
             server_id = arg_list[0]
             
-            if server_id.isdigit():
-                if self.db.show_backup_server_job_definitions(self.db.get_backup_server_fqdn(server_id)):
-                    print "\n* Done\n"
-            else:
-                if self.db.show_backup_server_job_definitions(server_id):
-                    print "\n* Done\n"
-                    
-        else:
-            print "\n* ERROR - Wrong number of parameters used.\n* Type help or ? to list commands\n"
+            print "--------------------------------------------------------"
+            print "# SrvID / FQDN: " + server_id
+            print "--------------------------------------------------------"
 
+            try:
+                if server_id.isdigit():
+                    self.db.get_backup_server_fqdn(server_id)
+                    self.db.show_backup_server_backup_definitions(server_id)
+                else:
+                    self.db.show_backup_server_backup_definitions(self.db.get_backup_server_id(server_id))
+                    
+            except Exception as e:
+                print "\n[ERROR]: ",e
+
+        else:
+            print "\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n"
         
 
 
     # ############################################
-    # Method do_show_pgsql_node_job_definitions
+    # Method do_show_pgsql_node_backup_definitions
     # ############################################
 
-    def do_show_pgsql_node_job_definitions(self,arg):
+    def do_show_pgsql_node_backup_definitions(self,arg):
         """
-        show_pgsql_node_job_definitions [NodeID | FQDN]
+        show_pgsql_node_backup_definitions [NodeID | FQDN]
 
 
         """
@@ -497,74 +510,86 @@ class pgbackman_cli(cmd.Cmd):
         arg_list = arg.split()
         
         if len(arg_list) == 0:
-            
-            ack = "n"
-            
+                        
             print "--------------------------------------------------------"
             node_id = raw_input("# NodeID / FQDN: ")
             print "--------------------------------------------------------"
 
-            if node_id.isdigit():
-                if self.db.show_pgsql_node_job_definitions(self.db.get_pgsql_node_fqdn(node_id)):
-                    print "\n* Done\n"
-            else:
-                if self.db.show_pgsql_node_job_definitions(node_id):
-                        print "\n* Done\n"
+            try:
+
+                if node_id.isdigit():
+                    self.db.get_pgsql_node_fqdn(node_id)
+                    self.db.show_pgsql_node_backup_definitions(node_id)
+                else:
+                    self.db.show_pgsql_node_backup_definitions(self.db.get_pgsql_node_id(node_id))
+
+            except Exception as e:
+                print "\n[ERROR]: ",e     
                     
         elif len(arg_list) == 1:
 
             node_id = arg_list[0]
             
-            if node_id.isdigit():
-                if self.db.show_pgsql_node_job_definitions(self.db.get_pgsql_node_fqdn(node_id)):
-                    print "\n* Done\n"
-            else:
-                if self.db.show_pgsql_node_job_definitions(node_id):
-                    print "\n* Done\n"
-                    
+            print "--------------------------------------------------------"
+            print "# NodeID / FQDN: " + node_id
+            print "--------------------------------------------------------"
+
+            try:
+                if node_id.isdigit():
+                    self.db.get_pgsql_node_fqdn(node_id)
+                    self.db.show_pgsql_node_backup_definitions(node_id)
+                else:
+                    self.db.show_pgsql_node_backup_definitions(self.db.get_pgsql_node_id(node_id))
+                         
+            except Exception as e:
+                print "\n[ERROR]: ",e     
+
         else:
-            print "\n* ERROR - Wrong number of parameters used.\n* Type help or ? to list commands\n"
-
-        
+            print "\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n"
 
 
     # ############################################
-    # Method do_show_database_job_definitions
+    # Method do_show_database_backup_definitions
     # ############################################
 
-    def do_show_database_job_definitions(self,arg):
+    def do_show_database_backup_definitions(self,arg):
         """
-        show_database_job_definitions [DBname]
+        show_database_backup_definitions [DBname]
 
 
         """
-
-       
         arg_list = arg.split()
         
         if len(arg_list) == 0:
-            
-            ack = "n"
-            
+                   
             print "--------------------------------------------------------"
             dbname = raw_input("# DBname: ")
             print "--------------------------------------------------------"
             
-            if self.db.show_database_job_definitions(dbname):
-                print "\n* Done\n"
+            try:
+                
+                self.db.show_database_backup_definitions(dbname)
+                
+            except Exception as e:
+                print "\n[ERROR]: ",e     
                 
                     
         elif len(arg_list) == 1:
 
             dbname = arg_list[0]
             
-            if self.db.show_database_job_definitions(dbname):
-                print "\n* Done\n"
+            print "--------------------------------------------------------"
+            print "# DBname: " + dbname
+            print "--------------------------------------------------------"
+            
+            try:
+                self.db.show_database_backup_definitions(dbname)
+            
+            except Exception as e:
+                print "\n[ERROR]: ",e     
                 
         else:
-            print "\n* ERROR - Wrong number of parameters used.\n* Type help or ? to list commands\n"
-
-        
+            print "\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n"
 
 
     # ############################################
@@ -746,44 +771,191 @@ class pgbackman_cli(cmd.Cmd):
         """
 
     # ############################################
-    # Method do_show_backup_server_catalog
+    # Method do_show_backup_server_backup_catalog
     # ############################################
 
-    def do_show_backup_server_catalog(self,arg):
+    def do_show_backup_server_backup_catalog(self,arg):
         """
-        show_backup_server_catalog [SrvID]
+        show_backup_server_backup_catalog [SrvID | FQDN]
 
         """
+        arg_list = arg.split()
+        
+        if len(arg_list) == 0:
+            
+            print "--------------------------------------------------------"
+            server_id = raw_input("# SrvID / FQDN: ")
+            print "--------------------------------------------------------"
+
+            try:
+
+                if server_id.isdigit():
+                    self.db.get_backup_server_fqdn(server_id)
+                    self.db.show_backup_server_backup_catalog(server_id)
+                else:
+                    self.db.show_backup_server_backup_catalog(self.db.get_backup_server_id(server_id))
+                                    
+            except Exception as e:
+                print "\n[ERROR]: ",e
+
+        elif len(arg_list) == 1:
+
+            server_id = arg_list[0]
+            
+            print "--------------------------------------------------------"
+            print "# SrvID / FQDN: " + server_id
+            print "--------------------------------------------------------"
+
+            try:
+                if server_id.isdigit():
+                    self.db.get_backup_server_fqdn(server_id)
+                    self.db.show_backup_server_backup_catalog(server_id)
+                else:
+                    self.db.show_backup_server_backup_catalog(self.db.get_backup_server_id(server_id))
+                    
+            except Exception as e:
+                print "\n[ERROR]: ",e
+
+        else:
+            print "\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n"
+        
 
     # ############################################
-    # Method do_show_pgsql_node_catalog
+    # Method do_show_pgsql_node_backup_catalog
     # ############################################
 
-    def do_show_pgsql_node_catalog(self,arg):
+    def do_show_pgsql_node_backup_catalog(self,arg):
         """
-        show_pgsql_node_catalog [NodeID | FQDN]
+        show_pgsql_node_backup_catalog [NodeID | FQDN]
 
         """
+        arg_list = arg.split()
+        
+        if len(arg_list) == 0:
+            
+            print "--------------------------------------------------------"
+            pgsql_node_id = raw_input("# NodeID / FQDN: ")
+            print "--------------------------------------------------------"
+
+            try:
+
+                if pgsql_node_id.isdigit():
+                    self.db.get_pgsql_node_fqdn(pgsql_node_id)
+                    self.db.show_pgsql_node_backup_catalog(pgsql_node_id)
+                else:
+                    self.db.show_pgsql_node_backup_catalog(self.db.get_pgsql_node_id(pgsql_node_id))
+                                    
+            except Exception as e:
+                print "\n[ERROR]: ",e
+
+        elif len(arg_list) == 1:
+
+            pgsql_node_id = arg_list[0]
+            
+            print "--------------------------------------------------------"
+            print "# NodeID / FQDN: " + pgsql_node_id
+            print "--------------------------------------------------------"
+
+            try:
+                if pgsql_node_id.isdigit():
+                    self.db.get_pgsql_node_fqdn(pgsql_node_id)
+                    self.db.show_pgsql_node_backup_catalog(pgsql_node_id)
+                else:
+                    self.db.show_pgsql_node_backup_catalog(self.db.get_backup_pgsql_node_id(pgsql_node_id))
+                    
+            except Exception as e:
+                print "\n[ERROR]: ",e
+
+        else:
+            print "\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n"
+        
+
 
     # ############################################
-    # Method do_show_database_catalog
+    # Method do_show_database_backup_catalog
     # ############################################
 
-    def do_show_database_catalog(self,arg):
+    def do_show_database_backup_catalog(self,arg):
         """
-        show_database_catalog [DBname]
+        show_database_backup_catalog [DBname]
 
         """
+        arg_list = arg.split()
+        
+        if len(arg_list) == 0:
+                   
+            print "--------------------------------------------------------"
+            dbname = raw_input("# DBname: ")
+            print "--------------------------------------------------------"
+            
+            try:
+                
+                self.db.show_database_backup_catalog(dbname)
+                
+            except Exception as e:
+                print "\n[ERROR]: ",e     
+                
+                    
+        elif len(arg_list) == 1:
+
+            dbname = arg_list[0]
+            
+            print "--------------------------------------------------------"
+            print "# DBname: " + dbname
+            print "--------------------------------------------------------"
+            
+            try:
+                self.db.show_database_backup_catalog(dbname)
+            
+            except Exception as e:
+                print "\n[ERROR]: ",e     
+                
+        else:
+            print "\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n"
+        
 
     # ############################################
     # Method do_show_backup_job_details
     # ############################################
 
-    def do_show_database_catalog_details(self,arg):
+    def do_show_backup_job_details(self,arg):
         """
-        show_database_catalog_details [BckID]
+        show_backup_job_details [BckID]
 
         """
+        arg_list = arg.split()
+        
+        if len(arg_list) == 0:
+                   
+            print "--------------------------------------------------------"
+            bck_id = raw_input("# BckID: ")
+            print "--------------------------------------------------------"
+            
+            try:
+                
+                self.db.show_backup_job_details(bck_id)
+                
+            except Exception as e:
+                print "\n[ERROR]: ",e     
+                
+                    
+        elif len(arg_list) == 1:
+
+            bck_id = arg_list[0]
+            
+            print "--------------------------------------------------------"
+            print "# BckID: " + bck_id
+            print "--------------------------------------------------------"
+            
+            try:
+                self.db.show_backup_job_details(bck_id)
+            
+            except Exception as e:
+                print "\n[ERROR]: ",e     
+                
+        else:
+            print "\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n"
+        
 
     # ############################################
     # Method do_show_pgbackman_config
@@ -836,22 +1008,22 @@ class pgbackman_cli(cmd.Cmd):
         """   
  
     # ############################################
-    # Method do_show_backup_server_default_config
+    # Method do_show_backup_server_config
     # ############################################
 
-    def do_show_backup_server_default_config(self,arg):
+    def do_show_backup_server_config(self,arg):
         """
-        show_backup_server_default_config [SrvID | FQDN]
+        show_backup_server_config [SrvID | FQDN]
 
         """    
 
     # ############################################
-    # Method do_show_pgsql_node_default_config
+    # Method do_show_pgsql_node_config
     # ############################################
 
-    def do_show_pgsql_node_default_config(self,arg):
+    def do_show_pgsql_node_config(self,arg):
         """
-        show_pgsql_node_default_config [NodeID | FQDN]
+        show_pgsql_node_config [NodeID | FQDN]
 
         """    
 
@@ -872,7 +1044,7 @@ class pgbackman_cli(cmd.Cmd):
     # ############################################
 
     def default(self,line):
-        print "* Unknown command: %s \n* Type help or \? to list commands\n" % line
+        print "\nUnknown command: %s \nType help or \? to list commands\n" % line
 
 
     # ############################################

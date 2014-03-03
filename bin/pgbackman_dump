@@ -468,9 +468,9 @@ def get_filename_id(global_parameters,dump_type,file_type):
     timestamp = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
 
     if dump_type == 'CLUSTER':
-        filename_id = global_parameters['pgsql_node_backup_dir'] + '/' + file_type + '/' + dump_type + '-' + pgsql_node + '-v' + global_parameters['pgsql_node_release'] + '-j' + backup_job_id + '-c' + backup_code + '-' + timestamp
+        filename_id = global_parameters['pgsql_node_backup_dir'] + '/' + file_type + '/' + dump_type + '-' + pgsql_node + '-v' + global_parameters['pgsql_node_release'] + '-j' + def_id + '-c' + backup_code + '-' + timestamp
     else:
-        filename_id = global_parameters['pgsql_node_backup_dir'] + '/' + file_type + '/' + dbname + '-' + pgsql_node + '-v' + global_parameters['pgsql_node_release'] + '-j' + backup_job_id + '-c' + backup_code + '-fcustom-' + timestamp + '-' + dump_type 
+        filename_id = global_parameters['pgsql_node_backup_dir'] + '/' + file_type + '/' + dbname + '-' + pgsql_node + '-v' + global_parameters['pgsql_node_release'] + '-j' + def_id + '-c' + backup_code + '-fcustom-' + timestamp + '-' + dump_type 
 
 
     return filename_id
@@ -606,7 +606,7 @@ def register_backup_job_catalog(global_parameters,db):
     # Updating database
     #
 
-    return_code = db.register_backup_job_catalog(backup_job_id,
+    return_code = db.register_backup_job_catalog(def_id,
                                                  global_parameters['backup_server_id'],  
                                                  global_parameters['pgsql_node_id'],
                                                  dbname,
@@ -627,15 +627,15 @@ def register_backup_job_catalog(global_parameters,db):
                                                  )
     
     if return_code == True:
-        logs.logger.info('Backup job catalog for jobID: %s updated in the database',backup_job_id)
+        logs.logger.info('Backup job catalog for DefID: %s updated in the database',def_id)
     elif return_code == False:
-        logs.logger.info('Problems updating the backup job catalog for jobID: %s in the database',backup_job_id)
+        logs.logger.info('Problems updating the backup job catalog for DefID: %s in the database',def_id)
 
         try:
             pending_log_file = global_parameters['pgsql_node_backup_dir']+ '/log/backup_job_catalog_updates_pending.log'
 
             with open(pending_log_file,'a+') as catalog_pending:
-                catalog_pending.write(str(backup_job_id) + ',' +
+                catalog_pending.write(str(def_id) + ',' +
                                       str(global_parameters['backup_server_id']) + ',' +   
                                       str(global_parameters['pgsql_node_id']) + ',' +   
                                       dbname + ',' +   
@@ -651,7 +651,7 @@ def register_backup_job_catalog(global_parameters,db):
                                       pg_dump_dbconfig_file + ',' +   
                                       str(pg_dump_dbconfig_file_size) + ',' +   
                                       pg_dump_dbconfig_log_file + ',' +   
-                                      global_parameters['global_log_file'] + ',' +   
+                                      global_parameters['global_log_file'] + ',' + 
                                       global_parameters['execution_status'] +
                                       '\n')
                 
@@ -767,7 +767,7 @@ if __name__ == '__main__':
     parser.add_argument('-H', metavar='PGSQL-NODE', required=True, help='PgSQL node FQDN', dest='pgsql_node')
     parser.add_argument('-p', metavar='PGSQL-NODE-PORT', required=True, help='PgSQL node port', dest='pgsql_node_port')
     parser.add_argument('-U', metavar='PGSQL-NODE_ADMIN-USER', required=True, help='PgSQL node admin user', dest='pgsql_node_admin_user')
-    parser.add_argument('-j', metavar='JOBID', required=True, help='Backup job ID', dest='backup_job_id')
+    parser.add_argument('-j', metavar='JOBID', required=True, help='Backup job ID', dest='def_id')
     parser.add_argument('-d', metavar='DBNAME', required=False, help='Database name', dest='dbname')
     parser.add_argument('-c', metavar='[FULL|SCHEMA|DATA|CLUSTER]', choices=['FULL', 'SCHEMA', 'DATA', 'CLUSTER'], required=True, help='Backup code', dest='backup_code')
     parser.add_argument('-e', metavar='[FALSE|TRUE]', default=False, required=True, help='Activate encryption', dest='encryption')
@@ -796,8 +796,8 @@ if __name__ == '__main__':
         logs.logger.error('PgSQL node admin user parameter not defined')
         sys.exit(1)
     
-    if args.backup_job_id:
-        backup_job_id = args.backup_job_id
+    if args.def_id:
+        def_id = args.def_id
     else:
         logs.logger.error('Backup jobID parameter not defined')
         sys.exit(1)
