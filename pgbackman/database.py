@@ -151,7 +151,7 @@ class pgbackman_db():
     # ############################################
 
     def register_backup_server(self,hostname,domain,status,remarks):
-        """A function to register a backup server"""
+        """A method to register a backup server"""
 
         self.pg_connect()
 
@@ -160,12 +160,9 @@ class pgbackman_db():
                 try:
                     self.cur.execute('SELECT register_backup_server(%s,%s,%s,%s)',(hostname,domain,status,remarks))
                     self.conn.commit()                        
-
-                    return True
                 
                 except psycopg2.Error as  e:
-                    print e
-                    return False
+                    raise e
 
             self.pg_close()
 
@@ -232,12 +229,9 @@ class pgbackman_db():
                 try:
                     self.cur.execute('SELECT register_pgsql_node(%s,%s,%s,%s,%s,%s)',(hostname,domain,port,admin_user,status,remarks))
                     self.conn.commit()                        
-                    
-                    return True
-                
+                                   
                 except psycopg2.Error as  e:
-                    print e
-                    return False
+                    raise e
                 
             self.pg_close()
 
@@ -284,12 +278,9 @@ class pgbackman_db():
                                                                                                             weekday_cron,month_cron,day_month_cron,backup_code,encryption, \
                                                                                                             retention_period,retention_redundancy,extra_parameters,job_status,remarks))
                     self.conn.commit()                        
-                    
-                    return True
-                
+                                    
                 except psycopg2.Error as e:
-                    print e
-                    return False
+                    raise e
             
             self.pg_close()
   

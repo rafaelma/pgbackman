@@ -81,7 +81,7 @@ CREATE TABLE pgsql_node(
   remarks TEXT
 );
 
-ALTER TABLE pgsql_node ADD PRIMARY KEY (hostname,domain_name,pgport,admin_user);
+ALTER TABLE pgsql_node ADD PRIMARY KEY (hostname,domain_name,pgport);
 CREATE UNIQUE INDEX ON pgsql_node(node_id);
 
 ALTER TABLE pgsql_node OWNER TO pgbackman_user_rw;
@@ -357,7 +357,6 @@ CREATE TABLE backup_job_catalog(
   pg_dump_dbconfig_file_size BIGINT,
   pg_dump_dbconfig_log_file TEXT,
   global_log_file TEXT NOT NULL,
-  backup_code CHARACTER VARYING(10) NOT NULL,
   execution_status TEXT
 );
 
@@ -454,9 +453,6 @@ ALTER TABLE ONLY backup_job_catalog
 
 ALTER TABLE ONLY backup_job_catalog
     ADD FOREIGN KEY (pgsql_node_id) REFERENCES pgsql_node (node_id) MATCH FULL ON DELETE RESTRICT;
-
-ALTER TABLE ONLY backup_job_catalog
-    ADD FOREIGN KEY (backup_code) REFERENCES backup_code (code) MATCH FULL ON DELETE RESTRICT;
 
 ALTER TABLE ONLY backup_job_catalog
     ADD FOREIGN KEY (execution_status) REFERENCES job_execution_status (code) MATCH FULL ON DELETE RESTRICT;
@@ -991,7 +987,7 @@ CREATE OR REPLACE FUNCTION register_pgsql_node(TEXT,TEXT,INTEGER,TEXT,CHARACTER 
     status_ := get_default_pgsql_node_parameter('pgsql_node_status');
    END IF;
 
-   SELECT count(*) AS cnt FROM pgsql_node WHERE hostname = hostname_ AND domain_name = domain_name_ AND pgport = pgport_ AND admin_user = admin_user_ INTO node_cnt;
+   SELECT count(*) AS cnt FROM pgsql_node WHERE hostname = hostname_ AND domain_name = domain_name_ AND pgport = pgport_ INTO node_cnt;
 
    IF node_cnt = 0 THEN     
 
@@ -1005,7 +1001,7 @@ CREATE OR REPLACE FUNCTION register_pgsql_node(TEXT,TEXT,INTEGER,TEXT,CHARACTER 
 
    ELSIF  node_cnt > 0 THEN
 
-    EXECUTE 'UPDATE pgsql_node SET status = $5, remarks = $6 WHERE hostname = $1 AND domain_name = $2 AND pgport = $3 AND admin_user = $4'
+    EXECUTE 'UPDATE pgsql_node SET admin_user = $4, status = $5, remarks = $6 WHERE hostname = $1 AND domain_name = $2 AND pgport = $3'
     USING hostname_,
           domain_name_,
           pgport_,
@@ -1971,7 +1967,7 @@ CREATE OR REPLACE VIEW show_backup_catalog AS
        a.dbname AS "DBname",
        date_trunc('seconds',a.duration) AS "Duration",
        pg_size_pretty(a.pg_dump_file_size+a.pg_dump_roles_file_size+a.pg_dump_dbconfig_file_size) AS "Size",
-       a.backup_code AS "Code",
+       b.backup_code AS "Code",
        a.execution_status AS "Status" 
    FROM backup_job_catalog a 
    JOIN backup_job_definition b ON a.def_id = b.def_id 
