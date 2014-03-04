@@ -12,7 +12,7 @@ CREATE USER pgbackman_user_ro;
 \echo '# [Creating database: pgbackman]\n'
 CREATE DATABASE pgbackman OWNER pgbackman_user_rw;
 
-\c pgbackman
+\c pgbackman		  
 
 BEGIN;
 
@@ -841,8 +841,6 @@ CREATE OR REPLACE FUNCTION register_backup_server(TEXT,TEXT,CHARACTER VARYING,TE
   status_ ALIAS FOR $3;
   remarks_ ALIAS FOR $4;  
 
-  server_cnt INTEGER;
-
   v_msg     TEXT;
   v_detail  TEXT;
   v_context TEXT;
@@ -860,25 +858,11 @@ CREATE OR REPLACE FUNCTION register_backup_server(TEXT,TEXT,CHARACTER VARYING,TE
     status_ := get_default_backup_server_parameter('backup_server_status');
    END IF;
 
-   SELECT count(*) AS cnt FROM backup_server WHERE hostname = hostname_ AND domain_name = domain_name_ INTO server_cnt;
-
-   IF server_cnt = 0 THEN     
-
-    EXECUTE 'INSERT INTO backup_server (hostname,domain_name,status,remarks) VALUES ($1,$2,$3,$4)'
-    USING hostname_,
-          domain_name_,
-          status_,
-          remarks_;         
-
-   ELSIF  server_cnt > 0 THEN
-
-    EXECUTE 'UPDATE backup_server SET status = $3, remarks = $4 WHERE hostname = $1 AND domain_name = $2'
-    USING hostname_,
-          domain_name_,
-          status_,
-          remarks_;	
-
-   END IF;
+   EXECUTE 'INSERT INTO backup_server (hostname,domain_name,status,remarks) VALUES ($1,$2,$3,$4)'
+   USING hostname_,
+         domain_name_,
+         status_,
+         remarks_;         
 
    RETURN TRUE;
  EXCEPTION WHEN others THEN
@@ -899,33 +883,33 @@ ALTER FUNCTION register_backup_server(TEXT,TEXT,CHARACTER VARYING,TEXT) OWNER TO
 --
 -- ------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION delete_backup_server(TEXT) RETURNS BOOLEAN
+CREATE OR REPLACE FUNCTION delete_backup_server(INTEGER) RETURNS BOOLEAN
  LANGUAGE plpgsql 
  SECURITY INVOKER 
  SET search_path = public, pg_temp
  AS $$
  DECLARE
-  backup_server_ ALIAS FOR $1;
-  server_id_ INTEGER;
+  backup_server_id_ ALIAS FOR $1;
+  server_cnt INTEGER;
 
   v_msg     TEXT;
   v_detail  TEXT;
   v_context TEXT;
  BEGIN
 
-    SELECT get_backup_server_id(backup_server_) INTO server_id_;
+	SELECT count(*) FROM backup_server WHERE server_id = backup_server_id_ INTO server_cnt;
 
-    IF server_id_ IS NOT NULL THEN
+   IF server_cnt != 0 THEN
 
      EXECUTE 'DELETE FROM backup_server_config WHERE server_id = $1'
-     USING server_id_;
+     USING backup_server_id_;
    
      EXECUTE 'DELETE FROM backup_server WHERE server_id = $1'
-     USING server_id_;
+     USING backup_server_id_;
 
      RETURN TRUE;
     ELSE
-      RAISE EXCEPTION 'Backup server % does not exist',backup_server_; 
+      RAISE EXCEPTION 'Backup server % does not exist',backup_server_id_; 
     END IF;
 	   
    EXCEPTION WHEN others THEN
@@ -960,8 +944,6 @@ CREATE OR REPLACE FUNCTION register_pgsql_node(TEXT,TEXT,INTEGER,TEXT,CHARACTER 
   status_ ALIAS FOR $5;
   remarks_ ALIAS FOR $6;  
 
-  node_cnt INTEGER;
-
   v_msg     TEXT;
   v_detail  TEXT;
   v_context TEXT;
@@ -987,10 +969,6 @@ CREATE OR REPLACE FUNCTION register_pgsql_node(TEXT,TEXT,INTEGER,TEXT,CHARACTER 
     status_ := get_default_pgsql_node_parameter('pgsql_node_status');
    END IF;
 
-   SELECT count(*) AS cnt FROM pgsql_node WHERE hostname = hostname_ AND domain_name = domain_name_ AND pgport = pgport_ INTO node_cnt;
-
-   IF node_cnt = 0 THEN     
-
     EXECUTE 'INSERT INTO pgsql_node (hostname,domain_name,pgport,admin_user,status,remarks) VALUES ($1,$2,$3,$4,$5,$6)'
     USING hostname_,
           domain_name_,
@@ -999,19 +977,7 @@ CREATE OR REPLACE FUNCTION register_pgsql_node(TEXT,TEXT,INTEGER,TEXT,CHARACTER 
           status_,
           remarks_;         
 
-   ELSIF  node_cnt > 0 THEN
-
-    EXECUTE 'UPDATE pgsql_node SET admin_user = $4, status = $5, remarks = $6 WHERE hostname = $1 AND domain_name = $2 AND pgport = $3'
-    USING hostname_,
-          domain_name_,
-          pgport_,
-          admin_user_,
-          status_,
-          remarks_;
-
-   END IF;
-
-   RETURN TRUE;
+    RETURN TRUE;
  EXCEPTION WHEN others THEN
    	GET STACKED DIAGNOSTICS	
             v_msg     = MESSAGE_TEXT,
@@ -1030,39 +996,36 @@ ALTER FUNCTION register_pgsql_node(TEXT,TEXT,INTEGER,TEXT,CHARACTER VARYING,TEXT
 --
 -- ------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION delete_pgsql_node(TEXT) RETURNS BOOLEAN
+CREATE OR REPLACE FUNCTION delete_pgsql_node(INTEGER) RETURNS BOOLEAN
  LANGUAGE plpgsql 
  SECURITY INVOKER 
  SET search_path = public, pg_temp
  AS $$
  DECLARE
-  pgsql_node_ ALIAS FOR $1;
-  node_id_ INTEGER;
+  pgsql_node_id_ ALIAS FOR $1;
+  node_cnt INTEGER;
 
   v_msg     TEXT;
   v_detail  TEXT;
   v_context TEXT;
  BEGIN
 
- SELECT get_pgsql_node_id(pgsql_node_) INTO node_id_;
+ SELECT count(*) FROM pgsql_node WHERE node_id = pgsql_node_id_ INTO node_cnt;
 
-   IF node_id_ IS NOT NULL THEN    
-
-    EXECUTE 'DELETE FROM backup_job_definition WHERE pgsql_node_id = $1'
-    USING node_id_;
+   IF node_cnt !=0 THEN    
     
     EXECUTE 'DELETE FROM pgsql_node_config WHERE node_id = $1'
-    USING node_id_;
+    USING pgsql_node_id_;
 
     EXECUTE 'DELETE FROM job_queue WHERE pgsql_node_id = $1'
-    USING node_id_;
+    USING pgsql_node_id_;
 
     EXECUTE 'DELETE FROM pgsql_node WHERE node_id = $1'
-    USING node_id_;
+    USING pgsql_node_id_;
 
     RETURN TRUE;
    ELSE
-    RAISE EXCEPTION 'PgSQL node % does not exist',pgsql_node_;
+    RAISE EXCEPTION 'PgSQL node % does not exist',pgsql_node_id_;
    END IF; 
 
   EXCEPTION WHEN others THEN

@@ -181,12 +181,9 @@ class pgbackman_db():
                 try:
                     self.cur.execute('SELECT delete_backup_server(%s)',(server_id,))
                     self.conn.commit()                        
-                    
-                    return True
-
+              
                 except psycopg2.Error as e:
-                    print e
-                    return False
+                    raise e
                     
             self.pg_close()
 
@@ -250,12 +247,9 @@ class pgbackman_db():
                 try:
                     self.cur.execute('SELECT delete_pgsql_node(%s)',(node_id,))
                     self.conn.commit()                        
-                    
-                    return True
             
                 except psycopg2.Error as e:
-                    print e
-                    return False
+                    raise e
             
             self.pg_close()
 

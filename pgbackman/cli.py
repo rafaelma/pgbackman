@@ -69,16 +69,26 @@ class pgbackman_cli(cmd.Cmd):
 
     def do_show_backup_servers(self,args):
         """
-        This command shows all backup servers 
-        registered in PgBackMan.
-
-        Command: show_backup_servers
+        DESCRIPTION:
+        This command shows all backup servers registered in PgBackMan.
+        
+        COMMAND:
+        show_backup_servers
         """
         
-        arg_list = args.split()
+        #
+        # If a parameter has more than one token, it has to be
+        # defined between doble quotes
+        #
+        
+        try: 
+            arg_list = shlex.split(args)
+        
+        except ValueError as e:
+            print "\n[ERROR]: ",e,"\n"
+            return False
         
         if len(arg_list) == 0:
-           
             try:
                 self.db.show_backup_servers()
             except Exception as e:
@@ -94,13 +104,14 @@ class pgbackman_cli(cmd.Cmd):
 
     def do_register_backup_server(self,args):
         """
-        This command can be used to register or update 
-        a backup server in PgBackMan.
+        DESCRIPTION:
+        This command registers a backup server in PgBackMan.
 
-        Command: register_backup_server [hostname] [domain] [status] [remarks]
+        COMMAND:
+        register_backup_server [hostname] [domain] [status] [remarks]
 
-        Status:
-        -------
+        [Status]:
+        ---------
         RUNNING: Backup server running and online
         DOWN: Backup server not online.
         """
@@ -122,7 +133,7 @@ class pgbackman_cli(cmd.Cmd):
         #
 
         if len(arg_list) == 0:
-     
+            
             ack = ""
             domain_default = self.db.get_default_backup_server_parameter("domain")
             status_default = self.db.get_default_backup_server_parameter("backup_server_status")
@@ -154,7 +165,7 @@ class pgbackman_cli(cmd.Cmd):
                     print "\n[ERROR]: Could not register this backup server\n",e  
 
             elif ack.lower() == "no":
-                print "\n[Done]\n"
+                print "\n[Aborted]\n"
 
         #
         # Command with the 4 parameters that can be defined.
@@ -189,11 +200,15 @@ class pgbackman_cli(cmd.Cmd):
 
     def do_delete_backup_server(self,args):
         """
-        This command can be used to delete a backup 
-        server registered in PgBackMan.
+        DESCRIPTION:
+        This command deletes a backup server registered in PgBackMan.
 
+        NOTE: This command will not work if there are backup job definitions 
+        registered in the server we want to delete. This is done on purpose 
+        to avoid operator errors with catastrophic consequences.
+
+        COMMAND:
         delete_backup_server [SrvID | FQDN]
-
         """
         
         try: 
@@ -202,7 +217,11 @@ class pgbackman_cli(cmd.Cmd):
         except ValueError as e:
             print "\n[ERROR]: ",e,"\n"
             return False
-               
+              
+        #
+        # Command without parameters
+        #
+ 
         if len(arg_list) == 0:
             
             ack = ""
@@ -210,40 +229,62 @@ class pgbackman_cli(cmd.Cmd):
             print "--------------------------------------------------------"
             server_id = raw_input("# SrvID / FQDN: ")
             print
-            ack = raw_input("# Are you sure you want to delete this server? (yes/no): ")
+
+            while ack != "yes" and ack != "no":
+                ack = raw_input("# Are you sure you want to delete this server? (yes/no): ")
+            
             print "--------------------------------------------------------"
 
             if ack.lower() == "yes":
                 if server_id.isdigit():
-                    if self.db.delete_backup_server(self.db.get_backup_server_fqdn(server_id)):
-                        print "\n* Done\n"
-                    else:
-                        print "* ERROR: Could not delete this backup server\n"
+                    try:
+                        self.db.get_backup_server_fqdn(server_id)
+                        self.db.delete_backup_server(server_id)
+                        print "\n[Done]\n"
+
+                    except Exception as e:
+                        print "\n[ERROR]: Could not delete this backup server\n",e
                 else:
-                    if self.db.delete_backup_server(server_id):
-                        print "\n* Done\n"
-                    else:
-                        print "* ERROR: Could not delete this backup server\n"
+                    try:
+                        self.db.delete_backup_server(self.db.get_backup_server_id(server_id))
+                        print "\n[Done]\n"
+                        
+                    except Exception as e:
+                        print "\n[ERROR]: Could not delete this backup server\n",e
+
             elif ack.lower() == "no":
-                print "\n[Done]\n"
+                print "\n[Aborted]\n"
                 
+        #
+        # Command with the 1 parameter that can be defined.
+        #
+
         elif len(arg_list) == 1:
 
             server_id = arg_list[0]
-            
+
             if server_id.isdigit():
-                if self.db.delete_backup_server(self.db.get_backup_server_fqdn(server_id)):
-                    print "\n* Done\n"
-                else:
-                    print "* ERROR: Could not delete this backup server\n"
-            else:
-                if self.db.delete_backup_server(server_id):
-                    print "\n* Done\n"
-                else:
-                    print "* ERROR: Could not delete this backup server\n"   
+                try:
+                    self.db.get_backup_server_fqdn(server_id)
+                    self.db.delete_backup_server(server_id)
+                    print "\n[Done]\n"
                     
+                except Exception as e:
+                    print "\n[ERROR]: Could not delete this backup server\n",e
+            else:
+                try:
+                    self.db.delete_backup_server(self.db.get_backup_server_id(server_id))
+                    print "\n[Done]\n"
+                    
+                except Exception as e:
+                    print "\n[ERROR]: Could not delete this backup server\n",e
+             
+        #
+        # Command with the wrong number of parameters
+        #
+
         else:
-            print "\n* ERROR - Wrong number of parameters used.\n* Type help or ? to list commands\n"
+            print "\n[ERROR] - Wrong number of parameters used.\n          Type help or \? to list commands\n"
 
         
     # ############################################
@@ -252,13 +293,19 @@ class pgbackman_cli(cmd.Cmd):
 
     def do_show_pgsql_nodes(self,args):
         """
-        This command shows all PgSQL nodes 
-        registered in PgBackMan.
+        DESCRIPTION:
+        This command shows all PgSQL nodes registered in PgBackMan.
         
-        command: show_pgsql_nodes
+        COMMAND:
+        show_pgsql_nodes
         """
         
-        arg_list = args.split()
+        try: 
+            arg_list = shlex.split(args)
+            
+        except ValueError as e:
+            print "\n[ERROR]: ",e,"\n"
+            return False
         
         if len(arg_list) == 0:
             try:
@@ -277,13 +324,14 @@ class pgbackman_cli(cmd.Cmd):
             
     def do_register_pgsql_node(self,args):
         """
-        This command can be used to register or update 
-        a PgSQL node in PgBackMan.
+        DESCRIPTION:
+        This command registers a PgSQL node in PgBackMan.
 
+        COMMAND:
         register_pgsql_node [hostname] [domain] [pgport] [admin_user] [status] [remarks]
 
-        Status:
-        -------
+        [Status]:
+        ---------
         RUNNING: PostgreSQL node running and online
         DOWN: PostgreSQL node not online.
         """
@@ -343,11 +391,12 @@ class pgbackman_cli(cmd.Cmd):
                     try:
                         self.db.register_pgsql_node(hostname.lower().strip(),domain.lower().strip(),port.strip(),admin_user.lower().strip(),status.upper().strip(),remarks.strip())
                         print "\n[Done]\n"
+
                     except Exception as e:
                         print "\n[ERROR]: Could not register this PgSQL node\n",e
 
             elif ack.lower() == "no":
-                print "\n[Done]\n"
+                print "\n[Aborted]\n"
 
         #
         # Command with the 6 parameters that can be defined.
@@ -367,6 +416,7 @@ class pgbackman_cli(cmd.Cmd):
                 try: 
                     self.db.register_pgsql_node(hostname.lower().strip(),domain.lower().strip(),port.strip(),admin_user.lower().strip(),status.upper().strip(),remarks.strip())
                     print "\n[Done]\n"
+            
                 except Exception as e:
                     print '\n[ERROR]: Could not register this PgSQL node\n',e
                     
@@ -375,8 +425,8 @@ class pgbackman_cli(cmd.Cmd):
         #
 
         else:
-            print "\n* ERROR - Wrong number of parameters used.\n* Type help or ? to list commands\n"
-
+            print "\n[ERROR] - Wrong number of parameters used.\n          Type help or \? to list commands\n"
+            
 
     # ############################################
     # Method do_delete_pgsql_node
@@ -384,64 +434,94 @@ class pgbackman_cli(cmd.Cmd):
 
     def do_delete_pgsql_node(self,args):
         """
-        This command can be used to delete a postgreSQL 
-        node defined in PgBackMan.
+        DESCRIPTION:
+        This command deletes a PgSQL node registered in PgBackMan.
         
-        delete_pgsql_node [NodeID | FQDN]
-        
-        """
+        NOTE: This command will not work if there are backup job definitions 
+        registered in the server we want to delete. This is done on purpose 
+        to avoid operator errors with catastrophic consequences.
 
+        COMMAND:
+        delete_pgsql_node [NodeID | FQDN]
+        """
        
-        arg_list = args.split()
+        try: 
+            arg_list = shlex.split(args)
+            
+        except ValueError as e:
+            print "\n[ERROR]: ",e,"\n"
+            return False
+        
+        #
+        # Command without parameters
+        #
         
         if len(arg_list) == 0:
             
-            ack = "n"
+            ack = ""
             
             print "--------------------------------------------------------"
             node_id = raw_input("# NodeID / FQDN: ")
             print
-            ack = raw_input("# This action will also DELETE ALL BACKUP JOBS definitions for this PgSQL node.\n# Are you sure you want to delete this PgSQL node? (y/n): ")
-           
 
-            if ack.lower() == "y":
+            while ack != "yes" and ack != "no":
+                ack = raw_input("# Are you sure you want to delete this server? (yes/no): ")
+    
+            print "--------------------------------------------------------"
+            
+            if ack.lower() == "yes":
+                if node_id.isdigit():
+                    try:
+                        self.db.get_pgsql_node_fqdn(node_id)
+                        self.db.delete_pgsql_node(node_id)
+                        print "\n* Done\n"
+                    
+                    except Exception as e:
+                        print '\n[ERROR]: Could not delete this PgSQL node\n',e
 
-                ack2= raw_input("\n# Are you 110% sure you want to do this?\n# There is no way back after this point (yes/no): ") 
-                print "--------------------------------------------------------"
+                else:
+                    try:
+                        self.db.delete_pgsql_node(self.db.get_pgsql_node_id(node_id))
+                        print "\n[Done]\n"
 
-                if ack2.lower() == "yes":
-                    if node_id.isdigit():
-                        if self.db.delete_pgsql_node(self.db.get_pgsql_node_fqdn(node_id)):
-                            print "\n* Done\n"
-                        else:
-                            print '* ERROR: Could not delete this PgSQL node\n'
-                    else:
-                        if self.db.delete_pgsql_node(node_id):
-                            print "\n* Done\n"
-                        else:
-                            print '* ERROR: Could not delete this PgSQL node\n'    
-            else:
-                print "--------------------------------------------------------"
+                    except Exception as e:
+                        print '\n[ERROR]: Could not delete this PgSQL node\n',e
 
-        elif len(arg_list) == 3:
+            elif ack.lower() == "no":
+                print "\n[Aborted]\n"
+
+        #
+        # Command with the 1 parameter that can be defined.
+        #
+
+        elif len(arg_list) == 1:
 
             node_id = arg_list[0]
-            ack =  arg_list[1]
-            ack2 =  arg_list[2]
+
+            if node_id.isdigit():
+                try:
+                    self.db.get_pgsql_node_fqdn(node_id)
+                    self.db.delete_pgsql_node(node_id)
+                    print "\n* Done\n"
+
+                except Exception as e:
+                    print '\n[ERROR]: Could not delete this PgSQL node\n',e
+                    
+            else:
+                try:
+                    self.db.delete_pgsql_node(self.db.get_pgsql_node_id(node_id))
+                    print "\n[Done]\n"
+                    
+                except Exception as e:
+                    print '\n[ERROR]: Could not delete this PgSQL node\n',e
             
-            if ack.lower() == "y" and ack2.lower() == "yes":
-                if node_id.isdigit():
-                    if self.db.delete_pgsql_node(self.db.get_pgsql_node_fqdn(node_id)):
-                        print "\n* Done\n"
-                    else:
-                        print '* ERROR: Could not delete this PgSQL node\n'    
-                else:
-                    if self.db.delete_pgsql_node(node_id):
-                        print "\n* Done\n"
-                    else:
-                        print '* ERROR: Could not delete this PgSQL node\n'
+        #
+        # Command with the wrong number of parameters
+        #
+
         else:
-            print "\n* ERROR - Wrong number of parameters used.\n* Type help or ? to list commands\n"
+            print "\n[ERROR] - Wrong number of parameters used.\n          Type help or \? to list commands\n"
+            
 
 
     # ############################################
@@ -450,9 +530,11 @@ class pgbackman_cli(cmd.Cmd):
 
     def do_show_backup_server_backup_definitions(self,args):
         """
+        DESCRIPTION:
+        This command shows all backup definitions for one particular Backup server.
+
+        COMMAND:
         show_backup_server_backup_definitions [SrvID | FQDN]
-
-
         """
         arg_list = args.split()
         
@@ -502,9 +584,11 @@ class pgbackman_cli(cmd.Cmd):
 
     def do_show_pgsql_node_backup_definitions(self,args):
         """
+        DESCRIPTION:
+        This command shows all backup definitions for one particular PgSQL node.
+
+        COMMAND:
         show_pgsql_node_backup_definitions [NodeID | FQDN]
-
-
         """
        
         arg_list = args.split()
@@ -516,7 +600,6 @@ class pgbackman_cli(cmd.Cmd):
             print "--------------------------------------------------------"
 
             try:
-
                 if node_id.isdigit():
                     self.db.get_pgsql_node_fqdn(node_id)
                     self.db.show_pgsql_node_backup_definitions(node_id)
@@ -554,10 +637,13 @@ class pgbackman_cli(cmd.Cmd):
 
     def do_show_database_backup_definitions(self,args):
         """
+        DESCRIPTION:
+        This command shows all backup definitions for one particular database.
+
+        COMMAND:
         show_database_backup_definitions [DBname]
-
-
         """
+
         arg_list = args.split()
         
         if len(arg_list) == 0:
@@ -598,27 +684,34 @@ class pgbackman_cli(cmd.Cmd):
 
     def do_register_backup_job_definition(self,args):
         """
-        This command can be used to register or update 
-        a backup job definition in PgBackMan.
+        DESCRIPTION:
+        This command registers a backup job definition in PgBackMan.
 
-        register_backup_job_definition [SrvID | FQDN] [NodeID | FQDN] [DBname] 
+        COMMAND:
+        register_backup_job_definition [SrvID | FQDN] 
+                                       [NodeID | FQDN] 
+                                       [DBname] 
                                        [mincron] [hourcron] [weekdaycron] [monthcron] [daymonthcron] 
-                                       [backup code] [encryption] 
-                                       [retention period] [retention redundancy] 
-                                       [extra params] [job status] [remarks] 
+                                       [backup code] 
+                                       [encryption] 
+                                       [retention period] 
+                                       [retention redundancy] 
+                                       [extra params] 
+                                       [job status] 
+                                       [remarks] 
 
-        Backup code: 
-        ------------
+        [backup code]: 
+        --------------
         FULL: Full Backup of a database. Schema + data + owner globals + db_parameters.
         SCHEMA: Schema backup of a database. Schema + owner globals + db_parameters.
         DATA: Data backup of the database.
 
-        Job status:
-        -----------
+        [job status]:
+        -------------
         ACTIVE: Backup job activated and in production.
         STOPPED: Backup job stopped.
 
-        Encryption:
+        [encryption]:
         -----------
         TRUE: GnuPG encryption activated.
         FALSE: GnuPG encryption NOT activated.
@@ -723,11 +816,12 @@ class pgbackman_cli(cmd.Cmd):
                                                     weekday_cron.strip(),month_cron.strip(),day_month_cron.strip(),backup_code.upper().strip(),encryption.lower().strip(), \
                                                     retention_period.lower().strip(),retention_redundancy.strip(),extra_parameters.lower().strip(),backup_job_status.upper().strip(),remarks.strip())
                     print "\n[Done]\n"
+
                 except Exception as e:
                     print '\n[ERROR]: Could not register this backup job definition\n',e
 
             elif ack.lower() == "no":
-                print "\n[Done]\n"
+                print "\n[Aborted]\n"
 
         #
         # Command with the 6 parameters that can be defined.
@@ -757,6 +851,7 @@ class pgbackman_cli(cmd.Cmd):
                                                 weekday_cron.strip(),month_cron.strip(),day_month_cron.strip(),backup_code.upper().strip(),encryption.lower().strip(), \
                                                 retention_period.lower().strip(),retention_redundancy.strip(),extra_parameters.lower().strip(),backup_job_status.upper().strip(),remarks.strip())
                 print "\n[Done]\n"
+
             except Exception as e:
                 print '\n[ERROR]: Could not register this backup job definition\n',e
                 
@@ -784,8 +879,11 @@ class pgbackman_cli(cmd.Cmd):
 
     def do_show_backup_server_backup_catalog(self,args):
         """
-        show_backup_server_backup_catalog [SrvID | FQDN]
+        DESCRIPTION:
+        This command shows all catalog entries for one particular Backup server.
 
+        COMMAND:
+        show_backup_server_backup_catalog [SrvID | FQDN]
         """
         arg_list = args.split()
         
@@ -834,9 +932,13 @@ class pgbackman_cli(cmd.Cmd):
 
     def do_show_pgsql_node_backup_catalog(self,args):
         """
-        show_pgsql_node_backup_catalog [NodeID | FQDN]
+        DESCRIPTION:
+        This command shows all catalog entries for one particular PgSQL node.
 
+        COMMAND:
+        show_pgsql_node_backup_catalog [NodeID | FQDN]
         """
+
         arg_list = args.split()
         
         if len(arg_list) == 0:
@@ -885,9 +987,13 @@ class pgbackman_cli(cmd.Cmd):
 
     def do_show_database_backup_catalog(self,args):
         """
-        show_database_backup_catalog [DBname]
+        DESCRIPTION:
+        This command shows all catalog entries for one particular database.
 
+        COMMAND:
+        show_database_backup_catalog [DBname]
         """
+
         arg_list = args.split()
         
         if len(arg_list) == 0:
@@ -897,7 +1003,6 @@ class pgbackman_cli(cmd.Cmd):
             print "--------------------------------------------------------"
             
             try:
-                
                 self.db.show_database_backup_catalog(dbname)
                 
             except Exception as e:
@@ -928,9 +1033,13 @@ class pgbackman_cli(cmd.Cmd):
 
     def do_show_backup_job_details(self,args):
         """
-        show_backup_job_details [BckID]
+        DESCRIPTION:
+        This command shows all the details for one particular backup job.
 
+        COMMAND:
+        show_backup_job_details [BckID]
         """
+
         arg_list = args.split()
         
         if len(arg_list) == 0:
