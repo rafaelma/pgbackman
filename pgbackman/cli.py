@@ -91,6 +91,7 @@ class pgbackman_cli(cmd.Cmd):
         if len(arg_list) == 0:
             try:
                 self.db.show_backup_servers()
+
             except Exception as e:
                 print "\n[ERROR]: ",e
                 
@@ -182,6 +183,7 @@ class pgbackman_cli(cmd.Cmd):
             try:    
                 self.db.register_backup_server(hostname.lower().strip(),domain.lower().strip(),status.upper().strip(),remarks.strip())
                 print "\n[Done]\n"
+
             except Exception as e:
                 print "\n[ERROR]: Could not register this backup server\n",e
     
@@ -474,7 +476,7 @@ class pgbackman_cli(cmd.Cmd):
                     try:
                         self.db.get_pgsql_node_fqdn(node_id)
                         self.db.delete_pgsql_node(node_id)
-                        print "\n* Done\n"
+                        print "\n[Done]\n"
                     
                     except Exception as e:
                         print '\n[ERROR]: Could not delete this PgSQL node\n',e
@@ -502,7 +504,7 @@ class pgbackman_cli(cmd.Cmd):
                 try:
                     self.db.get_pgsql_node_fqdn(node_id)
                     self.db.delete_pgsql_node(node_id)
-                    print "\n* Done\n"
+                    print "\n[Done]\n"
 
                 except Exception as e:
                     print '\n[ERROR]: Could not delete this PgSQL node\n',e
@@ -864,14 +866,249 @@ class pgbackman_cli(cmd.Cmd):
 
 
     # ############################################
-    # Method do_delete_backup_job
+    # Method do_delete_backup_job_definition_id
     # ############################################
 
-    def do_delete_backup_job_definition(self,args):
+    def do_delete_backup_job_definition_id(self,args):
         """
-        delete_backup_job_definition [BckID]
+        DESCRIPTION:
+        This command deletes a backup job definition ID
 
+        NOTE: You have to use the parameter force-deletion 
+        if you want to force the deletion backup job 
+        definitions with active backups in the catalog 
+
+        COMMAND:
+        delete_backup_job_definition_id DefID [force-deletion]
         """
+
+        try: 
+            arg_list = shlex.split(args)
+            
+        except ValueError as e:
+            print "\n[ERROR]: ",e,"\n"
+            return False
+        
+        #
+        # Command without parameters
+        #
+
+        if len(arg_list) == 0:
+            
+            ack = ""
+            force_deletion = ""
+
+            print "--------------------------------------------------------"
+            def_id = raw_input("# DefID: ")
+
+            while force_deletion != "y" and force_deletion != "n":
+                force_deletion = raw_input("# Force deletion (y/n): ")
+                
+            print
+            
+            while ack != "yes" and ack != "no":
+                ack = raw_input("# Are you sure you want to delete this backup job definition? (yes/no): ")
+    
+            print "--------------------------------------------------------"
+            
+            if ack.lower() == "yes":
+                if def_id.isdigit():
+                    try:
+                        if force_deletion == "y":
+                            self.db.delete_force_backup_job_definition_id(def_id)
+                            print "\n[Done]\n"
+                            
+                        elif force_deletion == "n":
+                            self.db.delete_backup_job_definition_id(def_id)
+                            print "\n[Done]\n"
+                            
+                    except Exception as e:
+                        print '\n[ERROR]: Could not delete this backup job definition\n',e
+                else:
+                    print "\n[ERROR]: %s is not a legal value for a backup job definition\n" % def_id
+
+            elif ack.lower() == "no":
+                print "\n[Aborted]\n"
+
+        
+        #
+        # Command with the parameters that can be defined.
+        #   
+
+        elif len(arg_list) == 1:
+            def_id = arg_list[0]
+
+            if def_id.isdigit():
+                try:
+                    self.db.delete_backup_job_definition_id(def_id)
+                    print "\n[Done]\n"
+                    
+                except Exception as e:
+                    print '\n[ERROR]: Could not delete this backup job definition\n',e
+            else:
+                print "\n[ERROR]: %s is not a legal value for a backup job definition\n" % def_id
+                
+        elif len(arg_list) == 2:
+            def_id = arg_list[0]
+            
+            if arg_list[1] == "force-deletion":
+
+                if def_id.isdigit():
+                    try:
+                        self.db.delete_force_backup_job_definition_id(def_id)
+                        print "\n[Done]\n"
+                        
+                    except Exception as e:
+                        print '\n[ERROR]: Could not delete this backup job definition\n',e
+                        
+                else:
+                    print "\n[ERROR]: %s is not a legal value for a backup job definition\n" % def_id
+
+            else: 
+                print "\n[ERROR] - %s is not a valid parameter\n" % arg_list[1]
+                print "\n[Aborted]\n"
+                    
+        #
+        # Command with the wrong number of parameters
+        #
+
+        else:
+            print "\n[ERROR] - Wrong number of parameters used.\n          Type help or \? to list commands\n"
+
+
+    # ################################################
+    # Method do_delete_backup_job_definition_database
+    # ################################################
+
+    def do_delete_backup_job_definition_database(self,args):
+        """
+        DESCRIPTION:
+        This command deletes a backup job definition for a database
+
+        NOTE: You have to use the parameter force-deletion 
+        if you want to force the deletion of backup job 
+        definitions with active backups in the catalog 
+
+        COMMAND:
+        delete_backup_job_definition_database NodeID/FQDN DBname [force-deletion]
+        """
+
+        try: 
+            arg_list = shlex.split(args)
+            
+        except ValueError as e:
+            print "\n[ERROR]: ",e,"\n"
+            return False
+        
+        #
+        # Command without parameters
+        #
+
+        if len(arg_list) == 0:
+            
+            ack = ""
+            force_deletion = ""
+
+            print "--------------------------------------------------------"
+            pgsql_node_id = raw_input("# NodeID / FQDN: ")
+            dbname = raw_input("# DBname: ")
+            
+            while force_deletion != "y" and force_deletion != "n":
+                force_deletion = raw_input("# Force deletion (y/n): ")
+            
+            print
+
+            while ack != "yes" and ack != "no":
+                ack = raw_input("# Are you sure you want to delete this backup job definition? (yes/no): ")
+    
+            print "--------------------------------------------------------"
+            
+            if ack.lower() == "yes":
+                if pgsql_node_id.isdigit():
+                    try:
+                        if force_deletion == "y":
+                            self.db.get_pgsql_node_fqdn(pgsql_node_id)
+                            self.db.delete_force_backup_job_definition_database(pgsql_node_id,dbname)
+                            print "\n[Done]\n"
+                        
+                        elif force_deletion == "n":
+                            self.db.get_pgsql_node_fqdn(pgsql_node_id)
+                            self.db.delete_backup_job_definition_database(pgsql_node_id,dbname)
+                            print "\n[Done]\n"
+                            
+                    except Exception as e:
+                        print '\n[ERROR]: Could not delete this backup job definition\n',e
+                else:
+                    try:
+                        if force_deletion == "y":
+                            self.db.delete_force_backup_job_definition_database(self.db.get_pgsql_node_id(pgsql_node_id),dbname)
+
+                        elif force_deletion == "n":
+                            self.db.delete_backup_job_definition_database(self.db.get_pgsql_node_id(pgsql_node_id),dbname)
+
+                    except Exception as e:
+                        print '\n[ERROR]: Could not delete this backup job definition\n',e
+
+            elif ack.lower() == "no":
+                print "\n[Aborted]\n"
+
+        
+        #
+        # Command with the parameters that can be defined.
+        #   
+
+        elif len(arg_list) == 2:
+            pgsql_node_id = arg_list[0]
+            dbname = arg_list[1]
+
+            if pgsql_node_id.isdigit():
+                try:
+                    self.db.get_pgsql_node_fqdn(pgsql_node_id)
+                    self.db.delete_backup_job_definition_database(pgsql_node_id,dbname)
+                    print "\n[Done]\n"
+                            
+                except Exception as e:
+                    print '\n[ERROR]: Could not delete this backup job definition\n',e
+            else:
+                try:
+                    self.db.delete_backup_job_definition_database(self.db.get_pgsql_node_id(pgsql_node_id),dbname)
+
+                except Exception as e:
+                    print '\n[ERROR]: Could not delete this backup job definition\n',e
+
+
+        elif len(arg_list) == 3:
+            pgsql_node_id = arg_list[0]
+            dbname = arg_list[1]
+
+            if arg_list[2] == "force-deletion":
+
+                if pgsql_node_id.isdigit():
+                    try:
+                        self.db.get_pgsql_node_fqdn(pgsql_node_id)
+                        self.db.delete_force_backup_job_definition_database(pgsql_node_id,dbname)
+                        print "\n[Done]\n"
+                        
+                    except Exception as e:
+                        print '\n[ERROR]: Could not delete this backup job definition\n',e
+                else:
+                    try:
+                        self.db.delete_force_backup_job_definition_database(self.db.get_pgsql_node_id(pgsql_node_id),dbname)
+                        
+                    except Exception as e:
+                        print '\n[ERROR]: Could not delete this backup job definition\n',e
+
+            else: 
+                print "\n[ERROR] - %s is not a valid parameter\n" % arg_list[2]
+                print "\n[Aborted]\n"
+        
+        #
+        # Command with the wrong number of parameters
+        #
+
+        else:
+            print "\n[ERROR] - Wrong number of parameters used.\n          Type help or \? to list commands\n"
+
 
     # ############################################
     # Method do_show_backup_server_backup_catalog
@@ -1143,6 +1380,17 @@ class pgbackman_cli(cmd.Cmd):
         show_pgsql_node_config [NodeID | FQDN]
 
         """    
+
+    # ############################################
+    # Method do_show_empty_backup_job_catalogs
+    # ############################################
+
+    def do_show_empty_backup_job_catalogs(self,args):
+        """
+        show_empty_backup_job_catalogs
+
+        """    
+
 
 
     # ############################################

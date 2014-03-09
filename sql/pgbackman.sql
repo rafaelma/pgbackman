@@ -305,7 +305,6 @@ CREATE TABLE backup_job_definition(
 );
 
 ALTER TABLE backup_job_definition ADD PRIMARY KEY (pgsql_node_id,dbname,backup_code,extra_parameters);
-
 ALTER TABLE backup_job_definition OWNER TO pgbackman_user_rw;
 
 
@@ -340,7 +339,7 @@ CREATE TABLE backup_job_catalog(
 
   bck_id BIGSERIAL,
   registered TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-  def_id INTEGER NOT NULL,
+  def_id BIGINT NOT NULL,
   backup_server_id INTEGER NOT NULL,
   pgsql_node_id INTEGER NOT NULL,
   dbname TEXT NOT NULL,
@@ -362,6 +361,39 @@ CREATE TABLE backup_job_catalog(
 
 ALTER TABLE backup_job_catalog ADD PRIMARY KEY (bck_id);
 ALTER TABLE backup_job_catalog OWNER TO pgbackman_user_rw;
+
+
+-- ------------------------------------------------------
+-- Table: cataloginfo_from_defid_force_deletion
+--
+-- @Description: Table with files to delete after a
+--               force delete of backup definitions
+--
+-- Attributes:
+--
+-- @server_id
+-- @parameter
+-- @value
+-- ------------------------------------------------------
+
+\echo '# [Creating table: cataloginfo_from_defid_force_deletion]\n'
+
+CREATE TABLE cataloginfo_from_defid_force_deletion(
+  del_id BIGSERIAL,
+  registered TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  def_id BIGINT NOT NULL,
+  bck_id BIGINT NOT NULL,
+  backup_server_id INTEGER NOT NULL,
+  pg_dump_file TEXT,
+  pg_dump_log_file TEXT,
+  pg_dump_roles_file TEXT,
+  pg_dump_roles_log_file TEXT,
+  pg_dump_dbconfig_file TEXT,
+  pg_dump_dbconfig_log_file TEXT
+);
+
+ALTER TABLE cataloginfo_from_defid_force_deletion ADD PRIMARY KEY (del_id);
+ALTER TABLE  cataloginfo_from_defid_force_deletion OWNER TO pgbackman_user_rw;
 
 
 -- ------------------------------------------------------
@@ -1228,6 +1260,236 @@ END;
 $$;
 
 ALTER FUNCTION register_backup_job(TEXT,TEXT,TEXT,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,BOOLEAN,INTERVAL,INTEGER,TEXT,CHARACTER VARYING,TEXT) OWNER TO pgbackman_user_rw;
+
+
+
+-- ------------------------------------------------------------
+-- Function: delete_backup_job_definition_id()
+--
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION delete_backup_job_definition_id(INTEGER) RETURNS BOOLEAN
+ LANGUAGE plpgsql 
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ DECLARE
+  def_id_ ALIAS FOR $1;
+  def_cnt INTEGER;
+
+  v_msg     TEXT;
+  v_detail  TEXT;
+  v_context TEXT;
+ BEGIN
+
+   SELECT count(*) FROM backup_job_definition WHERE def_id = def_id_ INTO def_cnt;
+
+    IF def_cnt != 0 THEN
+
+     EXECUTE 'DELETE FROM backup_job_definition WHERE def_id = $1'
+     USING def_id_;
+   
+     RETURN TRUE;
+    ELSE
+      RAISE EXCEPTION 'Backup job definition ID:% does not exist',def_id_; 
+    END IF;
+	   
+   EXCEPTION WHEN others THEN
+   	GET STACKED DIAGNOSTICS	
+            v_msg     = MESSAGE_TEXT,
+            v_detail  = PG_EXCEPTION_DETAIL,
+            v_context = PG_EXCEPTION_CONTEXT;
+        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \nCONTEXT: % \n----------------------------------------------\n', v_msg, v_detail, v_context;
+  END;
+$$;
+
+ALTER FUNCTION delete_backup_job_definition_id(INTEGER) OWNER TO pgbackman_user_rw;
+
+
+-- ------------------------------------------------------------
+-- Function: delete_force_backup_job_definition_id()
+--
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION delete_force_backup_job_definition_id(INTEGER) RETURNS BOOLEAN
+ LANGUAGE plpgsql 
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ DECLARE
+  def_id_ ALIAS FOR $1;
+  def_cnt INTEGER;
+
+  v_msg     TEXT;
+  v_detail  TEXT;
+  v_context TEXT;
+ BEGIN
+
+   SELECT count(*) FROM backup_job_definition WHERE def_id = def_id_ INTO def_cnt;
+
+    IF def_cnt != 0 THEN
+
+    EXECUTE 'WITH del_catid AS (
+               DELETE FROM backup_job_catalog 
+               WHERE def_id = $1
+               RETURNING def_id,
+			   bck_id,
+			   backup_server_id,
+			   pg_dump_file,
+			   pg_dump_log_file,
+			   pg_dump_roles_file,
+			   pg_dump_roles_log_file,
+			   pg_dump_dbconfig_file,
+			   pg_dump_dbconfig_log_file
+             ),save_catinfo AS (
+	       INSERT INTO cataloginfo_from_defid_force_deletion(
+	       	      	   def_id,
+			   bck_id,
+			   backup_server_id,
+			   pg_dump_file,
+			   pg_dump_log_file,
+			   pg_dump_roles_file,
+			   pg_dump_roles_log_file,
+			   pg_dump_dbconfig_file,
+			   pg_dump_dbconfig_log_file)
+		SELECT * FROM del_catid	
+             )
+             DELETE FROM backup_job_definition
+	     WHERE def_id = $1;'
+    USING def_id_;
+
+     RETURN TRUE;
+    ELSE
+      RAISE EXCEPTION 'Backup job definition ID:% does not exist',def_id_; 
+    END IF;
+	   
+   EXCEPTION WHEN others THEN
+   	GET STACKED DIAGNOSTICS	
+            v_msg     = MESSAGE_TEXT,
+            v_detail  = PG_EXCEPTION_DETAIL,
+            v_context = PG_EXCEPTION_CONTEXT;
+        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \nCONTEXT: % \n----------------------------------------------\n', v_msg, v_detail, v_context;
+  END;
+$$;
+
+ALTER FUNCTION delete_force_backup_job_definition_id(INTEGER) OWNER TO pgbackman_user_rw;
+
+-- ------------------------------------------------------------
+-- Function: delete_backup_job_definition_database()
+--
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION delete_backup_job_definition_database(INTEGER,TEXT) RETURNS BOOLEAN
+ LANGUAGE plpgsql 
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ DECLARE
+  pgsql_node_id_ ALIAS FOR $1;
+  dbname_ ALIAS FOR $2;
+  def_cnt INTEGER;
+
+  v_msg     TEXT;
+  v_detail  TEXT;
+  v_context TEXT;
+ BEGIN
+
+   SELECT count(*) FROM backup_job_definition WHERE pgsql_node_id = pgsql_node_id_ AND dbname = dbname_ INTO def_cnt;
+
+    IF def_cnt != 0 THEN
+
+     EXECUTE 'DELETE FROM backup_job_definition WHERE pgsql_node_id = $1 AND dbname = $2'
+     USING pgsql_node_id_,
+     	   dbname_;
+   
+     RETURN TRUE;
+    ELSE
+      RAISE EXCEPTION 'No backup job definition for dbname: %s and PgSQL node: %s',dbname_,pgsql_node_id_; 
+    END IF;
+	   
+   EXCEPTION WHEN others THEN
+   	GET STACKED DIAGNOSTICS	
+            v_msg     = MESSAGE_TEXT,
+            v_detail  = PG_EXCEPTION_DETAIL,
+            v_context = PG_EXCEPTION_CONTEXT;
+        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \nCONTEXT: % \n----------------------------------------------\n', v_msg, v_detail, v_context;
+  END;
+$$;
+
+ALTER FUNCTION delete_backup_job_definition_database(INTEGER,TEXT) OWNER TO pgbackman_user_rw;
+
+
+-- ------------------------------------------------------------
+-- Function: delete_force_backup_job_definition_database()
+--
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION delete_force_backup_job_definition_database(INTEGER,TEXT) RETURNS BOOLEAN
+ LANGUAGE plpgsql 
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ DECLARE
+  pgsql_node_id_ ALIAS FOR $1;
+  dbname_ ALIAS FOR $2;
+  def_cnt INTEGER;
+
+  v_msg     TEXT;
+  v_detail  TEXT;
+  v_context TEXT;
+ BEGIN
+
+   SELECT count(*) FROM backup_job_definition WHERE pgsql_node_id = pgsql_node_id_ AND dbname = dbname_ INTO def_cnt;
+
+    IF def_cnt != 0 THEN
+
+    EXECUTE 'WITH del_catid AS (
+               DELETE FROM backup_job_catalog 
+               WHERE pgsql_node_id = $1
+	       AND dbname = $2
+               RETURNING def_id,
+			   bck_id,
+			   backup_server_id,
+			   pg_dump_file,
+			   pg_dump_log_file,
+			   pg_dump_roles_file,
+			   pg_dump_roles_log_file,
+			   pg_dump_dbconfig_file,
+			   pg_dump_dbconfig_log_file
+             ),save_catinfo AS (
+	       INSERT INTO cataloginfo_from_defid_force_deletion(
+	       	      	   def_id,
+			   bck_id,
+			   backup_server_id,
+			   pg_dump_file,
+			   pg_dump_log_file,
+			   pg_dump_roles_file,
+			   pg_dump_roles_log_file,
+			   pg_dump_dbconfig_file,
+			   pg_dump_dbconfig_log_file)
+		SELECT * FROM del_catid	
+             )
+             DELETE FROM backup_job_definition
+	     WHERE pgsql_node_id = $1
+	     AND dbname = $2;'
+    USING pgsql_node_id_,
+    	  dbname_;
+
+     RETURN TRUE;
+    ELSE
+      RAISE EXCEPTION 'No backup job definition for dbname: %s and PgSQL node: %s',dbname_,pgsql_node_id_; 
+    END IF;
+	   
+   EXCEPTION WHEN others THEN
+   	GET STACKED DIAGNOSTICS	
+            v_msg     = MESSAGE_TEXT,
+            v_detail  = PG_EXCEPTION_DETAIL,
+            v_context = PG_EXCEPTION_CONTEXT;
+        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \nCONTEXT: % \n----------------------------------------------\n', v_msg, v_detail, v_context;
+  END;
+$$;
+
+ALTER FUNCTION delete_force_backup_job_definition_database(INTEGER,TEXT) OWNER TO pgbackman_user_rw;
 
 
 -- ------------------------------------------------------------

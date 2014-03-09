@@ -283,6 +283,92 @@ class pgbackman_db():
     # Method 
     # ############################################
 
+    def delete_backup_job_definition_id(self,def_id):
+        """A function to delete a backup job definition ID"""
+
+        self.pg_connect()
+
+        if self.conn:
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT delete_backup_job_definition_id(%s)',(def_id,))
+                    self.conn.commit()                        
+            
+                except psycopg2.Error as e:
+                    raise e
+            
+            self.pg_close()
+
+
+    # ############################################
+    # Method 
+    # ############################################
+
+    def delete_force_backup_job_definition_id(self,def_id):
+        """A function to force the deletion of a backup job definition ID"""
+
+        self.pg_connect()
+
+        if self.conn:
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT delete_force_backup_job_definition_id(%s)',(def_id,))
+                    self.conn.commit()                        
+            
+                except psycopg2.Error as e:
+                    raise e
+            
+            self.pg_close()
+
+
+    # ############################################
+    # Method 
+    # ############################################
+
+    def delete_backup_job_definition_database(self,pgsql_node_id,dbname):
+        """A function to delete a backup job definition for a database-PgSQL node"""
+
+        self.pg_connect()
+
+        if self.conn:
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT delete_backup_job_definition_database(%s,%s)',(pgsql_node_id,dbname))
+                    self.conn.commit()                        
+            
+                except psycopg2.Error as e:
+                    raise e
+            
+            self.pg_close()
+
+
+    # ############################################
+    # Method 
+    # ############################################
+
+    def delete_force_backup_job_definition_database(self,pgsql_node_id,dbname):
+        """A function to force the deletion of a backup job definition for a database-PgSQL node"""
+
+        self.pg_connect()
+
+        if self.conn:
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT delete_force_backup_job_definition_database(%s,%s)',(pgsql_node_id,dbname))
+                    self.conn.commit()                        
+            
+                except psycopg2.Error as e:
+                    raise e
+            
+            self.pg_close()
+
+
+
+
+    # ############################################
+    # Method 
+    # ############################################
+
     def show_backup_server_backup_definitions(self,backup_server_id):
         """A function to get a list with all backup job definitions for a backup server"""
 
