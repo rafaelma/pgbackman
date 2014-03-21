@@ -88,6 +88,9 @@ def delete_from_listen_channels(db,backup_server_id):
 def generate_crontab_backup_jobs(db,backup_server_id,pgsql_node_id):
     """Generate a crontab file for a PgSQL node"""
 
+    update_pgsql_node_cache_data(db,backup_server_id,pgsql_node_id)
+    create_pgsql_node_backup_directories(db,pgsql_node_id)
+
     crontab_file = db.get_pgsql_node_parameter(pgsql_node_id,'pg_node_cron_file')
 
     if os.path.exists(os.path.dirname(crontab_file)):
@@ -124,6 +127,147 @@ def generate_all_crontab_jobs(db,backup_server_id):
         pgsql_node_id = db.get_next_crontab_id_to_generate(backup_server_id)
  
     logs.logger.info('All crontab jobs in queue processed')
+
+
+# ############################################
+# Function
+# ############################################
+
+def create_global_directories(db,backup_server_fqdn,backup_server_id):
+    '''Create global directories used for cache and pending database registrations'''
+    
+    root_backup_partition = db.get_backup_server_parameter(backup_server_id,'root_backup_partition')
+    backup_server_pending_registration_dir = root_backup_partition + '/pending_updates'
+    backup_server_cache_dir = root_backup_partition +  '/cache_dir'
+
+    if os.path.exists(backup_server_pending_registration_dir):
+        logs.logger.debug('Pending log registration directory exists: %s',backup_server_pending_registration_dir)
+    else:
+        logs.logger.debug('Pending log registration directory does not exist: %s',backup_server_pending_registration_dir)
+        
+        try:
+            os.makedirs(backup_server_pending_registration_dir,0700)
+            logs.logger.info('Pending log registration directory created: %s',backup_server_pending_registration_dir)
+        except OSError as e:
+            logs.logger.critical('OS error when creating the pending log registration directory: %s',e)
+            sys.exit(1)
+            
+    if os.path.exists(backup_server_cache_dir):
+        logs.logger.debug('Cache directory exists: %s',backup_server_cache_dir)
+    else:
+        logs.logger.debug('Cache directory does not exist: %s',backup_server_cache_dir)
+        
+        try:
+            os.makedirs(backup_server_cache_dir,0700)
+            logs.logger.info('Cache directory created: %s',backup_server_cache_dir)
+
+            update_backup_server_cache_data(db,backup_server_fqdn,backup_server_id)
+        except OSError as e:
+            logs.logger.critical('OS error when creating the cache directory: %s',e)
+            sys.exit(1)
+            
+# ############################################
+# Function handler
+# ############################################
+    
+def create_pgsql_node_backup_directories(db,pgsql_node_id):
+    '''
+    Create the directories needed for PgSQL nodes backups
+    '''
+        
+    pgnode_backup_partition = db.get_pgsql_node_parameter(pgsql_node_id,'pgnode_backup_partition')
+
+    if os.path.exists(pgnode_backup_partition + '/dump'):
+        logs.logger.debug('Dump directory %s exists',pgnode_backup_partition + '/dump')
+    else:
+        logs.logger.error('Dump directory %s does not exist',pgnode_backup_partition + '/dump')
+        
+        try:
+            os.makedirs(pgnode_backup_partition + '/dump',0700)
+            logs.logger.info('Dump directory %s created',pgnode_backup_partition + '/dump')
+        except OSError as e:
+            logs.logger.critical('OS error when creating the dump directory: %s',e)
+            sys.exit(1)
+                
+    if os.path.exists(pgnode_backup_partition + '/log'):
+        logs.logger.debug('Log directory %s exists',pgnode_backup_partition + '/log')
+    else:
+        logs.logger.error('Log directory %s does not exist',pgnode_backup_partition + '/log')
+        
+        try:
+            os.makedirs(pgnode_backup_partition + '/log',0700)
+            logs.logger.info('Log directory %s created',pgnode_backup_partition + '/log')
+        except OSError as e:
+            logs.logger.critical('OS error when creating the log directory: %s',e)
+            sys.exit(1)       
+
+
+# ############################################
+# Function
+# ############################################
+
+def update_backup_server_cache_data(db,backup_server_fqdn,backup_server_id):
+    '''Update the cache data for the backup server'''
+
+    root_backup_partition = db.get_backup_server_parameter(backup_server_id,'root_backup_partition')
+    pgsql_bin_9_3 = db.get_backup_server_parameter(backup_server_id,'pgsql_bin_9.3')
+    pgsql_bin_9_2 = db.get_backup_server_parameter(backup_server_id,'pgsql_bin_9.2')
+    pgsql_bin_9_1 = db.get_backup_server_parameter(backup_server_id,'pgsql_bin_9.1')
+    pgsql_bin_9_0 = db.get_backup_server_parameter(backup_server_id,'pgsql_bin_9.0')
+    pgsql_bin_8_4 = db.get_backup_server_parameter(backup_server_id,'pgsql_bin_8.4')
+
+    backup_server_cache_dir = root_backup_partition +  '/cache_dir'
+
+    backup_server_cache_file = backup_server_cache_dir + '/backup_server_' + backup_server_fqdn + '.cache'
+
+    if os.path.exists(backup_server_cache_dir):
+        
+        try:
+            with open(backup_server_cache_file,'w+') as backup_server_cache:
+                backup_server_cache.write(str(backup_server_id) + ',' +
+                                          backup_server_fqdn + ',' +
+                                          root_backup_partition + ',' +
+                                          pgsql_bin_9_3 + ',' +
+                                          pgsql_bin_9_2 + ',' +
+                                          pgsql_bin_9_1 + ',' +
+                                          pgsql_bin_9_0 + ',' +
+                                          pgsql_bin_8_4 + ',' +
+                                          '\n')
+                
+                logs.logger.info('Cache file: %s created/updated',backup_server_cache_file)
+                
+        except IOError as e:
+            logs.logger.error('Could not create the cache file for the backup server: [%s] %s - %s',backup_server_id,backup_server_fqdn,e)
+
+
+# ############################################
+# Function
+# ############################################
+
+def update_pgsql_node_cache_data(db,backup_server_id,pgsql_node_id):
+    '''Update the cache data for the backup server'''
+
+    pgsql_node_fqdn = db.get_pgsql_node_fqdn(pgsql_node_id)
+    pgsql_node_backup_dir = db.get_pgsql_node_parameter(pgsql_node_id,'pgnode_backup_partition')
+    root_backup_partition = db.get_backup_server_parameter(backup_server_id,'root_backup_partition')
+    backup_server_cache_dir = root_backup_partition +  '/cache_dir'
+
+    pgsql_node_cache_file = backup_server_cache_dir + '/pgsql_node_' + str(pgsql_node_id) + '.cache'
+
+    if os.path.exists(backup_server_cache_dir):
+        
+        try:
+            with open(pgsql_node_cache_file,'w+') as pgsql_node_cache:
+                pgsql_node_cache.write(str(pgsql_node_id) + ',' +
+                                          pgsql_node_fqdn + ',' +
+                                          pgsql_node_backup_dir + '\n')
+                
+                logs.logger.info('Cache file: %s created/updated',pgsql_node_cache_file)
+                
+        except IOError as e:
+            logs.logger.error('Could not create the cache file for the PgSQL node: [%s] %s - %s',pgsql_node_id,pgsql_node_fqdn,e)
+
+
 
 # ############################################
 # Function
@@ -173,8 +317,9 @@ def main():
     db_notify = pgbackman_db_notify(dsn,logs,'pgbackman_notify')
     
     if conf.backup_server != '':
-        backup_server_id = db.get_backup_server_id(conf.backup_server)
-        
+        backup_server_fqdn = conf.backup_server
+        backup_server_id = db.get_backup_server_id(backup_server_fqdn)
+                
         if backup_server_id == False:
             logs.logger.critical('Backup server %s does not exist in pgbackman. Stopping pgbackman2cron.',conf.backup_server)
             logs.logger.info('**** PgBackMan2cron stopped. ****')
@@ -182,15 +327,17 @@ def main():
         else:
             logs.logger.info('Backup server: %s up and running',conf.backup_server)
     else:
-        backup_server_id = db.get_backup_server_id(socket.getfqdn())
+        backup_server_fqdn = socket.getfqdn()
+        backup_server_id = db.get_backup_server_id(backup_server_fqdn)
 
         if backup_server_id == False:
-            logs.logger.critical('Backup server %s does not exist in pgbackman. Stopping pgbackman2cron.',socket.getfqdn())
+            logs.logger.critical('Backup server %s does not exist in pgbackman. Stopping pgbackman2cron.',backup_server_fqdn)
             logs.logger.info('**** PgBackMan2cron stopped. ****')
             sys.exit()     
         else:
-            logs.logger.info('Backup server: %s exists in pgbackman and it is running',socket.getfqdn())
+            logs.logger.info('Backup server: %s exists in pgbackman',backup_server_fqdn)
 
+    create_global_directories(db,backup_server_fqdn,backup_server_id)
     add_to_listen_channels(db_notify,backup_server_id)
 
     # We check if there are some crontab files to generate when
@@ -200,13 +347,12 @@ def main():
 
     generate_all_crontab_jobs(db,backup_server_id)
  
-
     #
     # Main loop waiting for notifications
     #
     while True:
         channels = []        
-
+ 
         try:
             db_notify.conn.poll()
 
@@ -248,7 +394,7 @@ def main():
             db_notify = pgbackman_db_notify(dsn,logs,'pgbackman_notify')
             
             listen_list = []
-
+ 
             add_to_listen_channels(db_notify,backup_server_id)
             generate_all_crontab_jobs(db,backup_server_id)
     
