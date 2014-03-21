@@ -33,8 +33,11 @@ class configuration():
         """ The Constructor."""
         
         self.config_file = ''
+
+        # Backup server section
         self.backup_server = ''
 
+        # pgbackman database section
         self.dbhost = ''
         self.dbhostaddr = ''
         self.dbport = ''
@@ -42,13 +45,20 @@ class configuration():
         self.dbuser = 'pgbackman_user_rw'
         self.dbpassword = ''
         self.dsn = ''
+        self.pg_connect_retry_interval = 10
 
+        # pgbackman2cron section
         self.channels_check_interval = 60
 
+        # pgbackman_dump section
+        self.tmp_dir = '/tmp'
+
+        # pgbackman_maintenance section
+        self.maintenance_interval = 3600
+
+        # Logging section
         self.log_level = 'ERROR'
         self.log_file = '/var/log/pgbackman/pgbackman.log'
-
-        self.tmp_dir = '/tmp'
 
         self.set_configuration_file()
         self.set_configuration_parameters()
@@ -83,9 +93,11 @@ class configuration():
             config = ConfigParser.RawConfigParser()
             config.read(self.config_file)
             
+            # Backup server section
             if config.has_option('backup_server','backup_server'):
                 self.backup_server = config.get('backup_server','backup_server')
     
+            # pgbackman database section
             if config.has_option('pgbackman_database','host'):
                 self.dbhost = config.get('pgbackman_database','host')
 
@@ -104,18 +116,28 @@ class configuration():
             if config.has_option('pgbackman_database','password'):
                 self.dbpassword = config.get('pgbackman_database','password')
 
+            if config.has_option('pgbackman_database','pg_connect_retry_interval'):
+                self.pg_connect_retry_interval = int(config.get('pgbackman_database','pg_connect_retry_interval'))
+              
+            # pgbackman2cron section
             if config.has_option('pgbackman2cron','channels_check_interval'):
                 self.channels_check_interval = int(config.get('pgbackman2cron','channels_check_interval'))
 
+            # pgbackman_dump section
+            if config.has_option('pgbackman_dump','tmp_dir'):
+                self.tmp_dir = config.get('pgbackman_dump','tmp_dir')
+
+            # pgbackman_maintenance section
+            if config.has_option('pgbackman_maintenance','maintenance_interval'):
+                self.maintenance_interval = int(config.get('pgbackman_maintenance','maintenance_interval'))    
+
+            # Logging section
             if config.has_option('logging','log_level'):
                 self.log_level = config.get('logging','log_level')
 
             if config.has_option('logging','log_file'):
                 self.log_file = config.get('logging','log_file')
             
-            if config.has_option('pgbackman_dump','tmp_dir'):
-                self.tmp_dir = config.get('pgbackman_dump','tmp_dir')
-
 
         # Generate the DSN string 
 

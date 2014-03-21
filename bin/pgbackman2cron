@@ -125,24 +125,53 @@ def generate_all_crontab_jobs(db,backup_server_id):
  
     logs.logger.info('All crontab jobs in queue processed')
 
+# ############################################
+# Function
+# ############################################
+  
+def check_database_connection(db):
+    '''Check if we can connect to the database server and the pgbackman database'''
+
+    try:
+        db.pg_connect()
+        return True
+    except Exception as e:    
+        return False
+        
 
 # ############################################
 # Function
 # ############################################
 
 def main():
-    
+    global listen_list
+
     conf = configuration()
     dsn = conf.dsn
-
-    db = pgbackman_db(dsn,logs,'pgbackman2cron')
-    db_notify = pgbackman_db_notify(dsn,logs,'pgbackman_notify')
 
     logs.logger.debug('Backup server ID from config file: %s',conf.backup_server)
     logs.logger.debug('Backup server FQDN: %s',socket.getfqdn())
     logs.logger.debug('DSN: %s',conf.dsn)
     logs.logger.debug('Channels check interval: %s',conf.channels_check_interval)
 
+    db = pgbackman_db(dsn,logs,'pgbackman2cron')
+
+    #
+    # We check before starting if the database is available. 
+    # If it is not available we will wait conf.pg_connect_retry_interval 
+    # and try again 
+
+    check_db = check_database_connection(db)
+
+    while not check_db:
+        logs.logger.critical('The pgbackman database is not available. Waiting %s seconds before trying again',conf.pg_connect_retry_interval)
+        
+        time.sleep(conf.pg_connect_retry_interval)
+        check_db = check_database_connection(db)
+        
+    logs.logger.debug('Database server is up and running and pgbackman database is available')
+    db_notify = pgbackman_db_notify(dsn,logs,'pgbackman_notify')
+    
     if conf.backup_server != '':
         backup_server_id = db.get_backup_server_id(conf.backup_server)
         
@@ -160,8 +189,8 @@ def main():
             logs.logger.info('**** PgBackMan2cron stopped. ****')
             sys.exit()     
         else:
-            logs.logger.info('Backup server: %s up and running',socket.getfqdn())
-            
+            logs.logger.info('Backup server: %s exists in pgbackman and it is running',socket.getfqdn())
+
     add_to_listen_channels(db_notify,backup_server_id)
 
     # We check if there are some crontab files to generate when
@@ -171,25 +200,57 @@ def main():
 
     generate_all_crontab_jobs(db,backup_server_id)
  
+
+    #
+    # Main loop waiting for notifications
+    #
     while True:
         channels = []        
-        db_notify.conn.poll()
 
-        while db_notify.conn.notifies:
-            channel = db_notify.conn.notifies.pop().channel
-            channels.append(channel)
+        try:
+            db_notify.conn.poll()
 
-        for channel in set(channels):
-            if channel == 'channel_pgsql_nodes_updated':
-                delete_from_listen_channels(db_notify,backup_server_id)
-                add_to_listen_channels(db_notify,backup_server_id)
-            else:
-                pgsql_node_id = db.get_next_crontab_id_to_generate(backup_server_id)
-                generate_crontab_backup_jobs(db,backup_server_id,pgsql_node_id)
+            while db_notify.conn.notifies:
+                channel = db_notify.conn.notifies.pop().channel
+                channels.append(channel)
 
-        # We check and receive all new notifications every 60 seconds.
-        time.sleep(conf.channels_check_interval)
-        print 'main LOOP' # debug
+            for channel in set(channels):
+                if channel == 'channel_pgsql_nodes_updated':
+                    delete_from_listen_channels(db_notify,backup_server_id)
+                    add_to_listen_channels(db_notify,backup_server_id)
+                else:
+                    pgsql_node_id = db.get_next_crontab_id_to_generate(backup_server_id)
+                    generate_crontab_backup_jobs(db,backup_server_id,pgsql_node_id)
+
+            # We check and receive all new notifications after waiting conf.channels_check_interval.
+            time.sleep(conf.channels_check_interval)
+            print 'main LOOP' # debug
+
+        except psycopg2.OperationalError as e:
+
+            #
+            # If we lose the connection to the database, we will wait conf.pg_connect_retry_interval
+            # before trying to connect again. When the database is available again we will reset
+            # all the listen channels and check if there are some crontab jobs in queue to be processed
+            #
+
+            logs.logger.critical('Operational error: %s',e)
+
+            check_db = check_database_connection(db)
+            
+            while not check_db:
+                logs.logger.critical('We have lost the connection to the database. Waiting %s seconds before trying again',conf.pg_connect_retry_interval)
+                
+                time.sleep(conf.pg_connect_retry_interval)
+                check_db = check_database_connection(db)
+
+            db_notify = None
+            db_notify = pgbackman_db_notify(dsn,logs,'pgbackman_notify')
+            
+            listen_list = []
+
+            add_to_listen_channels(db_notify,backup_server_id)
+            generate_all_crontab_jobs(db,backup_server_id)
     
     db_notify.pg_close()
     db.pg_close()
