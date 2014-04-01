@@ -3,14 +3,14 @@
 --
 --
 
-\echo '# [Creating user: pgbackman_user_rw]\n'
-CREATE USER pgbackman_user_rw;
+\echo '# [Creating user: pgbackman_role_rw]\n'
+CREATE USER pgbackman_role_rw;
 
-\echo '# [Creating user: pgbackman_user_ro]\n'
-CREATE USER pgbackman_user_ro;
+\echo '# [Creating user: pgbackman_role_ro]\n'
+CREATE USER pgbackman_role_ro;
 
 \echo '# [Creating database: pgbackman]\n'
-CREATE DATABASE pgbackman OWNER pgbackman_user_rw;
+CREATE DATABASE pgbackman OWNER pgbackman_role_rw;
 
 \c pgbackman		  
 
@@ -46,7 +46,7 @@ CREATE TABLE backup_server(
 ALTER TABLE backup_server ADD PRIMARY KEY (hostname,domain_name);
 CREATE UNIQUE INDEX ON backup_server(server_id);
 
-ALTER TABLE backup_server OWNER TO pgbackman_user_rw;
+ALTER TABLE backup_server OWNER TO pgbackman_role_rw;
 
 -- ------------------------------------------------------
 -- Table: pgsql_node
@@ -84,7 +84,7 @@ CREATE TABLE pgsql_node(
 ALTER TABLE pgsql_node ADD PRIMARY KEY (hostname,domain_name,pgport);
 CREATE UNIQUE INDEX ON pgsql_node(node_id);
 
-ALTER TABLE pgsql_node OWNER TO pgbackman_user_rw;
+ALTER TABLE pgsql_node OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------
@@ -107,7 +107,7 @@ CREATE TABLE server_status(
 );
 
 ALTER TABLE server_status ADD PRIMARY KEY (code);
-ALTER TABLE server_status OWNER TO pgbackman_user_rw;
+ALTER TABLE server_status OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------
@@ -130,7 +130,7 @@ CREATE TABLE backup_code(
 );
 
 ALTER TABLE backup_code ADD PRIMARY KEY (code);
-ALTER TABLE backup_code OWNER TO pgbackman_user_rw;
+ALTER TABLE backup_code OWNER TO pgbackman_role_rw;
 
 -- ------------------------------------------------------
 -- Table: job_definition_status
@@ -152,7 +152,7 @@ CREATE TABLE job_definition_status(
 );
 
 ALTER TABLE job_definition_status ADD PRIMARY KEY (code);
-ALTER TABLE job_definition_status OWNER TO pgbackman_user_rw;
+ALTER TABLE job_definition_status OWNER TO pgbackman_role_rw;
 
 -- ------------------------------------------------------
 -- Table: job_execution_status
@@ -174,7 +174,7 @@ CREATE TABLE job_execution_status(
 );
 
 ALTER TABLE job_execution_status ADD PRIMARY KEY (code);
-ALTER TABLE job_execution_status OWNER TO pgbackman_user_rw;
+ALTER TABLE job_execution_status OWNER TO pgbackman_role_rw;
 
 -- ------------------------------------------------------
 -- Table: backup_server_default_config
@@ -199,7 +199,7 @@ CREATE TABLE backup_server_default_config(
 );
 
 ALTER TABLE backup_server_default_config ADD PRIMARY KEY (parameter);
-ALTER TABLE backup_server_default_config OWNER TO pgbackman_user_rw;
+ALTER TABLE backup_server_default_config OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------
@@ -225,7 +225,7 @@ CREATE TABLE pgsql_node_default_config(
 );
 
 ALTER TABLE pgsql_node_default_config ADD PRIMARY KEY (parameter);
-ALTER TABLE pgsql_node_default_config OWNER TO pgbackman_user_rw;
+ALTER TABLE pgsql_node_default_config OWNER TO pgbackman_role_rw;
 
 -- ------------------------------------------------------
 -- Table: job_queue
@@ -250,7 +250,7 @@ CREATE TABLE job_queue(
 );
 
 ALTER TABLE job_queue ADD PRIMARY KEY (backup_server_id,pgsql_node_id,is_assigned);
-ALTER TABLE job_queue OWNER TO pgbackman_user_rw;
+ALTER TABLE job_queue OWNER TO pgbackman_role_rw;
 
 
 
@@ -305,7 +305,7 @@ CREATE TABLE backup_job_definition(
 );
 
 ALTER TABLE backup_job_definition ADD PRIMARY KEY (pgsql_node_id,dbname,backup_code,extra_parameters);
-ALTER TABLE backup_job_definition OWNER TO pgbackman_user_rw;
+ALTER TABLE backup_job_definition OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------
@@ -360,7 +360,7 @@ CREATE TABLE backup_job_catalog(
 );
 
 ALTER TABLE backup_job_catalog ADD PRIMARY KEY (bck_id);
-ALTER TABLE backup_job_catalog OWNER TO pgbackman_user_rw;
+ALTER TABLE backup_job_catalog OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------
@@ -393,7 +393,7 @@ CREATE TABLE cataloginfo_from_defid_force_deletion(
 );
 
 ALTER TABLE cataloginfo_from_defid_force_deletion ADD PRIMARY KEY (del_id);
-ALTER TABLE  cataloginfo_from_defid_force_deletion OWNER TO pgbackman_user_rw;
+ALTER TABLE  cataloginfo_from_defid_force_deletion OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------
@@ -419,7 +419,7 @@ CREATE TABLE backup_server_config(
 );
 
 ALTER TABLE backup_server_config ADD PRIMARY KEY (server_id,parameter);
-ALTER TABLE backup_server_config OWNER TO pgbackman_user_rw;
+ALTER TABLE backup_server_config OWNER TO pgbackman_role_rw;
 
 -- ------------------------------------------------------
 -- Table: pgsql_node_config
@@ -444,7 +444,7 @@ CREATE TABLE pgsql_node_config(
 );
 
 ALTER TABLE pgsql_node_config ADD PRIMARY KEY (node_id,parameter);
-ALTER TABLE pgsql_node_config OWNER TO pgbackman_user_rw;
+ALTER TABLE pgsql_node_config OWNER TO pgbackman_role_rw;
 
 -- ------------------------------------------------------
 -- Contraints
@@ -527,11 +527,11 @@ INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('
 INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('backup_server_status','RUNNING','Default backup server status');
 INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('pgbackman_dump','/usr/bin/pgbackman_dump','Program used to take backup dumps');
 INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('admin_user','postgres','postgreSQL admin user');
-INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('pgsql_bin_9.3','/usr/pgsql-9.3/bin','postgreSQL 9.3 bin directory');
-INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('pgsql_bin_9.2','/usr/pgsql-9.2/bin','postgreSQL 9.2 bin directory');
-INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('pgsql_bin_9.1','/usr/pgsql-9.1/bin','postgreSQL 9.1 bin directory');
-INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('pgsql_bin_9.0','/usr/pgsql-9.0/bin','postgreSQL 9.0 bin directory');
-INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('pgsql_bin_8.4','/usr/pgsql-8.4/bin','postgreSQL 8.4 bin directory');
+INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('pgsql_bin_9_3','/usr/pgsql-9.3/bin','postgreSQL 9.3 bin directory');
+INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('pgsql_bin_9_2','/usr/pgsql-9.2/bin','postgreSQL 9.2 bin directory');
+INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('pgsql_bin_9_1','/usr/pgsql-9.1/bin','postgreSQL 9.1 bin directory');
+INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('pgsql_bin_9_0','/usr/pgsql-9.0/bin','postgreSQL 9.0 bin directory');
+INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('pgsql_bin_8_4','/usr/pgsql-8.4/bin','postgreSQL 8.4 bin directory');
 
 
 \echo '# [Init: pgsql_node_default_config]\n'
@@ -574,7 +574,7 @@ CREATE OR REPLACE FUNCTION notify_pgsql_nodes_updated() RETURNS TRIGGER
 END;
 $$;
 
-ALTER FUNCTION notify_pgsql_nodes_updated() OWNER TO pgbackman_user_rw;
+ALTER FUNCTION notify_pgsql_nodes_updated() OWNER TO pgbackman_role_rw;
 
 CREATE TRIGGER notify_pgsql_nodes_updated AFTER INSERT OR DELETE
     ON pgsql_node FOR EACH ROW
@@ -602,7 +602,7 @@ CREATE OR REPLACE FUNCTION update_backup_server_configuration() RETURNS TRIGGER
 END;
 $$;
 
-ALTER FUNCTION update_backup_server_configuration() OWNER TO pgbackman_user_rw;
+ALTER FUNCTION update_backup_server_configuration() OWNER TO pgbackman_role_rw;
 
 CREATE TRIGGER update_backup_server_configuration AFTER INSERT
     ON backup_server FOR EACH ROW
@@ -630,7 +630,7 @@ CREATE OR REPLACE FUNCTION update_pgsql_node_configuration() RETURNS TRIGGER
 END;
 $$;
 
-ALTER FUNCTION update_backup_server_configuration() OWNER TO pgbackman_user_rw;
+ALTER FUNCTION update_backup_server_configuration() OWNER TO pgbackman_role_rw;
 
 CREATE TRIGGER update_pgsql_node_configuration AFTER INSERT
     ON pgsql_node FOR EACH ROW
@@ -672,7 +672,7 @@ CREATE OR REPLACE FUNCTION update_job_queue(INTEGER,INTEGER) RETURNS BOOLEAN
  END;
 $$;
 
-ALTER FUNCTION update_job_queue(INTEGER,INTEGER) OWNER TO pgbackman_user_rw;
+ALTER FUNCTION update_job_queue(INTEGER,INTEGER) OWNER TO pgbackman_role_rw;
 
 
 
@@ -790,7 +790,7 @@ CREATE OR REPLACE FUNCTION update_job_queue() RETURNS TRIGGER
 END;
 $$;
 
-ALTER FUNCTION update_job_queue() OWNER TO pgbackman_user_rw;
+ALTER FUNCTION update_job_queue() OWNER TO pgbackman_role_rw;
 
 CREATE TRIGGER update_job_queue AFTER INSERT OR UPDATE OR DELETE
     ON backup_job_definition FOR EACH ROW 
@@ -854,7 +854,7 @@ CREATE OR REPLACE FUNCTION get_next_crontab_id_to_generate(INTEGER) RETURNS INTE
  END;
 $$;
 
-ALTER FUNCTION get_next_crontab_id_to_generate(INTEGER) OWNER TO pgbackman_user_rw;
+ALTER FUNCTION get_next_crontab_id_to_generate(INTEGER) OWNER TO pgbackman_role_rw;
 
 -- ------------------------------------------------------------
 -- Function: register_backup_server()
@@ -907,7 +907,7 @@ CREATE OR REPLACE FUNCTION register_backup_server(TEXT,TEXT,CHARACTER VARYING,TE
 END;
 $$;
 
-ALTER FUNCTION register_backup_server(TEXT,TEXT,CHARACTER VARYING,TEXT) OWNER TO pgbackman_user_rw;
+ALTER FUNCTION register_backup_server(TEXT,TEXT,CHARACTER VARYING,TEXT) OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------------
@@ -953,7 +953,7 @@ CREATE OR REPLACE FUNCTION delete_backup_server(INTEGER) RETURNS BOOLEAN
   END;
 $$;
 
-ALTER FUNCTION delete_backup_server(TEXT) OWNER TO pgbackman_user_rw;
+ALTER FUNCTION delete_backup_server(INTEGER) OWNER TO pgbackman_role_rw;
 
 
 
@@ -972,7 +972,7 @@ CREATE OR REPLACE FUNCTION register_pgsql_node(TEXT,TEXT,INTEGER,TEXT,CHARACTER 
   hostname_ ALIAS FOR $1;
   domain_name_ ALIAS FOR $2;
   pgport_ ALIAS FOR $3; 
-  admin_user_ ALIAS FOR $4;
+  admin_role_ ALIAS FOR $4;
   status_ ALIAS FOR $5;
   remarks_ ALIAS FOR $6;  
 
@@ -993,8 +993,8 @@ CREATE OR REPLACE FUNCTION register_pgsql_node(TEXT,TEXT,INTEGER,TEXT,CHARACTER 
     pgport_ := get_default_pgsql_node_parameter('pgport')::INTEGER;
    END IF;
 
-   IF admin_user_ = '' OR admin_user_ IS NULL THEN
-    admin_user_ := get_default_pgsql_node_parameter('admin_user');
+   IF admin_role_ = '' OR admin_role_ IS NULL THEN
+    admin_role_ := get_default_pgsql_node_parameter('admin_user');
    END IF;
 
    IF status_ = '' OR status_ IS NULL THEN
@@ -1005,7 +1005,7 @@ CREATE OR REPLACE FUNCTION register_pgsql_node(TEXT,TEXT,INTEGER,TEXT,CHARACTER 
     USING hostname_,
           domain_name_,
           pgport_,
-          admin_user_,
+          admin_role_,
           status_,
           remarks_;         
 
@@ -1020,7 +1020,7 @@ CREATE OR REPLACE FUNCTION register_pgsql_node(TEXT,TEXT,INTEGER,TEXT,CHARACTER 
 END;
 $$;
 
-ALTER FUNCTION register_pgsql_node(TEXT,TEXT,INTEGER,TEXT,CHARACTER VARYING,TEXT) OWNER TO pgbackman_user_rw;
+ALTER FUNCTION register_pgsql_node(TEXT,TEXT,INTEGER,TEXT,CHARACTER VARYING,TEXT) OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------------
@@ -1070,7 +1070,7 @@ CREATE OR REPLACE FUNCTION delete_pgsql_node(INTEGER) RETURNS BOOLEAN
 END;
 $$;
 
-ALTER FUNCTION delete_pgsql_node(TEXT) OWNER TO pgbackman_user_rw;
+ALTER FUNCTION delete_pgsql_node(INTEGER) OWNER TO pgbackman_role_rw;
 
 
 
@@ -1168,6 +1168,8 @@ CREATE OR REPLACE FUNCTION register_backup_job(TEXT,TEXT,TEXT,CHARACTER VARYING,
      RAISE EXCEPTION 'Backup server % does not exist',backup_server_ ;
    ELSIF pgsql_node_id_ IS NULL THEN
      RAISE EXCEPTION 'PgSQL node % does not exist',pgsql_node_ ;
+   ELSIF dbname_ = '' OR dbname_ IS NULL THEN
+     RAISE EXCEPTION 'No database value defined';
    END IF;
 
    SELECT count(*) AS cnt 
@@ -1259,7 +1261,7 @@ CREATE OR REPLACE FUNCTION register_backup_job(TEXT,TEXT,TEXT,CHARACTER VARYING,
 END;
 $$;
 
-ALTER FUNCTION register_backup_job(TEXT,TEXT,TEXT,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,BOOLEAN,INTERVAL,INTEGER,TEXT,CHARACTER VARYING,TEXT) OWNER TO pgbackman_user_rw;
+ALTER FUNCTION register_backup_job(TEXT,TEXT,TEXT,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,BOOLEAN,INTERVAL,INTEGER,TEXT,CHARACTER VARYING,TEXT) OWNER TO pgbackman_role_rw;
 
 
 
@@ -1303,7 +1305,7 @@ CREATE OR REPLACE FUNCTION delete_backup_job_definition_id(INTEGER) RETURNS BOOL
   END;
 $$;
 
-ALTER FUNCTION delete_backup_job_definition_id(INTEGER) OWNER TO pgbackman_user_rw;
+ALTER FUNCTION delete_backup_job_definition_id(INTEGER) OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------------
@@ -1372,7 +1374,7 @@ CREATE OR REPLACE FUNCTION delete_force_backup_job_definition_id(INTEGER) RETURN
   END;
 $$;
 
-ALTER FUNCTION delete_force_backup_job_definition_id(INTEGER) OWNER TO pgbackman_user_rw;
+ALTER FUNCTION delete_force_backup_job_definition_id(INTEGER) OWNER TO pgbackman_role_rw;
 
 -- ------------------------------------------------------------
 -- Function: delete_backup_job_definition_database()
@@ -1416,7 +1418,7 @@ CREATE OR REPLACE FUNCTION delete_backup_job_definition_database(INTEGER,TEXT) R
   END;
 $$;
 
-ALTER FUNCTION delete_backup_job_definition_database(INTEGER,TEXT) OWNER TO pgbackman_user_rw;
+ALTER FUNCTION delete_backup_job_definition_database(INTEGER,TEXT) OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------------
@@ -1489,7 +1491,7 @@ CREATE OR REPLACE FUNCTION delete_force_backup_job_definition_database(INTEGER,T
   END;
 $$;
 
-ALTER FUNCTION delete_force_backup_job_definition_database(INTEGER,TEXT) OWNER TO pgbackman_user_rw;
+ALTER FUNCTION delete_force_backup_job_definition_database(INTEGER,TEXT) OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------------
@@ -1521,7 +1523,7 @@ CREATE OR REPLACE FUNCTION get_default_backup_server_parameter(TEXT) RETURNS TEX
  END;
 $$;
 
-ALTER FUNCTION get_default_backup_server_parameter(TEXT) OWNER TO pgbackman_user_rw;
+ALTER FUNCTION get_default_backup_server_parameter(TEXT) OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------------
@@ -1554,7 +1556,7 @@ CREATE OR REPLACE FUNCTION get_backup_server_parameter(INTEGER,TEXT) RETURNS TEX
  END;
 $$;
 
-ALTER FUNCTION get_backup_server_parameter(INTEGER,TEXT) OWNER TO pgbackman_user_rw;
+ALTER FUNCTION get_backup_server_parameter(INTEGER,TEXT) OWNER TO pgbackman_role_rw;
 
 -- ------------------------------------------------------------
 -- Function: get_default_pgsql_node_parameter()
@@ -1585,7 +1587,7 @@ CREATE OR REPLACE FUNCTION get_default_pgsql_node_parameter(TEXT) RETURNS TEXT
  END;
 $$;
 
-ALTER FUNCTION get_default_pgsql_node_parameter(TEXT) OWNER TO pgbackman_user_rw;
+ALTER FUNCTION get_default_pgsql_node_parameter(TEXT) OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------------
@@ -1618,7 +1620,7 @@ CREATE OR REPLACE FUNCTION get_pgsql_node_parameter(INTEGER,TEXT) RETURNS TEXT
  END;
 $$;
 
-ALTER FUNCTION get_pgsql_node_parameter(INTEGER,TEXT) OWNER TO pgbackman_user_rw;
+ALTER FUNCTION get_pgsql_node_parameter(INTEGER,TEXT) OWNER TO pgbackman_role_rw;
 
 -- ------------------------------------------------------------
 -- Function: get_hour_from_interval()
@@ -1669,7 +1671,7 @@ CREATE OR REPLACE FUNCTION get_hour_from_interval(TEXT) RETURNS TEXT
  END;
 $$;
 
-ALTER FUNCTION get_hour_from_interval(TEXT) OWNER TO pgbackman_user_rw;
+ALTER FUNCTION get_hour_from_interval(TEXT) OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------------
@@ -1720,7 +1722,7 @@ CREATE OR REPLACE FUNCTION get_minute_from_interval(TEXT) RETURNS TEXT
  END;
 $$;
 
-ALTER FUNCTION get_minute_from_interval(TEXT) OWNER TO pgbackman_user_rw;
+ALTER FUNCTION get_minute_from_interval(TEXT) OWNER TO pgbackman_role_rw;
 
 -- ------------------------------------------------------------
 -- Function: get_backup_server_fqdn()
@@ -1751,7 +1753,7 @@ CREATE OR REPLACE FUNCTION get_backup_server_fqdn(INTEGER) RETURNS TEXT
  END;
 $$;
 
-ALTER FUNCTION get_backup_server_fqdn(INTEGER) OWNER TO pgbackman_user_rw;
+ALTER FUNCTION get_backup_server_fqdn(INTEGER) OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------------
@@ -1782,7 +1784,7 @@ CREATE OR REPLACE FUNCTION get_backup_server_id(TEXT) RETURNS INTEGER
  END;
 $$;
 
-ALTER FUNCTION get_backup_server_id(TEXT) OWNER TO pgbackman_user_rw;
+ALTER FUNCTION get_backup_server_id(TEXT) OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------------
@@ -1814,7 +1816,7 @@ CREATE OR REPLACE FUNCTION get_pgsql_node_fqdn(INTEGER) RETURNS TEXT
  END;
 $$;
 
-ALTER FUNCTION get_pgsql_node_fqdn(INTEGER) OWNER TO pgbackman_user_rw;
+ALTER FUNCTION get_pgsql_node_fqdn(INTEGER) OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------------
@@ -1846,7 +1848,7 @@ CREATE OR REPLACE FUNCTION get_pgsql_node_id(TEXT) RETURNS INTEGER
  END;
 $$;
 
-ALTER FUNCTION get_pgsql_node_id(TEXT) OWNER TO pgbackman_user_rw;
+ALTER FUNCTION get_pgsql_node_id(TEXT) OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------------
@@ -1864,7 +1866,7 @@ CREATE OR REPLACE FUNCTION get_listen_channel_names(INTEGER) RETURNS SETOF TEXT
   SELECT 'channel_bs' || $1 || '_pg' || node_id AS channel FROM pgsql_node ORDER BY channel DESC
 $$;
 
-ALTER FUNCTION get_listen_channel_names(INTEGER) OWNER TO pgbackman_user_rw;
+ALTER FUNCTION get_listen_channel_names(INTEGER) OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------------
@@ -1887,6 +1889,7 @@ CREATE OR REPLACE FUNCTION generate_crontab_backup_jobs(INTEGER,INTEGER) RETURNS
 
   logs_email TEXT := '';
   pg_node_cron_file TEXT := '';
+  root_backup_dir TEXT := '';
   admin_user TEXT := '';
   pgbackman_dump TEXT := '';
 
@@ -1895,6 +1898,7 @@ BEGIN
 
  logs_email := get_pgsql_node_parameter(pgsql_node_id_,'logs_email');
  pg_node_cron_file := get_pgsql_node_parameter(pgsql_node_id_,'pg_node_cron_file');
+ root_backup_dir := get_backup_server_parameter(backup_server_id_,'root_backup_partition');
  backup_server_fqdn := get_backup_server_fqdn(backup_server_id_);
  pgsql_node_fqdn := get_pgsql_node_fqdn(pgsql_node_id_);
  pgsql_node_port := get_pgsql_node_port(pgsql_node_id_);
@@ -1935,16 +1939,18 @@ BEGIN
 
   output := output || ' ' || admin_user;
   output := output || ' ' || pgbackman_dump || 
-  	    	   ' -H ' || pgsql_node_fqdn ||
-		   ' -p ' || pgsql_node_port ||
-		   ' -U ' || admin_user || 
-		   ' -j ' || job_row.def_id || 
-		   ' -d ' || job_row.dbname || 
-		   ' -e ' || job_row.encryption::TEXT || 
-		   ' -c ' || job_row.backup_code;
+  	    	   ' --node-fqdn ' || pgsql_node_fqdn ||
+		   ' --node-id ' || pgsql_node_id_ ||
+		   ' --node-port ' || pgsql_node_port ||
+		   ' --node-user ' || admin_user || 
+		   ' --def-id ' || job_row.def_id || 
+		   ' --dbname ' || job_row.dbname || 
+		   ' --encryption ' || job_row.encryption::TEXT || 
+		   ' --backup-code ' || job_row.backup_code ||
+		   ' --root-backup-dir ' || root_backup_dir;
 
   IF job_row.extra_parameters != '' AND job_row.extra_parameters IS NOT NULL THEN
-    output := output || ' -P ' || job_row.extra_parameters;
+    output := output || ' --extra-params ' || job_row.extra_parameters;
   END IF;
  
   output := output || E'\n';
@@ -1955,7 +1961,7 @@ BEGIN
 END;
 $$;
 
-ALTER FUNCTION generate_crontab_backup_jobs(INTEGER,INTEGER) OWNER TO pgbackman_user_rw;
+ALTER FUNCTION generate_crontab_backup_jobs(INTEGER,INTEGER) OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------------
@@ -1982,7 +1988,7 @@ CREATE OR REPLACE FUNCTION get_pgsql_node_dsn(INTEGER) RETURNS TEXT
  END;
 $$;
 
-ALTER FUNCTION get_pgsql_node_dsn(INTEGER) OWNER TO pgbackman_user_rw;
+ALTER FUNCTION get_pgsql_node_dsn(INTEGER) OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------------
@@ -2009,7 +2015,7 @@ CREATE OR REPLACE FUNCTION get_pgsql_node_port(INTEGER) RETURNS TEXT
  END;
 $$;
 
-ALTER FUNCTION get_pgsql_node_port(INTEGER) OWNER TO pgbackman_user_rw;
+ALTER FUNCTION get_pgsql_node_port(INTEGER) OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------------
@@ -2036,7 +2042,7 @@ CREATE OR REPLACE FUNCTION get_pgsql_node_admin_user(INTEGER) RETURNS TEXT
  END;
 $$;
 
-ALTER FUNCTION get_pgsql_node_admin_user(INTEGER) OWNER TO pgbackman_user_rw;
+ALTER FUNCTION get_pgsql_node_admin_user(INTEGER) OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------------
@@ -2125,9 +2131,93 @@ CREATE OR REPLACE FUNCTION register_backup_job_catalog(INTEGER,INTEGER,INTEGER,T
  END;
 $$;
 
-ALTER FUNCTION register_backup_job_catalog(INTEGER,INTEGER,INTEGER,TEXT,TIMESTAMP WITH TIME ZONE,TIMESTAMP WITH TIME ZONE,INTERVAL,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,TEXT) OWNER TO pgbackman_user_rw;
+ALTER FUNCTION register_backup_job_catalog(INTEGER,INTEGER,INTEGER,TEXT,TIMESTAMP WITH TIME ZONE,TIMESTAMP WITH TIME ZONE,INTERVAL,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,TEXT) OWNER TO pgbackman_role_rw;
 
 
+-- ------------------------------------------------------------
+-- Function: delete_cataloginfo_from_defid_force_deletion()
+--
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION delete_cataloginfo_from_defid_force_deletion(INTEGER) RETURNS BOOLEAN
+ LANGUAGE plpgsql 
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ DECLARE
+  del_id_ ALIAS FOR $1;
+  del_cnt INTEGER;
+
+  v_msg     TEXT;
+  v_detail  TEXT;
+  v_context TEXT;
+ BEGIN
+
+   SELECT count(*) FROM cataloginfo_from_defid_force_deletion WHERE del_id = del_id_ INTO del_cnt;
+
+   IF del_cnt != 0 THEN
+
+     EXECUTE 'DELETE FROM cataloginfo_from_defid_force_deletion WHERE del_id = $1'
+     USING del_id_;
+   
+     RETURN TRUE;
+    ELSE
+      RAISE EXCEPTION 'Cataloginfo DelID % does not exist',del_id_; 
+    END IF;
+	   
+   EXCEPTION WHEN others THEN
+   	GET STACKED DIAGNOSTICS	
+            v_msg     = MESSAGE_TEXT,
+            v_detail  = PG_EXCEPTION_DETAIL,
+            v_context = PG_EXCEPTION_CONTEXT;
+        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \nCONTEXT: % \n----------------------------------------------\n', v_msg, v_detail, v_context;
+  END;
+$$;
+
+ALTER FUNCTION delete_cataloginfo_from_defid_force_deletion(INTEGER) OWNER TO pgbackman_role_rw;
+
+
+-- ------------------------------------------------------------
+-- Function:  delete_backup_job_catalog()
+--
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION  delete_backup_job_catalog(INTEGER) RETURNS BOOLEAN
+ LANGUAGE plpgsql 
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ DECLARE
+  bck_id_ ALIAS FOR $1;
+  bck_cnt INTEGER;
+
+  v_msg     TEXT;
+  v_detail  TEXT;
+  v_context TEXT;
+ BEGIN
+
+   SELECT count(*) FROM backup_job_catalog WHERE bck_id = bck_id_ INTO bck_cnt;
+
+   IF bck_cnt != 0 THEN
+
+     EXECUTE 'DELETE FROM backup_job_catalog WHERE bck_id = $1'
+     USING bck_id_;
+   
+     RETURN TRUE;
+    ELSE
+      RAISE EXCEPTION 'Catalog entry with BckID % does not exist',bck_id_; 
+    END IF;
+	   
+   EXCEPTION WHEN others THEN
+   	GET STACKED DIAGNOSTICS	
+            v_msg     = MESSAGE_TEXT,
+            v_detail  = PG_EXCEPTION_DETAIL,
+            v_context = PG_EXCEPTION_CONTEXT;
+        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \nCONTEXT: % \n----------------------------------------------\n', v_msg, v_detail, v_context;
+  END;
+$$;
+
+ALTER FUNCTION  delete_backup_job_catalog(INTEGER) OWNER TO pgbackman_role_rw;
 
 -- ------------------------------------------------------------
 -- Views
@@ -2232,6 +2322,49 @@ CREATE OR REPLACE VIEW show_backup_job_details AS
    JOIN backup_job_definition b ON a.def_id = b.def_id 
    ORDER BY "Finished" DESC,backup_server_id,pgsql_node_id,"DBname","Code","Status";
 
+CREATE OR REPLACE VIEW get_cataloginfo_from_defid_force_deletion AS
+  SELECT del_id,
+  	 registered,
+	 def_id,
+	 bck_id,
+	 backup_server_id,
+	 pg_dump_file,
+	 pg_dump_log_file,
+	 pg_dump_roles_file,
+	 pg_dump_roles_log_file,
+	 pg_dump_dbconfig_file,
+	 pg_dump_dbconfig_log_file 
+   FROM cataloginfo_from_defid_force_deletion
+   ORDER BY del_id;
+
+CREATE OR REPLACE VIEW get_catalog_entries_to_delete_by_retention AS
+WITH 
+  all_backup_jobs_catalog AS (
+   SELECT 
+      row_number() OVER (PARTITION BY a.def_id ORDER BY a.def_id,a.finished DESC) AS row_id, 
+      a.bck_id, 
+      a.def_id,
+      a.backup_server_id,
+      a.pgsql_node_id,
+      a.dbname, 
+      a.finished,
+      b.retention_period,
+      b.retention_redundancy,
+      a.pg_dump_file, 
+      a.pg_dump_log_file,
+      a.pg_dump_roles_file,
+      a.pg_dump_roles_log_file,
+      a.pg_dump_dbconfig_file,
+      a.pg_dump_dbconfig_log_file 
+   FROM backup_job_catalog a 
+   INNER JOIN backup_job_definition b ON a.def_id=b.def_id
+   ORDER BY a.def_id,a.finished DESC
+   )
+   SELECT * 
+   FROM all_backup_jobs_catalog
+   WHERE finished < now() - retention_period
+   AND row_id > retention_redundancy 
+   ORDER BY def_id,finished DESC;
 
 
 

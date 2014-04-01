@@ -61,7 +61,7 @@ class pgbackman_cli(cmd.Cmd):
         
         self.logs = logs("pgbackman_cli")
 
-        self.db = pgbackman_db(self.dsn,self.logs,'pgbackman_cli')
+        self.db = pgbackman_db(self.dsn,'pgbackman_cli')
 
     # ############################################
     # Method do_show_backup_servers
@@ -869,7 +869,7 @@ class pgbackman_cli(cmd.Cmd):
     # Method do_delete_backup_job_definition_id
     # ############################################
 
-    def do_delete_backup_job_definition_id(self,args):
+    def do_delete_id_backup_job_definition(self,args):
         """
         DESCRIPTION:
         This command deletes a backup job definition ID
@@ -980,7 +980,7 @@ class pgbackman_cli(cmd.Cmd):
     # Method do_delete_backup_job_definition_database
     # ################################################
 
-    def do_delete_backup_job_definition_database(self,args):
+    def do_delete_database_backup_job_definition(self,args):
         """
         DESCRIPTION:
         This command deletes a backup job definition for a database
@@ -1390,6 +1390,38 @@ class pgbackman_cli(cmd.Cmd):
         show_empty_backup_job_catalogs
 
         """    
+
+    # ############################################
+    # Method do_update_backup_server
+    # ############################################
+
+    def do_update_backup_server(self,args):
+        """
+        update_backup_server
+
+        """    
+
+    # ############################################
+    # Method do_update_pgsql_node
+    # ############################################
+
+    def do_update_pgsql_node(self,args):
+        """
+        update_pgsql_node
+
+        """    
+
+    # ############################################
+    # Method do_update_backup_job_definition
+    # ############################################
+
+    def do_update_backup_job_definition(self,args):
+        """
+        update_backup_job_definition
+
+        """    
+
+
 
 
 

@@ -1,0 +1,357 @@
+#!/usr/bin/env python
+#
+# Copyright (c) 2013 Rafael Martinez Guerrero (PostgreSQL-es)
+# rafael@postgresql.org.es / http://www.postgresql.org.es/
+#
+# This file is part of Pgbackman
+# https://github.com/rafaelma/pgbackman
+#
+# PgBackMan is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# PgBackMan is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Pgbackman.  If not, see <http://www.gnu.org/licenses/>.
+
+import subprocess
+import tempfile
+import datetime
+import sys
+import os
+import time
+import socket
+import signal
+import argparse
+import errno
+
+sys.path.append('/home/rafael/Devel/GIT/pgbackman')
+
+from pgbackman.logs import *
+from pgbackman.database import *
+from pgbackman.database_notify import *
+from pgbackman.config import *
+
+
+# ############################################
+# Function
+# ############################################
+
+def delete_files_from_force_deletes(db,backup_server_id):
+    '''Delete dump and log files from force deletions of backup definitions'''
+
+    logs.logger.debug('## Deleting files from forced DefID deletions ##')
+    
+    try:
+        for record in db.get_cataloginfo_from_defid_force_deletion(backup_server_id):
+            
+            error_cnt = 0
+
+            #
+            # record[5...10] are the files to delete
+            #
+
+            for index in range(5,11):
+
+                try:
+                    os.unlink(record[index])
+                    logs.logger.debug('File: %s deleted',record[index])
+            
+                except OSError as e:
+                    if e.errno != errno.ENOENT:
+                        logs.logger.error('Problems deleting files from force deletions of DefIDs: %s',e)
+                        error_cnt = error_cnt + 1
+                    else:
+                        pass
+
+            #
+            # We can delete the delID entry from the database only if we can 
+            # delete all the files in the delID entry without errors
+            #
+
+            if error_cnt == 0:
+                try:
+                    db.delete_cataloginfo_from_defid_force_deletion(record[0])
+                    logs.logger.info('Files for catalog ID: %s / DefID: %s deleted',record[3],record[2])
+                    
+                except psycopg2.OperationalError as e:
+                    raise e
+                except Exception as e:
+                    logs.logger.error('Problems deleting cataloginfo from force defid deletions - %s',e)
+    
+    except psycopg2.OperationalError as e:
+        raise e
+    except Exception as e:
+        logs.logger.error('Could not get the catalog information for defid force deletions - %s',e)
+
+            
+# ############################################
+# Function
+# ############################################
+
+def enforce_retentions(db,backup_server_id):
+    '''Delete dump and log files according to retention_periods and retention_redundancies'''
+
+    logs.logger.debug('## Enforce file retentions ##')
+
+    try:
+        for record in db.get_catalog_entries_to_delete_by_retention(backup_server_id):
+
+            error_cnt = 0
+            
+            #
+            # record[9...14] are the files to delete
+            #
+
+            for index in range(9,15):
+
+                 try:
+                    os.unlink(record[index])
+                    logs.logger.debug('File: %s deleted',record[index])
+    
+                 except OSError as e:
+                    if e.errno != errno.ENOENT:
+                        logs.logger.error('Problems deleting files from enforce retentions: %s',e)
+                        error_cnt = error_cnt + 1
+                    else:
+                        pass
+    
+            #
+            # We can delete the BckID entry from the catalog table only if we can 
+            # delete all the files for the BckID entry without errors
+            #
+
+            if error_cnt == 0:
+                try:
+                    db.delete_backup_job_catalog(record[1])
+                    logs.logger.info('Files for catalog ID: %s / DefID: %s deleted',record[1],record[2])
+
+                except psycopg2.OperationalError as e:
+                    raise e
+                except Exception as e:
+                    logs.logger.error('Problems deleting entry from backup job catalog - %s',e)
+
+    except psycopg2.OperationalError as e:
+        raise e
+    except Exception as e:
+        logs.logger.error('Could not get information to enforce file retentions - %s',e)
+        
+
+# ############################################
+# Function
+# ############################################
+
+def process_pending_catalog_log_file(db,backup_server_id):
+    '''Process all pending catalog log files in the server '''
+
+    logs.logger.debug('## Processing pending catalog log files ##')
+    
+    try:
+        db.pg_connect()
+        
+        root_backup_partition = db.get_backup_server_parameter(backup_server_id,'root_backup_partition')
+        pending_catalog = root_backup_partition + '/pending_updates'
+        
+        for pending_log_file in os.listdir(pending_catalog):
+            try:
+                with open(pending_catalog + '/' + pending_log_file,'r') as pending_file:
+                    for line in pending_file:
+                        parameters = line.split('::')
+                        
+                        if len(parameters) == 18:
+                            
+                            #
+                            # Updating the database with the information in the pending file
+                            #
+                            try:
+                                db.register_backup_job_catalog(parameters[0],
+                                                               parameters[1],
+                                                               parameters[2],
+                                                               parameters[3],
+                                                               parameters[4],
+                                                               parameters[5],
+                                                               parameters[6],
+                                                               parameters[7],
+                                                               parameters[8],
+                                                               parameters[9],
+                                                               parameters[10],
+                                                               parameters[11],
+                                                               parameters[12],
+                                                               parameters[13],
+                                                               parameters[14],
+                                                               parameters[15],
+                                                               parameters[16],
+                                                               parameters[17].replace('\n',''))
+
+                                logs.logger.info('Backup job catalog for DefID: %s in pending file %s updated in the database',parameters[0],pending_log_file)
+                            
+                                #
+                                # Deleting the pending file if we can update the database with
+                                # the information in the file
+                                #
+                                try:
+                                    os.unlink(pending_catalog + '/' + pending_log_file)
+                                    logs.logger.info('Pending file: %s deleted',pending_log_file)
+                                    
+                                except OSError as e:
+                                    logs.logger.error('Could not delete pending file: %s ',pending_log_file)
+                                                            
+                            except Exception as e:
+                                logs.logger.error('Problems to register in the database the pending backup file %s - %s',pending_log_file,e)
+                                
+                        else:
+                            logs.logger.error('Wrong format in pending file: %s',pending_log_file)
+
+            except IOError as e:
+                logs.logger.error('Could not read pending log file: %s - %s',pending_log_file,e)
+
+    except psycopg2.Error as e:
+        logs.logger.error('Problems with the database - %s',e)
+
+
+# ############################################
+# Function
+# ############################################
+  
+def check_database_connection(db):
+    '''Check if we can connect to the database server and the pgbackman database'''
+
+    try:
+        db.pg_connect()
+        return True
+    except Exception as e:    
+        return False
+
+
+# ############################################
+# Function
+# ############################################
+
+def main():
+
+    conf = configuration()
+    dsn = conf.dsn
+
+    logs.logger.debug('Backup server ID from config file: %s',conf.backup_server)
+    logs.logger.debug('Backup server FQDN: %s',socket.getfqdn())
+    logs.logger.debug('DSN: host=%s hostaddr=%s port=%s database=%s user=%s ',conf.dbhost,conf.dbhostaddr,conf.dbport,conf.dbname,conf.dbuser)
+    logs.logger.debug('Maintenance interval: %s',conf.maintenance_interval)
+
+    db = pgbackman_db(dsn,'pgbackman_maintenance')
+
+    #
+    # We check before starting if the database is available. 
+    # If it is not available we will wait conf.pg_connect_retry_interval 
+    # and try again 
+
+    check_db = check_database_connection(db)
+
+    while not check_db:
+        logs.logger.critical('The pgbackman database is not available. Waiting %s seconds before trying again',conf.pg_connect_retry_interval)
+        
+        time.sleep(conf.pg_connect_retry_interval)
+        check_db = check_database_connection(db)
+        
+    logs.logger.debug('Database server is up and running and pgbackman database is available')
+
+    if conf.backup_server != '':
+        backup_server_fqdn = conf.backup_server
+        
+        try:
+            backup_server_id = db.get_backup_server_id(backup_server_fqdn)
+            logs.logger.info('Backup server: %s is registered in pgbackman',backup_server_fqdn)
+
+        except psycopg2.Error as e:
+            logs.logger.critical('Cannot find backup server %s in pgbackman. Stopping pgbackman2cron.',backup_server_fqdn)
+            logs.logger.info('**** pgbackman_maintenance stopped. ****')
+            sys.exit()     
+    else:
+        backup_server_fqdn = socket.getfqdn()
+
+        try:
+            backup_server_id = db.get_backup_server_id(backup_server_fqdn)
+            logs.logger.info('Backup server: %s is registered in pgbackman',backup_server_fqdn)
+            
+        except psycopg2.Error as e:
+            logs.logger.critical('Cannot find backup server %s in pgbackman. Stopping pgbackman2cron.',backup_server_fqdn)
+            logs.logger.info('**** pgbackman_maintenance stopped. ****')
+            sys.exit()     
+    
+    loop = 0
+
+    while loop == 0:
+        try:
+            delete_files_from_force_deletes(db,backup_server_id)
+            enforce_retentions(db,backup_server_id)
+            process_pending_catalog_log_file(db,backup_server_id)
+            
+        except psycopg2.OperationalError as e:
+
+            #
+            # If we lose the connection to the database, we will wait conf.pg_connect_retry_interval
+            # before trying to connect again. 
+            #
+
+            logs.logger.critical('Operational error: %s',e)
+
+            check_db = check_database_connection(db)
+            
+            while not check_db:
+                logs.logger.critical('We have lost the connection to the database. Waiting %s seconds before trying again',conf.pg_connect_retry_interval)
+                
+                time.sleep(conf.pg_connect_retry_interval)
+                check_db = check_database_connection(db)
+
+        if cron:
+            loop = 1
+        else:
+            # Wait for next maintenance run if in loop mode
+            time.sleep(conf.maintenance_interval)
+    
+    db.pg_close()
+
+
+
+
+        
+# ############################################
+# Function handler
+# ############################################
+    
+def signal_handler(signum, frame):
+    logs.logger.info('**** pgbackman_maintenance stopped. ****')
+    sys.exit(0)
+
+
+# ############################################
+# 
+# ############################################
+
+if __name__ == '__main__':
+
+    logs = logs("pgbackman_maintenance")
+
+    signal.signal(signal.SIGINT,signal_handler)
+    signal.signal(signal.SIGTERM,signal_handler)
+
+    parser = argparse.ArgumentParser(prog=sys.argv[0])
+    parser.add_argument('--cron', required=False, help='Single run to use via cron', action="store_true")
+
+    args = parser.parse_args()    
+
+    logs.logger.info('**** pgbackman_maintenance started. ****')
+    
+    if args.cron:
+        cron = True
+        logs.logger.info('Running in cron mode')
+    else:
+        cron = False
+        logs.logger.info('Running in loop mode')
+    main()
+
+    logs.logger.info('**** pgbackman_maintenance finished. ****')
