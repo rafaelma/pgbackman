@@ -25,13 +25,9 @@ import time
 import socket
 import signal
 
-sys.path.append('/home/rafael/Devel/GIT/pgbackman')
-
 from pgbackman.logs import *
 from pgbackman.database import *
 from pgbackman.config import *
- 
-__version__ = "1.0.0"
 
 listen_list = []
 

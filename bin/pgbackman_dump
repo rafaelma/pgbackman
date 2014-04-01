@@ -28,8 +28,6 @@ import time
 import signal
 import argparse
 
-sys.path.append('/home/rafael/Devel/GIT/pgbackman')
-
 from pgbackman.logs import *
 from pgbackman.database import * 
 from pgbackman.config import *

@@ -30,11 +30,8 @@ import signal
 import argparse
 import errno
 
-sys.path.append('/home/rafael/Devel/GIT/pgbackman')
-
 from pgbackman.logs import *
 from pgbackman.database import *
-from pgbackman.database_notify import *
 from pgbackman.config import *
 
 
