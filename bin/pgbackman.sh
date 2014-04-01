@@ -1,24 +1,24 @@
 #!/bin/bash
 #
-# PGBACKMAN is a set of scripts that can be used to run 
-# automatic NMAP scans of a network and save 
-# the results in a database for further analysis.
+# Copyright (c) 2013 Rafael Martinez Guerrero (PostgreSQL-es)
+# rafael@postgresql.org.es / http://www.postgresql.org.es/
 #
-# @File: 
-# pgbackman_ctrl.sh
+# This file is part of Pgbackman
+# https://github.com/rafaelma/pgbackman
 #
-# @Author: 
-# Rafael Martinez Guerrero / rafael@postgresql.org.es
-# 
-# @Description: 
-# PGBACKMAN control script. Used to start/stop the pgbackman
+# PgBackMan is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-# Some nmap scans must be run as root. We recommend to run 
-# this script as 'root'
+# PgBackMan is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-# Example: sudo ./pgbackman_ctrl.sh -c start
+# You should have received a copy of the GNU General Public License
+# along with Pgbackman.  If not, see <http://www.gnu.org/licenses/>.
 #
-
 
 #
 # Execute command
