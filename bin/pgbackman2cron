@@ -19,6 +19,19 @@
 # You should have received a copy of the GNU General Public License
 # along with Pgbackman.  If not, see <http://www.gnu.org/licenses/>.
 
+'''
+This program is used by pgbackman to administrate the crontab files for all the
+PgSQL nodes running backup jobs in this Backup server. These crontab files will run pgbackman_dump 
+for the backup jobs running in this backup server.
+
+pgbackman2cron uses LISTEN/NOTIFY to track changes on PgSQL nodes using this backup server.
+
+In addition pgbackman2cron will create cache data for the Backup server and all PgSQL nodes. 
+
+pgbackman2cron will catch up with changes that happened during a down period of the program. 
+No changes will be lose if pgbackman2cron is down.
+'''
+
 import sys
 import os
 import time
@@ -31,12 +44,13 @@ from pgbackman.config import *
 
 listen_list = []
 
+
 # ############################################
-# Function
+# Function add_to_listen_channels()
 # ############################################
 
 def add_to_listen_channels(db,db_notify,backup_server_id):
-    """Listen to all active channels"""
+    """LISTEN to all active channels"""
     
     global listen_list
     
@@ -54,14 +68,16 @@ def add_to_listen_channels(db,db_notify,backup_server_id):
             db_notify.add_listen(channel)
 
             #
-            # Create cache data and backup directory for a pgsql_node if 
-            # they do not exist.
+            # Create cache data, backup directory and crontab file 
+            # for a pgsql_node if they do not exist. 
             #
             
             if channel != 'channel_pgsql_nodes_updated':
                 pgsql_node_id = get_pgsql_node_id_from_channel(channel)
+                
                 update_pgsql_node_cache_data(db,backup_server_id,pgsql_node_id)
                 create_pgsql_node_backup_directories(db,pgsql_node_id)
+                generate_crontab_backup_jobs(db,backup_server_id,pgsql_node_id)
 
             logs.logger.info('Listening to channel: %s',channel)
 
@@ -70,11 +86,11 @@ def add_to_listen_channels(db,db_notify,backup_server_id):
             
 
 # ############################################
-# Function
+# Function delete_from_listen_channels()
 # ############################################
 
 def delete_from_listen_channels(db_notify,backup_server_id):
-    """Unlisten to channels"""
+    """UNLISTEN to channels"""
     
     new_listen_list = []
     delete_listen_list = []
@@ -95,7 +111,7 @@ def delete_from_listen_channels(db_notify,backup_server_id):
 
                  
 # ############################################
-# Function
+# Function get_pgsql_node_id_from_channel()
 # ############################################
 
 def get_pgsql_node_id_from_channel(channel):
@@ -106,7 +122,7 @@ def get_pgsql_node_id_from_channel(channel):
 
             
 # ############################################
-# Function
+# Function generate_crontab_backup_jobs()
 # ############################################
 
 def generate_crontab_backup_jobs(db,backup_server_id,pgsql_node_id):
@@ -114,43 +130,30 @@ def generate_crontab_backup_jobs(db,backup_server_id,pgsql_node_id):
 
     try:
         crontab_file = db.get_pgsql_node_parameter(pgsql_node_id,'pg_node_cron_file')
-
+               
+        with open(crontab_file,'w') as file:
+            data = db.generate_crontab_backup_jobs(backup_server_id,pgsql_node_id)
+            
+            file.write(data)
+            file.close()
+            
+            logs.logger.info('Crontab file: %s created/updated',crontab_file)
+            
     except Exception as e:
-        logs.logger.error('Problems getting the crontab file name for nodeID: %s - %s',pgsql_node_id,e)
-    
-    if os.path.exists(os.path.dirname(crontab_file)):
-        
+            
+        # If we cannot create the crontab file, we have to update
+        # the job_queue in the database so we don't loose this update.
+            
         try:
-            file = open(crontab_file,'w',1)
-                       
-            if file:
-                
-                try:
-                    data = db.generate_crontab_backup_jobs(backup_server_id,pgsql_node_id)
-   
-                except Exception as e:
-                    logs.logger.error('Problems getting data to update the crontab file for PgSQL node %s - %s',pgsql_node_id,e)
-   
-                file.write(data)
-                file.close()
+            db.update_job_queue(backup_server_id,pgsql_node_id)
+            logs.logger.error('Problems creating/updating the crontab file: %s - %s',crontab_file,e)
+            
+        except Exception as e:
+            logs.logger.error('Problems updating job queue for SrvID: %s and nodeID: %s after a crontab file update error - %s',backup_server_id,pgsql_node_id,e)
 
-                logs.logger.info('Crontab file: %s created/updated',crontab_file)
-                    
-        except IOError as e:
-            
-            # If we cannot create the crontab file, we have to update
-            # the job_queue in the database so we don't loose this update.
-            
-            try:
-                db.update_job_queue(backup_server_id,pgsql_node_id)
-                logs.logger.error('I/O error when creating/updating a crontab file: %s',e)
-            
-            except Exception as e:
-                logs.logger.error('Problems updating job queue for SrvID: %s and nodeID: %s after a crontab file update error - %s',backup_server_id,pgsql_node_id,e)
-   
 
 # ############################################
-# Function
+# Function generate_all_crontab_jobs()
 # ############################################
                          
 def generate_all_crontab_jobs(db,backup_server_id):
@@ -170,7 +173,7 @@ def generate_all_crontab_jobs(db,backup_server_id):
    
 
 # ############################################
-# Function
+# Function create_global_directories()
 # ############################################
 
 def create_global_directories(db,backup_server_fqdn,backup_server_id):
@@ -210,8 +213,9 @@ def create_global_directories(db,backup_server_fqdn,backup_server_id):
             logs.logger.critical('OS error when creating the cache directory: %s',e)
             sys.exit(1)
             
+
 # ############################################
-# Function handler
+# Function create_pgsql_node_backup_directories()
 # ############################################
     
 def create_pgsql_node_backup_directories(db,pgsql_node_id):
@@ -251,7 +255,7 @@ def create_pgsql_node_backup_directories(db,pgsql_node_id):
 
 
 # ############################################
-# Function
+# Function update_backup_server_cache_data()
 # ############################################
 
 def update_backup_server_cache_data(db,backup_server_fqdn,backup_server_id):
@@ -273,28 +277,24 @@ def update_backup_server_cache_data(db,backup_server_fqdn,backup_server_id):
 
         if os.path.exists(backup_server_cache_dir):
         
-            try:
-                with open(backup_server_cache_file,'w') as backup_server_cache:
-                    backup_server_cache.write('backup_server_id::' + str(backup_server_id) + '\n' +
-                                              'backup_server_fqdn::' + backup_server_fqdn + '\n' +
-                                              'root_backup_partition::' + root_backup_partition + '\n' +
-                                              'pgsql_bin_9_3::' + pgsql_bin_9_3 + '\n' +
-                                              'pgsql_bin_9_2::' + pgsql_bin_9_2 + '\n' +
-                                              'pgsql_bin_9_1::' + pgsql_bin_9_1 + '\n' +
-                                              'pgsql_bin_9_0::' + pgsql_bin_9_0 + '\n' +
-                                              'pgsql_bin_8_4::' + pgsql_bin_8_4 + '\n')
+            with open(backup_server_cache_file,'w') as backup_server_cache:
+                backup_server_cache.write('backup_server_id::' + str(backup_server_id) + '\n' +
+                                          'backup_server_fqdn::' + backup_server_fqdn + '\n' +
+                                          'root_backup_partition::' + root_backup_partition + '\n' +
+                                          'pgsql_bin_9_3::' + pgsql_bin_9_3 + '\n' +
+                                          'pgsql_bin_9_2::' + pgsql_bin_9_2 + '\n' +
+                                          'pgsql_bin_9_1::' + pgsql_bin_9_1 + '\n' +
+                                          'pgsql_bin_9_0::' + pgsql_bin_9_0 + '\n' +
+                                          'pgsql_bin_8_4::' + pgsql_bin_8_4 + '\n')
                 
-                    logs.logger.info('Cache file: %s created/updated',backup_server_cache_file)
+                logs.logger.info('Cache file: %s created/updated',backup_server_cache_file)
                 
-            except IOError as e:
-                logs.logger.error('Could not create the cache file for the backup server: [%s] %s - %s',backup_server_id,backup_server_fqdn,e)
-
     except Exception as e:
-        logs.logger.error('Problems getting backup server data to update cache data for %s - %s',backup_server_fqdn,e)   
+        logs.logger.error('Problems updating backup server cache data for %s - %s',backup_server_fqdn,e)   
         
     
 # ############################################
-# Function
+# Function update_pgsql_node_cache_data()
 # ############################################
 
 def update_pgsql_node_cache_data(db,backup_server_id,pgsql_node_id):
@@ -304,29 +304,25 @@ def update_pgsql_node_cache_data(db,backup_server_id,pgsql_node_id):
         pgsql_node_fqdn = db.get_pgsql_node_fqdn(pgsql_node_id)
         pgsql_node_backup_dir = db.get_pgsql_node_parameter(pgsql_node_id,'pgnode_backup_partition')
         root_backup_partition = db.get_backup_server_parameter(backup_server_id,'root_backup_partition')
-
-    except Exception as e:
-        logs.logger.error('Problems getting PgSQL node data to update cache data for NodeID: %s - %s',pgsql_node_id,e)   
+           
+        backup_server_cache_dir = root_backup_partition +  '/cache_dir'
+        pgsql_node_cache_file = backup_server_cache_dir + '/pgsql_node_' + str(pgsql_node_id) + '.cache'
         
-    backup_server_cache_dir = root_backup_partition +  '/cache_dir'
-    pgsql_node_cache_file = backup_server_cache_dir + '/pgsql_node_' + str(pgsql_node_id) + '.cache'
-
-    if os.path.exists(backup_server_cache_dir):
+        if os.path.exists(backup_server_cache_dir):
         
-        try:
             with open(pgsql_node_cache_file,'w') as pgsql_node_cache:
                 pgsql_node_cache.write('pgsql_node_id::' + str(pgsql_node_id) + '\n' +
                                        'pgsql_node_fqdn::' + pgsql_node_fqdn + '\n' +
                                        'pgsql_node_backup_dir::' + pgsql_node_backup_dir + '\n')
                 
                 logs.logger.info('Cache file: %s created/updated',pgsql_node_cache_file)
-                
-        except IOError as e:
-            logs.logger.error('Could not create the cache file for the PgSQL node: [%s] %s - %s',pgsql_node_id,pgsql_node_fqdn,e)
-
+                   
+    except Exception as e:
+        logs.logger.error('Problems updating pgsql node cache data for %s - %s',pgsql_node_fqdn,e)   
+   
 
 # ############################################
-# Function
+# Function check_database_connection()
 # ############################################
   
 def check_database_connection(db):
@@ -340,7 +336,7 @@ def check_database_connection(db):
         
 
 # ############################################
-# Function
+# Function main()
 # ############################################
 
 def main():
@@ -376,8 +372,9 @@ def main():
     try:
         db_notify.pg_connect()
     except Exception as e:
-        logs.logger.error('Problems creating a permanent connection to the pgbackman database for LISTEN/NOTIFY data - %s',e)   
-        
+        logs.logger.critical('Problems creating a permanent connection to the pgbackman database for LISTEN/NOTIFY data - %s',e)   
+        sys.exit(1)
+
     #
     # Checking if this backup server is registered in pgbackman
     #
@@ -432,9 +429,18 @@ def main():
 
             for channel in set(channels):
                 if channel == 'channel_pgsql_nodes_updated':
+                    
+                    #
+                    # A PgSQL node has been registered or deleted
+                    #
                     delete_from_listen_channels(db_notify,backup_server_id)
                     add_to_listen_channels(db,db_notify,backup_server_id)
+                
                 else:
+                    
+                    #
+                    # A backup job has been registered or deleted
+                    #
                     pgsql_node_id = db.get_next_crontab_id_to_generate(backup_server_id)
                     generate_crontab_backup_jobs(db,backup_server_id,pgsql_node_id)
 
@@ -465,8 +471,9 @@ def main():
             try:
                 db_notify.pg_connect()
             except Exception as e:
-                logs.logger.error('Problems creating a permanent connection to the pgbackman database for LISTEN/NOTIFY data - %s',e)   
-        
+                logs.logger.critical('Problems creating a permanent connection to the pgbackman database for LISTEN/NOTIFY data - %s',e)   
+                sys.exit(1)
+
             listen_list = []
  
             add_to_listen_channels(db,db_notify,backup_server_id)
@@ -480,7 +487,7 @@ def main():
 
         
 # ############################################
-# Function handler
+# Function signal_handler()
 # ############################################
     
 def signal_handler(signum, frame):
@@ -501,5 +508,4 @@ if __name__ == '__main__':
     signal.signal(signal.SIGTERM,signal_handler)
 
     main()
-
 

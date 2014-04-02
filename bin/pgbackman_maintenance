@@ -198,6 +198,8 @@ def process_pending_catalog_log_file(db,backup_server_id):
                     else:
                         logs.logger.error('Wrong format in pending file: %s',pending_log_file)
 
+    except psycopg2.OperationalError as e:
+        raise e
     except Exception as e:
         logs.logger.error('Problems processing pending files - %s',e)
 
@@ -246,6 +248,10 @@ def main():
         check_db = check_database_connection(db)
         
     logs.logger.debug('Database server is up and running and pgbackman database is available')
+
+    #
+    # Check backup server information
+    #
 
     if conf.backup_server != '':
         backup_server_fqdn = conf.backup_server
@@ -302,9 +308,6 @@ def main():
             time.sleep(conf.maintenance_interval)
     
     db.pg_close()
-
-
-
 
         
 # ############################################
