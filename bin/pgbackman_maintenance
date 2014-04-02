@@ -155,60 +155,51 @@ def process_pending_catalog_log_file(db,backup_server_id):
         pending_catalog = root_backup_partition + '/pending_updates'
         
         for pending_log_file in os.listdir(pending_catalog):
-            try:
-                with open(pending_catalog + '/' + pending_log_file,'r') as pending_file:
-                    for line in pending_file:
-                        parameters = line.split('::')
+            
+            with open(pending_catalog + '/' + pending_log_file,'r') as pending_file:
+                for line in pending_file:
+                    parameters = line.split('::')
+                    
+                    if len(parameters) == 18:
+                            
+                        #
+                        # Updating the database with the information in the pending file
+                        #
+            
+                        db.register_backup_job_catalog(parameters[0],
+                                                       parameters[1],
+                                                       parameters[2],
+                                                       parameters[3],
+                                                       parameters[4],
+                                                       parameters[5],
+                                                       parameters[6],
+                                                       parameters[7],
+                                                       parameters[8],
+                                                       parameters[9],
+                                                       parameters[10],
+                                                       parameters[11],
+                                                       parameters[12],
+                                                       parameters[13],
+                                                       parameters[14],
+                                                       parameters[15],
+                                                       parameters[16],
+                                                       parameters[17].replace('\n',''))
+
+                        logs.logger.info('Backup job catalog for DefID: %s in pending file %s updated in the database',parameters[0],pending_log_file)
+                            
+                        #
+                        # Deleting the pending file if we can update the database with
+                        # the information in the file
+                        #
                         
-                        if len(parameters) == 18:
-                            
-                            #
-                            # Updating the database with the information in the pending file
-                            #
-                            try:
-                                db.register_backup_job_catalog(parameters[0],
-                                                               parameters[1],
-                                                               parameters[2],
-                                                               parameters[3],
-                                                               parameters[4],
-                                                               parameters[5],
-                                                               parameters[6],
-                                                               parameters[7],
-                                                               parameters[8],
-                                                               parameters[9],
-                                                               parameters[10],
-                                                               parameters[11],
-                                                               parameters[12],
-                                                               parameters[13],
-                                                               parameters[14],
-                                                               parameters[15],
-                                                               parameters[16],
-                                                               parameters[17].replace('\n',''))
+                        os.unlink(pending_catalog + '/' + pending_log_file)
+                        logs.logger.info('Pending file: %s deleted',pending_log_file)
+                                                        
+                    else:
+                        logs.logger.error('Wrong format in pending file: %s',pending_log_file)
 
-                                logs.logger.info('Backup job catalog for DefID: %s in pending file %s updated in the database',parameters[0],pending_log_file)
-                            
-                                #
-                                # Deleting the pending file if we can update the database with
-                                # the information in the file
-                                #
-                                try:
-                                    os.unlink(pending_catalog + '/' + pending_log_file)
-                                    logs.logger.info('Pending file: %s deleted',pending_log_file)
-                                    
-                                except OSError as e:
-                                    logs.logger.error('Could not delete pending file: %s ',pending_log_file)
-                                                            
-                            except Exception as e:
-                                logs.logger.error('Problems to register in the database the pending backup file %s - %s',pending_log_file,e)
-                                
-                        else:
-                            logs.logger.error('Wrong format in pending file: %s',pending_log_file)
-
-            except IOError as e:
-                logs.logger.error('Could not read pending log file: %s - %s',pending_log_file,e)
-
-    except psycopg2.Error as e:
-        logs.logger.error('Problems with the database - %s',e)
+    except Exception as e:
+        logs.logger.error('Problems processing pending files - %s',e)
 
 
 # ############################################
