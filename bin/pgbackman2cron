@@ -77,7 +77,11 @@ def add_to_listen_channels(db,db_notify,backup_server_id):
                 
                 update_pgsql_node_cache_data(db,backup_server_id,pgsql_node_id)
                 create_pgsql_node_backup_directories(db,pgsql_node_id)
-                generate_crontab_backup_jobs(db,backup_server_id,pgsql_node_id)
+                
+                crontab_file = db.get_pgsql_node_parameter(pgsql_node_id,'pg_node_cron_file')
+                
+                if not os.path.exists(crontab_file):
+                    generate_crontab_backup_jobs(db,backup_server_id,pgsql_node_id)
 
             logs.logger.info('Listening to channel: %s',channel)
 
