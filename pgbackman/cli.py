@@ -743,22 +743,26 @@ class pgbackman_cli(cmd.Cmd):
                 backup_code_default = encryption_default = retention_period_default = retention_redundancy_default = \
                 extra_parameters_default = backup_job_status_default = ""
 
-            minutes_cron_default = self.db.get_minute_from_interval(self.db.get_default_pgsql_node_parameter("backup_minutes_interval"))
-            hours_cron_default = self.db.get_hour_from_interval(self.db.get_default_pgsql_node_parameter("backup_hours_interval"))
-            weekday_cron_default = self.db.get_default_pgsql_node_parameter("backup_weekday_cron")
-            month_cron_default = self.db.get_default_pgsql_node_parameter("backup_month_cron")
-            day_month_cron_default = self.db.get_default_pgsql_node_parameter("backup_day_month_cron")
-            backup_code_default = self.db.get_default_pgsql_node_parameter("backup_code")
-            encryption_default = self.db.get_default_pgsql_node_parameter("encryption")
-            retention_period_default = self.db.get_default_pgsql_node_parameter("retention_period")
-            retention_redundancy_default = self.db.get_default_pgsql_node_parameter("retention_redundancy")
-            extra_parameters_default = self.db.get_default_pgsql_node_parameter("extra_parameters")
-            backup_job_status_default = self.db.get_default_pgsql_node_parameter("backup_job_status")
+            try:
+                minutes_cron_default = self.db.get_minute_from_interval(self.db.get_default_pgsql_node_parameter("backup_minutes_interval"))
+                hours_cron_default = self.db.get_hour_from_interval(self.db.get_default_pgsql_node_parameter("backup_hours_interval"))
+                weekday_cron_default = self.db.get_default_pgsql_node_parameter("backup_weekday_cron")
+                month_cron_default = self.db.get_default_pgsql_node_parameter("backup_month_cron")
+                day_month_cron_default = self.db.get_default_pgsql_node_parameter("backup_day_month_cron")
+                backup_code_default = self.db.get_default_pgsql_node_parameter("backup_code")
+                encryption_default = self.db.get_default_pgsql_node_parameter("encryption")
+                retention_period_default = self.db.get_default_pgsql_node_parameter("retention_period")
+                retention_redundancy_default = self.db.get_default_pgsql_node_parameter("retention_redundancy")
+                extra_parameters_default = self.db.get_default_pgsql_node_parameter("extra_parameters")
+                backup_job_status_default = self.db.get_default_pgsql_node_parameter("backup_job_status")
 
+            except Exception as e:
+                print "\n[ERROR]: Problems getting default values for parameters\n",e 
+                return False
             
             print "--------------------------------------------------------"
-            backup_server = raw_input("# Backup server FQDN []: ")
-            pgsql_node = raw_input("# PgSQL node FQDN  []: ")
+            backup_server = raw_input("# Backup server SrvID / FQDN []: ")
+            pgsql_node = raw_input("# PgSQL node NodeID / FQDN []: ")
             dbname = raw_input("# DBname []: ")
             minutes_cron = raw_input("# Minutes cron [" + str(minutes_cron_default) + "]: ")
             hours_cron = raw_input("# Hours cron [" + str(hours_cron_default) + "]: ")
@@ -778,6 +782,24 @@ class pgbackman_cli(cmd.Cmd):
                 ack = raw_input("# Are all values correct (yes/no): ")
 
             print "--------------------------------------------------------"
+
+            try:
+                if backup_server.isdigit():
+                    backup_server_id = backup_server
+                else:
+                    backup_server_id = self.db.get_backup_server_id(backup_server)
+                    
+            except Exception as e:
+                print "\n[ERROR]: ",e 
+                
+            try:
+                if pgsql_node.isdigit():
+                    pgsql_node_id = pgsql_node
+                else:
+                    pgsql_node_id = self.db.get_pgsql_node_id(pgsql_node)
+                    
+            except Exception as e:
+                print "\n[ERROR]: ",e 
 
             if minutes_cron == "":
                 minutes_cron = str(minutes_cron_default)
@@ -814,7 +836,7 @@ class pgbackman_cli(cmd.Cmd):
             
             if ack.lower() == "yes":
                 try:
-                    self.db.register_backup_job(backup_server.lower().strip(),pgsql_node.lower().strip(),dbname.strip(),minutes_cron,hours_cron, \
+                    self.db.register_backup_job(backup_server_id,pgsql_node_id,dbname.strip(),minutes_cron,hours_cron, \
                                                     weekday_cron.strip(),month_cron.strip(),day_month_cron.strip(),backup_code.upper().strip(),encryption.lower().strip(), \
                                                     retention_period.lower().strip(),retention_redundancy.strip(),extra_parameters.lower().strip(),backup_job_status.upper().strip(),remarks.strip())
                     print "\n[Done]\n"
@@ -831,7 +853,7 @@ class pgbackman_cli(cmd.Cmd):
         #
 
         elif len(arg_list) == 15:
-
+            
             backup_server = arg_list[0]
             pgsql_node = arg_list[1]
             dbname = arg_list[2]
@@ -849,7 +871,27 @@ class pgbackman_cli(cmd.Cmd):
             remarks = arg_list[14]
               
             try:
-                self.db.register_backup_job(backup_server.lower().strip(),pgsql_node.lower().strip(),dbname.strip(),minutes_cron,hours_cron, \
+                if backup_server.isdigit():
+                    backup_server_id = backup_server
+                else:
+                    backup_server_id = self.db.get_backup_server_id(backup_server)
+                    
+            except Exception as e:
+                print "\n[ERROR]: ",e 
+                
+            try:
+                if pgsql_node.isdigit():
+                    pgsql_node_id = pgsql_node
+                else:
+                    pgsql_node_id = self.db.get_pgsql_node_id(pgsql_node)
+                    
+            except Exception as e:
+                print "\n[ERROR]: ",e 
+            
+
+
+            try:
+                self.db.register_backup_job(backup_server_id,pgsql_node_id,dbname.strip(),minutes_cron,hours_cron, \
                                                 weekday_cron.strip(),month_cron.strip(),day_month_cron.strip(),backup_code.upper().strip(),encryption.lower().strip(), \
                                                 retention_period.lower().strip(),retention_redundancy.strip(),extra_parameters.lower().strip(),backup_job_status.upper().strip(),remarks.strip())
                 print "\n[Done]\n"

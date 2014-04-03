@@ -929,7 +929,7 @@ CREATE OR REPLACE FUNCTION delete_backup_server(INTEGER) RETURNS BOOLEAN
   v_context TEXT;
  BEGIN
 
-	SELECT count(*) FROM backup_server WHERE server_id = backup_server_id_ INTO server_cnt;
+   SELECT count(*) FROM backup_server WHERE server_id = backup_server_id_ INTO server_cnt;
 
    IF server_cnt != 0 THEN
 
@@ -1079,15 +1079,15 @@ ALTER FUNCTION delete_pgsql_node(INTEGER) OWNER TO pgbackman_role_rw;
 --
 -- ------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION register_backup_job(TEXT,TEXT,TEXT,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,BOOLEAN,INTERVAL,INTEGER,TEXT,CHARACTER VARYING,TEXT) RETURNS BOOLEAN
+CREATE OR REPLACE FUNCTION register_backup_job(INTEGER,INTEGER,TEXT,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,BOOLEAN,INTERVAL,INTEGER,TEXT,CHARACTER VARYING,TEXT) RETURNS VOID
  LANGUAGE plpgsql 
  SECURITY INVOKER 
  SET search_path = public, pg_temp
  AS $$
  DECLARE
  
-  backup_server_ ALIAS FOR $1;
-  pgsql_node_ ALIAS FOR $2;
+  backup_server_id_ ALIAS FOR $1;
+  pgsql_node_id_ ALIAS FOR $2;
   dbname_ ALIAS FOR $3; 
   minutes_cron_ ALIAS FOR $4;
   hours_cron_ ALIAS FOR $5;
@@ -1102,10 +1102,8 @@ CREATE OR REPLACE FUNCTION register_backup_job(TEXT,TEXT,TEXT,CHARACTER VARYING,
   job_status_ ALIAS FOR $14;
   remarks_ ALIAS FOR $15;
 
-  backup_server_id_ INTEGER;
-  pgsql_node_id_ INTEGER;
-
-  backup_job_cnt INTEGER;
+  server_cnt INTEGER;
+  node_cnt INTEGER;  
 
   backup_hours_interval TEXT;
   backup_minutes_interval TEXT;
@@ -1114,6 +1112,17 @@ CREATE OR REPLACE FUNCTION register_backup_job(TEXT,TEXT,TEXT,CHARACTER VARYING,
   v_detail  TEXT;
   v_context TEXT;
  BEGIN
+
+   SELECT count(*) FROM backup_server WHERE server_id = backup_server_id_ INTO server_cnt;
+   SELECT count(*) FROM pgsql_node WHERE node_id = pgsql_node_id_ INTO node_cnt;
+
+   IF server_cnt = 0 THEN
+     RAISE EXCEPTION 'Backup server with SrvID: % does not exist',backup_server_id_ ;
+   ELSIF node_cnt = 0 THEN
+     RAISE EXCEPTION 'PgSQL node with NodeID: % does not exist',pgsql_node_id_ ;
+   ELSIF (dbname_ = '' OR dbname_ IS NULL) AND  backup_code_ != 'CLUSTER' THEN
+     RAISE EXCEPTION 'No database value defined';
+   END IF;
 
    IF hours_cron_ = '' OR hours_cron_ IS NULL THEN
     backup_hours_interval := get_default_pgsql_node_parameter('backup_hours_interval');
@@ -1161,27 +1170,6 @@ CREATE OR REPLACE FUNCTION register_backup_job(TEXT,TEXT,TEXT,CHARACTER VARYING,
     job_status_ := get_default_pgsql_node_parameter('backup_job_status');
    END IF;
 
-   SELECT get_backup_server_id(backup_server_) INTO backup_server_id_;
-   SELECT get_pgsql_node_id(pgsql_node_) INTO pgsql_node_id_;
-
-   IF backup_server_id_ IS NULL THEN
-     RAISE EXCEPTION 'Backup server % does not exist',backup_server_ ;
-   ELSIF pgsql_node_id_ IS NULL THEN
-     RAISE EXCEPTION 'PgSQL node % does not exist',pgsql_node_ ;
-   ELSIF dbname_ = '' OR dbname_ IS NULL THEN
-     RAISE EXCEPTION 'No database value defined';
-   END IF;
-
-   SELECT count(*) AS cnt 
-   FROM backup_job_definition 
-   WHERE pgsql_node_id = pgsql_node_id_ 
-   AND dbname = dbname_ 
-   AND backup_code = backup_code_ 
-   AND extra_parameters = extra_parameters_ 
-   INTO backup_job_cnt;
-
-   IF backup_job_cnt = 0 THEN     
-
     EXECUTE 'INSERT INTO backup_job_definition (backup_server_id,
 						pgsql_node_id,
 						dbname,
@@ -1214,43 +1202,6 @@ CREATE OR REPLACE FUNCTION register_backup_job(TEXT,TEXT,TEXT,CHARACTER VARYING,
 	  job_status_,
 	  remarks_;         
 
-   ELSIF backup_job_cnt > 0 THEN
-
-    EXECUTE 'UPDATE backup_job_definition 
-    	     SET minutes_cron = $4, 
-	     	 hours_cron = $5,
-		 weekday_cron = $6,
-		 month_cron = $7,
-		 day_month_cron = $8,
-		 encryption = $10,
-		 retention_period = $11,
-		 retention_redundancy = $12,
-		 job_status = $14,
-		 remarks = $15
-	     WHERE  backup_server_id = $1
-	     AND pgsql_node_id = $2
-	     AND dbname = $3
-	     AND backup_code = $9 
-	     AND extra_parameters = $13'
-    USING backup_server_id_,
-	  pgsql_node_id_,
-	  dbname_,
-	  minutes_cron_,
-	  hours_cron_,
-	  weekday_cron_,
-	  month_cron_,
-	  day_month_cron_,
-	  backup_code_,
-	  encryption_,
-	  retention_period_,
-	  retention_redundancy_,
-	  extra_parameters_,
-	  job_status_,
-	  remarks_;         
-
-   END IF;
-
-   RETURN TRUE;
  EXCEPTION WHEN others THEN
    	GET STACKED DIAGNOSTICS	
             v_msg     = MESSAGE_TEXT,
@@ -1261,7 +1212,7 @@ CREATE OR REPLACE FUNCTION register_backup_job(TEXT,TEXT,TEXT,CHARACTER VARYING,
 END;
 $$;
 
-ALTER FUNCTION register_backup_job(TEXT,TEXT,TEXT,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,BOOLEAN,INTERVAL,INTEGER,TEXT,CHARACTER VARYING,TEXT) OWNER TO pgbackman_role_rw;
+ALTER FUNCTION register_backup_job(INTEGER,INTEGER,TEXT,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,BOOLEAN,INTERVAL,INTEGER,TEXT,CHARACTER VARYING,TEXT) OWNER TO pgbackman_role_rw;
 
 
 
@@ -1943,11 +1894,15 @@ BEGIN
 		   ' --node-id ' || pgsql_node_id_ ||
 		   ' --node-port ' || pgsql_node_port ||
 		   ' --node-user ' || admin_user || 
-		   ' --def-id ' || job_row.def_id || 
-		   ' --dbname ' || job_row.dbname || 
-		   ' --encryption ' || job_row.encryption::TEXT || 
-		   ' --backup-code ' || job_row.backup_code ||
-		   ' --root-backup-dir ' || root_backup_dir;
+		   ' --def-id ' || job_row.def_id;
+
+  IF job_row.backup_code != 'CLUSTER' THEN
+     output := output || ' --dbname ' || job_row.dbname;
+  END IF;
+
+  output := output || ' --encryption ' || job_row.encryption::TEXT || 
+		      ' --backup-code ' || job_row.backup_code ||
+		      ' --root-backup-dir ' || root_backup_dir;
 
   IF job_row.extra_parameters != '' AND job_row.extra_parameters IS NOT NULL THEN
     output := output || ' --extra-params ' || job_row.extra_parameters;

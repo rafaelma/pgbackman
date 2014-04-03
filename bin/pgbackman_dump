@@ -911,7 +911,7 @@ if __name__ == '__main__':
     if args.dbname:
         global_parameters['dbname'] = args.dbname
     else:
-        global_parameters['dbname'] = ''
+        global_parameters['dbname'] = 'template1'
 
     if args.encryption:
         global_parameters['encryption'] = args.encryption
