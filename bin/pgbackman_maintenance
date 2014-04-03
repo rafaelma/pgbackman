@@ -264,26 +264,17 @@ def main():
 
     if conf.backup_server != '':
         backup_server_fqdn = conf.backup_server
-        
-        try:
-            backup_server_id = db.get_backup_server_id(backup_server_fqdn)
-            logs.logger.info('Backup server: %s is registered in pgbackman',backup_server_fqdn)
-
-        except psycopg2.Error as e:
-            logs.logger.critical('Cannot find backup server %s in pgbackman. Stopping pgbackman2cron.',backup_server_fqdn)
-            logs.logger.info('**** pgbackman_maintenance stopped. ****')
-            sys.exit()     
     else:
         backup_server_fqdn = socket.getfqdn()
 
-        try:
-            backup_server_id = db.get_backup_server_id(backup_server_fqdn)
-            logs.logger.info('Backup server: %s is registered in pgbackman',backup_server_fqdn)
+    try:
+        backup_server_id = db.get_backup_server_id(backup_server_fqdn)
+        logs.logger.info('Backup server: %s is registered in pgbackman',backup_server_fqdn)
             
-        except psycopg2.Error as e:
-            logs.logger.critical('Cannot find backup server %s in pgbackman. Stopping pgbackman2cron.',backup_server_fqdn)
-            logs.logger.info('**** pgbackman_maintenance stopped. ****')
-            sys.exit()     
+    except psycopg2.Error as e:
+        logs.logger.critical('Cannot find backup server %s in pgbackman. Stopping pgbackman2cron.',backup_server_fqdn)
+        logs.logger.info('**** pgbackman_maintenance stopped. ****')
+        sys.exit()     
     
     loop = 0
 
