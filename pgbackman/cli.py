@@ -138,9 +138,15 @@ class pgbackman_cli(cmd.Cmd):
         if len(arg_list) == 0:
             
             ack = ""
-            domain_default = self.db.get_default_backup_server_parameter("domain")
-            status_default = self.db.get_default_backup_server_parameter("backup_server_status")
 
+            try:
+                domain_default = self.db.get_default_backup_server_parameter("domain")
+                status_default = self.db.get_default_backup_server_parameter("backup_server_status")
+
+            except Exception as e:
+                print "\n[ERROR]: Problems getting default values for parameters\n",e 
+                return False
+            
             print "--------------------------------------------------------"
             hostname = raw_input("# Hostname []: ")
             domain = raw_input("# Domain [" + domain_default + "]: ")
@@ -196,7 +202,6 @@ class pgbackman_cli(cmd.Cmd):
         else:
             print "\n[ERROR] - Wrong number of parameters used.\n          Type help or \? to list commands\n"
 
-    
 
     # ############################################
     # Method do_delete_backup_server
@@ -240,21 +245,18 @@ class pgbackman_cli(cmd.Cmd):
             print "--------------------------------------------------------"
 
             if ack.lower() == "yes":
-                if server_id.isdigit():
-                    try:
-                        self.db.get_backup_server_fqdn(server_id)
+
+                try:
+                    if server_id.isdigit():
                         self.db.delete_backup_server(server_id)
                         print "\n[Done]\n"
 
-                    except Exception as e:
-                        print "\n[ERROR]: Could not delete this backup server\n",e
-                else:
-                    try:
+                    else:
                         self.db.delete_backup_server(self.db.get_backup_server_id(server_id))
                         print "\n[Done]\n"
                         
-                    except Exception as e:
-                        print "\n[ERROR]: Could not delete this backup server\n",e
+                except Exception as e:
+                    print "\n[ERROR]: Could not delete this backup server\n",e
 
             elif ack.lower() == "no":
                 print "\n[Aborted]\n"
@@ -267,22 +269,18 @@ class pgbackman_cli(cmd.Cmd):
 
             server_id = arg_list[0]
 
-            if server_id.isdigit():
-                try:
-                    self.db.get_backup_server_fqdn(server_id)
+            try:
+                if server_id.isdigit():
                     self.db.delete_backup_server(server_id)
                     print "\n[Done]\n"
                     
-                except Exception as e:
-                    print "\n[ERROR]: Could not delete this backup server\n",e
-            else:
-                try:
+                else:
                     self.db.delete_backup_server(self.db.get_backup_server_id(server_id))
                     print "\n[Done]\n"
                     
-                except Exception as e:
-                    print "\n[ERROR]: Could not delete this backup server\n",e
-             
+            except Exception as e:
+                print "\n[ERROR]: Could not delete this backup server\n",e
+                         
         #
         # Command with the wrong number of parameters
         #
@@ -359,11 +357,17 @@ class pgbackman_cli(cmd.Cmd):
         if len(arg_list) == 0:
      
             ack = ""
-            domain_default = self.db.get_default_pgsql_node_parameter("domain")
-            port_default = self.db.get_default_pgsql_node_parameter("pgport")
-            admin_user_default = self.db.get_default_pgsql_node_parameter("admin_user")
-            status_default = self.db.get_default_pgsql_node_parameter("pgsql_node_status")
-            
+
+            try:
+                domain_default = self.db.get_default_pgsql_node_parameter("domain")
+                port_default = self.db.get_default_pgsql_node_parameter("pgport")
+                admin_user_default = self.db.get_default_pgsql_node_parameter("admin_user")
+                status_default = self.db.get_default_pgsql_node_parameter("pgsql_node_status")
+
+            except Exception as e:
+                print "\n[ERROR]: Problems getting default values for parameters\n",e 
+                return False
+
             print "--------------------------------------------------------"
             hostname = raw_input("# Hostname []: ")
             domain = raw_input("# Domain [" + domain_default + "]: ")
@@ -391,11 +395,11 @@ class pgbackman_cli(cmd.Cmd):
                 status = status_default
             
             if ack.lower() == "yes":
-                if self.check_digit(port):
+                if self.check_port(port):  
                     try:
                         self.db.register_pgsql_node(hostname.lower().strip(),domain.lower().strip(),port.strip(),admin_user.lower().strip(),status.upper().strip(),remarks.strip())
                         print "\n[Done]\n"
-
+                        
                     except Exception as e:
                         print "\n[ERROR]: Could not register this PgSQL node\n",e
 
@@ -416,13 +420,14 @@ class pgbackman_cli(cmd.Cmd):
             status = arg_list[4]
             remarks = arg_list[5]
 
-            if self.check_digit(port):   
+            if self.check_port(port):   
                 try: 
                     self.db.register_pgsql_node(hostname.lower().strip(),domain.lower().strip(),port.strip(),admin_user.lower().strip(),status.upper().strip(),remarks.strip())
                     print "\n[Done]\n"
             
                 except Exception as e:
                     print '\n[ERROR]: Could not register this PgSQL node\n',e
+            
                     
         #
         # Command with the wrong number of parameters
@@ -474,22 +479,18 @@ class pgbackman_cli(cmd.Cmd):
             print "--------------------------------------------------------"
             
             if ack.lower() == "yes":
-                if node_id.isdigit():
-                    try:
-                        self.db.get_pgsql_node_fqdn(node_id)
+
+                try:
+                    if node_id.isdigit():
                         self.db.delete_pgsql_node(node_id)
                         print "\n[Done]\n"
-                    
-                    except Exception as e:
-                        print '\n[ERROR]: Could not delete this PgSQL node\n',e
 
-                else:
-                    try:
+                    else:
                         self.db.delete_pgsql_node(self.db.get_pgsql_node_id(node_id))
                         print "\n[Done]\n"
 
-                    except Exception as e:
-                        print '\n[ERROR]: Could not delete this PgSQL node\n',e
+                except Exception as e:
+                    print '\n[ERROR]: Could not delete this PgSQL node\n',e
 
             elif ack.lower() == "no":
                 print "\n[Aborted]\n"
@@ -502,22 +503,17 @@ class pgbackman_cli(cmd.Cmd):
 
             node_id = arg_list[0]
 
-            if node_id.isdigit():
-                try:
-                    self.db.get_pgsql_node_fqdn(node_id)
+            try:
+                if node_id.isdigit():
                     self.db.delete_pgsql_node(node_id)
                     print "\n[Done]\n"
-
-                except Exception as e:
-                    print '\n[ERROR]: Could not delete this PgSQL node\n',e
                     
-            else:
-                try:
+                else:
                     self.db.delete_pgsql_node(self.db.get_pgsql_node_id(node_id))
                     print "\n[Done]\n"
                     
-                except Exception as e:
-                    print '\n[ERROR]: Could not delete this PgSQL node\n',e
+            except Exception as e:
+                print '\n[ERROR]: Could not delete this PgSQL node\n',e
             
         #
         # Command with the wrong number of parameters
@@ -526,7 +522,6 @@ class pgbackman_cli(cmd.Cmd):
         else:
             print "\n[ERROR] - Wrong number of parameters used.\n          Type help or \? to list commands\n"
             
-
 
     # ############################################
     # Method do_show_backup_server_backup_definitions
@@ -551,8 +546,8 @@ class pgbackman_cli(cmd.Cmd):
             try:
 
                 if server_id.isdigit():
-                    self.db.get_backup_server_fqdn(server_id)
                     self.db.show_backup_server_backup_definitions(server_id)
+                
                 else:
                     self.db.show_backup_server_backup_definitions(self.db.get_backup_server_id(server_id))
                                     
@@ -569,8 +564,8 @@ class pgbackman_cli(cmd.Cmd):
 
             try:
                 if server_id.isdigit():
-                    self.db.get_backup_server_fqdn(server_id)
                     self.db.show_backup_server_backup_definitions(server_id)
+                
                 else:
                     self.db.show_backup_server_backup_definitions(self.db.get_backup_server_id(server_id))
                     
@@ -580,7 +575,6 @@ class pgbackman_cli(cmd.Cmd):
         else:
             print "\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n"
         
-
 
     # ############################################
     # Method do_show_pgsql_node_backup_definitions
@@ -605,8 +599,8 @@ class pgbackman_cli(cmd.Cmd):
 
             try:
                 if node_id.isdigit():
-                    self.db.get_pgsql_node_fqdn(node_id)
                     self.db.show_pgsql_node_backup_definitions(node_id)
+                
                 else:
                     self.db.show_pgsql_node_backup_definitions(self.db.get_pgsql_node_id(node_id))
 
@@ -623,8 +617,8 @@ class pgbackman_cli(cmd.Cmd):
 
             try:
                 if node_id.isdigit():
-                    self.db.get_pgsql_node_fqdn(node_id)
                     self.db.show_pgsql_node_backup_definitions(node_id)
+                
                 else:
                     self.db.show_pgsql_node_backup_definitions(self.db.get_pgsql_node_id(node_id))
                          
@@ -657,7 +651,6 @@ class pgbackman_cli(cmd.Cmd):
             print "--------------------------------------------------------"
             
             try:
-                
                 self.db.show_database_backup_definitions(dbname)
                 
             except Exception as e:
@@ -792,7 +785,8 @@ class pgbackman_cli(cmd.Cmd):
                     backup_server_id = self.db.get_backup_server_id(backup_server)
                     
             except Exception as e:
-                print "\n[ERROR]: ",e 
+                print "\n[ERROR]: ",e
+                return False
                 
             try:
                 if pgsql_node.isdigit():
@@ -802,6 +796,7 @@ class pgbackman_cli(cmd.Cmd):
                     
             except Exception as e:
                 print "\n[ERROR]: ",e 
+                return False
 
             if minutes_cron == "":
                 minutes_cron = str(minutes_cron_default)
@@ -880,7 +875,8 @@ class pgbackman_cli(cmd.Cmd):
                     
             except Exception as e:
                 print "\n[ERROR]: ",e 
-                
+                return False
+
             try:
                 if pgsql_node.isdigit():
                     pgsql_node_id = pgsql_node
@@ -889,9 +885,8 @@ class pgbackman_cli(cmd.Cmd):
                     
             except Exception as e:
                 print "\n[ERROR]: ",e 
-            
-
-
+                return False
+                
             try:
                 self.db.register_backup_job(backup_server_id,pgsql_node_id,dbname.strip(),minutes_cron,hours_cron, \
                                                 weekday_cron.strip(),month_cron.strip(),day_month_cron.strip(),backup_code.upper().strip(),encryption.lower().strip(), \
@@ -923,7 +918,7 @@ class pgbackman_cli(cmd.Cmd):
         definitions with active backups in the catalog 
 
         COMMAND:
-        delete_backup_job_definition_id DefID [force-deletion]
+        delete_backup_job_definition_id [DefID] [force-deletion]
         """
 
         try: 
@@ -1068,30 +1063,26 @@ class pgbackman_cli(cmd.Cmd):
             print "--------------------------------------------------------"
             
             if ack.lower() == "yes":
-                if pgsql_node_id.isdigit():
-                    try:
+
+                try:
+                    if pgsql_node_id.isdigit():
                         if force_deletion == "y":
-                            self.db.get_pgsql_node_fqdn(pgsql_node_id)
                             self.db.delete_force_backup_job_definition_database(pgsql_node_id,dbname)
                             print "\n[Done]\n"
                         
                         elif force_deletion == "n":
-                            self.db.get_pgsql_node_fqdn(pgsql_node_id)
                             self.db.delete_backup_job_definition_database(pgsql_node_id,dbname)
                             print "\n[Done]\n"
                             
-                    except Exception as e:
-                        print '\n[ERROR]: Could not delete this backup job definition\n',e
-                else:
-                    try:
+                    else:
                         if force_deletion == "y":
                             self.db.delete_force_backup_job_definition_database(self.db.get_pgsql_node_id(pgsql_node_id),dbname)
-
+                            
                         elif force_deletion == "n":
                             self.db.delete_backup_job_definition_database(self.db.get_pgsql_node_id(pgsql_node_id),dbname)
 
-                    except Exception as e:
-                        print '\n[ERROR]: Could not delete this backup job definition\n',e
+                except Exception as e:
+                    print '\n[ERROR]: Could not delete this backup job definition\n',e
 
             elif ack.lower() == "no":
                 print "\n[Aborted]\n"
@@ -1105,20 +1096,16 @@ class pgbackman_cli(cmd.Cmd):
             pgsql_node_id = arg_list[0]
             dbname = arg_list[1]
 
-            if pgsql_node_id.isdigit():
-                try:
-                    self.db.get_pgsql_node_fqdn(pgsql_node_id)
+            try:
+                if pgsql_node_id.isdigit():
                     self.db.delete_backup_job_definition_database(pgsql_node_id,dbname)
                     print "\n[Done]\n"
-                            
-                except Exception as e:
-                    print '\n[ERROR]: Could not delete this backup job definition\n',e
-            else:
-                try:
+                    
+                else:
                     self.db.delete_backup_job_definition_database(self.db.get_pgsql_node_id(pgsql_node_id),dbname)
 
-                except Exception as e:
-                    print '\n[ERROR]: Could not delete this backup job definition\n',e
+            except Exception as e:
+                print '\n[ERROR]: Could not delete this backup job definition\n',e
 
 
         elif len(arg_list) == 3:
@@ -1127,20 +1114,16 @@ class pgbackman_cli(cmd.Cmd):
 
             if arg_list[2] == "force-deletion":
 
-                if pgsql_node_id.isdigit():
-                    try:
-                        self.db.get_pgsql_node_fqdn(pgsql_node_id)
+                try:
+                    if pgsql_node_id.isdigit():
                         self.db.delete_force_backup_job_definition_database(pgsql_node_id,dbname)
                         print "\n[Done]\n"
                         
-                    except Exception as e:
-                        print '\n[ERROR]: Could not delete this backup job definition\n',e
-                else:
-                    try:
+                    else:
                         self.db.delete_force_backup_job_definition_database(self.db.get_pgsql_node_id(pgsql_node_id),dbname)
                         
-                    except Exception as e:
-                        print '\n[ERROR]: Could not delete this backup job definition\n',e
+                except Exception as e:
+                    print '\n[ERROR]: Could not delete this backup job definition\n',e
 
             else: 
                 print "\n[ERROR] - %s is not a valid parameter\n" % arg_list[2]
@@ -1177,7 +1160,6 @@ class pgbackman_cli(cmd.Cmd):
             try:
 
                 if server_id.isdigit():
-                    self.db.get_backup_server_fqdn(server_id)
                     self.db.show_backup_server_backup_catalog(server_id)
                 else:
                     self.db.show_backup_server_backup_catalog(self.db.get_backup_server_id(server_id))
@@ -1195,7 +1177,6 @@ class pgbackman_cli(cmd.Cmd):
 
             try:
                 if server_id.isdigit():
-                    self.db.get_backup_server_fqdn(server_id)
                     self.db.show_backup_server_backup_catalog(server_id)
                 else:
                     self.db.show_backup_server_backup_catalog(self.db.get_backup_server_id(server_id))
@@ -1231,7 +1212,6 @@ class pgbackman_cli(cmd.Cmd):
             try:
 
                 if pgsql_node_id.isdigit():
-                    self.db.get_pgsql_node_fqdn(pgsql_node_id)
                     self.db.show_pgsql_node_backup_catalog(pgsql_node_id)
                 else:
                     self.db.show_pgsql_node_backup_catalog(self.db.get_pgsql_node_id(pgsql_node_id))
@@ -1249,7 +1229,6 @@ class pgbackman_cli(cmd.Cmd):
 
             try:
                 if pgsql_node_id.isdigit():
-                    self.db.get_pgsql_node_fqdn(pgsql_node_id)
                     self.db.show_pgsql_node_backup_catalog(pgsql_node_id)
                 else:
                     self.db.show_pgsql_node_backup_catalog(self.db.get_backup_pgsql_node_id(pgsql_node_id))
@@ -1613,15 +1592,15 @@ class pgbackman_cli(cmd.Cmd):
 
 
     # ############################################
-    # Method check_digit
+    # Method check_port
     # ############################################
 
-    def check_digit(self,digit):
+    def check_port(self,digit):
         
         if digit.isdigit():
             return True
         else:
-            print "\n* ERROR - %s should be a digit\n" % digit 
+            print "\n[ERROR]: Port value should be an INTEGER\n"
             return False
 
 
