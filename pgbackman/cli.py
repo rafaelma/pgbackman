@@ -27,7 +27,6 @@ import time
 import signal
 import shlex
 
-sys.path.append('/home/rafael/Devel/GIT/pgbackman')
 from pgbackman.database import * 
 from pgbackman.config import *
 from pgbackman.logs import *
@@ -48,8 +47,10 @@ class pgbackman_cli(cmd.Cmd):
     def __init__(self):
         cmd.Cmd.__init__(self)
         
+        self.version = self.get_version()
+
         self.intro =  '\n########################################################\n' + \
-            'Welcome to the PostgreSQL Backup Manager shell (v.1.0.0)\n' + \
+            'Welcome to the PostgreSQL Backup Manager shell (v.' + self.version + ')\n' + \
             '########################################################\n' + \
             'Type help or \? to list commands.\n'
         
@@ -62,6 +63,7 @@ class pgbackman_cli(cmd.Cmd):
         self.logs = logs("pgbackman_cli")
 
         self.db = pgbackman_db(self.dsn,'pgbackman_cli')
+
 
     # ############################################
     # Method do_show_backup_servers
@@ -1623,11 +1625,26 @@ class pgbackman_cli(cmd.Cmd):
             return False
 
 
+    # ############################################
+    # Method get_version
+    # ############################################
 
-signal.signal(signal.SIGINT, pgbackman_cli().signal_handler)
+    def get_version(self):
+        '''Get pgbackman version'''
+        
+        try:
+            pgbackman_version = {}
+            with open('pgbackman/version.py', 'r') as version_file:
+                exec (version_file.read(), pgbackman_version)
+        
+                return pgbackman_version['__version__']
+
+        except Exception as e:
+            return "Unknown"
 
 
 if __name__ == '__main__':
 
+    signal.signal(signal.SIGINT, pgbackman_cli().signal_handler)
     pgbackman_cli().cmdloop()
 
