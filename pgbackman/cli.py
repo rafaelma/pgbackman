@@ -654,8 +654,7 @@ class pgbackman_cli(cmd.Cmd):
                 self.db.show_database_backup_definitions(dbname)
                 
             except Exception as e:
-                print "\n[ERROR]: ",e     
-                
+                print "\n[ERROR]: ",e                     
                     
         elif len(arg_list) == 1:
 
@@ -1341,8 +1340,42 @@ class pgbackman_cli(cmd.Cmd):
     def do_show_pgbackman_config(self,args):
         """
         show_pgbackman_config
-
         """
+
+        print "--------------------------------------------------------"
+        print "# PgBackMan Database"
+        print "--------------------------------------------------------"
+        print "DBhost: " + self.conf.dbhost
+        print "DBhostaddr: " + self.conf.dbhostaddr
+        print "DBport: " + str(self.conf.dbport)
+        print "DBname: " + self.conf.dbname
+        print "DBuser: " + self.conf.dbuser
+        print "Connection retry interval: " + str(self.conf.pg_connect_retry_interval) + " sec."
+        print
+        print "--------------------------------------------------------"
+        print "# pgbackman2cron"
+        print "--------------------------------------------------------"
+        print "LISTEN/NOTIFY channel check interval: " + str(self.conf.channels_check_interval) + " sec."
+        print
+        print "--------------------------------------------------------"
+        print "# pgbackman_dump"
+        print "--------------------------------------------------------"
+        print "Temp directory: " + self.conf.tmp_dir
+        print
+        print "--------------------------------------------------------"
+        print "# pgbackman_maintenance"
+        print "--------------------------------------------------------"
+        print "Maintenance interval: " + str(self.conf.maintenance_interval) + "sec."
+        print
+        print "--------------------------------------------------------"
+        print "# Logging"
+        print "--------------------------------------------------------"
+        print "Log level: " + self.conf.log_level
+        print "Log file: " + self.conf.log_file
+        print
+        print "--------------------------------------------------------"
+        print
+
 
     # ############################################
     # Method do_show_pgbackman_stats
@@ -1360,7 +1393,7 @@ class pgbackman_cli(cmd.Cmd):
 
     def do_show_backup_server_stats(self,args):
         """
-        show_backup_server_stats [SrvID]
+        show_backup_server_stats [SrvID | FQDN]
 
         """    
 
@@ -1370,7 +1403,7 @@ class pgbackman_cli(cmd.Cmd):
 
     def do_show_pgsql_node_stats(self,args):
         """
-        show_pgsql_node_stats [NodeID]
+        show_pgsql_node_stats [NodeID | FQDN]
 
         """    
 
@@ -1378,12 +1411,35 @@ class pgbackman_cli(cmd.Cmd):
     # Method do_show_job_queue
     # ############################################
 
-    def do_show_job_queue(self,args):
+    def do_show_jobs_queue(self,args):
         """
-        show_pgsql_job_queue
+        DESCRIPTION:
+        This command shows the queue of jobs waiting 
+        to be processed by pgbackman2cron
+        
+        COMMAND:
+        show_pgsql_jobs_queue
 
         """   
- 
+        
+        try: 
+            arg_list = shlex.split(args)
+            
+        except ValueError as e:
+            print "\n[ERROR]: ",e,"\n"
+            return False
+        
+        if len(arg_list) == 0:
+            try:
+                self.db.show_jobs_queue()
+                
+            except Exception as e:
+                print "\n[ERROR]: ",e
+            
+        else:
+            print "\n[ERROR] - This command does not accept parameters.\n          Type help or ? to list commands\n"
+                        
+
     # ############################################
     # Method do_show_backup_server_config
     # ############################################
@@ -1445,7 +1501,35 @@ class pgbackman_cli(cmd.Cmd):
         """    
 
 
+    # ############################################
+    # Method do_move_backup_job_id
+    # ############################################
 
+    def do_move_backup_job_id(self,args):
+        """
+        move_backup_job_id
+
+        """    
+
+    # ############################################
+    # Method do_move_backup_job_pgsql_node
+    # ############################################
+
+    def do_move_backup_job_pgsql_node(self,args):
+        """
+        move_backup_job
+
+        """  
+  
+    # ############################################
+    # Method do_move_backup_job_pgsql_node
+    # ############################################
+
+    def do_move_backup_job_pgsql_node(self,args):
+        """
+        move_backup_job
+
+        """  
 
 
     # ############################################

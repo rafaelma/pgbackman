@@ -2179,19 +2179,20 @@ ALTER FUNCTION  delete_backup_job_catalog(INTEGER) OWNER TO pgbackman_role_rw;
 --
 -- ------------------------------------------------------------
 
-CREATE OR REPLACE VIEW jobs_queue AS 
-SELECT a.id,
-       a.registered,
-       a.backup_server_id,
-       b.hostname || '.' || b.domain_name AS backup_server,
-       a.pgsql_node_id,
-       c.hostname || '.' || b.domain_name AS pgsql_node,
-       a.is_assigned
+CREATE OR REPLACE VIEW show_jobs_queue AS 
+SELECT a.id AS "JobID",
+       a.registered AS "Registered",
+       a.backup_server_id AS "SrvID",
+       b.hostname || '.' || b.domain_name AS "Backup server",
+       a.pgsql_node_id AS "NodeID",
+       c.hostname || '.' || b.domain_name AS "PgSQL node",
+       a.is_assigned AS "Assigned"
 FROM job_queue a
 INNER JOIN backup_server b ON a.backup_server_id = b.server_id
 INNER JOIN pgsql_node c ON a.pgsql_node_id = c.node_id
 ORDER BY a.registered ASC;
 
+ALTER VIEW show_jobs_queue OWNER TO pgbackman_role_rw;
 
 CREATE OR REPLACE VIEW show_pgsql_nodes AS
 SELECT lpad(node_id::text,6,'0') AS "NodeID", 
@@ -2203,6 +2204,8 @@ SELECT lpad(node_id::text,6,'0') AS "NodeID",
        FROM pgsql_node
        ORDER BY domain_name,hostname,"Pgport","Admin user","Status";
 
+ALTER VIEW show_pgsql_nodes OWNER TO pgbackman_role_rw;
+
 CREATE OR REPLACE VIEW show_backup_servers AS
 SELECT lpad(server_id::text,5,'0') AS "SrvID", 
        hostname || '.' || domain_name AS "FQDN",
@@ -2210,6 +2213,8 @@ SELECT lpad(server_id::text,5,'0') AS "SrvID",
        remarks AS "Remarks" 
        FROM backup_server
        ORDER BY domain_name,hostname,"Status";
+
+ALTER VIEW show_backup_servers OWNER TO pgbackman_role_rw;
 
 CREATE OR REPLACE VIEW show_backup_definitions AS
 SELECT lpad(def_id::text,8,'0') AS "DefID",
@@ -2227,6 +2232,8 @@ SELECT lpad(def_id::text,8,'0') AS "DefID",
 FROM backup_job_definition
 ORDER BY backup_server_id,pgsql_node_id,"DBname","Code","Status";
 
+ALTER VIEW show_backup_definitions OWNER TO pgbackman_role_rw;
+
 CREATE OR REPLACE VIEW show_backup_catalog AS
    SELECT lpad(a.bck_id::text,12,'0') AS "BckID",
        date_trunc('seconds',a.finished) AS "Finished",
@@ -2242,6 +2249,8 @@ CREATE OR REPLACE VIEW show_backup_catalog AS
    FROM backup_job_catalog a 
    JOIN backup_job_definition b ON a.def_id = b.def_id 
    ORDER BY "Finished" DESC,backup_server_id,pgsql_node_id,"DBname","Code","Status";
+
+ALTER VIEW show_backup_catalog OWNER TO pgbackman_role_rw;
 
 CREATE OR REPLACE VIEW show_backup_job_details AS
    SELECT lpad(a.bck_id::text,12,'0') AS "BckID",
@@ -2277,6 +2286,8 @@ CREATE OR REPLACE VIEW show_backup_job_details AS
    JOIN backup_job_definition b ON a.def_id = b.def_id 
    ORDER BY "Finished" DESC,backup_server_id,pgsql_node_id,"DBname","Code","Status";
 
+ALTER VIEW show_backup_job_details OWNER TO pgbackman_role_rw;
+
 CREATE OR REPLACE VIEW get_cataloginfo_from_defid_force_deletion AS
   SELECT del_id,
   	 registered,
@@ -2291,6 +2302,8 @@ CREATE OR REPLACE VIEW get_cataloginfo_from_defid_force_deletion AS
 	 pg_dump_dbconfig_log_file 
    FROM cataloginfo_from_defid_force_deletion
    ORDER BY del_id;
+
+ALTER VIEW get_cataloginfo_from_defid_force_deletion OWNER TO pgbackman_role_rw;
 
 CREATE OR REPLACE VIEW get_catalog_entries_to_delete_by_retention AS
 WITH 
@@ -2321,6 +2334,7 @@ WITH
    AND row_id > retention_redundancy 
    ORDER BY def_id,finished DESC;
 
+ALTER VIEW get_catalog_entries_to_delete_by_retention OWNER TO pgbackman_role_rw;
 
 
 COMMIT;

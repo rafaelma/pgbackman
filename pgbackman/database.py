@@ -1195,3 +1195,31 @@ class pgbackman_db():
                 
         except psycopg2.Error as e:
             return e
+
+
+    # ############################################
+    # Method 
+    # ############################################
+
+    def show_jobs_queue(self):
+        """A function to get a list with all jobs waiting to be processed by pgbackman2cron"""
+
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT * FROM show_jobs_queue')
+                    self.conn.commit()
+
+                    colnames = [desc[0] for desc in self.cur.description]
+                    self.print_results_table(self.cur,colnames,["JobID","Registered","Backup server","PgSQL node"])
+                    
+                except psycopg2.Error as e:
+                    raise e
+
+            self.pg_close()
+    
+        except psycopg2.Error as e:
+            raise e
+    
