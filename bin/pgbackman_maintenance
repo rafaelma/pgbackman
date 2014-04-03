@@ -36,7 +36,7 @@ from pgbackman.config import *
 
 
 # ############################################
-# Function
+# Function delete_files_from_force_deletes()
 # ############################################
 
 def delete_files_from_force_deletes(db,backup_server_id):
@@ -88,7 +88,7 @@ def delete_files_from_force_deletes(db,backup_server_id):
 
             
 # ############################################
-# Function
+# Function enforce_retentions()
 # ############################################
 
 def enforce_retentions(db,backup_server_id):
@@ -140,7 +140,7 @@ def enforce_retentions(db,backup_server_id):
         
 
 # ############################################
-# Function
+# Function process_pending_catalog_log_file()
 # ############################################
 
 def process_pending_catalog_log_file(db,backup_server_id):
@@ -205,7 +205,16 @@ def process_pending_catalog_log_file(db,backup_server_id):
 
 
 # ############################################
-# Function
+# Function signal_handler()
+# ############################################
+    
+def signal_handler(signum, frame):
+    logs.logger.info('**** pgbackman_maintenance stopped. ****')
+    sys.exit(0)
+
+
+# ############################################
+# Function check_database_connection()
 # ############################################
   
 def check_database_connection(db):
@@ -219,7 +228,7 @@ def check_database_connection(db):
 
 
 # ############################################
-# Function
+# Function main()
 # ############################################
 
 def main():
@@ -308,15 +317,6 @@ def main():
             time.sleep(conf.maintenance_interval)
     
     db.pg_close()
-
-        
-# ############################################
-# Function handler
-# ############################################
-    
-def signal_handler(signum, frame):
-    logs.logger.info('**** pgbackman_maintenance stopped. ****')
-    sys.exit(0)
 
 
 # ############################################

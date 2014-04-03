@@ -317,7 +317,7 @@ def update_pgsql_node_cache_data(db,backup_server_id,pgsql_node_id):
             with open(pgsql_node_cache_file,'w') as pgsql_node_cache:
                 pgsql_node_cache.write('pgsql_node_id::' + str(pgsql_node_id) + '\n' +
                                        'pgsql_node_fqdn::' + pgsql_node_fqdn + '\n' +
-                                       'pgsql_node_backup_dir::' + pgsql_node_backup_dir + '\n')
+                                       'pgnode_backup_partition::' + pgsql_node_backup_dir + '\n')
                 
                 logs.logger.info('Cache file: %s created/updated',pgsql_node_cache_file)
                    
