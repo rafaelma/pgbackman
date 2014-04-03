@@ -1249,3 +1249,29 @@ class pgbackman_db():
         except psycopg2.Error as e:
             raise e
     
+    # ############################################
+    # Method 
+    # ############################################
+
+    def show_pgsql_node_config(self,pgsql_node_id):
+        """A function to get the default configuration for a pgsql node"""
+
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT "Parameter","Value","Description" FROM show_pgsql_node_config WHERE node_id = %s',(pgsql_node_id,))
+                    self.conn.commit()
+
+                    colnames = [desc[0] for desc in self.cur.description]
+                    self.print_results_table(self.cur,colnames,["Parameter","Value","Description"])
+                    
+                except psycopg2.Error as e:
+                    raise e
+
+            self.pg_close()
+    
+        except psycopg2.Error as e:
+            raise e
+    

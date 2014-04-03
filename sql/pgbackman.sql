@@ -2346,6 +2346,16 @@ ORDER BY parameter;
 
 ALTER VIEW show_backup_server_config OWNER TO pgbackman_role_rw;
 
+CREATE OR REPLACE VIEW show_pgsql_node_config AS
+SELECT node_id,
+       parameter AS "Parameter",
+       value AS "Value",
+       description As "Description"
+FROM pgsql_node_config
+ORDER BY parameter; 
+
+ALTER VIEW show_pgsql_node_config OWNER TO pgbackman_role_rw;
+
 
 
 COMMIT;

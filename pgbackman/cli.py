@@ -1561,9 +1561,57 @@ class pgbackman_cli(cmd.Cmd):
 
     def do_show_pgsql_node_config(self,args):
         """
+        DESCRIPTION:
+        This command shows a PgSQL node configuration
+        
+        COMMAND
         show_pgsql_node_config [NodeID | FQDN]
 
         """    
+        
+        try: 
+            arg_list = shlex.split(args)
+            
+        except ValueError as e:
+            print "\n[ERROR]: ",e,"\n"
+            return False
+                
+        if len(arg_list) == 0:
+            
+            print "--------------------------------------------------------"
+            pgsql_node_id = raw_input("# NodeID / FQDN: ")
+            print "--------------------------------------------------------"
+
+            try:
+
+                if pgsql_node_id.isdigit():
+                    self.db.show_pgsql_node_config(pgsql_node_id)
+                else:
+                    self.db.show_pgsql_node_config(self.db.get_pgsql_node_id(pgsql_node_id))
+                                    
+            except Exception as e:
+                print "\n[ERROR]: ",e
+
+        elif len(arg_list) == 1:
+
+            pgsql_node_id = arg_list[0]
+            
+            print "--------------------------------------------------------"
+            print "# NodeID / FQDN: " + pgsql_node_id
+            print "--------------------------------------------------------"
+
+            try:
+                if pgsql_node_id.isdigit():
+                    self.db.show_pgsql_node_config(pgsql_node_id)
+                else:
+                    self.db.show_pgsql_node_backup_catalog(self.db.get_backup_pgsql_node_id(pgsql_node_id))
+                    
+            except Exception as e:
+                print "\n[ERROR]: ",e
+
+        else:
+            print "\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n"
+        
 
     # ############################################
     # Method do_show_empty_backup_job_catalogs
