@@ -25,7 +25,6 @@ import psycopg2
 import psycopg2.extensions
 from psycopg2.extras import wait_select
 
-sys.path.append('/home/rafael/Devel/GIT/pgbackman')
 from pgbackman.prettytable import *
 
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
@@ -1275,3 +1274,112 @@ class pgbackman_db():
         except psycopg2.Error as e:
             raise e
     
+    # ############################################
+    # Method 
+    # ############################################
+
+    def show_pgbackman_stats(self):
+        """A function to get pgbackman global stats"""
+        
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+                    self.cur.execute("SELECT count(*) FROM backup_server WHERE status = 'RUNNING'")
+                    backup_server_running_cnt = self.cur.fetchone()[0]
+
+                    self.cur.execute("SELECT count(*) FROM backup_server WHERE status = 'STOPPED'")
+                    backup_server_stopped_cnt = self.cur.fetchone()[0]
+
+                    self.cur.execute("SELECT count(*) FROM pgsql_node WHERE status = 'RUNNING'")
+                    pgsql_node_running_cnt = self.cur.fetchone()[0]
+
+                    self.cur.execute("SELECT count(*) FROM pgsql_node WHERE status = 'STOPPED'")
+                    pgsql_node_stopped_cnt = self.cur.fetchone()[0]
+                    
+                    self.cur.execute("SELECT count(*) FROM (SELECT DISTINCT ON (pgsql_node_id,dbname) def_id FROM backup_job_definition) AS cnt")
+                    dbname_cnt = self.cur.fetchone()[0]
+
+                    self.cur.execute("SELECT count(*) FROM backup_job_definition WHERE job_status = 'ACTIVE'")
+                    backup_jobs_active_cnt = self.cur.fetchone()[0]
+                    
+                    self.cur.execute("SELECT count(*) FROM backup_job_definition WHERE job_status = 'STOPPED'")
+                    backup_jobs_stopped_cnt = self.cur.fetchone()[0]
+                    
+                    self.cur.execute("SELECT count(*) FROM backup_job_definition WHERE backup_code = 'CLUSTER'")
+                    backup_jobs_cluster_cnt = self.cur.fetchone()[0]
+
+                    self.cur.execute("SELECT count(*) FROM backup_job_definition WHERE backup_code = 'DATA'")
+                    backup_jobs_data_cnt = self.cur.fetchone()[0]
+
+                    self.cur.execute("SELECT count(*) FROM backup_job_definition WHERE backup_code = 'FULL'")
+                    backup_jobs_full_cnt = self.cur.fetchone()[0]
+
+                    self.cur.execute("SELECT count(*) FROM backup_job_definition WHERE backup_code = 'SCHEMA'")
+                    backup_jobs_schema_cnt = self.cur.fetchone()[0]
+                   
+                    self.cur.execute("SELECT count(*) FROM backup_job_catalog WHERE execution_status = 'SUCCEEDED'")
+                    backup_catalog_succeeded_cnt = self.cur.fetchone()[0]
+                    
+                    self.cur.execute("SELECT count(*) FROM backup_job_catalog WHERE execution_status = 'ERROR'")
+                    backup_catalog_error_cnt = self.cur.fetchone()[0]
+         
+                    self.cur.execute("SELECT pg_size_pretty(sum(pg_dump_file_size+pg_dump_roles_file_size+pg_dump_dbconfig_file_size)) FROM backup_job_catalog")
+                    backup_space = self.cur.fetchone()[0]
+ 
+                    self.cur.execute("SELECT sum(duration) FROM backup_job_catalog")
+                    backup_duration = self.cur.fetchone()[0]
+                    
+                    self.cur.execute("select min(finished) from backup_job_catalog;")
+                    oldest_backup_job = self.cur.fetchone()[0]
+                    
+                    self.cur.execute("select max(finished) from backup_job_catalog;")
+                    newest_backup_job = self.cur.fetchone()[0]
+                    
+                    self.cur.execute("SELECT count(*) FROM job_queue")
+                    job_queue_cnt = self.cur.fetchone()[0]
+                     
+                    self.cur.execute("SELECT count(*) FROM cataloginfo_from_defid_force_deletion")
+                    defid_force_deletion_cnt = self.cur.fetchone()[0]
+                    
+                    x = PrettyTable([".",".."],header = False)
+                    x.align["."] = "r"
+                    x.align[".."] = "l"
+                    x.padding_width = 1
+                        
+                    x.add_row(["Running Backup servers:",str(backup_server_running_cnt)])
+                    x.add_row(["Stopped Backup servers:",str(backup_server_stopped_cnt)])
+                    x.add_row(["",""])
+                    x.add_row(["Running PgSQL nodes:",str(pgsql_node_running_cnt)])
+                    x.add_row(["Stopped PgSQL nodes:",str(pgsql_node_stopped_cnt)])
+                    x.add_row(["",""])
+                    x.add_row(["Different databases:",str(dbname_cnt)])
+                    x.add_row(["Active Backup job defs:",str(backup_jobs_active_cnt)])
+                    x.add_row(["Stopped Backup job defs:",str(backup_jobs_stopped_cnt)])
+                    x.add_row(["Backup job defs with CLUSTER code:",str(backup_jobs_cluster_cnt)])
+                    x.add_row(["Backup job defs with DATA code:",str(backup_jobs_data_cnt)])
+                    x.add_row(["Backup job defs with FULL code:",str(backup_jobs_full_cnt)])
+                    x.add_row(["Backup job defs with SCHEMA code:",str(backup_jobs_schema_cnt)])
+                    x.add_row(["",""])
+                    x.add_row(["Succeeded backups in catalog:",str(backup_catalog_succeeded_cnt)])
+                    x.add_row(["Faulty backups in catalog:",str(backup_catalog_error_cnt)])
+                    x.add_row(["Total size of backups in catalog:",str(backup_space)])
+                    x.add_row(["Total running time of backups in catalog:",str(backup_duration)])
+                    x.add_row(["Oldest backup in catalog:",str(oldest_backup_job)])
+                    x.add_row(["Newest backup in catalog:",str(newest_backup_job)])
+                    x.add_row(["",""])
+                    x.add_row(["Jobs waiting to be processed by pgbackman2cron:",str(job_queue_cnt)])
+                    x.add_row(["Forced deletion of backups in catalog waiting to be processed:",str(defid_force_deletion_cnt)])
+                    
+                    print x
+                    print
+
+                except psycopg2.Error as e:
+                    raise e
+                
+            self.pg_close()
+      
+        except psycopg2.Error as e:
+            raise e    
+      

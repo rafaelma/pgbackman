@@ -1420,7 +1420,7 @@ class pgbackman_cli(cmd.Cmd):
             print "--------------------------------------------------------"
             print "# pgbackman_maintenance"
             print "--------------------------------------------------------"
-            print "Maintenance interval: " + str(self.conf.maintenance_interval) + "sec."
+            print "Maintenance interval: " + str(self.conf.maintenance_interval) + " sec."
             print
             print "--------------------------------------------------------"
             print "# Logging"
@@ -1441,9 +1441,30 @@ class pgbackman_cli(cmd.Cmd):
 
     def do_show_pgbackman_stats(self,args):
         """
+        DESCRIPTION:
+        This command shows global statistics for this 
+        pgbackman installation
+        
+        COOMAND:
         show_pgbackman_stats
 
         """    
+        try: 
+            arg_list = shlex.split(args)
+            
+        except ValueError as e:
+            print "\n[ERROR]: ",e,"\n"
+            return False
+        
+        if len(arg_list) == 0:
+            try:
+                self.db.show_pgbackman_stats()
+                
+            except Exception as e:
+                print "\n[ERROR]: ",e
+        else:
+            print "\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n"
+          
 
     # ############################################
     # Method do_show_backup_server_stats
