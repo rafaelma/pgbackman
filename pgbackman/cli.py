@@ -535,7 +535,13 @@ class pgbackman_cli(cmd.Cmd):
         COMMAND:
         show_backup_server_backup_definitions [SrvID | FQDN]
         """
-        arg_list = args.split()
+
+        try: 
+            arg_list = shlex.split(args)
+            
+        except ValueError as e:
+            print "\n[ERROR]: ",e,"\n"
+            return False
         
         if len(arg_list) == 0:
             
@@ -589,8 +595,13 @@ class pgbackman_cli(cmd.Cmd):
         show_pgsql_node_backup_definitions [NodeID | FQDN]
         """
        
-        arg_list = args.split()
-        
+        try: 
+            arg_list = shlex.split(args)
+            
+        except ValueError as e:
+            print "\n[ERROR]: ",e,"\n"
+            return False
+                
         if len(arg_list) == 0:
                         
             print "--------------------------------------------------------"
@@ -642,8 +653,13 @@ class pgbackman_cli(cmd.Cmd):
         show_database_backup_definitions [DBname]
         """
 
-        arg_list = args.split()
-        
+        try: 
+            arg_list = shlex.split(args)
+            
+        except ValueError as e:
+            print "\n[ERROR]: ",e,"\n"
+            return False
+                     
         if len(arg_list) == 0:
                    
             print "--------------------------------------------------------"
@@ -1148,7 +1164,13 @@ class pgbackman_cli(cmd.Cmd):
         COMMAND:
         show_backup_server_backup_catalog [SrvID | FQDN]
         """
-        arg_list = args.split()
+
+        try: 
+            arg_list = shlex.split(args)
+            
+        except ValueError as e:
+            print "\n[ERROR]: ",e,"\n"
+            return False
         
         if len(arg_list) == 0:
             
@@ -1200,8 +1222,13 @@ class pgbackman_cli(cmd.Cmd):
         show_pgsql_node_backup_catalog [NodeID | FQDN]
         """
 
-        arg_list = args.split()
-        
+        try: 
+            arg_list = shlex.split(args)
+            
+        except ValueError as e:
+            print "\n[ERROR]: ",e,"\n"
+            return False
+                
         if len(arg_list) == 0:
             
             print "--------------------------------------------------------"
@@ -1252,9 +1279,14 @@ class pgbackman_cli(cmd.Cmd):
         COMMAND:
         show_database_backup_catalog [DBname]
         """
-
-        arg_list = args.split()
         
+        try: 
+            arg_list = shlex.split(args)
+            
+        except ValueError as e:
+            print "\n[ERROR]: ",e,"\n"
+            return False
+                    
         if len(arg_list) == 0:
                    
             print "--------------------------------------------------------"
@@ -1267,7 +1299,6 @@ class pgbackman_cli(cmd.Cmd):
             except Exception as e:
                 print "\n[ERROR]: ",e     
                 
-                    
         elif len(arg_list) == 1:
 
             dbname = arg_list[0]
@@ -1299,8 +1330,13 @@ class pgbackman_cli(cmd.Cmd):
         show_backup_job_details [BckID]
         """
 
-        arg_list = args.split()
-        
+        try: 
+            arg_list = shlex.split(args)
+            
+        except ValueError as e:
+            print "\n[ERROR]: ",e,"\n"
+            return False
+
         if len(arg_list) == 0:
                    
             print "--------------------------------------------------------"
@@ -1314,7 +1350,6 @@ class pgbackman_cli(cmd.Cmd):
             except Exception as e:
                 print "\n[ERROR]: ",e     
                 
-                    
         elif len(arg_list) == 1:
 
             bck_id = arg_list[0]
@@ -1339,43 +1374,66 @@ class pgbackman_cli(cmd.Cmd):
 
     def do_show_pgbackman_config(self,args):
         """
+        DESCRIPTION:
+        This command shows the configuration parameters
+        used by this pgbackman installation.
+
+        COMMAND:
         show_pgbackman_config
-        """
 
-        print "--------------------------------------------------------"
-        print "# PgBackMan Database"
-        print "--------------------------------------------------------"
-        print "DBhost: " + self.conf.dbhost
-        print "DBhostaddr: " + self.conf.dbhostaddr
-        print "DBport: " + str(self.conf.dbport)
-        print "DBname: " + self.conf.dbname
-        print "DBuser: " + self.conf.dbuser
-        print "Connection retry interval: " + str(self.conf.pg_connect_retry_interval) + " sec."
-        print
-        print "--------------------------------------------------------"
-        print "# pgbackman2cron"
-        print "--------------------------------------------------------"
-        print "LISTEN/NOTIFY channel check interval: " + str(self.conf.channels_check_interval) + " sec."
-        print
-        print "--------------------------------------------------------"
-        print "# pgbackman_dump"
-        print "--------------------------------------------------------"
-        print "Temp directory: " + self.conf.tmp_dir
-        print
-        print "--------------------------------------------------------"
-        print "# pgbackman_maintenance"
-        print "--------------------------------------------------------"
-        print "Maintenance interval: " + str(self.conf.maintenance_interval) + "sec."
-        print
-        print "--------------------------------------------------------"
-        print "# Logging"
-        print "--------------------------------------------------------"
-        print "Log level: " + self.conf.log_level
-        print "Log file: " + self.conf.log_file
-        print
-        print "--------------------------------------------------------"
-        print
+        """ 
 
+        try: 
+            arg_list = shlex.split(args)
+            
+        except ValueError as e:
+            print "\n[ERROR]: ",e,"\n"
+            return False
+        
+        if len(arg_list) == 0:
+            
+            print "--------------------------------------------------------"
+            print "# Configuration file"
+            print "--------------------------------------------------------"
+            print "Configuration file used: " + self.conf.config_file
+            print
+            print "--------------------------------------------------------"
+            print "# PgBackMan Database"
+            print "--------------------------------------------------------"
+            print "DBhost: " + self.conf.dbhost
+            print "DBhostaddr: " + self.conf.dbhostaddr
+            print "DBport: " + str(self.conf.dbport)
+            print "DBname: " + self.conf.dbname
+            print "DBuser: " + self.conf.dbuser
+            print "Connection retry interval: " + str(self.conf.pg_connect_retry_interval) + " sec."
+            print
+            print "--------------------------------------------------------"
+            print "# pgbackman2cron"
+            print "--------------------------------------------------------"
+            print "LISTEN/NOTIFY channel check interval: " + str(self.conf.channels_check_interval) + " sec."
+            print
+            print "--------------------------------------------------------"
+            print "# pgbackman_dump"
+            print "--------------------------------------------------------"
+            print "Temp directory: " + self.conf.tmp_dir
+            print
+            print "--------------------------------------------------------"
+            print "# pgbackman_maintenance"
+            print "--------------------------------------------------------"
+            print "Maintenance interval: " + str(self.conf.maintenance_interval) + "sec."
+            print
+            print "--------------------------------------------------------"
+            print "# Logging"
+            print "--------------------------------------------------------"
+            print "Log level: " + self.conf.log_level
+            print "Log file: " + self.conf.log_file
+            print
+            print "--------------------------------------------------------"
+            print
+
+        else:
+            print "\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n"
+        
 
     # ############################################
     # Method do_show_pgbackman_stats
@@ -1446,9 +1504,56 @@ class pgbackman_cli(cmd.Cmd):
 
     def do_show_backup_server_config(self,args):
         """
+        DESCRIPTION:
+        This command shows a backup server configuration
+
+        COMMAND:
         show_backup_server_config [SrvID | FQDN]
 
         """    
+        
+        try: 
+            arg_list = shlex.split(args)
+            
+        except ValueError as e:
+            print "\n[ERROR]: ",e,"\n"
+            return False
+        
+        if len(arg_list) == 0:
+            
+            print "--------------------------------------------------------"
+            server_id = raw_input("# SrvID / FQDN: ")
+            print "--------------------------------------------------------"
+
+            try:
+                if server_id.isdigit():
+                    self.db.show_backup_server_config(server_id)
+                else:
+                    self.db.show_backup_server_config(self.db.get_backup_server_id(server_id))
+                                    
+            except Exception as e:
+                print "\n[ERROR]: ",e
+
+        elif len(arg_list) == 1:
+
+            server_id = arg_list[0]
+            
+            print "--------------------------------------------------------"
+            print "# SrvID / FQDN: " + server_id
+            print "--------------------------------------------------------"
+
+            try:
+                if server_id.isdigit():
+                    self.db.show_backup_server_config(server_id)
+                else:
+                    self.db.show_backup_server_config(self.db.get_backup_server_id(server_id))
+                    
+            except Exception as e:
+                print "\n[ERROR]: ",e
+
+        else:
+            print "\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n"
+        
 
     # ############################################
     # Method do_show_pgsql_node_config
@@ -1594,8 +1699,9 @@ class pgbackman_cli(cmd.Cmd):
         
         try:
             os.system(line)
+            print
         except:
-            print "* Problems running '%s'" % line
+            print "\n[ERROR]: Problems running '%s'" % line
 
 
     # ############################################

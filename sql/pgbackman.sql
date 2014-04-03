@@ -2336,5 +2336,16 @@ WITH
 
 ALTER VIEW get_catalog_entries_to_delete_by_retention OWNER TO pgbackman_role_rw;
 
+CREATE OR REPLACE VIEW show_backup_server_config AS
+SELECT server_id,
+       parameter AS "Parameter",
+       value AS "Value",
+       description As "Description"
+FROM backup_server_config
+ORDER BY parameter; 
+
+ALTER VIEW show_backup_server_config OWNER TO pgbackman_role_rw;
+
+
 
 COMMIT;

@@ -1223,3 +1223,29 @@ class pgbackman_db():
         except psycopg2.Error as e:
             raise e
     
+    # ############################################
+    # Method 
+    # ############################################
+
+    def show_backup_server_config(self,backup_server_id):
+        """A function to get the default configuration for a backup server"""
+
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT "Parameter","Value","Description" FROM show_backup_server_config WHERE server_id = %s',(backup_server_id,))
+                    self.conn.commit()
+
+                    colnames = [desc[0] for desc in self.cur.description]
+                    self.print_results_table(self.cur,colnames,["Parameter","Value","Description"])
+                    
+                except psycopg2.Error as e:
+                    raise e
+
+            self.pg_close()
+    
+        except psycopg2.Error as e:
+            raise e
+    
