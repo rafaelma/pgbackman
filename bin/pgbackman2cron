@@ -32,6 +32,9 @@ pgbackman2cron will catch up with changes that happened during a down period of 
 No changes will be lose if pgbackman2cron is down.
 '''
 
+import shutil
+import pwd
+import grp
 import sys
 import os
 import time
@@ -72,13 +75,13 @@ def add_to_listen_channels(db,db_notify,backup_server_id):
             # for a pgsql_node if they do not exist. 
             #
             
-            if channel != 'channel_pgsql_nodes_updated':
+            if channel != 'channel_pgsql_nodes_updated' and channel != 'channel_pgsql_nodes_deleted':
                 pgsql_node_id = get_pgsql_node_id_from_channel(channel)
                 
                 update_pgsql_node_cache_data(db,backup_server_id,pgsql_node_id)
                 create_pgsql_node_backup_directories(db,pgsql_node_id)
                 
-                crontab_file = db.get_pgsql_node_parameter(pgsql_node_id,'pg_node_cron_file')
+                crontab_file = db.get_pgsql_node_parameter(pgsql_node_id,'pgnode_crontab_file')
                 
                 if not os.path.exists(crontab_file):
                     generate_crontab_backup_jobs(db,backup_server_id,pgsql_node_id)
@@ -109,7 +112,7 @@ def delete_from_listen_channels(db_notify,backup_server_id):
             db_notify.delete_listen(channel)
         
             logs.logger.info('Unlistening to channel: %s',channel)
- 
+
     except Exception as e:
         logs.logger.error('Problems unlistening to channels - %s',e)
 
@@ -133,7 +136,7 @@ def generate_crontab_backup_jobs(db,backup_server_id,pgsql_node_id):
     """Generate a crontab file for a PgSQL node"""
 
     try:
-        crontab_file = db.get_pgsql_node_parameter(pgsql_node_id,'pg_node_cron_file')
+        crontab_file = db.get_pgsql_node_parameter(pgsql_node_id,'pgnode_crontab_file')
                
         with open(crontab_file,'w') as file:
             data = db.generate_crontab_backup_jobs(backup_server_id,pgsql_node_id)
@@ -198,7 +201,7 @@ def create_global_directories(db,backup_server_fqdn,backup_server_id):
         logs.logger.debug('Pending log registration directory does not exist: %s',backup_server_pending_registration_dir)
         
         try:
-            os.makedirs(backup_server_pending_registration_dir,0700)
+            os.makedirs(backup_server_pending_registration_dir,0755)
             logs.logger.info('Pending log registration directory created: %s',backup_server_pending_registration_dir)
         except OSError as e:
             logs.logger.critical('OS error when creating the pending log registration directory: %s',e)
@@ -210,7 +213,7 @@ def create_global_directories(db,backup_server_fqdn,backup_server_id):
         logs.logger.debug('Cache directory does not exist: %s',backup_server_cache_dir)
         
         try:
-            os.makedirs(backup_server_cache_dir,0700)
+            os.makedirs(backup_server_cache_dir,0755)
             logs.logger.info('Cache directory created: %s',backup_server_cache_dir)
 
         except OSError as e:
@@ -228,6 +231,15 @@ def create_pgsql_node_backup_directories(db,pgsql_node_id):
     '''
 
     try:
+        admin_user = db.get_pgsql_node_parameter(pgsql_node_id,'admin_user')
+
+        uid = pwd.getpwnam(admin_user).pw_uid
+        gid = grp.getgrnam(admin_user).gr_gid
+
+    except Exception as e:
+        logs.logger.error('Problems getting UID and GID values for NodeID: %s - %s',pgsql_node_id,e)  
+
+    try:
         pgnode_backup_partition = db.get_pgsql_node_parameter(pgsql_node_id,'pgnode_backup_partition')
 
     except Exception as e:
@@ -241,6 +253,11 @@ def create_pgsql_node_backup_directories(db,pgsql_node_id):
         try:
             os.makedirs(pgnode_backup_partition + '/dump',0700)
             logs.logger.info('Dump directory %s created',pgnode_backup_partition + '/dump')
+
+            os.chown(pgnode_backup_partition, uid, gid)
+            os.chown(pgnode_backup_partition + '/dump', uid, gid)
+            logs.logger.info('UID: %s abd GID: %s defined for the directory %s',uid,gid,pgnode_backup_partition + '/dump')
+
         except OSError as e:
             logs.logger.critical('OS error when creating the dump directory: %s',e)
             sys.exit(1)
@@ -253,9 +270,69 @@ def create_pgsql_node_backup_directories(db,pgsql_node_id):
         try:
             os.makedirs(pgnode_backup_partition + '/log',0700)
             logs.logger.info('Log directory %s created',pgnode_backup_partition + '/log')
+
+            os.chown(pgnode_backup_partition, uid, gid)
+            os.chown(pgnode_backup_partition + '/log', uid, gid)
+            logs.logger.info('UID: %s abd GID: %s defined for the directory %s',uid,gid,pgnode_backup_partition + '/log')
+
         except OSError as e:
             logs.logger.critical('OS error when creating the log directory: %s',e)
             sys.exit(1)       
+
+# ############################################
+# Function process_pgsql_node_to_delete()
+# ############################################
+
+def process_pgsql_node_to_delete(db,backup_server_id):
+    '''Delete PgSQL node data from nodes that has been deleted.'''
+    
+    try:
+        for record in db.get_pgsql_node_to_delete(backup_server_id):
+
+            root_backup_partition = db.get_backup_server_parameter(backup_server_id,'root_backup_partition')
+            pgsql_node_backup_dir = root_backup_partition + '/pgsql_node_' + str(record[1])
+            crontab_file = '/etc/cron.d/pgsql_node_' + str(record[1])
+
+            backup_server_cache_dir = root_backup_partition +  '/cache_dir'
+            pgsql_node_cache_file = backup_server_cache_dir + '/pgsql_node_' + str(record[1]) + '.cache'
+        
+            #
+            # Deleting PgSQL node crontab file
+            #  
+
+            if os.path.exists(crontab_file):
+                 os.unlink(crontab_file)
+                 logs.logger.info('Crontab file: %s deleted',crontab_file)
+
+            else:
+                logs.logger.warning('Crontab file: %s does not exist',crontab_file) 
+
+            #
+            # Deleting cache file for PgSQL node
+            #
+
+            if os.path.exists(pgsql_node_cache_file):
+                os.unlink(pgsql_node_cache_file)
+                logs.logger.info('Cache file: %s deleted',pgsql_node_cache_file)
+        
+            else:
+                logs.logger.warning('Cache file: %s does not exist',pgsql_node_cache_file)
+             
+            #
+            # Deleting PgSQL node backup dir
+            #  
+            
+            if os.path.exists(pgsql_node_backup_dir):
+                shutil.rmtree(pgsql_node_backup_dir,True)
+                logs.logger.info('PgSQL node backup dir: %s deleted',pgsql_node_backup_dir)
+                
+            else:
+                logs.logger.warning('PgSQL node backup dir: %s does not exist',pgsql_node_backup_dir)
+                
+            db.delete_pgsql_node_to_delete(backup_server_id,record[1])
+
+    except Exception as e:
+        logs.logger.error('Problems deleting data from PgSQL node when the node has been deleted - %s',e)   
 
 
 # ############################################
@@ -291,6 +368,7 @@ def update_backup_server_cache_data(db,backup_server_fqdn,backup_server_id):
                                           'pgsql_bin_9_0::' + pgsql_bin_9_0 + '\n' +
                                           'pgsql_bin_8_4::' + pgsql_bin_8_4 + '\n')
                 
+                os.chmod(backup_server_cache_file,0744)
                 logs.logger.info('Cache file: %s created/updated',backup_server_cache_file)
                 
     except Exception as e:
@@ -318,7 +396,8 @@ def update_pgsql_node_cache_data(db,backup_server_id,pgsql_node_id):
                 pgsql_node_cache.write('pgsql_node_id::' + str(pgsql_node_id) + '\n' +
                                        'pgsql_node_fqdn::' + pgsql_node_fqdn + '\n' +
                                        'pgnode_backup_partition::' + pgsql_node_backup_dir + '\n')
-                
+
+                os.chmod(pgsql_node_cache_file,0744)
                 logs.logger.info('Cache file: %s created/updated',pgsql_node_cache_file)
                    
     except Exception as e:
@@ -426,11 +505,18 @@ def main():
                 if channel == 'channel_pgsql_nodes_updated':
                     
                     #
-                    # A PgSQL node has been registered or deleted
+                    # A PgSQL node has been registered or updated
                     #
                     delete_from_listen_channels(db_notify,backup_server_id)
                     add_to_listen_channels(db,db_notify,backup_server_id)
-                
+
+                elif channel == 'channel_pgsql_nodes_deleted':
+
+                    #
+                    # A PgSQL node has been deleted
+                    #
+                    delete_from_listen_channels(db_notify,backup_server_id)
+                    process_pgsql_node_to_delete(db,backup_server_id)
                 else:
                     
                     #

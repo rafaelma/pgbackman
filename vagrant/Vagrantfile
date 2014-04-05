@@ -12,26 +12,53 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # Every Vagrant virtual environment requires a box to build off of.
   #config.vm.box = "chef/centos-6.5"
 
-  config.vm.define "pgbackup1" do |pgbackup1|
+  config.vm.define "pg-backup01" do |pgbackup1|
     pgbackup1.vm.box = "chef/centos-6.5"
-    pgbackup1.vm.network "private_network", ip: "10.10.10.100"
-    pgbackup1.vm.hostname = "pg-backup1.example.net"
+    pgbackup1.vm.network "private_network", ip: "10.10.10.101"
+    pgbackup1.vm.hostname = "pg-backup01.example.net"
+    pgbackup1.vm.provision :shell, :path => "bootstrap.sh"
 
     pgbackup1.vm.provider "virtualbox" do |vb1|
      # Use VBoxManage to customize the VM. For example to change memory:  
-     vb1.customize ["modifyvm", :id, "--memory", "512"]                             end
-  end
+     vb1.customize ["modifyvm", :id, "--memory", "512"]                             
+    end
+   end
 
-  config.vm.define "pgbackup2" do |pgbackup2|
+   config.vm.define "pg-backup02" do |pgbackup2|
     pgbackup2.vm.box = "chef/centos-6.5"
-    pgbackup2.vm.network "private_network", ip: "10.10.10.101"
-    pgbackup2.vm.hostname = "pg-backup2.example.net"
+    pgbackup2.vm.network "private_network", ip: "10.10.10.102"
+    pgbackup2.vm.hostname = "pg-backup02.example.net"
+    pgbackup2.vm.provision :shell, :path => "bootstrap.sh"
 
     pgbackup2.vm.provider "virtualbox" do |vb2|
      # Use VBoxManage to customize the VM. For example to change memory:  
      vb2.customize ["modifyvm", :id, "--memory", "512"]
     end
-  end
+   end
+
+   config.vm.define "pg-node01" do |pgnode1|
+    pgnode1.vm.box = "chef/centos-6.5"
+    pgnode1.vm.network "private_network", ip: "10.10.10.103"
+    pgnode1.vm.hostname = "pg-node01.example.net"
+    pgnode1.vm.provision :shell, :path => "bootstrap3.sh"
+
+    pgnode1.vm.provider "virtualbox" do |vb3|
+     # Use VBoxManage to customize the VM. For example to change memory:  
+     vb3.customize ["modifyvm", :id, "--memory", "512"]
+    end
+   end
+
+   config.vm.define "pgbackmandb" do |pgbackmandb|
+    pgbackmandb.vm.box = "chef/centos-6.5"
+    pgbackmandb.vm.network "private_network", ip: "10.10.10.104"
+    pgbackmandb.vm.hostname = "pgbackmandb.example.net"
+    pgbackmandb.vm.provision :shell, :path => "bootstrap2.sh"
+
+    pgbackmandb.vm.provider "virtualbox" do |vb4|
+     # Use VBoxManage to customize the VM. For example to change memory:  
+     vb4.customize ["modifyvm", :id, "--memory", "512"]
+    end
+   end
 
 
   # The url from where the 'config.vm.box' box will be fetched if it

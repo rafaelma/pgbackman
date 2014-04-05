@@ -1035,7 +1035,7 @@ class pgbackman_db():
     # Method 
     # ############################################
            
-    def get_cataloginfo_from_defid_force_deletion(self,backup_server_id):
+    def get_catalog_entries_to_delete(self,backup_server_id):
         """A function to get catalog information about force deletion of backup job definitions"""
      
         try:
@@ -1043,7 +1043,7 @@ class pgbackman_db():
 
             if self.cur:
                 try:
-                    self.cur.execute('SELECT * FROM get_cataloginfo_from_defid_force_deletion WHERE backup_server_id = %s',(backup_server_id,))
+                    self.cur.execute('SELECT * FROM get_catalog_entries_to_delete WHERE backup_server_id = %s',(backup_server_id,))
                     self.conn.commit()
                     
                     return self.cur
@@ -1061,7 +1061,7 @@ class pgbackman_db():
     # Method 
     # ############################################
                       
-    def delete_cataloginfo_from_defid_force_deletion(self,del_id):
+    def delete_catalog_entries_to_delete(self,del_id):
         """A function to delete catalog info from defid force deletions"""
 
         try:
@@ -1069,7 +1069,7 @@ class pgbackman_db():
 
             if self.cur:
                 try:
-                    self.cur.execute('SELECT delete_cataloginfo_from_defid_force_deletion(%s)',(del_id,))
+                    self.cur.execute('SELECT delete_catalog_entries_to_delete(%s)',(del_id,))
                     self.conn.commit()                        
               
                 except psycopg2.Error as e:
@@ -1340,7 +1340,7 @@ class pgbackman_db():
                     self.cur.execute("SELECT count(*) FROM job_queue")
                     job_queue_cnt = self.cur.fetchone()[0]
                      
-                    self.cur.execute("SELECT count(*) FROM cataloginfo_from_defid_force_deletion")
+                    self.cur.execute("SELECT count(*) FROM catalog_entries_to_delete")
                     defid_force_deletion_cnt = self.cur.fetchone()[0]
                     
                     x = PrettyTable([".",".."],header = False)
@@ -1383,3 +1383,50 @@ class pgbackman_db():
         except psycopg2.Error as e:
             raise e    
       
+    # ############################################
+    # Method 
+    # ############################################
+           
+    def get_pgsql_node_to_delete(self,backup_server_id):
+        """A function to get the PgSQL node data from nodes that has been deleted"""
+     
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT backup_server_id,pgsql_node_id FROM pgsql_node_to_delete WHERE backup_server_id = %s',(backup_server_id,))
+                    self.conn.commit()
+                    
+                    return self.cur
+                
+                except psycopg2.Error as e:
+                    raise e
+
+            self.pg_close()
+
+        except psycopg2.Error as e:
+            raise e
+
+    # ############################################
+    # Method 
+    # ############################################
+           
+    def delete_pgsql_node_to_delete(self,backup_server_id,pgsql_node_id):
+        """A function to delete the PgSQL node data from a node that has been deleted"""
+     
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+                    self.cur.execute('DELETE FROM pgsql_node_to_delete WHERE backup_server_id = %s AND pgsql_node_id = %s',(backup_server_id,pgsql_node_id))
+                    self.conn.commit()
+                                    
+                except psycopg2.Error as e:
+                    raise e
+
+            self.pg_close()
+
+        except psycopg2.Error as e:
+            raise e

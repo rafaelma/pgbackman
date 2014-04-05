@@ -45,6 +45,7 @@ CREATE TABLE backup_server(
 
 ALTER TABLE backup_server ADD PRIMARY KEY (hostname,domain_name);
 CREATE UNIQUE INDEX ON backup_server(server_id);
+CREATE INDEX ON backup_server(status);
 
 ALTER TABLE backup_server OWNER TO pgbackman_role_rw;
 
@@ -70,21 +71,48 @@ ALTER TABLE backup_server OWNER TO pgbackman_role_rw;
 
 CREATE TABLE pgsql_node(
 
-  node_id SERIAL NOT NULL,
+  node_id BIGSERIAL NOT NULL,
   registered TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   hostname TEXT NOT NULL,
   domain_name TEXT NOT NULL,
   pgport INTEGER DEFAULT '5432' NOT NULL,
   admin_user TEXT DEFAULT 'postgres' NOT NULL,
   pg_version CHARACTER VARYING(5),
-  status CHARACTER VARYING(20) DEFAULT 'RUNNING' NOT NULL,
+  status CHARACTER VARYING(20) DEFAULT 'STOPPED' NOT NULL,
   remarks TEXT
 );
 
 ALTER TABLE pgsql_node ADD PRIMARY KEY (hostname,domain_name,pgport);
 CREATE UNIQUE INDEX ON pgsql_node(node_id);
+CREATE INDEX ON pgsql_node(status);
 
 ALTER TABLE pgsql_node OWNER TO pgbackman_role_rw;
+
+
+-- ------------------------------------------------------
+-- Table: pgsql_node_to_delete
+--
+-- @Description: Information about the PostgreSQL servers
+--               waiting to be deleted
+--
+-- Attributes:
+--
+-- @backup_server_id
+-- @pgsql_node_id:
+-- @registered:
+-- ------------------------------------------------------
+
+
+\echo '# [Creating table: pgsql_node_to_delete]\n'
+
+CREATE TABLE pgsql_node_to_delete(
+  registered TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  backup_server_id INTEGER NOT NULL,
+  pgsql_node_id BIGINT NOT NULL
+);
+
+ALTER TABLE pgsql_node_to_delete ADD PRIMARY KEY (backup_server_id,pgsql_node_id);
+ALTER TABLE pgsql_node_to_delete OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------
@@ -285,7 +313,7 @@ ALTER TABLE job_queue OWNER TO pgbackman_role_rw;
 
 CREATE TABLE backup_job_definition(
 
-  def_id SERIAL UNIQUE,
+  def_id BIGSERIAL UNIQUE,
   registered TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   backup_server_id INTEGER NOT NULL,
   pgsql_node_id INTEGER NOT NULL,
@@ -304,7 +332,7 @@ CREATE TABLE backup_job_definition(
   remarks TEXT
 );
 
-ALTER TABLE backup_job_definition ADD PRIMARY KEY (pgsql_node_id,dbname,backup_code,extra_parameters);
+ALTER TABLE backup_job_definition ADD PRIMARY KEY (backup_server_id,pgsql_node_id,dbname,backup_code,extra_parameters);
 ALTER TABLE backup_job_definition OWNER TO pgbackman_role_rw;
 
 
@@ -331,6 +359,7 @@ ALTER TABLE backup_job_definition OWNER TO pgbackman_role_rw;
 -- @db_parameters_file
 -- @log_file
 -- @execution_status
+-- @error_message
 -- ------------------------------------------------------
 
 \echo '# [Creating table: backup_job_catalog]\n'
@@ -356,15 +385,20 @@ CREATE TABLE backup_job_catalog(
   pg_dump_dbconfig_file_size BIGINT,
   pg_dump_dbconfig_log_file TEXT,
   global_log_file TEXT NOT NULL,
-  execution_status TEXT
+  execution_status TEXT,
+  error_message TEXT
 );
 
 ALTER TABLE backup_job_catalog ADD PRIMARY KEY (bck_id);
+CREATE INDEX ON backup_job_catalog(backup_server_id);
+CREATE INDEX ON backup_job_catalog(pgsql_node_id);
+
+
 ALTER TABLE backup_job_catalog OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------
--- Table: cataloginfo_from_defid_force_deletion
+-- Table: catalog_entries_to_delete
 --
 -- @Description: Table with files to delete after a
 --               force delete of backup definitions
@@ -376,9 +410,9 @@ ALTER TABLE backup_job_catalog OWNER TO pgbackman_role_rw;
 -- @value
 -- ------------------------------------------------------
 
-\echo '# [Creating table: cataloginfo_from_defid_force_deletion]\n'
+\echo '# [Creating table: catalog_entries_to_delete]\n'
 
-CREATE TABLE cataloginfo_from_defid_force_deletion(
+CREATE TABLE catalog_entries_to_delete(
   del_id BIGSERIAL,
   registered TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   def_id BIGINT NOT NULL,
@@ -392,8 +426,8 @@ CREATE TABLE cataloginfo_from_defid_force_deletion(
   pg_dump_dbconfig_log_file TEXT
 );
 
-ALTER TABLE cataloginfo_from_defid_force_deletion ADD PRIMARY KEY (del_id);
-ALTER TABLE  cataloginfo_from_defid_force_deletion OWNER TO pgbackman_role_rw;
+ALTER TABLE catalog_entries_to_delete ADD PRIMARY KEY (del_id);
+ALTER TABLE  catalog_entries_to_delete OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------
@@ -437,7 +471,7 @@ ALTER TABLE backup_server_config OWNER TO pgbackman_role_rw;
 
 CREATE TABLE pgsql_node_config(
 
-  node_id INTEGER NOT NULL NOT NULL REFERENCES pgsql_node (node_id),
+  node_id BIGINT NOT NULL NOT NULL REFERENCES pgsql_node (node_id),
   parameter TEXT NOT NULL,
   value TEXT NOT NULL,
   description TEXT
@@ -497,7 +531,7 @@ ALTER TABLE ONLY backup_job_catalog
 \echo '# [Init: backup_code]\n'
 
 INSERT INTO server_status (code,description) VALUES ('RUNNING','Server is active and running');
-INSERT INTO server_status (code,description) VALUES ('DOWN','Server is down');
+INSERT INTO server_status (code,description) VALUES ('STOPPED','Server is down');
 
 \echo '# [Init: backup_code]\n'
 
@@ -524,7 +558,7 @@ INSERT INTO job_execution_status (code,description) VALUES ('WARNING','Job finni
 INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('root_backup_partition','/srv/pgbackman','Main partition used by pgbackman');
 INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('root_cron_file','/etc/cron.d/pgbackman','Crontab file used by pgbackman');
 INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('domain','example.org','Default domain');
-INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('backup_server_status','RUNNING','Default backup server status');
+INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('backup_server_status','RUNNING','Default backup server status - *Not used*');
 INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('pgbackman_dump','/usr/bin/pgbackman_dump','Program used to take backup dumps');
 INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('admin_user','postgres','postgreSQL admin user');
 INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('pgsql_bin_9_3','/usr/pgsql-9.3/bin','postgreSQL 9.3 bin directory');
@@ -536,15 +570,15 @@ INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('
 
 \echo '# [Init: pgsql_node_default_config]\n'
 
-INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('pgnode_backup_partition','/srv/pgbackman/%%pgnode%%','Partition to save pgbackman information for a pgnode');
-INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('pg_node_cron_file','/etc/cron.d/%%pgnode%%_backups','Crontab file for pgnode in the backup server');
-INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('encryption','false','GnuPG encryption');
+INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('pgnode_backup_partition','/srv/pgbackman/pgsql_node_%%pgnode%%','Partition to save pgbackman information for a pgnode');
+INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('pgnode_crontab_file','/etc/cron.d/pgsql_node_%%pgnode%%','Crontab file for pgnode in the backup server');
+INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('encryption','false','GnuPG encryption - *Not used*');
 INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('retention_period','7 days','Retention period for a backup job');
 INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('retention_redundancy','1','Retention redundancy for a backup job');
 INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('pgport','5432','postgreSQL port');
 INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('admin_user','postgres','postgreSQL admin user');
 INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('domain','example.org','Default domain');
-INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('pgsql_node_status','RUNNING','pgsql node status');
+INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('pgsql_node_status','STOPPED','pgsql node status');
 INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('backup_job_status','ACTIVE','Backup job status');
 INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('backup_code','FULL','Backup job code');
 INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('backup_minutes_interval','01-59','Backup minutes interval');
@@ -558,7 +592,7 @@ INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('log
 
 
 -- ------------------------------------------------------------
--- Function: update_backup_server_configuration()
+-- Function: notify_pgsql_nodes_updated()
 --
 -- ------------------------------------------------------------
 
@@ -576,9 +610,61 @@ $$;
 
 ALTER FUNCTION notify_pgsql_nodes_updated() OWNER TO pgbackman_role_rw;
 
-CREATE TRIGGER notify_pgsql_nodes_updated AFTER INSERT OR DELETE
+CREATE TRIGGER notify_pgsql_nodes_updated AFTER INSERT OR UPDATE
     ON pgsql_node FOR EACH ROW
     EXECUTE PROCEDURE notify_pgsql_nodes_updated();
+
+
+-- ------------------------------------------------------------
+-- Function: notify_pgsql_nodes_updated()
+--
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION notify_pgsql_nodes_deleted() RETURNS TRIGGER
+ LANGUAGE plpgsql 
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ BEGIN
+  PERFORM pg_notify('channel_pgsql_nodes_deleted','PgSQL node changed');
+ 
+  RETURN NULL;
+END;
+$$;
+
+ALTER FUNCTION notify_pgsql_nodes_deleted() OWNER TO pgbackman_role_rw;
+
+CREATE TRIGGER notify_pgsql_nodes_deleted AFTER DELETE
+    ON pgsql_node FOR EACH ROW
+    EXECUTE PROCEDURE notify_pgsql_nodes_deleted();
+
+
+-- ------------------------------------------------------------
+-- Function: update_pgsql_nodes_updated()
+--
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION update_pgsql_nodes_deleted() RETURNS TRIGGER
+ LANGUAGE plpgsql 
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ BEGIN
+ 
+   EXECUTE 'INSERT INTO pgsql_node_to_delete (backup_server_id,pgsql_node_id) 
+   	   SELECT server_id,$1
+           FROM backup_server ORDER BY server_id'
+   USING OLD.node_id; 
+
+RETURN NULL;
+END;
+$$;
+
+ALTER FUNCTION update_pgsql_nodes_deleted() OWNER TO pgbackman_role_rw;
+
+CREATE TRIGGER update_pgsql_nodes_deleted AFTER DELETE
+    ON pgsql_node FOR EACH ROW
+    EXECUTE PROCEDURE update_pgsql_nodes_deleted();
 
 
 -- ------------------------------------------------------------
@@ -622,9 +708,10 @@ CREATE OR REPLACE FUNCTION update_pgsql_node_configuration() RETURNS TRIGGER
  BEGIN
 
   EXECUTE 'INSERT INTO pgsql_node_config (node_id,parameter,value,description) 
-  	   SELECT $1,parameter,replace(replace(replace(value,''%%pgnode%%'',$2),''.'',''_''),''cron_d'',''cron.d''),description FROM pgsql_node_default_config'
+  	   SELECT $1,parameter,replace(value,''%%pgnode%%'',$2),description FROM pgsql_node_default_config'
   USING NEW.node_id,
-  	NEW.hostname || '.' || NEW.domain_name;
+  	NEW.node_id::TEXT;
+	
 
  RETURN NULL;
 END;
@@ -1295,7 +1382,7 @@ CREATE OR REPLACE FUNCTION delete_force_backup_job_definition_id(INTEGER) RETURN
 			   pg_dump_dbconfig_file,
 			   pg_dump_dbconfig_log_file
              ),save_catinfo AS (
-	       INSERT INTO cataloginfo_from_defid_force_deletion(
+	       INSERT INTO catalog_entries_to_delete(
 	       	      	   def_id,
 			   bck_id,
 			   backup_server_id,
@@ -1410,7 +1497,7 @@ CREATE OR REPLACE FUNCTION delete_force_backup_job_definition_database(INTEGER,T
 			   pg_dump_dbconfig_file,
 			   pg_dump_dbconfig_log_file
              ),save_catinfo AS (
-	       INSERT INTO cataloginfo_from_defid_force_deletion(
+	       INSERT INTO catalog_entries_to_delete(
 	       	      	   def_id,
 			   bck_id,
 			   backup_server_id,
@@ -1814,7 +1901,9 @@ CREATE OR REPLACE FUNCTION get_listen_channel_names(INTEGER) RETURNS SETOF TEXT
  AS $$
   SELECT 'channel_pgsql_nodes_updated' AS channel
   UNION
-  SELECT 'channel_bs' || $1 || '_pg' || node_id AS channel FROM pgsql_node ORDER BY channel DESC
+  SELECT 'channel_pgsql_nodes_deleted' AS channel
+  UNION
+  SELECT 'channel_bs' || $1 || '_pg' || node_id AS channel FROM pgsql_node WHERE status = 'RUNNING' ORDER BY channel DESC
 $$;
 
 ALTER FUNCTION get_listen_channel_names(INTEGER) OWNER TO pgbackman_role_rw;
@@ -1839,7 +1928,7 @@ CREATE OR REPLACE FUNCTION generate_crontab_backup_jobs(INTEGER,INTEGER) RETURNS
   job_row RECORD;
 
   logs_email TEXT := '';
-  pg_node_cron_file TEXT := '';
+  pgnode_crontab_file TEXT := '';
   root_backup_dir TEXT := '';
   admin_user TEXT := '';
   pgbackman_dump TEXT := '';
@@ -1848,7 +1937,7 @@ CREATE OR REPLACE FUNCTION generate_crontab_backup_jobs(INTEGER,INTEGER) RETURNS
 BEGIN
 
  logs_email := get_pgsql_node_parameter(pgsql_node_id_,'logs_email');
- pg_node_cron_file := get_pgsql_node_parameter(pgsql_node_id_,'pg_node_cron_file');
+ pgnode_crontab_file := get_pgsql_node_parameter(pgsql_node_id_,'pgnode_crontab_file');
  root_backup_dir := get_backup_server_parameter(backup_server_id_,'root_backup_partition');
  backup_server_fqdn := get_backup_server_fqdn(backup_server_id_);
  pgsql_node_fqdn := get_pgsql_node_fqdn(pgsql_node_id_);
@@ -1856,7 +1945,7 @@ BEGIN
  admin_user := get_pgsql_node_admin_user(pgsql_node_id_);
  pgbackman_dump := get_backup_server_parameter(backup_server_id_,'pgbackman_dump');
 
- output := output || '# File: ' || COALESCE(pg_node_cron_file,'') || E'\n';
+ output := output || '# File: ' || COALESCE(pgnode_crontab_file,'') || E'\n';
  output := output || '# ' || E'\n';
  output := output || '# This crontab file is generated automatically' || E'\n';
  output := output || '# and contains the backup jobs to be run' || E'\n';
@@ -2090,11 +2179,11 @@ ALTER FUNCTION register_backup_job_catalog(INTEGER,INTEGER,INTEGER,TEXT,TIMESTAM
 
 
 -- ------------------------------------------------------------
--- Function: delete_cataloginfo_from_defid_force_deletion()
+-- Function: delete_catalog_entries_to_delete()
 --
 -- ------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION delete_cataloginfo_from_defid_force_deletion(INTEGER) RETURNS BOOLEAN
+CREATE OR REPLACE FUNCTION delete_catalog_entries_to_delete(INTEGER) RETURNS BOOLEAN
  LANGUAGE plpgsql 
  SECURITY INVOKER 
  SET search_path = public, pg_temp
@@ -2108,11 +2197,11 @@ CREATE OR REPLACE FUNCTION delete_cataloginfo_from_defid_force_deletion(INTEGER)
   v_context TEXT;
  BEGIN
 
-   SELECT count(*) FROM cataloginfo_from_defid_force_deletion WHERE del_id = del_id_ INTO del_cnt;
+   SELECT count(*) FROM catalog_entries_to_delete WHERE del_id = del_id_ INTO del_cnt;
 
    IF del_cnt != 0 THEN
 
-     EXECUTE 'DELETE FROM cataloginfo_from_defid_force_deletion WHERE del_id = $1'
+     EXECUTE 'DELETE FROM catalog_entries_to_delete WHERE del_id = $1'
      USING del_id_;
    
      RETURN TRUE;
@@ -2129,7 +2218,7 @@ CREATE OR REPLACE FUNCTION delete_cataloginfo_from_defid_force_deletion(INTEGER)
   END;
 $$;
 
-ALTER FUNCTION delete_cataloginfo_from_defid_force_deletion(INTEGER) OWNER TO pgbackman_role_rw;
+ALTER FUNCTION delete_catalog_entries_to_delete(INTEGER) OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------------
@@ -2288,7 +2377,7 @@ CREATE OR REPLACE VIEW show_backup_job_details AS
 
 ALTER VIEW show_backup_job_details OWNER TO pgbackman_role_rw;
 
-CREATE OR REPLACE VIEW get_cataloginfo_from_defid_force_deletion AS
+CREATE OR REPLACE VIEW get_catalog_entries_to_delete AS
   SELECT del_id,
   	 registered,
 	 def_id,
@@ -2300,10 +2389,10 @@ CREATE OR REPLACE VIEW get_cataloginfo_from_defid_force_deletion AS
 	 pg_dump_roles_log_file,
 	 pg_dump_dbconfig_file,
 	 pg_dump_dbconfig_log_file 
-   FROM cataloginfo_from_defid_force_deletion
+   FROM catalog_entries_to_delete
    ORDER BY del_id;
 
-ALTER VIEW get_cataloginfo_from_defid_force_deletion OWNER TO pgbackman_role_rw;
+ALTER VIEW get_catalog_entries_to_delete OWNER TO pgbackman_role_rw;
 
 CREATE OR REPLACE VIEW get_catalog_entries_to_delete_by_retention AS
 WITH 
