@@ -1640,9 +1640,31 @@ class pgbackman_cli(cmd.Cmd):
 
     def do_show_empty_backup_job_catalogs(self,args):
         """
+        COMMAND:
         show_empty_backup_job_catalogs
 
-        """    
+        DESCRIPTION:
+        Command to get a list with all backup definitions with empty catalogs
+
+        """     
+
+        try: 
+            arg_list = shlex.split(args)
+            
+        except ValueError as e:
+            print "\n[ERROR]: ",e,"\n"
+            return False
+        
+        if len(arg_list) == 0:
+            try:
+                self.db.show_empty_backup_job_catalogs()
+                
+            except Exception as e:
+                print "\n[ERROR]: ",e
+            
+        else:
+            print "\n[ERROR] - This command does not accept parameters.\n          Type help or ? to list commands\n"
+
 
     # ############################################
     # Method do_update_backup_server

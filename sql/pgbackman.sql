@@ -2533,6 +2533,29 @@ ORDER BY parameter;
 
 ALTER VIEW show_pgsql_node_config OWNER TO pgbackman_role_rw;
 
+CREATE OR REPLACE VIEW show_empty_backup_job_catalogs AS
+WITH def_id_list AS (
+SELECT DISTINCT ON (a.def_id)
+       lpad(b.def_id::text,11,'0') AS "DefID",
+       b.registered AS "Registered",
+       b.backup_server_id,
+       get_backup_server_fqdn(b.backup_server_id) AS "Backup server",
+       b.pgsql_node_id,
+       get_pgsql_node_fqdn(b.pgsql_node_id) AS "PgSQL node",
+       b.dbname AS "DBname",
+       b.minutes_cron || ' ' || b.hours_cron || ' ' || b.weekday_cron || ' ' || b.month_cron || ' ' || b.day_month_cron AS "Schedule",
+       b.backup_code AS "Code",
+       b.encryption::TEXT AS "Encryption",
+       b.retention_period::TEXT || ' (' || b.retention_redundancy::TEXT || ')' AS "Retention",
+       b.job_status AS "Status",
+       b.extra_parameters AS "Parameters"
+FROM backup_job_catalog a
+RIGHT JOIN backup_job_definition b ON a.def_id = b.def_id
+WHERE a.def_id IS NULL
+)
+SELECT * FROM def_id_list
+ORDER BY "Registered",backup_server_id,pgsql_node_id,"DBname","Code","Status";
 
+ALTER VIEW show_empty_backup_job_catalogs OWNER TO pgbackman_role_rw;
 
 COMMIT;
