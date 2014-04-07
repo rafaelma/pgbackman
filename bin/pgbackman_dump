@@ -76,6 +76,7 @@ def pg_dumpall(db):
                 cluster_log_file.write('[ERROR] Cluster dump file could not be created. Return code = ' + str(proc.returncode) + '. Check log file: ' + global_parameters['cluster_log_file'] + '\n')
                 
                 global_parameters['execution_status'] = 'ERROR'
+                global_parameters['error_message'] = 'pgdumpall returncode: ' + proc.returncode
                 register_backup_job_catalog(db)
                 sys.exit(1)
                 
@@ -83,6 +84,7 @@ def pg_dumpall(db):
         logs.logger.critical('Could not generate the final cluster dump file %s - %s',global_parameters['cluster_dump_file'],e)
         
         global_parameters['execution_status'] = 'ERROR'
+        global_parameters['error_message'] = e
         register_backup_job_catalog(db)  
         sys.exit(1)
         
@@ -153,6 +155,7 @@ def pg_dump(db):
                 logs.logger.critical('Database dump file could not be created. Return code = %s. Check log file: %s',proc.returncode,global_parameters['database_log_file'])
                 
                 global_parameters['execution_status'] = 'ERROR'
+                global_parameters['error_message'] = 'pg_dump returncode: ' + proc.returncode
                 register_backup_job_catalog(db)  
                 sys.exit(1)
                 
@@ -163,6 +166,7 @@ def pg_dump(db):
         logs.logger.critical('Could not generate the final database dump file %s - %s',global_parameters['database_dump_file'],e)
 
         global_parameters['execution_status'] = 'ERROR'
+        global_parameters['error_message'] = e
         register_backup_job_catalog(db)  
         sys.exit(1)
         
@@ -226,6 +230,7 @@ def pg_dump_users(db):
                 logs.logger.critical('The command used to generate the tmp schema dump of the database %s has a return value != 0',global_parameters['dbname'])
 
                 global_parameters['execution_status'] = 'ERROR'
+                global_parameters['error_message'] = 'pg_dump returncode: ' + proc.returncode
                 register_backup_job_catalog(db)  
                 sys.exit(1)
                 
@@ -249,6 +254,7 @@ def pg_dump_users(db):
         logs.logger.critical('pg_dump schema temp file could not be created in directory %s - %s',global_parameters['tmp_dir'],e)
         
         global_parameters['execution_status'] = 'ERROR'
+        global_parameters['error_message'] = e
         register_backup_job_catalog(db)  
         sys.exit(1)
         
@@ -283,6 +289,7 @@ def pg_dump_users(db):
                 logs.logger.critical('The command used to generate the role dump for the PgSQL node running the database %s has a return value != 0',global_parameters['dbname'])
             
                 global_parameters['execution_status'] = 'ERROR'
+                global_parameters['error_message'] = 'pg_dumpall returncode: ' + proc.returncode
                 register_backup_job_catalog(db)  
                 sys.exit(1)
 
@@ -319,6 +326,7 @@ def pg_dump_users(db):
         logs.logger.critical('Could not generate the final roles dump file %s - %s',global_parameters['roles_dump_file'],e)
         
         global_parameters['execution_status'] = 'ERROR'
+        global_parameters['error_message'] = e
         register_backup_job_catalog(db)  
         sys.exit(1)
         
@@ -366,6 +374,7 @@ def pg_dump_database_config(db):
                 logs.logger.critical('The command used to generate the dbconfig dump for the PgSQL node running the database %s has a return value != 0',global_parameters['dbname'])
             
                 global_parameters['execution_status'] = 'ERROR'
+                global_parameters['error_message'] = 'pg_dumpall returncode: ' + proc.returncode
                 register_backup_job_catalog(db)  
                 sys.exit(1)
             
@@ -402,6 +411,7 @@ def pg_dump_database_config(db):
         logs.logger.critical('Could not generate the final dbconfig dump file %s - %s',global_parameters['dbconfig_dump_file'],e)
         
         global_parameters['execution_status'] = 'ERROR'
+        global_parameters['error_message'] = e
         register_backup_job_catalog(db)  
         sys.exit(1)
 
@@ -458,6 +468,7 @@ def get_pgsql_node_release(db,db_pgnode):
     else:
         logs.logger.critical('Could not get the postgreSQL release for this PgSQL node: %s',global_parameters['pgsql_node_fqdn'])
         global_parameters['execution_status'] = 'ERROR'
+        global_parameters['error_message'] = 'Problems getting pgsql release'
         register_backup_job_catalog(db)
 
         sys.exit(1)
@@ -598,7 +609,9 @@ def register_backup_job_catalog(db):
     #
 
     try:
+        procpid = os.getpid()
         db.register_backup_job_catalog(global_parameters['def_id'],
+                                       procpid,
                                        global_parameters['backup_server_id'],  
                                        global_parameters['pgsql_node_id'],
                                        global_parameters['dbname'],
@@ -615,7 +628,8 @@ def register_backup_job_catalog(db):
                                        pg_dump_dbconfig_file_size,
                                        pg_dump_dbconfig_log_file,
                                        global_parameters['global_log_file'],
-                                       global_parameters['execution_status']
+                                       global_parameters['execution_status'],
+                                       global_parameters['error_message']
                                        )
     
 
@@ -623,13 +637,14 @@ def register_backup_job_catalog(db):
         
     except Exception as e:
         logs.logger.info('Problems updating the backup job catalog for DefID: %s in the database - %s',global_parameters['def_id'],e)
-        procpid = os.getpid()
 
         try:
+            procpid = os.getpid()
             pending_log_file = global_parameters['backup_server_pending_registration_dir'] + '/backup_jobs_pending_log_updates_nodeid_' + str(global_parameters['pgsql_node_id']) + '_' + str(procpid) + '.log'
 
             with open(pending_log_file,'w+') as catalog_pending:
                 catalog_pending.write(str(global_parameters['def_id']) + '::' +
+                                      str(procpid) + '::' +
                                       str(global_parameters['backup_server_id']) + '::' +   
                                       str(global_parameters['pgsql_node_id']) + '::' +   
                                       global_parameters['dbname'] + '::' +   
@@ -646,7 +661,8 @@ def register_backup_job_catalog(db):
                                       str(pg_dump_dbconfig_file_size) + '::' +   
                                       pg_dump_dbconfig_log_file + '::' +   
                                       global_parameters['global_log_file'] + '::' + 
-                                      global_parameters['execution_status'] +
+                                      global_parameters['execution_status'] + '::' +
+                                      global_parameters['error_message'] +
                                       '\n')
                 
                 logs.logger.info('Catalog pending log file: %s created',pending_log_file)
@@ -676,6 +692,7 @@ def get_backup_server_parameters_from_cache(db,backup_server_fqdn):
     except Exception as e:
         logs.logger.error('Could not read the cache file for the backup server: %s - %s',backup_server_fqdn,e)
         global_parameters['execution_status'] = 'ERROR'
+        global_parameters['error_message'] = 'Problems getting backup server cache data'
         register_backup_job_catalog(db)
 
         sys.exit(1)
@@ -702,6 +719,7 @@ def get_pgsql_node_parameters_from_cache(db):
     except Exception as e:
         logs.logger.critical('Could not read the cache file for the PgSQL node: %s - %s',global_parameters['pgsql_node_fqdn'],e)
         global_parameters['execution_status'] = 'ERROR'
+        global_parameters['error_message'] = 'Problems getting pgsql node cache data'
         register_backup_job_catalog(db)
 
         sys.exit(1)
@@ -772,34 +790,13 @@ def main():
  
     global_parameters['dbconfig_dump_file'] = ''
     global_parameters['dbconfig_log_file'] = ''
+
+    global_parameters['error_message'] = ''
        
     db = pgbackman_db(pgbackman_dsn,'pgbackman_dump')
  
     pgsql_node_dsn = get_pgsql_node_dsn()
     db_pgnode = pgbackman_db(pgsql_node_dsn,'pgbackman_dump')
-
-    #
-    # We check before starting if the database we are going to backup is available. 
-    # If it is not available, we will stop the backup job with an error
-    #
-    # pgbackman_dump has to work and take the backups defined
-    # in the system even if the pgbackman database is not available.
-    #
-    # If the pgbackman database is not available, pgbackman_dump will get the
-    # necessary parameters from the cache files saved in the backup server
-    #
-    
-    check_pgnode_db = check_pgsql_node_database_connection(db_pgnode)
-
-    if not check_pgnode_db:
-        logs.logger.critical('The database "%s" is not available at %s. Shutting down the backup job with DefID: %s',
-                             global_parameters['dbname'],
-                             global_parameters['pgsql_node_fqdn'],
-                             str(global_parameters['def_id']))
-        
-        global_parameters['execution_status'] = 'ERROR'
-        register_backup_job_catalog(db)
-        sys.exit(1) 
 
     # 
     # The backup server FQDN to be used can be defined in the pgbackman configuration file.
@@ -825,6 +822,30 @@ def main():
         logs.logger.info('Backup server: %s is registered in the cache',backup_server_fqdn)
 
     global_parameters['backup_server_id'] = backup_server_id
+
+    #
+    # We check before starting if the database we are going to backup is available. 
+    # If it is not available, we will stop the backup job with an error
+    #
+    # pgbackman_dump has to work and take the backups defined
+    # in the system even if the pgbackman database is not available.
+    #
+    # If the pgbackman database is not available, pgbackman_dump will get the
+    # necessary parameters from the cache files saved in the backup server
+    #
+    
+    check_pgnode_db = check_pgsql_node_database_connection(db_pgnode)
+
+    if not check_pgnode_db:
+        logs.logger.critical('The database "%s" is not available at %s. Shutting down the backup job with DefID: %s',
+                             global_parameters['dbname'],
+                             global_parameters['pgsql_node_fqdn'],
+                             str(global_parameters['def_id']))
+        
+        global_parameters['execution_status'] = 'ERROR'
+        global_parameters['error_message'] = 'Database not available'
+        register_backup_job_catalog(db)
+        sys.exit(1) 
 
     global_parameters['backup_server_pending_registration_dir'] = global_parameters['root_backup_dir'] + '/pending_updates'
     global_parameters['backup_server_cache_dir'] =  global_parameters['root_backup_dir'] + '/cache_dir'

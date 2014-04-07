@@ -45,7 +45,7 @@ def delete_files_from_force_deletes(db,backup_server_id):
     logs.logger.debug('## Deleting files from forced DefID deletions ##')
     
     try:
-        for record in db.get_cataloginfo_from_defid_force_deletion(backup_server_id):
+        for record in db.get_catalog_entries_to_delete(backup_server_id):
             
             error_cnt = 0
 
@@ -73,7 +73,7 @@ def delete_files_from_force_deletes(db,backup_server_id):
 
             if error_cnt == 0:
                 try:
-                    db.delete_cataloginfo_from_defid_force_deletion(record[0])
+                    db.delete_catalog_entries_to_delete(record[0])
                     logs.logger.info('Files for catalog ID: %s / DefID: %s deleted',record[3],record[2])
                     
                 except psycopg2.OperationalError as e:
@@ -160,7 +160,7 @@ def process_pending_catalog_log_file(db,backup_server_id):
                 for line in pending_file:
                     parameters = line.split('::')
                     
-                    if len(parameters) == 18:
+                    if len(parameters) == 20:
                             
                         #
                         # Updating the database with the information in the pending file
@@ -183,7 +183,9 @@ def process_pending_catalog_log_file(db,backup_server_id):
                                                        parameters[14],
                                                        parameters[15],
                                                        parameters[16],
-                                                       parameters[17].replace('\n',''))
+                                                       parameters[17],
+                                                       parameters[18],
+                                                       parameters[19].replace('\n',''))
 
                         logs.logger.info('Backup job catalog for DefID: %s in pending file %s updated in the database',parameters[0],pending_log_file)
                             

@@ -572,34 +572,36 @@ class pgbackman_db():
                     for record in self.cur:
                         
                         x.add_row(["BckID:",record[0]])
+                        x.add_row(["ProcPID:",str(record[8])])
                         x.add_row(["Registered:",str(record[2])])
                         x.add_row(["",""])
                         x.add_row(["Started:",str(record[3])])
                         x.add_row(["Finished:",str(record[4])])
                         x.add_row(["Duration:",str(record[6])])
-                        x.add_row(["Total size:",record[26]])
-                        x.add_row(["Execution status:",record[28]])
+                        x.add_row(["Total size:",record[27]])
+                        x.add_row(["Execution status:",record[29]])
                         x.add_row(["",""])
                         x.add_row(["DefID:",record[7]])
-                        x.add_row(["DBname:",record[16]])
-                        x.add_row(["Backup server (ID/FQDN):","[" + str(record[12]) + "] / " + record[13]])
-                        x.add_row(["PgSQL node (ID/FQDN):","[" + str(record[14]) + "] / " + record[15]])
+                        x.add_row(["DBname:",record[17]])
+                        x.add_row(["Backup server (ID/FQDN):","[" + str(record[13]) + "] / " + record[14]])
+                        x.add_row(["PgSQL node (ID/FQDN):","[" + str(record[15]) + "] / " + record[16]])
                         x.add_row(["",""])
-                        x.add_row(["Schedule:",record[9] + " [min hour weekday month day_month]"])
-                        x.add_row(["Retention:",record[8]])
-                        x.add_row(["Backup code:",record[27]])
-                        x.add_row(["Extra parameters:",record[11]])
+                        x.add_row(["Schedule:",record[10] + " [min hour weekday month day_month]"])
+                        x.add_row(["Retention:",record[9]])
+                        x.add_row(["Backup code:",record[28]])
+                        x.add_row(["Extra parameters:",record[12]])
                         x.add_row(["",""])
-                        x.add_row(["DB dump file:", record[17] + " (" + record[19] + ")"])
-                        x.add_row(["DB log file:",record[18]])
+                        x.add_row(["DB dump file:", record[18] + " (" + record[20] + ")"])
+                        x.add_row(["DB log file:",record[19]])
                         x.add_row(["",""])
-                        x.add_row(["DB roles dump file:", record[20] + " (" + record[22] + ")"])
-                        x.add_row(["DB roles log file:",record[21]])
+                        x.add_row(["DB roles dump file:", record[21] + " (" + record[23] + ")"])
+                        x.add_row(["DB roles log file:",record[22]])
                         x.add_row(["",""])
-                        x.add_row(["DB config dump file:", record[23] + " (" + record[25] + ")"])
-                        x.add_row(["DB config log file:",record[24]])
+                        x.add_row(["DB config dump file:", record[24] + " (" + record[26] + ")"])
+                        x.add_row(["DB config log file:",record[25]])
                         x.add_row(["",""])
                         x.add_row(["On disk until:",str(record[5])])
+                        x.add_row(["Error message:",str(record[30])])
                         
                         print x
 
@@ -979,9 +981,9 @@ class pgbackman_db():
     # Method 
     # ############################################
            
-    def register_backup_job_catalog(self,def_id,backup_server_id,pgsql_node_id,dbname,started,finished,duration,pg_dump_file,
+    def register_backup_job_catalog(self,def_id,procpid,backup_server_id,pgsql_node_id,dbname,started,finished,duration,pg_dump_file,
                                   pg_dump_file_size,pg_dump_log_file,pg_dump_roles_file,pg_dump_roles_file_size,pg_dump_roles_log_file,
-                                  pg_dump_dbconfig_file,pg_dump_dbconfig_file_size,pg_dump_dbconfig_log_file,global_log_file,execution_status):
+                                  pg_dump_dbconfig_file,pg_dump_dbconfig_file_size,pg_dump_dbconfig_log_file,global_log_file,execution_status,error_message):
         
         """A function to update the backup job catalog"""
 
@@ -991,12 +993,13 @@ class pgbackman_db():
  
             if self.cur:
                 try:
-                    self.cur.execute('SELECT register_backup_job_catalog(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',(def_id,backup_server_id,pgsql_node_id,dbname,
-                                                                                                                                     started,finished,duration,pg_dump_file,
-                                                                                                                                     pg_dump_file_size,pg_dump_log_file,pg_dump_roles_file,
-                                                                                                                                     pg_dump_roles_file_size,pg_dump_roles_log_file,
-                                                                                                                                     pg_dump_dbconfig_file,pg_dump_dbconfig_file_size,
-                                                                                                                                     pg_dump_dbconfig_log_file,global_log_file,execution_status))
+                    self.cur.execute('SELECT register_backup_job_catalog(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',(def_id,procpid,backup_server_id,pgsql_node_id,dbname,
+                                                                                                                                        started,finished,duration,pg_dump_file,
+                                                                                                                                        pg_dump_file_size,pg_dump_log_file,pg_dump_roles_file,
+                                                                                                                                        pg_dump_roles_file_size,pg_dump_roles_log_file,
+                                                                                                                                        pg_dump_dbconfig_file,pg_dump_dbconfig_file_size,
+                                                                                                                                        pg_dump_dbconfig_log_file,global_log_file,execution_status,
+                                                                                                                                        error_message))
                     self.conn.commit()                        
                     
                 except psycopg2.Error as e:
@@ -1423,6 +1426,32 @@ class pgbackman_db():
                     self.cur.execute('DELETE FROM pgsql_node_to_delete WHERE backup_server_id = %s AND pgsql_node_id = %s',(backup_server_id,pgsql_node_id))
                     self.conn.commit()
                                     
+                except psycopg2.Error as e:
+                    raise e
+
+            self.pg_close()
+
+        except psycopg2.Error as e:
+            raise e
+
+
+    # ############################################
+    # Method 
+    # ############################################
+           
+    def get_pgsql_node_stopped(self):
+        """A function to get data for PgSQL nodes stopped when pgbackman2cron was down"""
+     
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT pgsql_node_id FROM pgsql_node_stopped')
+                    self.conn.commit()
+                    
+                    return self.cur
+                
                 except psycopg2.Error as e:
                     raise e
 

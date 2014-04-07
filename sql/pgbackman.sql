@@ -116,6 +116,31 @@ ALTER TABLE pgsql_node_to_delete OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------
+-- Table: pgsql_node_stopped
+--
+-- @Description: Information about the PostgreSQL servers
+--               stopped in the system
+--
+-- Attributes:
+--
+-- @backup_server_id
+-- @pgsql_node_id:
+-- @registered:
+-- ------------------------------------------------------
+
+
+\echo '# [Creating table: pgsql_node_stopped]\n'
+
+CREATE TABLE pgsql_node_stopped(
+  registered TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  pgsql_node_id BIGINT NOT NULL
+);
+
+ALTER TABLE pgsql_node_stopped ADD PRIMARY KEY (pgsql_node_id);
+ALTER TABLE pgsql_node_stopped OWNER TO pgbackman_role_rw;
+
+
+-- ------------------------------------------------------
 -- Table: server_code
 --
 -- @Description: Server status
@@ -369,6 +394,7 @@ CREATE TABLE backup_job_catalog(
   bck_id BIGSERIAL,
   registered TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   def_id BIGINT NOT NULL,
+  procpid INTEGER,
   backup_server_id INTEGER NOT NULL,
   pgsql_node_id INTEGER NOT NULL,
   dbname TEXT NOT NULL,
@@ -596,23 +622,37 @@ INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('log
 --
 -- ------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION notify_pgsql_nodes_updated() RETURNS TRIGGER
+CREATE OR REPLACE FUNCTION notify_pgsql_node_change() RETURNS TRIGGER
  LANGUAGE plpgsql 
  SECURITY INVOKER 
  SET search_path = public, pg_temp
  AS $$
  BEGIN
-  PERFORM pg_notify('channel_pgsql_nodes_updated','PgSQL node changed');
- 
+
+  IF NEW.status = 'RUNNING' THEN
+
+     EXECUTE 'DELETE FROM pgsql_node_stopped WHERE pgsql_node_id = $1'
+     USING NEW.node_id; 
+
+     PERFORM pg_notify('channel_pgsql_node_running','PgSQL node running');
+  
+  ELSEIF NEW.status = 'STOPPED' THEN
+       
+     EXECUTE 'INSERT INTO pgsql_node_stopped (pgsql_node_id) VALUES ($1)'
+     USING NEW.node_id; 
+
+     PERFORM pg_notify('channel_pgsql_node_stopped','PgSQL node stopped');
+  END IF;    
+
   RETURN NULL;
 END;
 $$;
 
-ALTER FUNCTION notify_pgsql_nodes_updated() OWNER TO pgbackman_role_rw;
+ALTER FUNCTION notify_pgsql_node_change() OWNER TO pgbackman_role_rw;
 
-CREATE TRIGGER notify_pgsql_nodes_updated AFTER INSERT OR UPDATE
+CREATE TRIGGER notify_pgsql_node_change AFTER INSERT OR UPDATE
     ON pgsql_node FOR EACH ROW
-    EXECUTE PROCEDURE notify_pgsql_nodes_updated();
+    EXECUTE PROCEDURE notify_pgsql_node_change();
 
 
 -- ------------------------------------------------------------
@@ -620,23 +660,23 @@ CREATE TRIGGER notify_pgsql_nodes_updated AFTER INSERT OR UPDATE
 --
 -- ------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION notify_pgsql_nodes_deleted() RETURNS TRIGGER
+CREATE OR REPLACE FUNCTION notify_pgsql_node_deleted() RETURNS TRIGGER
  LANGUAGE plpgsql 
  SECURITY INVOKER 
  SET search_path = public, pg_temp
  AS $$
  BEGIN
-  PERFORM pg_notify('channel_pgsql_nodes_deleted','PgSQL node changed');
+  PERFORM pg_notify('channel_pgsql_node_deleted','PgSQL node deleted');
  
   RETURN NULL;
 END;
 $$;
 
-ALTER FUNCTION notify_pgsql_nodes_deleted() OWNER TO pgbackman_role_rw;
+ALTER FUNCTION notify_pgsql_node_deleted() OWNER TO pgbackman_role_rw;
 
-CREATE TRIGGER notify_pgsql_nodes_deleted AFTER DELETE
+CREATE TRIGGER notify_pgsql_node_deleted AFTER DELETE
     ON pgsql_node FOR EACH ROW
-    EXECUTE PROCEDURE notify_pgsql_nodes_deleted();
+    EXECUTE PROCEDURE notify_pgsql_node_deleted();
 
 
 -- ------------------------------------------------------------
@@ -644,7 +684,7 @@ CREATE TRIGGER notify_pgsql_nodes_deleted AFTER DELETE
 --
 -- ------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION update_pgsql_nodes_deleted() RETURNS TRIGGER
+CREATE OR REPLACE FUNCTION update_pgsql_nodes_to_delete() RETURNS TRIGGER
  LANGUAGE plpgsql 
  SECURITY INVOKER 
  SET search_path = public, pg_temp
@@ -660,11 +700,38 @@ RETURN NULL;
 END;
 $$;
 
-ALTER FUNCTION update_pgsql_nodes_deleted() OWNER TO pgbackman_role_rw;
+ALTER FUNCTION update_pgsql_nodes_to_delete() OWNER TO pgbackman_role_rw;
 
-CREATE TRIGGER update_pgsql_nodes_deleted AFTER DELETE
+CREATE TRIGGER update_pgsql_nodes_to_delete AFTER DELETE
     ON pgsql_node FOR EACH ROW
-    EXECUTE PROCEDURE update_pgsql_nodes_deleted();
+    EXECUTE PROCEDURE update_pgsql_nodes_to_delete();
+
+
+-- ------------------------------------------------------------
+-- Function: delete_pgsql_nodes_stopped()
+--
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION delete_pgsql_nodes_stopped() RETURNS TRIGGER
+ LANGUAGE plpgsql 
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ BEGIN
+ 
+  EXECUTE 'DELETE FROM pgsql_node_stopped WHERE pgsql_node_id = $1'
+     USING OLD.node_id;  
+
+RETURN NULL;
+END;
+$$;
+
+ALTER FUNCTION delete_pgsql_nodes_stopped() OWNER TO pgbackman_role_rw;
+
+CREATE TRIGGER delete_pgsql_nodes_stopped AFTER DELETE
+    ON pgsql_node FOR EACH ROW
+    EXECUTE PROCEDURE delete_pgsql_nodes_stopped();
+
 
 
 -- ------------------------------------------------------------
@@ -1899,9 +1966,11 @@ CREATE OR REPLACE FUNCTION get_listen_channel_names(INTEGER) RETURNS SETOF TEXT
  SECURITY INVOKER 
  SET search_path = public, pg_temp
  AS $$
-  SELECT 'channel_pgsql_nodes_updated' AS channel
+  SELECT 'channel_pgsql_node_running' AS channel
   UNION
-  SELECT 'channel_pgsql_nodes_deleted' AS channel
+  SELECT 'channel_pgsql_node_stopped' AS channel
+  UNION
+  SELECT 'channel_pgsql_node_deleted' AS channel
   UNION
   SELECT 'channel_bs' || $1 || '_pg' || node_id AS channel FROM pgsql_node WHERE status = 'RUNNING' ORDER BY channel DESC
 $$;
@@ -1927,6 +1996,8 @@ CREATE OR REPLACE FUNCTION generate_crontab_backup_jobs(INTEGER,INTEGER) RETURNS
   pgsql_node_port TEXT;
   job_row RECORD;
 
+  node_cnt INTEGER;
+
   logs_email TEXT := '';
   pgnode_crontab_file TEXT := '';
   root_backup_dir TEXT := '';
@@ -1935,6 +2006,12 @@ CREATE OR REPLACE FUNCTION generate_crontab_backup_jobs(INTEGER,INTEGER) RETURNS
 
   output TEXT := '';
 BEGIN
+
+ SELECT count(*) FROM pgsql_node WHERE node_id = pgsql_node_id_ INTO node_cnt;	
+
+ IF node_cnt = 0 THEN
+  RETURN output;
+ END IF;
 
  logs_email := get_pgsql_node_parameter(pgsql_node_id_,'logs_email');
  pgnode_crontab_file := get_pgsql_node_parameter(pgsql_node_id_,'pgnode_crontab_file');
@@ -1967,12 +2044,14 @@ BEGIN
  --
 
  FOR job_row IN (
- SELECT *
- FROM backup_job_definition
- WHERE backup_server_id = backup_server_id_
- AND pgsql_node_id = pgsql_node_id_
- AND job_status IN ('ACTIVE')
- ORDER BY dbname,month_cron,weekday_cron,hours_cron,minutes_cron,backup_code
+ SELECT a.*
+ FROM backup_job_definition a
+ join pgsql_node b on a.pgsql_node_id = b.node_id
+ WHERE a.backup_server_id = backup_server_id_
+ AND a.pgsql_node_id = pgsql_node_id_
+ AND a.job_status = 'ACTIVE'
+ AND b.status = 'RUNNING'
+ ORDER BY a.dbname,a.month_cron,a.weekday_cron,a.hours_cron,a.minutes_cron,a.backup_code
  ) LOOP
 
   output := output || COALESCE(job_row.minutes_cron, '*') || ' ' || COALESCE(job_row.hours_cron, '*') || ' ' || COALESCE(job_row.day_month_cron, '*') || ' ' || COALESCE(job_row.month_cron, '*') || ' ' || COALESCE(job_row.weekday_cron, '*');
@@ -2094,7 +2173,7 @@ ALTER FUNCTION get_pgsql_node_admin_user(INTEGER) OWNER TO pgbackman_role_rw;
 --
 -- ------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION register_backup_job_catalog(INTEGER,INTEGER,INTEGER,TEXT,TIMESTAMP WITH TIME ZONE,TIMESTAMP WITH TIME ZONE,INTERVAL,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,TEXT) RETURNS BOOLEAN
+CREATE OR REPLACE FUNCTION register_backup_job_catalog(INTEGER,INTEGER,INTEGER,INTEGER,TEXT,TIMESTAMP WITH TIME ZONE,TIMESTAMP WITH TIME ZONE,INTERVAL,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,TEXT,TEXT) RETURNS BOOLEAN
  LANGUAGE plpgsql 
  SECURITY INVOKER 
  SET search_path = public, pg_temp
@@ -2102,23 +2181,25 @@ CREATE OR REPLACE FUNCTION register_backup_job_catalog(INTEGER,INTEGER,INTEGER,T
  DECLARE
 
   def_id_ ALIAS FOR $1;
-  backup_server_id_ ALIAS FOR $2;
-  pgsql_node_id_ ALIAS FOR $3;
-  dbname_ ALIAS FOR $4;
-  started_ ALIAS FOR $5;
-  finished_ ALIAS FOR $6;
-  duration_ ALIAS FOR $7;
-  pg_dump_file_ ALIAS FOR $8;
-  pg_dump_file_size_ ALIAS FOR $9;
-  pg_dump_log_file_ ALIAS FOR $10;
-  pg_dump_roles_file_ ALIAS FOR $11;
-  pg_dump_roles_file_size_ ALIAS FOR $12;
-  pg_dump_roles_log_file_ ALIAS FOR $13;
-  pg_dump_dbconfig_file_ ALIAS FOR $14;
-  pg_dump_dbconfig_file_size_ ALIAS FOR $15;
-  pg_dump_dbconfig_log_file_ ALIAS FOR $16;
-  global_log_file_ ALIAS FOR $17;
-  execution_status_ ALIAS FOR $18;
+  procpid_ ALIAS FOR $2;
+  backup_server_id_ ALIAS FOR $3;
+  pgsql_node_id_ ALIAS FOR $4;
+  dbname_ ALIAS FOR $5;
+  started_ ALIAS FOR $6;
+  finished_ ALIAS FOR $7;
+  duration_ ALIAS FOR $8;
+  pg_dump_file_ ALIAS FOR $9;
+  pg_dump_file_size_ ALIAS FOR $10;
+  pg_dump_log_file_ ALIAS FOR $11;
+  pg_dump_roles_file_ ALIAS FOR $12;
+  pg_dump_roles_file_size_ ALIAS FOR $13;
+  pg_dump_roles_log_file_ ALIAS FOR $14;
+  pg_dump_dbconfig_file_ ALIAS FOR $15;
+  pg_dump_dbconfig_file_size_ ALIAS FOR $16;
+  pg_dump_dbconfig_log_file_ ALIAS FOR $17;
+  global_log_file_ ALIAS FOR $18;
+  execution_status_ ALIAS FOR $19;
+  error_message_ ALIAS FOR $20;
 
   v_msg     TEXT;
   v_detail  TEXT;
@@ -2126,6 +2207,7 @@ CREATE OR REPLACE FUNCTION register_backup_job_catalog(INTEGER,INTEGER,INTEGER,T
 
  BEGIN
     EXECUTE 'INSERT INTO backup_job_catalog (def_id,
+					     procpid,
 					     backup_server_id,
 					     pgsql_node_id,
 					     dbname,
@@ -2142,9 +2224,11 @@ CREATE OR REPLACE FUNCTION register_backup_job_catalog(INTEGER,INTEGER,INTEGER,T
 					     pg_dump_dbconfig_file_size,
 					     pg_dump_dbconfig_log_file,
 					     global_log_file,
-					     execution_status) 
-	     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)'
+					     execution_status,
+					     error_message) 
+	     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)'
     USING  def_id_,
+    	   procpid_,
     	   backup_server_id_,
   	   pgsql_node_id_,
   	   dbname_,
@@ -2161,7 +2245,8 @@ CREATE OR REPLACE FUNCTION register_backup_job_catalog(INTEGER,INTEGER,INTEGER,T
   	   pg_dump_dbconfig_file_size_,
   	   pg_dump_dbconfig_log_file_,
   	   global_log_file_,
-  	   execution_status_;
+  	   execution_status_,
+	   error_message_;
 
    RETURN TRUE;
  EXCEPTION WHEN others THEN
@@ -2175,7 +2260,7 @@ CREATE OR REPLACE FUNCTION register_backup_job_catalog(INTEGER,INTEGER,INTEGER,T
  END;
 $$;
 
-ALTER FUNCTION register_backup_job_catalog(INTEGER,INTEGER,INTEGER,TEXT,TIMESTAMP WITH TIME ZONE,TIMESTAMP WITH TIME ZONE,INTERVAL,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,TEXT) OWNER TO pgbackman_role_rw;
+ALTER FUNCTION register_backup_job_catalog(INTEGER,INTEGER,INTEGER,INTEGER,TEXT,TIMESTAMP WITH TIME ZONE,TIMESTAMP WITH TIME ZONE,INTERVAL,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,TEXT,TEXT) OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------------
@@ -2350,6 +2435,7 @@ CREATE OR REPLACE VIEW show_backup_job_details AS
        date_trunc('seconds',a.finished+b.retention_period) AS "Valid until",
        date_trunc('seconds',a.duration) AS "Duration",
        lpad(a.def_id::text,8,'0') AS "DefID",
+       a.procpid AS "ProcPID",
        b.retention_period::TEXT || ' (' || b.retention_redundancy::TEXT || ')' AS "Retention",
        b.minutes_cron || ' ' || b.hours_cron || ' ' || b.weekday_cron || ' ' || b.month_cron || ' ' || b.day_month_cron AS "Schedule",
        b.encryption::TEXT AS "Encryption",
@@ -2370,7 +2456,8 @@ CREATE OR REPLACE VIEW show_backup_job_details AS
        pg_size_pretty(a.pg_dump_dbconfig_file_size) AS "DB config dump size",
        pg_size_pretty(a.pg_dump_file_size+a.pg_dump_roles_file_size+a.pg_dump_dbconfig_file_size) AS "Total size",
        b.backup_code AS "Code",
-       a.execution_status AS "Status" 
+       a.execution_status AS "Status",
+       left(a.error_message,60) AS "Error message" 
    FROM backup_job_catalog a 
    JOIN backup_job_definition b ON a.def_id = b.def_id 
    ORDER BY "Finished" DESC,backup_server_id,pgsql_node_id,"DBname","Code","Status";

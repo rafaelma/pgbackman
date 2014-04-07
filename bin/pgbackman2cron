@@ -20,13 +20,12 @@
 # along with Pgbackman.  If not, see <http://www.gnu.org/licenses/>.
 
 '''
-This program is used by pgbackman to administrate the crontab files for all the
-PgSQL nodes running backup jobs in this Backup server. These crontab files will run pgbackman_dump 
-for the backup jobs running in this backup server.
+This program is used by pgbackman to administrate the crontab files running backups 
+in this Backup server. 
 
-pgbackman2cron uses LISTEN/NOTIFY to track changes on PgSQL nodes using this backup server.
-
-In addition pgbackman2cron will create cache data for the Backup server and all PgSQL nodes. 
+pgbackman2cron uses LISTEN/NOTIFY to track changes on PgSQL nodes backups.
+In addition pgbackman2cron will create cache data for the Backup server and all PgSQL nodes, 
+in case the pgbackman database is not available when running backups.
 
 pgbackman2cron will catch up with changes that happened during a down period of the program. 
 No changes will be lose if pgbackman2cron is down.
@@ -69,24 +68,9 @@ def add_to_listen_channels(db,db_notify,backup_server_id):
 
         for channel in new_listen_list:
             db_notify.add_listen(channel)
-
-            #
-            # Create cache data, backup directory and crontab file 
-            # for a pgsql_node if they do not exist. 
-            #
-            
-            if channel != 'channel_pgsql_nodes_updated' and channel != 'channel_pgsql_nodes_deleted':
-                pgsql_node_id = get_pgsql_node_id_from_channel(channel)
-                
-                update_pgsql_node_cache_data(db,backup_server_id,pgsql_node_id)
-                create_pgsql_node_backup_directories(db,pgsql_node_id)
-                
-                crontab_file = db.get_pgsql_node_parameter(pgsql_node_id,'pgnode_crontab_file')
-                
-                if not os.path.exists(crontab_file):
-                    generate_crontab_backup_jobs(db,backup_server_id,pgsql_node_id)
-
             logs.logger.info('Listening to channel: %s',channel)
+
+        return new_listen_list
 
     except Exception as e:
         logs.logger.error('Problems listening to channels - %s',e)
@@ -96,8 +80,10 @@ def add_to_listen_channels(db,db_notify,backup_server_id):
 # Function delete_from_listen_channels()
 # ############################################
 
-def delete_from_listen_channels(db_notify,backup_server_id):
+def delete_from_listen_channels(db,db_notify,backup_server_id):
     """UNLISTEN to channels"""
+
+    global listen_list
     
     new_listen_list = []
     delete_listen_list = []
@@ -107,12 +93,15 @@ def delete_from_listen_channels(db_notify,backup_server_id):
             new_listen_list.append(channel)
         
         delete_listen_list = set(listen_list)-set(new_listen_list)
-        
+        listen_list = []
+        listen_list = new_listen_list
+
         for channel in delete_listen_list:
             db_notify.delete_listen(channel)
-        
             logs.logger.info('Unlistening to channel: %s',channel)
 
+        return delete_listen_list
+        
     except Exception as e:
         logs.logger.error('Problems unlistening to channels - %s',e)
 
@@ -137,7 +126,7 @@ def generate_crontab_backup_jobs(db,backup_server_id,pgsql_node_id):
 
     try:
         crontab_file = db.get_pgsql_node_parameter(pgsql_node_id,'pgnode_crontab_file')
-               
+    
         with open(crontab_file,'w') as file:
             data = db.generate_crontab_backup_jobs(backup_server_id,pgsql_node_id)
             
@@ -152,8 +141,8 @@ def generate_crontab_backup_jobs(db,backup_server_id,pgsql_node_id):
         # the job_queue in the database so we don't loose this update.
             
         try:
-            db.update_job_queue(backup_server_id,pgsql_node_id)
             logs.logger.error('Problems creating/updating the crontab file: %s - %s',crontab_file,e)
+            db.update_job_queue(backup_server_id,pgsql_node_id)
             
         except Exception as e:
             logs.logger.error('Problems updating job queue for SrvID: %s and nodeID: %s after a crontab file update error - %s',backup_server_id,pgsql_node_id,e)
@@ -201,7 +190,7 @@ def create_global_directories(db,backup_server_fqdn,backup_server_id):
         logs.logger.debug('Pending log registration directory does not exist: %s',backup_server_pending_registration_dir)
         
         try:
-            os.makedirs(backup_server_pending_registration_dir,0755)
+            os.makedirs(backup_server_pending_registration_dir,0777)
             logs.logger.info('Pending log registration directory created: %s',backup_server_pending_registration_dir)
         except OSError as e:
             logs.logger.critical('OS error when creating the pending log registration directory: %s',e)
@@ -333,6 +322,23 @@ def process_pgsql_node_to_delete(db,backup_server_id):
 
     except Exception as e:
         logs.logger.error('Problems deleting data from PgSQL node when the node has been deleted - %s',e)   
+
+
+# ############################################
+# Function process_pgsql_node_stopped()
+# ############################################
+
+def process_pgsql_node_stopped(db,backup_server_id):
+    '''Update crontab for PgSQL nodes stopped when pgbackman2cron was down.'''
+    
+    try:
+        for record in db.get_pgsql_node_stopped():
+
+            crontab_file = db.get_pgsql_node_parameter(record[0],'pgnode_crontab_file')
+            generate_crontab_backup_jobs(db,backup_server_id,record[0])
+
+    except Exception as e:
+        logs.logger.error('Problems updating crontab of pgsql nodes stopped when pgbackman2cron was down - %s',e)   
 
 
 # ############################################
@@ -481,13 +487,16 @@ def main():
     
     add_to_listen_channels(db,db_notify,backup_server_id)
 
-    # We check if there are some crontab files to generate when
-    # we start pgbackman2cron. This is nesessary just in case 
-    # pgbackman2cron has been down and missed some NOTIFYs 
+    # We check if there are some crontab files to generate, and pgsql nodes than 
+    # have been deleted or stopped when we start pgbackman2cron. 
+    #
+    # This is necessary just in case pgbackman2cron has been down and missed some NOTIFYs 
     # from the central database.
 
     generate_all_crontab_jobs(db,backup_server_id)
- 
+    process_pgsql_node_to_delete(db,backup_server_id)
+    process_pgsql_node_stopped(db,backup_server_id)
+
     #
     # Main loop waiting for notifications
     #
@@ -502,20 +511,50 @@ def main():
                 channels.append(channel)
 
             for channel in set(channels):
-                if channel == 'channel_pgsql_nodes_updated':
+                if channel == 'channel_pgsql_node_running':
                     
                     #
-                    # A PgSQL node has been registered or updated
+                    # A PgSQL node has been registered with status RUNNING
                     #
-                    delete_from_listen_channels(db_notify,backup_server_id)
-                    add_to_listen_channels(db,db_notify,backup_server_id)
+                    listen_channels = add_to_listen_channels(db,db_notify,backup_server_id)
 
-                elif channel == 'channel_pgsql_nodes_deleted':
+                    #
+                    # Create cache data, backup directory and crontab file 
+                    # for a pgsql_node if they do not exist. 
+                    #
+                    
+                    for listen_channel in listen_channels: 
+
+                        if listen_channel != 'channel_pgsql_node_running' and listen_channel != 'channel_pgsql_node_stopped' and listen_channel != 'channel_pgsql_node_deleted':
+                            pgsql_node_id = get_pgsql_node_id_from_channel(listen_channel)
+                            
+                            update_pgsql_node_cache_data(db,backup_server_id,pgsql_node_id)
+                            create_pgsql_node_backup_directories(db,pgsql_node_id)
+                            generate_crontab_backup_jobs(db,backup_server_id,pgsql_node_id)
+
+                elif channel == 'channel_pgsql_node_stopped':
+                    
+                    #
+                    # A PgSQL node has been registered with status STOPPED
+                    #
+                    unlisten_channels = delete_from_listen_channels(db,db_notify,backup_server_id)
+                    
+                    #
+                    # Delete all backup jobs in the crontab file of the stopped node.
+                    #
+
+                    for unlisten_channel in unlisten_channels:
+                        
+                        if unlisten_channel != 'channel_pgsql_node_running' and unlisten_channel != 'channel_pgsql_node_stopped' and unlisten_channel != 'channel_pgsql_node_deleted':
+                            pgsql_node_id = get_pgsql_node_id_from_channel(unlisten_channel)
+                            generate_crontab_backup_jobs(db,backup_server_id,pgsql_node_id)
+
+                elif channel == 'channel_pgsql_node_deleted':
 
                     #
                     # A PgSQL node has been deleted
                     #
-                    delete_from_listen_channels(db_notify,backup_server_id)
+                    unlisten_channels = delete_from_listen_channels(db,db_notify,backup_server_id)
                     process_pgsql_node_to_delete(db,backup_server_id)
                 else:
                     
