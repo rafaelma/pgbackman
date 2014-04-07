@@ -484,8 +484,21 @@ def main():
 
     create_global_directories(db,backup_server_fqdn,backup_server_id)
     update_backup_server_cache_data(db,backup_server_fqdn,backup_server_id)
+
+    #
+    # Start listening to active channels when we start pgbackman2cron. 
+    # Create cache and backup directories for new pgsql nodes created
+    # when pgbackman2cron was down.
+    #
     
-    add_to_listen_channels(db,db_notify,backup_server_id)
+    listen_channels = add_to_listen_channels(db,db_notify,backup_server_id)
+   
+    for listen_channel in listen_channels: 
+        if listen_channel != 'channel_pgsql_node_running' and listen_channel != 'channel_pgsql_node_stopped' and listen_channel != 'channel_pgsql_node_deleted':
+            pgsql_node_id = get_pgsql_node_id_from_channel(listen_channel)
+            
+            update_pgsql_node_cache_data(db,backup_server_id,pgsql_node_id)
+            create_pgsql_node_backup_directories(db,pgsql_node_id)
 
     # We check if there are some crontab files to generate, and pgsql nodes than 
     # have been deleted or stopped when we start pgbackman2cron. 

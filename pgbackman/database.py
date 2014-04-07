@@ -407,7 +407,7 @@ class pgbackman_db():
 
             if self.cur:
                 try:
-                    self.cur.execute("SELECT \"DefID\",\"PgSQL node\",\"DBname\",\"Schedule\",\"Code\",\"Retention\",\"Status\",\"Parameters\" FROM show_backup_definitions WHERE backup_server_id = %s",(backup_server_id,))
+                    self.cur.execute("SELECT \"DefID\",pgsql_node_id AS \"ID\",\"PgSQL node\",\"DBname\",\"Schedule\",\"Code\",\"Retention\",\"Status\",\"Parameters\" FROM show_backup_definitions WHERE backup_server_id = %s",(backup_server_id,))
                                      
                     colnames = [desc[0] for desc in self.cur.description]
                     self.print_results_table(self.cur,colnames,["PgSQL node","DBname","Schedule","Retention","Parameters"])
@@ -433,7 +433,7 @@ class pgbackman_db():
 
             if self.cur:
                 try:
-                    self.cur.execute("SELECT \"DefID\",\"Backup server\",\"DBname\",\"Schedule\",\"Code\",\"Retention\",\"Status\",\"Parameters\" FROM show_backup_definitions WHERE pgsql_node_id = %s",(pgsql_node_id,))
+                    self.cur.execute("SELECT \"DefID\",backup_server_id AS \"ID\",\"Backup server\",\"DBname\",\"Schedule\",\"Code\",\"Retention\",\"Status\",\"Parameters\" FROM show_backup_definitions WHERE pgsql_node_id = %s",(pgsql_node_id,))
 
                     colnames = [desc[0] for desc in self.cur.description]
                     self.print_results_table(self.cur,colnames,["Backup server","DBname","Schedule","Retention","Parameters"])
@@ -459,7 +459,7 @@ class pgbackman_db():
 
             if self.cur:
                 try:
-                    self.cur.execute('SELECT \"DefID\",\"Backup server\",\"PgSQL node\",\"Schedule\",\"Code\",\"Retention\",\"Status\",\"Parameters\" FROM show_backup_definitions WHERE "DBname" = %s',(dbname,))
+                    self.cur.execute('SELECT \"DefID\",backup_server_id AS \"ID.\",\"Backup server\",pgsql_node_id AS \"ID\",\"PgSQL node\",\"Schedule\",\"Code\",\"Retention\",\"Status\",\"Parameters\" FROM show_backup_definitions WHERE "DBname" = %s',(dbname,))
                     colnames = [desc[0] for desc in self.cur.description]
                     self.print_results_table(self.cur,colnames,["Backup server","PgSQL node","Schedule","Retention","Parameters"])
                                         
@@ -484,7 +484,7 @@ class pgbackman_db():
 
             if self.cur:
                 try:
-                    self.cur.execute("SELECT \"BckID\",\"Finished\",\"PgSQL node\",\"DBname\",\"Duration\",\"Size\",\"Code\",\"Status\" FROM show_backup_catalog WHERE backup_server_id = %s",(backup_server_id,))
+                    self.cur.execute("SELECT \"BckID\",\"Finished\",pgsql_node_id AS \"ID\",\"PgSQL node\",\"DBname\",\"Duration\",\"Size\",\"Code\",\"Status\" FROM show_backup_catalog WHERE backup_server_id = %s",(backup_server_id,))
                                      
                     colnames = [desc[0] for desc in self.cur.description]
                     self.print_results_table(self.cur,colnames,["Finished","PgSQL node","DBname","Size"])
@@ -510,7 +510,7 @@ class pgbackman_db():
 
             if self.cur:
                 try:
-                    self.cur.execute("SELECT \"BckID\",\"Finished\",\"Backup server\",\"DBname\",\"Duration\",\"Size\",\"Code\",\"Status\" FROM show_backup_catalog WHERE pgsql_node_id = %s",(pgsql_node_id,))
+                    self.cur.execute("SELECT \"BckID\",\"DefID\",\"Finished\",backup_server_id AS \"ID\",\"Backup server\",\"DBname\",\"Duration\",\"Size\",\"Code\",\"Status\" FROM show_backup_catalog WHERE pgsql_node_id = %s",(pgsql_node_id,))
                                      
                     colnames = [desc[0] for desc in self.cur.description]
                     self.print_results_table(self.cur,colnames,["Finished","Backup_server","DBname","Size"])
@@ -536,7 +536,7 @@ class pgbackman_db():
 
             if self.cur:
                 try:
-                    self.cur.execute("SELECT \"BckID\",\"Finished\",\"Backup server\",\"PgSQL node\",\"Duration\",\"Size\",\"Code\",\"Status\" FROM show_backup_catalog WHERE \"DBname\" = %s",(dbname,))
+                    self.cur.execute("SELECT \"BckID\",\"DefID\",\"Finished\",backup_server_id AS \"ID.\",\"Backup server\",pgsql_node_id AS \"ID\",\"PgSQL node\",\"Duration\",\"Size\",\"Code\",\"Status\" FROM show_backup_catalog WHERE \"DBname\" = %s",(dbname,))
                                      
                     colnames = [desc[0] for desc in self.cur.description]
                     self.print_results_table(self.cur,colnames,["Finished","Backup server","PgSQL node","Size"])

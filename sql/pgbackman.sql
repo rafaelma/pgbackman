@@ -2073,7 +2073,7 @@ BEGIN
 		      ' --root-backup-dir ' || root_backup_dir;
 
   IF job_row.extra_parameters != '' AND job_row.extra_parameters IS NOT NULL THEN
-    output := output || ' --extra-params ' || job_row.extra_parameters;
+    output := output || ' --extra-params "' || job_row.extra_parameters || '"';
   END IF;
  
   output := output || E'\n';
@@ -2391,7 +2391,7 @@ SELECT lpad(server_id::text,5,'0') AS "SrvID",
 ALTER VIEW show_backup_servers OWNER TO pgbackman_role_rw;
 
 CREATE OR REPLACE VIEW show_backup_definitions AS
-SELECT lpad(def_id::text,8,'0') AS "DefID",
+SELECT lpad(def_id::text,11,'0') AS "DefID",
        backup_server_id,
        get_backup_server_fqdn(backup_server_id) AS "Backup server",
        pgsql_node_id,
@@ -2410,6 +2410,7 @@ ALTER VIEW show_backup_definitions OWNER TO pgbackman_role_rw;
 
 CREATE OR REPLACE VIEW show_backup_catalog AS
    SELECT lpad(a.bck_id::text,12,'0') AS "BckID",
+       lpad(a.def_id::text,11,'0') AS "DefID",
        date_trunc('seconds',a.finished) AS "Finished",
        a.backup_server_id,
        get_backup_server_fqdn(a.backup_server_id) AS "Backup server",
