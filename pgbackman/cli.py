@@ -527,13 +527,13 @@ class pgbackman_cli(cmd.Cmd):
     # Method do_show_backup_server_backup_definitions
     # ############################################
 
-    def do_show_backup_server_backup_definitions(self,args):
+    def do_show_backup_job_definitions(self,args):
         """
         DESCRIPTION:
-        This command shows all backup definitions for one particular Backup server.
+        This command shows all backup definitions for a particular combination of search values.
 
         COMMAND:
-        show_backup_server_backup_definitions [SrvID | FQDN]
+        show_backup_server_backup_definitions [SrvID | FQDN][NodeID | FQDN][DBname]
         """
 
         try: 
@@ -546,149 +546,68 @@ class pgbackman_cli(cmd.Cmd):
         if len(arg_list) == 0:
             
             print "--------------------------------------------------------"
-            server_id = raw_input("# SrvID / FQDN: ")
+            server_id = raw_input("# SrvID / FQDN [all]: ")
+            node_id = raw_input("# NodeID / FQDN [all]: ")
+            dbname = raw_input("# DBname [all]: ")
             print "--------------------------------------------------------"
 
-            try:
+            if server_id == '' or server_id == 'all':
+                server_list = None
+            else:
+                server_list = server_id.strip().replace(' ','').split(',')
 
-                if server_id.isdigit():
-                    self.db.show_backup_server_backup_definitions(server_id)
+            if node_id == '' or node_id == 'all':
+                node_list = None
+            else:
+                node_list = node_id.strip().replace(' ','').split(',')
+
+            if dbname == '' or dbname == 'all':
+                dbname_list = None
+            else:
+                dbname_list = dbname.strip().replace(' ','').split(',')
                 
-                else:
-                    self.db.show_backup_server_backup_definitions(self.db.get_backup_server_id(server_id))
-                                    
+            try:
+                self.db.show_backup_job_definitions(server_list,node_list,dbname_list)
+                                                    
             except Exception as e:
                 print "\n[ERROR]: ",e
 
-        elif len(arg_list) == 1:
+        elif len(arg_list) == 3:
 
             server_id = arg_list[0]
-            
+            node_id = arg_list[1]
+            dbname = arg_list[2]
+
+            if server_id == '' or server_id == 'all':
+                server_list = None
+            else:
+                server_list = server_id.strip().replace(' ','').split(',')
+
+            if node_id == '' or node_id == 'all':
+                node_list = None
+            else:
+                node_list = node_id.strip().replace(' ','').split(',')
+
+            if dbname == '' or dbname == 'all':
+                dbname_list = None
+            else:
+                dbname_list = dbname.strip().replace(' ','').split(',')
+
             print "--------------------------------------------------------"
             print "# SrvID / FQDN: " + server_id
+            print "# NodeID / FQDN: " + node_id
+            print "# DBname: " + dbname
             print "--------------------------------------------------------"
 
             try:
-                if server_id.isdigit():
-                    self.db.show_backup_server_backup_definitions(server_id)
+                self.db.show_backup_job_definitions(server_list,node_list,dbname_list)
                 
-                else:
-                    self.db.show_backup_server_backup_definitions(self.db.get_backup_server_id(server_id))
-                    
             except Exception as e:
                 print "\n[ERROR]: ",e
 
         else:
             print "\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n"
         
-
-    # ############################################
-    # Method do_show_pgsql_node_backup_definitions
-    # ############################################
-
-    def do_show_pgsql_node_backup_definitions(self,args):
-        """
-        DESCRIPTION:
-        This command shows all backup definitions for one particular PgSQL node.
-
-        COMMAND:
-        show_pgsql_node_backup_definitions [NodeID | FQDN]
-        """
-       
-        try: 
-            arg_list = shlex.split(args)
-            
-        except ValueError as e:
-            print "\n[ERROR]: ",e,"\n"
-            return False
-                
-        if len(arg_list) == 0:
-                        
-            print "--------------------------------------------------------"
-            node_id = raw_input("# NodeID / FQDN: ")
-            print "--------------------------------------------------------"
-
-            try:
-                if node_id.isdigit():
-                    self.db.show_pgsql_node_backup_definitions(node_id)
-                
-                else:
-                    self.db.show_pgsql_node_backup_definitions(self.db.get_pgsql_node_id(node_id))
-
-            except Exception as e:
-                print "\n[ERROR]: ",e     
-                    
-        elif len(arg_list) == 1:
-
-            node_id = arg_list[0]
-            
-            print "--------------------------------------------------------"
-            print "# NodeID / FQDN: " + node_id
-            print "--------------------------------------------------------"
-
-            try:
-                if node_id.isdigit():
-                    self.db.show_pgsql_node_backup_definitions(node_id)
-                
-                else:
-                    self.db.show_pgsql_node_backup_definitions(self.db.get_pgsql_node_id(node_id))
-                         
-            except Exception as e:
-                print "\n[ERROR]: ",e     
-
-        else:
-            print "\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n"
-
-
-    # ############################################
-    # Method do_show_database_backup_definitions
-    # ############################################
-
-    def do_show_database_backup_definitions(self,args):
-        """
-        DESCRIPTION:
-        This command shows all backup definitions for one particular database.
-
-        COMMAND:
-        show_database_backup_definitions [DBname]
-        """
-
-        try: 
-            arg_list = shlex.split(args)
-            
-        except ValueError as e:
-            print "\n[ERROR]: ",e,"\n"
-            return False
-                     
-        if len(arg_list) == 0:
-                   
-            print "--------------------------------------------------------"
-            dbname = raw_input("# DBname: ")
-            print "--------------------------------------------------------"
-            
-            try:
-                self.db.show_database_backup_definitions(dbname)
-                
-            except Exception as e:
-                print "\n[ERROR]: ",e                     
-                    
-        elif len(arg_list) == 1:
-
-            dbname = arg_list[0]
-            
-            print "--------------------------------------------------------"
-            print "# DBname: " + dbname
-            print "--------------------------------------------------------"
-            
-            try:
-                self.db.show_database_backup_definitions(dbname)
-            
-            except Exception as e:
-                print "\n[ERROR]: ",e     
-                
-        else:
-            print "\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n"
-
 
     # ############################################
     # Method do_register_backup_job
