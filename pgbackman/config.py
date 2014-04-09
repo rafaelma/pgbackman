@@ -130,7 +130,7 @@ class configuration():
             # pgbackman_maintenance section
             if config.has_option('pgbackman_maintenance','maintenance_interval'):
                 self.maintenance_interval = int(config.get('pgbackman_maintenance','maintenance_interval'))    
-
+                   
             # Logging section
             if config.has_option('logging','log_level'):
                 self.log_level = config.get('logging','log_level')

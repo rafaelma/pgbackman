@@ -1306,9 +1306,56 @@ class pgbackman_cli(cmd.Cmd):
 
     def do_show_backup_server_stats(self,args):
         """
+        DESCRIPTION:
+        This command shows global statistics for a backup server
+
+        COMMAND:
         show_backup_server_stats [SrvID | FQDN]
 
         """    
+
+        try: 
+            arg_list = shlex.split(args)
+            
+        except ValueError as e:
+            print "\n[ERROR]: ",e,"\n"
+            return False
+        
+        if len(arg_list) == 0:
+
+            print "--------------------------------------------------------"
+            server_id = raw_input("# SrvID / FQDN: ")
+            print "--------------------------------------------------------"
+
+            try:
+                if server_id.isdigit():
+                    self.db.show_backup_server_stats(server_id)
+                else:
+                    self.db.show_backup_server_stats(self.db.get_backup_server_id(server_id))
+
+            except Exception as e:
+                print "\n[ERROR]: ",e
+   
+        elif len(arg_list) == 1:
+
+            server_id = arg_list[0]
+
+            print "--------------------------------------------------------"
+            print "# SrvID: " + server_id
+            print "--------------------------------------------------------"
+            
+            try:
+                if server_id.isdigit():
+                    self.db.show_backup_server_stats(server_id)
+                else:
+                    self.db.show_backup_server_stats(self.db.get_backup_server_id(server_id))
+
+            except Exception as e:
+                print "\n[ERROR]: ",e
+
+        else:
+            print "\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n"
+          
 
     # ############################################
     # Method do_show_pgsql_node_stats
@@ -1316,9 +1363,56 @@ class pgbackman_cli(cmd.Cmd):
 
     def do_show_pgsql_node_stats(self,args):
         """
+        DESCRIPTION:
+        This command shows global statistics for a PgSQL node
+
+        COMMAND:
         show_pgsql_node_stats [NodeID | FQDN]
 
         """    
+
+        try: 
+            arg_list = shlex.split(args)
+            
+        except ValueError as e:
+            print "\n[ERROR]: ",e,"\n"
+            return False
+        
+        if len(arg_list) == 0:
+
+            print "--------------------------------------------------------"
+            node_id = raw_input("# NodeID / FQDN: ")
+            print "--------------------------------------------------------"
+
+            try:
+                if node_id.isdigit():
+                    self.db.show_pgsql_node_stats(server_id)
+                else:
+                    self.db.show_pgsql_node_stats(self.db.get_pgsql_node_id(node_id))
+
+            except Exception as e:
+                print "\n[ERROR]: ",e
+   
+        elif len(arg_list) == 1:
+
+            node_id = arg_list[0]
+
+            print "--------------------------------------------------------"
+            print "# NodeID: " + node_id
+            print "--------------------------------------------------------"
+            
+            try:
+                if node_id.isdigit():
+                    self.db.show_pgsql_node_stats(node_id)
+                else:
+                    self.db.show_pgsql_node_stats(self.db.get_pgsql_node_id(node_id))
+
+            except Exception as e:
+                print "\n[ERROR]: ",e
+
+        else:
+            print "\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n"
+       
 
     # ############################################
     # Method do_show_job_queue
@@ -1521,12 +1615,12 @@ class pgbackman_cli(cmd.Cmd):
         """    
 
     # ############################################
-    # Method do_update_backup_job_definition
+    # Method do_update_backup_definition
     # ############################################
 
-    def do_update_backup_job_definition(self,args):
+    def do_update_backup_definition(self,args):
         """
-        update_backup_job_definition
+        update_backup_definition
 
         """    
 
@@ -1659,8 +1753,13 @@ class pgbackman_cli(cmd.Cmd):
     def do_show_history(self, args):
         """Print a list of commands that have been entered"""
 
-        print self._hist
+        cnt = 0
+        
+        for line in self._hist:
+            print '[' + str(cnt) + ']: ' + line
+            cnt = cnt +1
 
+        print
 
     # ############################################
     # Method preloop
