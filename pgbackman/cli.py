@@ -30,6 +30,8 @@ import shlex
 from pgbackman.database import * 
 from pgbackman.config import *
 from pgbackman.logs import *
+from pgbackman.prettytable import *
+
 
 # ############################################
 # class pgbackman_cli
@@ -1232,43 +1234,35 @@ class pgbackman_cli(cmd.Cmd):
         
         if len(arg_list) == 0:
             
-            print "--------------------------------------------------------"
-            print "# Configuration file"
-            print "--------------------------------------------------------"
-            print "Configuration file used: " + self.conf.config_file
-            print
-            print "--------------------------------------------------------"
-            print "# PgBackMan Database"
-            print "--------------------------------------------------------"
-            print "DBhost: " + self.conf.dbhost
-            print "DBhostaddr: " + self.conf.dbhostaddr
-            print "DBport: " + str(self.conf.dbport)
-            print "DBname: " + self.conf.dbname
-            print "DBuser: " + self.conf.dbuser
-            print "Connection retry interval: " + str(self.conf.pg_connect_retry_interval) + " sec."
-            print
-            print "--------------------------------------------------------"
-            print "# pgbackman2cron"
-            print "--------------------------------------------------------"
-            print "LISTEN/NOTIFY channel check interval: " + str(self.conf.channels_check_interval) + " sec."
-            print
-            print "--------------------------------------------------------"
-            print "# pgbackman_dump"
-            print "--------------------------------------------------------"
-            print "Temp directory: " + self.conf.tmp_dir
-            print
-            print "--------------------------------------------------------"
-            print "# pgbackman_maintenance"
-            print "--------------------------------------------------------"
-            print "Maintenance interval: " + str(self.conf.maintenance_interval) + " sec."
-            print
-            print "--------------------------------------------------------"
-            print "# Logging"
-            print "--------------------------------------------------------"
-            print "Log level: " + self.conf.log_level
-            print "Log file: " + self.conf.log_file
-            print
-            print "--------------------------------------------------------"
+            x = PrettyTable([".",".."],header = False)
+            x.align["."] = "r"
+            x.align[".."] = "l"
+            x.padding_width = 1
+            
+            x.add_row(["Configuration file used:",self.conf.config_file])
+            x.add_row(["",""])
+            x.add_row(["PGBACKMAN DATABASE",""])
+            x.add_row(["DBhost:",self.conf.dbhost])
+            x.add_row(["DBhostaddr:",self.conf.dbhostaddr])
+            x.add_row(["DBport:",str(self.conf.dbport)])
+            x.add_row(["DBname:",self.conf.dbname])
+            x.add_row(["DBuser:",self.conf.dbuser])
+            x.add_row(["Connection retry interval:",str(self.conf.pg_connect_retry_interval) + " sec."])
+            x.add_row(["",""])
+            x.add_row(["PGBACKMAN2CRON",""])
+            x.add_row(["LISTEN/NOTIFY channel check interval:", str(self.conf.channels_check_interval) + " sec."])
+            x.add_row(["",""])
+            x.add_row(["PGBACKMAN_DUMP",""])
+            x.add_row(["Temp directory:",self.conf.tmp_dir])
+            x.add_row(["",""])
+            x.add_row(["PGBACKMAN_MAINTENANCE",""])
+            x.add_row(["Maintenance interval:",str(self.conf.maintenance_interval) + " sec."])
+            x.add_row(["",""])
+            x.add_row(["LOGGING",""])
+            x.add_row(["Log level:",self.conf.log_level])
+            x.add_row(["Log file:",self.conf.log_file])
+         
+            print x
             print
 
         else:
