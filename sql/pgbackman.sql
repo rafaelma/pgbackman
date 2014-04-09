@@ -1233,7 +1233,7 @@ ALTER FUNCTION delete_pgsql_node(INTEGER) OWNER TO pgbackman_role_rw;
 --
 -- ------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION register_backup_job(INTEGER,INTEGER,TEXT,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,BOOLEAN,INTERVAL,INTEGER,TEXT,CHARACTER VARYING,TEXT) RETURNS VOID
+CREATE OR REPLACE FUNCTION register_backup_definition(INTEGER,INTEGER,TEXT,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,BOOLEAN,INTERVAL,INTEGER,TEXT,CHARACTER VARYING,TEXT) RETURNS VOID
  LANGUAGE plpgsql 
  SECURITY INVOKER 
  SET search_path = public, pg_temp
@@ -1371,11 +1371,11 @@ ALTER FUNCTION register_backup_job(INTEGER,INTEGER,TEXT,CHARACTER VARYING,CHARAC
 
 
 -- ------------------------------------------------------------
--- Function: delete_backup_job_definition_id()
+-- Function: delete_backup_definition_id()
 --
 -- ------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION delete_backup_job_definition_id(INTEGER) RETURNS BOOLEAN
+CREATE OR REPLACE FUNCTION delete_backup_definition_id(INTEGER) RETURNS BOOLEAN
  LANGUAGE plpgsql 
  SECURITY INVOKER 
  SET search_path = public, pg_temp
@@ -1414,11 +1414,11 @@ ALTER FUNCTION delete_backup_job_definition_id(INTEGER) OWNER TO pgbackman_role_
 
 
 -- ------------------------------------------------------------
--- Function: delete_force_backup_job_definition_id()
+-- Function: delete_force_backup_definition_id()
 --
 -- ------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION delete_force_backup_job_definition_id(INTEGER) RETURNS BOOLEAN
+CREATE OR REPLACE FUNCTION delete_force_backup_definition_id(INTEGER) RETURNS BOOLEAN
  LANGUAGE plpgsql 
  SECURITY INVOKER 
  SET search_path = public, pg_temp
@@ -1486,7 +1486,7 @@ ALTER FUNCTION delete_force_backup_job_definition_id(INTEGER) OWNER TO pgbackman
 --
 -- ------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION delete_backup_job_definition_database(INTEGER,TEXT) RETURNS BOOLEAN
+CREATE OR REPLACE FUNCTION delete_backup_definition_dbname(INTEGER,TEXT) RETURNS BOOLEAN
  LANGUAGE plpgsql 
  SECURITY INVOKER 
  SET search_path = public, pg_temp
@@ -1531,7 +1531,7 @@ ALTER FUNCTION delete_backup_job_definition_database(INTEGER,TEXT) OWNER TO pgba
 --
 -- ------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION delete_force_backup_job_definition_database(INTEGER,TEXT) RETURNS BOOLEAN
+CREATE OR REPLACE FUNCTION delete_force_backup_definition_dbname(INTEGER,TEXT) RETURNS BOOLEAN
  LANGUAGE plpgsql 
  SECURITY INVOKER 
  SET search_path = public, pg_temp

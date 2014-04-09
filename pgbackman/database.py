@@ -275,19 +275,19 @@ class pgbackman_db():
     # Method 
     # ############################################
 
-    def register_backup_job(self,backup_server,pgsql_node,dbname,minutes_cron,hours_cron, \
-                                weekday_cron,month_cron,day_month_cron,backup_code,encryption, \
-                                retention_period,retention_redundancy,extra_parameters,job_status,remarks):
-        """A function to register a backup job"""
+    def register_backup_definition(self,backup_server,pgsql_node,dbname,minutes_cron,hours_cron, \
+                                       weekday_cron,month_cron,day_month_cron,backup_code,encryption, \
+                                       retention_period,retention_redundancy,extra_parameters,job_status,remarks):
+        """A function to register a backup definition"""
 
         try:
             self.pg_connect()
 
             if self.cur:
                 try:
-                    self.cur.execute('SELECT register_backup_job(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',(backup_server,pgsql_node,dbname,minutes_cron,hours_cron, \
-                                                                                                            weekday_cron,month_cron,day_month_cron,backup_code,encryption, \
-                                                                                                            retention_period,retention_redundancy,extra_parameters,job_status,remarks))
+                    self.cur.execute('SELECT register_backup_definition(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',(backup_server,pgsql_node,dbname,minutes_cron,hours_cron, \
+                                                                                                                            weekday_cron,month_cron,day_month_cron,backup_code,encryption, \
+                                                                                                                            retention_period,retention_redundancy,extra_parameters,job_status,remarks))
                     self.conn.commit()                        
                                     
                 except psycopg2.Error as e:
@@ -303,7 +303,7 @@ class pgbackman_db():
     # Method 
     # ############################################
 
-    def delete_backup_job_definition_id(self,def_id):
+    def delete_backup_definition_id(self,def_id):
         """A function to delete a backup job definition ID"""
 
         try:
@@ -311,7 +311,7 @@ class pgbackman_db():
 
             if self.cur:
                 try:
-                    self.cur.execute('SELECT delete_backup_job_definition_id(%s)',(def_id,))
+                    self.cur.execute('SELECT delete_backup_definition_id(%s)',(def_id,))
                     self.conn.commit()                        
             
                 except psycopg2.Error as e:
@@ -327,7 +327,7 @@ class pgbackman_db():
     # Method 
     # ############################################
 
-    def delete_force_backup_job_definition_id(self,def_id):
+    def delete_force_backup_definition_id(self,def_id):
         """A function to force the deletion of a backup job definition ID"""
 
         try:
@@ -335,7 +335,7 @@ class pgbackman_db():
 
             if self.cur:
                 try:
-                    self.cur.execute('SELECT delete_force_backup_job_definition_id(%s)',(def_id,))
+                    self.cur.execute('SELECT delete_force_backup_definition_id(%s)',(def_id,))
                     self.conn.commit()                        
             
                 except psycopg2.Error as e:
@@ -351,7 +351,7 @@ class pgbackman_db():
     # Method 
     # ############################################
 
-    def delete_backup_job_definition_database(self,pgsql_node_id,dbname):
+    def delete_backup_definition_dbname(self,pgsql_node_id,dbname):
         """A function to delete a backup job definition for a database-PgSQL node"""
 
         try:
@@ -359,7 +359,7 @@ class pgbackman_db():
 
             if self.cur:
                 try:
-                    self.cur.execute('SELECT delete_backup_job_definition_database(%s,%s)',(pgsql_node_id,dbname))
+                    self.cur.execute('SELECT delete_backup_definition_dbname(%s,%s)',(pgsql_node_id,dbname))
                     self.conn.commit()                        
             
                 except psycopg2.Error as e:
@@ -375,7 +375,7 @@ class pgbackman_db():
     # Method 
     # ############################################
 
-    def delete_force_backup_job_definition_database(self,pgsql_node_id,dbname):
+    def delete_force_backup_definition_dbname(self,pgsql_node_id,dbname):
         """A function to force the deletion of a backup job definition for a database-PgSQL node"""
 
         try:
@@ -383,7 +383,7 @@ class pgbackman_db():
 
             if self.cur:
                 try:
-                    self.cur.execute('SELECT delete_force_backup_job_definition_database(%s,%s)',(pgsql_node_id,dbname))
+                    self.cur.execute('SELECT delete_force_backup_definition_dbname(%s,%s)',(pgsql_node_id,dbname))
                     self.conn.commit()                        
             
                 except psycopg2.Error as e:
@@ -399,7 +399,7 @@ class pgbackman_db():
     # Method 
     # ############################################
 
-    def show_backup_job_definitions(self,backup_server_list,pgsql_node_list,dbname_list):
+    def show_backup_definitions(self,backup_server_list,pgsql_node_list,dbname_list):
         """A function to get a list with backup job definitions"""
 
         try:
@@ -461,90 +461,78 @@ class pgbackman_db():
         except psycopg2.Error as e:
             raise e
    
-
     # ############################################
     # Method 
     # ############################################
 
-    def show_backup_server_backup_catalog(self,backup_server_id):
-        """A function to get a list with all backup catalogs for a backup server"""
+    def show_backup_catalog(self,backup_server_list,pgsql_node_list,dbname_list):
+        """A function to get a list from a backup catalog"""
 
         try:
             self.pg_connect()
 
             if self.cur:
                 try:
-                    self.cur.execute("SELECT \"BckID\",\"Finished\",pgsql_node_id AS \"ID\",\"PgSQL node\",\"DBname\",\"Duration\",\"Size\",\"Code\",\"Status\" FROM show_backup_catalog WHERE backup_server_id = %s",(backup_server_id,))
-                                     
-                    colnames = [desc[0] for desc in self.cur.description]
-                    self.print_results_table(self.cur,colnames,["Finished","PgSQL node","DBname","Size"])
-            
-                except psycopg2.Error as e:
-                    raise e
-                
-            self.pg_close()
 
-        except psycopg2.Error as e:
-            raise e
-            
+                    if backup_server_list != None:
+                        server_sql = 'AND (FALSE '
+                        
+                        for server in backup_server_list:
+                            if server.isdigit():
+                                server_sql = server_sql + 'OR backup_server_id = ' + str(server) + ' '
+                            else:
+                                server_sql = server_sql + 'OR backup_server_id = ' +  str(self.get_backup_server_id(server.lower())) + ' '
+                                                                                   
+                        server_sql = server_sql + ') '
+                        
+                    else:
+                        server_sql = ''
+                        
+                    if pgsql_node_list != None:
+                        node_sql = 'AND (FALSE '
+                        
+                        for node in pgsql_node_list:
+                            if node.isdigit():
+                                node_sql = node_sql + 'OR pgsql_node_id = ' + str(node) + ' '
+                            else:
+                                node_sql = node_sql + 'OR pgsql_node_id = ' +  str(self.get_pgsql_node_id(node.lower())) + ' '
+                                                                                   
+                        node_sql = node_sql + ') '
+                        
+                    else:
+                        node_sql = ''   
 
-    # ############################################
-    # Method 
-    # ############################################
 
-    def show_pgsql_node_backup_catalog(self,pgsql_node_id):
-        """A function to get a list with all backup catalogs for a pgsql node"""
-
-        try:
-            self.pg_connect()
-
-            if self.cur:
-                try:
-                    self.cur.execute("SELECT \"BckID\",\"DefID\",\"Finished\",backup_server_id AS \"ID\",\"Backup server\",\"DBname\",\"Duration\",\"Size\",\"Code\",\"Status\" FROM show_backup_catalog WHERE pgsql_node_id = %s",(pgsql_node_id,))
-                                     
-                    colnames = [desc[0] for desc in self.cur.description]
-                    self.print_results_table(self.cur,colnames,["Finished","Backup_server","DBname","Size"])
-            
-                except psycopg2.Error as e:
-                    raise e
-                
-            self.pg_close()
-
-        except psycopg2.Error as e:
-            raise e
+                    if dbname_list != None:
+                        dbname_sql = 'AND (FALSE '
+                        
+                        for dbname in dbname_list:
+                            dbname_sql = dbname_sql + 'OR "DBname" = \'' + dbname + '\' '
+                                                                                   
+                        dbname_sql = dbname_sql + ') '
+                        
+                    else:
+                        dbname_sql = ''
     
-
-    # ############################################
-    # Method 
-    # ############################################
-
-    def show_database_backup_catalog(self,dbname):
-        """A function to get a database backup catalog"""
-
-        try:
-            self.pg_connect()
-
-            if self.cur:
-                try:
-                    self.cur.execute("SELECT \"BckID\",\"DefID\",\"Finished\",backup_server_id AS \"ID.\",\"Backup server\",pgsql_node_id AS \"ID\",\"PgSQL node\",\"Duration\",\"Size\",\"Code\",\"Status\" FROM show_backup_catalog WHERE \"DBname\" = %s",(dbname,))
+                    self.cur.execute('SELECT \"BckID\",\"Finished\",backup_server_id AS \"ID.\",\"Backup server\",pgsql_node_id AS \"ID\",\"PgSQL node\",\"DBname\",\"Duration\",\"Size\",\"Code\",\"Status\" FROM show_backup_catalog WHERE TRUE ' + server_sql + node_sql + dbname_sql)
                                      
                     colnames = [desc[0] for desc in self.cur.description]
-                    self.print_results_table(self.cur,colnames,["Finished","Backup server","PgSQL node","Size"])
+                    self.print_results_table(self.cur,colnames,["Finished","Backup server","PgSQL node","DBname","Size"])
             
                 except psycopg2.Error as e:
                     raise e
                 
             self.pg_close()
-        
+    
         except psycopg2.Error as e:
-            raise e    
-            
+            raise e
+   
 
     # ############################################
     # Method 
     # ############################################
 
-    def show_backup_job_details(self,bck_id):
+    def show_backup_details(self,bck_id):
         """A function to get all details for a backup job"""
 
         try:
@@ -552,7 +540,7 @@ class pgbackman_db():
 
             if self.cur:
                 try:
-                    self.cur.execute("SELECT * FROM show_backup_job_details WHERE bck_id= %s",(bck_id,))
+                    self.cur.execute("SELECT * FROM show_backup_details WHERE bck_id= %s",(bck_id,))
    
                     x = PrettyTable([".",".."],header = False)
                     x.align["."] = "r"

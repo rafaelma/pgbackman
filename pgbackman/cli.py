@@ -524,16 +524,16 @@ class pgbackman_cli(cmd.Cmd):
             
 
     # ############################################
-    # Method do_show_backup_server_backup_definitions
+    # Method do_show_backup_definitions
     # ############################################
 
-    def do_show_backup_job_definitions(self,args):
+    def do_show_backup_definitions(self,args):
         """
         DESCRIPTION:
         This command shows all backup definitions for a particular combination of search values.
 
         COMMAND:
-        show_backup_server_backup_definitions [SrvID | FQDN][NodeID | FQDN][DBname]
+        show_backup_definitions [SrvID|FQDN] [NodeID|FQDN] [DBname]
         """
 
         try: 
@@ -567,7 +567,7 @@ class pgbackman_cli(cmd.Cmd):
                 dbname_list = dbname.strip().replace(' ','').split(',')
                 
             try:
-                self.db.show_backup_job_definitions(server_list,node_list,dbname_list)
+                self.db.show_backup_definitions(server_list,node_list,dbname_list)
                                                     
             except Exception as e:
                 print "\n[ERROR]: ",e
@@ -600,7 +600,7 @@ class pgbackman_cli(cmd.Cmd):
             print "--------------------------------------------------------"
 
             try:
-                self.db.show_backup_job_definitions(server_list,node_list,dbname_list)
+                self.db.show_backup_definitions(server_list,node_list,dbname_list)
                 
             except Exception as e:
                 print "\n[ERROR]: ",e
@@ -610,16 +610,16 @@ class pgbackman_cli(cmd.Cmd):
         
 
     # ############################################
-    # Method do_register_backup_job
+    # Method do_register_backup_definition
     # ############################################
 
-    def do_register_backup_job_definition(self,args):
+    def do_register_backup_definition(self,args):
         """
         DESCRIPTION:
         This command registers a backup job definition in PgBackMan.
 
         COMMAND:
-        register_backup_job_definition [SrvID | FQDN] 
+        register_backup_definition [SrvID | FQDN] 
                                        [NodeID | FQDN] 
                                        [DBname] 
                                        [mincron] [hourcron] [weekdaycron] [monthcron] [daymonthcron] 
@@ -767,7 +767,7 @@ class pgbackman_cli(cmd.Cmd):
             
             if ack.lower() == "yes":
                 try:
-                    self.db.register_backup_job(backup_server_id,pgsql_node_id,dbname.strip(),minutes_cron,hours_cron, \
+                    self.db.register_backup_definition(backup_server_id,pgsql_node_id,dbname.strip(),minutes_cron,hours_cron, \
                                                     weekday_cron.strip(),month_cron.strip(),day_month_cron.strip(),backup_code.upper().strip(),encryption.lower().strip(), \
                                                     retention_period.lower().strip(),retention_redundancy.strip(),extra_parameters.lower().strip(),backup_job_status.upper().strip(),remarks.strip())
                     print "\n[Done]\n"
@@ -822,7 +822,7 @@ class pgbackman_cli(cmd.Cmd):
                 return False
                 
             try:
-                self.db.register_backup_job(backup_server_id,pgsql_node_id,dbname.strip(),minutes_cron,hours_cron, \
+                self.db.register_backup_definition(backup_server_id,pgsql_node_id,dbname.strip(),minutes_cron,hours_cron, \
                                                 weekday_cron.strip(),month_cron.strip(),day_month_cron.strip(),backup_code.upper().strip(),encryption.lower().strip(), \
                                                 retention_period.lower().strip(),retention_redundancy.strip(),extra_parameters.lower().strip(),backup_job_status.upper().strip(),remarks.strip())
                 print "\n[Done]\n"
@@ -839,10 +839,10 @@ class pgbackman_cli(cmd.Cmd):
 
 
     # ############################################
-    # Method do_delete_backup_job_definition_id
+    # Method do_delete_backup_definition_id
     # ############################################
 
-    def do_delete_id_backup_job_definition(self,args):
+    def do_delete_backup_definition_id(self,args):
         """
         DESCRIPTION:
         This command deletes a backup job definition ID
@@ -852,7 +852,7 @@ class pgbackman_cli(cmd.Cmd):
         definitions with active backups in the catalog 
 
         COMMAND:
-        delete_backup_job_definition_id [DefID] [force-deletion]
+        delete_backup_definition_id [DefID] [force-deletion]
         """
 
         try: 
@@ -888,7 +888,7 @@ class pgbackman_cli(cmd.Cmd):
                 if def_id.isdigit():
                     try:
                         if force_deletion == "y":
-                            self.db.delete_force_backup_job_definition_id(def_id)
+                            self.db.delete_force_backup_definition_id(def_id)
                             print "\n[Done]\n"
                             
                         elif force_deletion == "n":
@@ -913,7 +913,7 @@ class pgbackman_cli(cmd.Cmd):
 
             if def_id.isdigit():
                 try:
-                    self.db.delete_backup_job_definition_id(def_id)
+                    self.db.delete_backup_definition_id(def_id)
                     print "\n[Done]\n"
                     
                 except Exception as e:
@@ -928,7 +928,7 @@ class pgbackman_cli(cmd.Cmd):
 
                 if def_id.isdigit():
                     try:
-                        self.db.delete_force_backup_job_definition_id(def_id)
+                        self.db.delete_force_backup_definition_id(def_id)
                         print "\n[Done]\n"
                         
                     except Exception as e:
@@ -950,10 +950,10 @@ class pgbackman_cli(cmd.Cmd):
 
 
     # ################################################
-    # Method do_delete_backup_job_definition_database
+    # Method do_delete_backup_definition_database
     # ################################################
 
-    def do_delete_database_backup_job_definition(self,args):
+    def do_delete_backup_definition_dbname(self,args):
         """
         DESCRIPTION:
         This command deletes a backup job definition for a database
@@ -963,7 +963,7 @@ class pgbackman_cli(cmd.Cmd):
         definitions with active backups in the catalog 
 
         COMMAND:
-        delete_backup_job_definition_database NodeID/FQDN DBname [force-deletion]
+        delete_backup_job_definition_dbname NodeID/FQDN DBname [force-deletion]
         """
 
         try: 
@@ -1001,19 +1001,19 @@ class pgbackman_cli(cmd.Cmd):
                 try:
                     if pgsql_node_id.isdigit():
                         if force_deletion == "y":
-                            self.db.delete_force_backup_job_definition_database(pgsql_node_id,dbname)
+                            self.db.delete_force_backup_definition_dbname(pgsql_node_id,dbname)
                             print "\n[Done]\n"
                         
                         elif force_deletion == "n":
-                            self.db.delete_backup_job_definition_database(pgsql_node_id,dbname)
+                            self.db.delete_backup_definition_dbname(pgsql_node_id,dbname)
                             print "\n[Done]\n"
                             
                     else:
                         if force_deletion == "y":
-                            self.db.delete_force_backup_job_definition_database(self.db.get_pgsql_node_id(pgsql_node_id),dbname)
+                            self.db.delete_force_backup_definition_dbname(self.db.get_pgsql_node_id(pgsql_node_id),dbname)
                             
                         elif force_deletion == "n":
-                            self.db.delete_backup_job_definition_database(self.db.get_pgsql_node_id(pgsql_node_id),dbname)
+                            self.db.delete_backup_definition_dbname(self.db.get_pgsql_node_id(pgsql_node_id),dbname)
 
                 except Exception as e:
                     print '\n[ERROR]: Could not delete this backup job definition\n',e
@@ -1032,11 +1032,11 @@ class pgbackman_cli(cmd.Cmd):
 
             try:
                 if pgsql_node_id.isdigit():
-                    self.db.delete_backup_job_definition_database(pgsql_node_id,dbname)
+                    self.db.delete_backup_definition_dbname(pgsql_node_id,dbname)
                     print "\n[Done]\n"
                     
                 else:
-                    self.db.delete_backup_job_definition_database(self.db.get_pgsql_node_id(pgsql_node_id),dbname)
+                    self.db.delete_backup_definition_dbname(self.db.get_pgsql_node_id(pgsql_node_id),dbname)
 
             except Exception as e:
                 print '\n[ERROR]: Could not delete this backup job definition\n',e
@@ -1050,11 +1050,11 @@ class pgbackman_cli(cmd.Cmd):
 
                 try:
                     if pgsql_node_id.isdigit():
-                        self.db.delete_force_backup_job_definition_database(pgsql_node_id,dbname)
+                        self.db.delete_force_backup_definition_dbname(pgsql_node_id,dbname)
                         print "\n[Done]\n"
                         
                     else:
-                        self.db.delete_force_backup_job_definition_database(self.db.get_pgsql_node_id(pgsql_node_id),dbname)
+                        self.db.delete_force_backup_definition_dbname(self.db.get_pgsql_node_id(pgsql_node_id),dbname)
                         
                 except Exception as e:
                     print '\n[ERROR]: Could not delete this backup job definition\n',e
@@ -1072,16 +1072,16 @@ class pgbackman_cli(cmd.Cmd):
 
 
     # ############################################
-    # Method do_show_backup_server_backup_catalog
+    # Method do_show_backup_definitions
     # ############################################
 
-    def do_show_backup_server_backup_catalog(self,args):
+    def do_show_backup_catalog(self,args):
         """
         DESCRIPTION:
-        This command shows all catalog entries for one particular Backup server.
+        This command shows all catalog entries for a particular combination of search values.
 
         COMMAND:
-        show_backup_server_backup_catalog [SrvID | FQDN]
+        show_backup_catalog [SrvID|FQDN] [NodeID|FQDN] [DBname]
         """
 
         try: 
@@ -1094,159 +1094,80 @@ class pgbackman_cli(cmd.Cmd):
         if len(arg_list) == 0:
             
             print "--------------------------------------------------------"
-            server_id = raw_input("# SrvID / FQDN: ")
+            server_id = raw_input("# SrvID / FQDN [all]: ")
+            node_id = raw_input("# NodeID / FQDN [all]: ")
+            dbname = raw_input("# DBname [all]: ")
             print "--------------------------------------------------------"
 
-            try:
+            if server_id == '' or server_id == 'all':
+                server_list = None
+            else:
+                server_list = server_id.strip().replace(' ','').split(',')
 
-                if server_id.isdigit():
-                    self.db.show_backup_server_backup_catalog(server_id)
-                else:
-                    self.db.show_backup_server_backup_catalog(self.db.get_backup_server_id(server_id))
-                                    
+            if node_id == '' or node_id == 'all':
+                node_list = None
+            else:
+                node_list = node_id.strip().replace(' ','').split(',')
+
+            if dbname == '' or dbname == 'all':
+                dbname_list = None
+            else:
+                dbname_list = dbname.strip().replace(' ','').split(',')
+                
+            try:
+                self.db.show_backup_catalog(server_list,node_list,dbname_list)
+                                                    
             except Exception as e:
                 print "\n[ERROR]: ",e
 
-        elif len(arg_list) == 1:
+        elif len(arg_list) == 3:
 
             server_id = arg_list[0]
-            
+            node_id = arg_list[1]
+            dbname = arg_list[2]
+
+            if server_id == '' or server_id == 'all':
+                server_list = None
+            else:
+                server_list = server_id.strip().replace(' ','').split(',')
+
+            if node_id == '' or node_id == 'all':
+                node_list = None
+            else:
+                node_list = node_id.strip().replace(' ','').split(',')
+
+            if dbname == '' or dbname == 'all':
+                dbname_list = None
+            else:
+                dbname_list = dbname.strip().replace(' ','').split(',')
+
             print "--------------------------------------------------------"
             print "# SrvID / FQDN: " + server_id
-            print "--------------------------------------------------------"
-
-            try:
-                if server_id.isdigit():
-                    self.db.show_backup_server_backup_catalog(server_id)
-                else:
-                    self.db.show_backup_server_backup_catalog(self.db.get_backup_server_id(server_id))
-                    
-            except Exception as e:
-                print "\n[ERROR]: ",e
-
-        else:
-            print "\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n"
-        
-
-    # ############################################
-    # Method do_show_pgsql_node_backup_catalog
-    # ############################################
-
-    def do_show_pgsql_node_backup_catalog(self,args):
-        """
-        DESCRIPTION:
-        This command shows all catalog entries for one particular PgSQL node.
-
-        COMMAND:
-        show_pgsql_node_backup_catalog [NodeID | FQDN]
-        """
-
-        try: 
-            arg_list = shlex.split(args)
-            
-        except ValueError as e:
-            print "\n[ERROR]: ",e,"\n"
-            return False
-                
-        if len(arg_list) == 0:
-            
-            print "--------------------------------------------------------"
-            pgsql_node_id = raw_input("# NodeID / FQDN: ")
-            print "--------------------------------------------------------"
-
-            try:
-
-                if pgsql_node_id.isdigit():
-                    self.db.show_pgsql_node_backup_catalog(pgsql_node_id)
-                else:
-                    self.db.show_pgsql_node_backup_catalog(self.db.get_pgsql_node_id(pgsql_node_id))
-                                    
-            except Exception as e:
-                print "\n[ERROR]: ",e
-
-        elif len(arg_list) == 1:
-
-            pgsql_node_id = arg_list[0]
-            
-            print "--------------------------------------------------------"
-            print "# NodeID / FQDN: " + pgsql_node_id
-            print "--------------------------------------------------------"
-
-            try:
-                if pgsql_node_id.isdigit():
-                    self.db.show_pgsql_node_backup_catalog(pgsql_node_id)
-                else:
-                    self.db.show_pgsql_node_backup_catalog(self.db.get_backup_pgsql_node_id(pgsql_node_id))
-                    
-            except Exception as e:
-                print "\n[ERROR]: ",e
-
-        else:
-            print "\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n"
-        
-
-
-    # ############################################
-    # Method do_show_database_backup_catalog
-    # ############################################
-
-    def do_show_database_backup_catalog(self,args):
-        """
-        DESCRIPTION:
-        This command shows all catalog entries for one particular database.
-
-        COMMAND:
-        show_database_backup_catalog [DBname]
-        """
-        
-        try: 
-            arg_list = shlex.split(args)
-            
-        except ValueError as e:
-            print "\n[ERROR]: ",e,"\n"
-            return False
-                    
-        if len(arg_list) == 0:
-                   
-            print "--------------------------------------------------------"
-            dbname = raw_input("# DBname: ")
-            print "--------------------------------------------------------"
-            
-            try:
-                self.db.show_database_backup_catalog(dbname)
-                
-            except Exception as e:
-                print "\n[ERROR]: ",e     
-                
-        elif len(arg_list) == 1:
-
-            dbname = arg_list[0]
-            
-            print "--------------------------------------------------------"
+            print "# NodeID / FQDN: " + node_id
             print "# DBname: " + dbname
             print "--------------------------------------------------------"
-            
+
             try:
-                self.db.show_database_backup_catalog(dbname)
-            
-            except Exception as e:
-                print "\n[ERROR]: ",e     
+                self.db.show_backup_catalog(server_list,node_list,dbname_list)
                 
+            except Exception as e:
+                print "\n[ERROR]: ",e
+
         else:
             print "\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n"
         
 
     # ############################################
-    # Method do_show_backup_job_details
+    # Method do_show_backup_details
     # ############################################
 
-    def do_show_backup_job_details(self,args):
+    def do_show_backup_details(self,args):
         """
         DESCRIPTION:
         This command shows all the details for one particular backup job.
 
         COMMAND:
-        show_backup_job_details [BckID]
+        show_backup_details [BckID]
         """
 
         try: 
@@ -1264,7 +1185,7 @@ class pgbackman_cli(cmd.Cmd):
             
             try:
                 
-                self.db.show_backup_job_details(bck_id)
+                self.db.show_backup_details(bck_id)
                 
             except Exception as e:
                 print "\n[ERROR]: ",e     
@@ -1278,7 +1199,7 @@ class pgbackman_cli(cmd.Cmd):
             print "--------------------------------------------------------"
             
             try:
-                self.db.show_backup_job_details(bck_id)
+                self.db.show_backup_details(bck_id)
             
             except Exception as e:
                 print "\n[ERROR]: ",e     
