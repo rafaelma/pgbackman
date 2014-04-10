@@ -133,7 +133,7 @@ class pgbackman_db():
 
             if self.cur:
                 try:
-                    self.cur.execute('SELECT * FROM show_backup_servers')
+                    self.cur.execute('SELECT "SrvID","FQDN","Remarks" FROM show_backup_servers')
                     self.conn.commit()
 
                     colnames = [desc[0] for desc in self.cur.description]
@@ -1665,3 +1665,35 @@ class pgbackman_db():
         except psycopg2.Error as e:
             raise e
     
+
+    # ############################################
+    # Method 
+    # ############################################
+
+    def database_exists(self,dbname):
+        """A function to check if a database exists in a pgsql node"""
+
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT count(*) AS dbname_cnt FROM pg_database WHERE datname = %s',(dbname,))
+                    self.conn.commit()
+
+                    dbname_cnt = self.cur.fetchone()[0]
+
+                    if dbname_cnt > 0:
+                        return True
+                    
+                    elif dbname_cnt == 0:
+                        return False
+                                        
+                except psycopg2.Error as e:
+                    raise e
+
+            self.pg_close()
+    
+        except psycopg2.Error as e:
+            raise e
+

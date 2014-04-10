@@ -113,7 +113,7 @@ class pgbackman_cli(cmd.Cmd):
         This command registers a backup server in PgBackMan.
 
         COMMAND:
-        register_backup_server [hostname] [domain] [status] [remarks]
+        register_backup_server [hostname] [domain] [remarks]
 
         [Status]:
         ---------
@@ -152,7 +152,6 @@ class pgbackman_cli(cmd.Cmd):
             print "--------------------------------------------------------"
             hostname = raw_input("# Hostname []: ")
             domain = raw_input("# Domain [" + domain_default + "]: ")
-            status = raw_input("# Status[" + status_default + "]: ")
             remarks = raw_input("# Remarks []: ")
             print
 
@@ -163,13 +162,10 @@ class pgbackman_cli(cmd.Cmd):
 
             if domain == "":
                 domain = domain_default
-
-            if status == "":
-                status = status_default
             
             if ack.lower() == "yes":
                 try:
-                    self.db.register_backup_server(hostname.lower().strip(),domain.lower().strip(),status.upper().strip(),remarks.strip())
+                    self.db.register_backup_server(hostname.lower().strip(),domain.lower().strip(),status_default.upper().strip(),remarks.strip())
                     print "\n[Done]\n"
 
                 except Exception as e:
@@ -183,15 +179,16 @@ class pgbackman_cli(cmd.Cmd):
         # Hostname, domain, status and remarks
         #
 
-        elif len(arg_list) == 4:
+        elif len(arg_list) == 3:
 
             hostname = arg_list[0]
             domain = arg_list[1]
-            status = arg_list[2]
-            remarks = arg_list[3]
+            remarks = arg_list[2]
 
             try:    
-                self.db.register_backup_server(hostname.lower().strip(),domain.lower().strip(),status.upper().strip(),remarks.strip())
+                status_default = self.db.get_default_backup_server_parameter("backup_server_status")
+                
+                self.db.register_backup_server(hostname.lower().strip(),domain.lower().strip(),status_default.upper().strip(),remarks.strip())
                 print "\n[Done]\n"
 
             except Exception as e:
@@ -719,17 +716,26 @@ class pgbackman_cli(cmd.Cmd):
                     backup_server_id = backup_server
                 else:
                     backup_server_id = self.db.get_backup_server_id(backup_server)
-                    
-            except Exception as e:
-                print "\n[ERROR]: ",e
-                return False
-                
-            try:
+
                 if pgsql_node.isdigit():
                     pgsql_node_id = pgsql_node
+                    pgsql_node_fqdn = self.db.get_pgsql_node_fqdn(pgsql_node)
                 else:
                     pgsql_node_id = self.db.get_pgsql_node_id(pgsql_node)
-                    
+                    pgsql_node_fqdn = pgsql_node
+
+                dsn_value = self.db.get_pgsql_node_dsn(pgsql_node_id)
+                db_node = pgbackman_db(dsn_value,'pgbackman_cli')
+
+                if dbname != '':
+                    if not db_node.database_exists(dbname):
+                        print ("\n[ERROR]: Database %s does not exist in The PgSQL node %s" % (dbname, pgsql_node_fqdn)) 
+                        print
+                        db_node = None
+                        return False
+
+                db_node = None
+
             except Exception as e:
                 print "\n[ERROR]: ",e 
                 return False
@@ -808,16 +814,25 @@ class pgbackman_cli(cmd.Cmd):
                     backup_server_id = backup_server
                 else:
                     backup_server_id = self.db.get_backup_server_id(backup_server)
-                    
-            except Exception as e:
-                print "\n[ERROR]: ",e 
-                return False
 
-            try:
                 if pgsql_node.isdigit():
                     pgsql_node_id = pgsql_node
+                    pgsql_node_fqdn = self.db.get_pgsql_node_fqdn(pgsql_node)
                 else:
                     pgsql_node_id = self.db.get_pgsql_node_id(pgsql_node)
+                    pgsql_node_fqdn = pgsql_node
+
+                dsn_value = self.db.get_pgsql_node_dsn(pgsql_node_id)
+                db_node = pgbackman_db(dsn_value,'pgbackman_cli')
+
+                if dbname != '':
+                    if not db_node.database_exists(dbname):
+                        print ("\n[ERROR]: Database %s does not exist in The PgSQL node %s" % (dbname, pgsql_node_fqdn)) 
+                        print
+                        db_node = None
+                        return False
+
+                db_node = None
                     
             except Exception as e:
                 print "\n[ERROR]: ",e 
@@ -1605,6 +1620,17 @@ class pgbackman_cli(cmd.Cmd):
         """    
 
     # ############################################
+    # Method do_update_backup_server
+    # ############################################
+
+    def do_update_backup_server_config(self,args):
+        """
+        update_backup_server_config
+
+        """    
+
+
+    # ############################################
     # Method do_update_pgsql_node
     # ############################################
 
@@ -1613,6 +1639,17 @@ class pgbackman_cli(cmd.Cmd):
         update_pgsql_node
 
         """    
+
+    # ############################################
+    # Method do_update_pgsql_node
+    # ############################################
+
+    def do_update_pgsql_node_config(self,args):
+        """
+        update_pgsql_node_config
+
+        """    
+
 
     # ############################################
     # Method do_update_backup_definition
@@ -1626,35 +1663,24 @@ class pgbackman_cli(cmd.Cmd):
 
 
     # ############################################
-    # Method do_move_backup_job_id
+    # Method do_move_backup_definition
     # ############################################
 
-    def do_move_backup_job_id(self,args):
+    def do_move_backup_definition(self,args):
         """
-        move_backup_job_id
+        move_backup_definition
 
         """    
 
     # ############################################
-    # Method do_move_backup_job_pgsql_node
+    # Method do_copy_database
     # ############################################
 
-    def do_move_backup_job_pgsql_node(self,args):
+    def do_copy_database(self,args):
         """
-        move_backup_job
+        copy_database
 
-        """  
-  
-    # ############################################
-    # Method do_move_backup_job_pgsql_node
-    # ############################################
-
-    def do_move_backup_job_pgsql_node(self,args):
-        """
-        move_backup_job
-
-        """  
-
+        """    
 
     # ############################################
     # Method do_clear
@@ -1795,6 +1821,7 @@ class pgbackman_cli(cmd.Cmd):
         \! [COMMAND] - Execute command in shell
           
         """
+
 
     # ############################################
     # Method handler
