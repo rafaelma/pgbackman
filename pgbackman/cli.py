@@ -2049,7 +2049,7 @@ class pgbackman_cli(cmd.Cmd):
         'Quit the PgBackMan shell.'
         
         print
-        print "Thank you for using PgBackMan"
+        print "\nDone, thank you for using PgBackMan"
         return True
 
 
@@ -2147,5 +2147,6 @@ class pgbackman_cli(cmd.Cmd):
 if __name__ == '__main__':
 
     signal.signal(signal.SIGINT, pgbackman_cli().signal_handler)
+    signal.signal(signal.SIGTERM,pgbackman_cli().signal_handler)
     pgbackman_cli().cmdloop()
 

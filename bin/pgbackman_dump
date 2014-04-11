@@ -636,12 +636,14 @@ def register_backup_job_catalog(db):
         logs.logger.info('Backup job catalog for DefID: %s updated in the database',global_parameters['def_id'])
         
     except Exception as e:
-        logs.logger.info('Problems updating the backup job catalog for DefID: %s in the database - %s',global_parameters['def_id'],e)
+        logs.logger.warning('Problems updating the backup job catalog for DefID: %s in the database - %s',global_parameters['def_id'],e)
 
+        pending_log_file = ''
+        
         try:
             procpid = os.getpid()
             pending_log_file = global_parameters['backup_server_pending_registration_dir'] + '/backup_jobs_pending_log_updates_nodeid_' + str(global_parameters['pgsql_node_id']) + '_' + str(procpid) + '.log'
-
+           
             with open(pending_log_file,'w+') as catalog_pending:
                 catalog_pending.write(str(global_parameters['def_id']) + '::' +
                                       str(procpid) + '::' +
@@ -823,6 +825,11 @@ def main():
 
     global_parameters['backup_server_id'] = backup_server_id
 
+    global_parameters['backup_server_pending_registration_dir'] = global_parameters['root_backup_dir'] + '/pending_updates'
+    global_parameters['backup_server_cache_dir'] =  global_parameters['root_backup_dir'] + '/cache_dir'
+
+    get_pgsql_node_parameters_from_cache(db)
+
     #
     # We check before starting if the database we are going to backup is available. 
     # If it is not available, we will stop the backup job with an error
@@ -847,10 +854,7 @@ def main():
         register_backup_job_catalog(db)
         sys.exit(1) 
 
-    global_parameters['backup_server_pending_registration_dir'] = global_parameters['root_backup_dir'] + '/pending_updates'
-    global_parameters['backup_server_cache_dir'] =  global_parameters['root_backup_dir'] + '/cache_dir'
-
-    get_pgsql_node_parameters_from_cache(db)
+    
 
     try:
         global_parameters['pgsql_node_backup_dir'] = db.get_pgsql_node_parameter(global_parameters['pgsql_node_id'],'pgnode_backup_partition')
