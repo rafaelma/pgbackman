@@ -1725,9 +1725,20 @@ class pgbackman_cli(cmd.Cmd):
 
     def do_update_backup_server_config(self,args):
         """
+        Not implemented
+
+        DESCRIPTION:
+        This command updates the default configuration parameters
+        for a backup server.
+        
+        COMMAND:
         update_backup_server_config
 
         """    
+        
+        print "Not implemented"
+        print "See: help update_backup_server_config"
+        print
 
 
     # ############################################
@@ -1868,20 +1879,20 @@ class pgbackman_cli(cmd.Cmd):
 
     def do_update_pgsql_node_config(self,args):
         """
-        update_pgsql_node_config
+        Not implemented
+
+        DESCRIPTION:
+        This command updates the default configuration parameters 
+        for a PgSQl node 
+
+        COMMAND:
+        update_pgsql_node_config [parameter] [value]
 
         """    
-
-
-    # ############################################
-    # Method do_update_backup_definition
-    # ############################################
-
-    def do_update_backup_definition(self,args):
-        """
-        update_backup_definition
-
-        """    
+        
+        print "Not implemented"
+        print "See: help update_backup_server_config"
+        print
 
 
     # ############################################
@@ -1890,9 +1901,21 @@ class pgbackman_cli(cmd.Cmd):
 
     def do_move_backup_definition(self,args):
         """
-        move_backup_definition
+        Not implemented
+
+        DESCRIPTION:
+        This command moves a backup definition between
+        backup servers.
+
+        COMMAND:
+        move_backup_definition [SrvID source | FQDN source] [SrvID target | FQDN target]
 
         """    
+
+        print "Not implemented"
+        print "See: help move_backup_definition"
+        print
+        
 
     # ############################################
     # Method do_copy_database
@@ -1900,9 +1923,45 @@ class pgbackman_cli(cmd.Cmd):
 
     def do_copy_database(self,args):
         """
-        copy_database
+        Not implemented
+        
+        DESCRIPTION:
+        This command can be used to move a database
+        to another PgSQL node.
+
+        The pgsql version used must be greater than or equal
+        to the one used in the SOURCE PgSQL node.
+        
+        COMMAND:
+        copy_database [NodeID source | FQDN source] [NodeID target | FQDN target] [9.0 | 9.1 | 9.2 | 9.3]
 
         """    
+
+        print "Not implemented"
+        print "See: help copy_database"
+        print
+
+
+    # ############################################
+    # Method do_copy_database
+    # ############################################
+
+    def do_restore_backup(self,args):
+        """
+        Not implemented
+        
+        DESCRIPTION:
+        This command can be used to restore a backup.
+        
+        COMMAND:
+        restore_backup [BckID] [NodeID target | FQDN target] 
+
+        """    
+
+        print "Not implemented"
+        print "See: help restore_backup"
+        print
+
 
     # ############################################
     # Method do_clear
