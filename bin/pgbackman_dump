@@ -817,7 +817,7 @@ def main():
         logs.logger.info('Backup server: %s is registered in pgbackman',backup_server_fqdn)
 
     except psycopg2.Error as e:
-        get_backup_server_parameters_from_cache(db.backup_server_fqdn)
+        get_backup_server_parameters_from_cache(db,backup_server_fqdn)
         backup_server_id = backup_server_cache_data['backup_server_id']
         logs.logger.info('Backup server: %s is registered in the cache',backup_server_fqdn)
 
