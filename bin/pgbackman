@@ -29,11 +29,18 @@ __version__ = "1.0.0"
 
 if __name__ == '__main__':
 
-    if len(sys.argv) > 1:
-        pgbackman_cli().onecmd(' '.join(sys.argv[1:]))
-    elif len(sys.argv) == 1:
-        os.system('clear')
-        pgbackman_cli().cmdloop()
-    else:
-        raise NotImplementedError
+    try:
+        
+        if len(sys.argv) > 1:
+            pgbackman_cli().onecmd(' '.join(sys.argv[1:]))
+        elif len(sys.argv) == 1:
+            os.system('clear')
+            pgbackman_cli().cmdloop()
+        else:
+            raise NotImplementedError
+        
+    except KeyboardInterrupt:
+        print
+        print "\nDone, thank you for using PgBackMan"
 
+        sys.exit(0)
