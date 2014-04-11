@@ -1098,7 +1098,7 @@ class pgbackman_cli(cmd.Cmd):
         This command shows all catalog entries for a particular combination of search values.
 
         COMMAND:
-        show_backup_catalog [SrvID|FQDN] [NodeID|FQDN] [DBname]
+        show_backup_catalog [SrvID|FQDN] [NodeID|FQDN] [DBname] [DefID]
         """
 
         try: 
@@ -1114,6 +1114,7 @@ class pgbackman_cli(cmd.Cmd):
             server_id = raw_input("# SrvID / FQDN [all]: ")
             node_id = raw_input("# NodeID / FQDN [all]: ")
             dbname = raw_input("# DBname [all]: ")
+            def_id = raw_input("# DefID [all]: ")
             print "--------------------------------------------------------"
 
             if server_id == '' or server_id == 'all':
@@ -1131,17 +1132,23 @@ class pgbackman_cli(cmd.Cmd):
             else:
                 dbname_list = dbname.strip().replace(' ','').split(',')
                 
+            if def_id == '' or def_id == 'all':
+                def_id_list = None
+            else:
+                def_id_list = def_id.strip().replace(' ','').split(',')
+              
             try:
-                self.db.show_backup_catalog(server_list,node_list,dbname_list)
+                self.db.show_backup_catalog(server_list,node_list,dbname_list,def_id_list)
                                                     
             except Exception as e:
                 print "\n[ERROR]: ",e
 
-        elif len(arg_list) == 3:
+        elif len(arg_list) == 4:
 
             server_id = arg_list[0]
             node_id = arg_list[1]
             dbname = arg_list[2]
+            def_id = arg_list[3]
 
             if server_id == '' or server_id == 'all':
                 server_list = None
@@ -1158,14 +1165,20 @@ class pgbackman_cli(cmd.Cmd):
             else:
                 dbname_list = dbname.strip().replace(' ','').split(',')
 
+            if def_id == '' or def_id == 'all':
+                def_id_list = None
+            else:
+                def_id_list = def_id.strip().replace(' ','').split(',')
+
             print "--------------------------------------------------------"
-            print "# SrvID / FQDN: " + server_id
-            print "# NodeID / FQDN: " + node_id
-            print "# DBname: " + dbname
+            print "# SrvID / FQDN: " + str(server_id)
+            print "# NodeID / FQDN: " + str(node_id)
+            print "# DBname: " + str(dbname)
+            print "# DefID: " + str(def_id)
             print "--------------------------------------------------------"
 
             try:
-                self.db.show_backup_catalog(server_list,node_list,dbname_list)
+                self.db.show_backup_catalog(server_list,node_list,dbname_list,def_id_list)
                 
             except Exception as e:
                 print "\n[ERROR]: ",e

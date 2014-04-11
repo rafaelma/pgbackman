@@ -465,7 +465,7 @@ class pgbackman_db():
     # Method 
     # ############################################
 
-    def show_backup_catalog(self,backup_server_list,pgsql_node_list,dbname_list):
+    def show_backup_catalog(self,backup_server_list,pgsql_node_list,dbname_list,def_id_list):
         """A function to get a list from a backup catalog"""
 
         try:
@@ -502,7 +502,6 @@ class pgbackman_db():
                     else:
                         node_sql = ''   
 
-
                     if dbname_list != None:
                         dbname_sql = 'AND (FALSE '
                         
@@ -514,7 +513,18 @@ class pgbackman_db():
                     else:
                         dbname_sql = ''
     
-                    self.cur.execute('SELECT \"BckID\",\"Finished\",backup_server_id AS \"ID.\",\"Backup server\",pgsql_node_id AS \"ID\",\"PgSQL node\",\"DBname\",\"Duration\",\"Size\",\"Code\",\"Status\" FROM show_backup_catalog WHERE TRUE ' + server_sql + node_sql + dbname_sql)
+                    if def_id_list != None:
+                        def_id_sql = 'AND (FALSE '
+                        
+                        for def_id in def_id_list:
+                            def_id_sql = def_id_sql + 'OR def_id = \'' + def_id + '\' '
+                                                                                   
+                        def_id_sql = def_id_sql + ') '
+                        
+                    else:
+                        def_id_sql = ''
+                  
+                    self.cur.execute('SELECT \"BckID\",\"DefID\",\"Finished\",backup_server_id AS \"ID.\",\"Backup server\",pgsql_node_id AS \"ID\",\"PgSQL node\",\"DBname\",\"Duration\",\"Size\",\"Code\",\"Status\" FROM show_backup_catalog WHERE TRUE ' + server_sql + node_sql + dbname_sql + def_id_sql)
                                      
                     colnames = [desc[0] for desc in self.cur.description]
                     self.print_results_table(self.cur,colnames,["Finished","Backup server","PgSQL node","DBname","Size"])

@@ -416,9 +416,10 @@ CREATE TABLE backup_job_catalog(
 );
 
 ALTER TABLE backup_job_catalog ADD PRIMARY KEY (bck_id);
+CREATE INDEX ON backup_job_catalog(def_id);
 CREATE INDEX ON backup_job_catalog(backup_server_id);
 CREATE INDEX ON backup_job_catalog(pgsql_node_id);
-
+CREATE INDEX ON backup_job_catalog(dbname);
 
 ALTER TABLE backup_job_catalog OWNER TO pgbackman_role_rw;
 
@@ -1229,7 +1230,7 @@ ALTER FUNCTION delete_pgsql_node(INTEGER) OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------------
--- Function: register_backup_job()
+-- Function: register_backup_definition()
 --
 -- ------------------------------------------------------------
 
@@ -1366,7 +1367,7 @@ CREATE OR REPLACE FUNCTION register_backup_definition(INTEGER,INTEGER,TEXT,CHARA
 END;
 $$;
 
-ALTER FUNCTION register_backup_job(INTEGER,INTEGER,TEXT,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,BOOLEAN,INTERVAL,INTEGER,TEXT,CHARACTER VARYING,TEXT) OWNER TO pgbackman_role_rw;
+ALTER FUNCTION register_backup_definition(INTEGER,INTEGER,TEXT,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,BOOLEAN,INTERVAL,INTEGER,TEXT,CHARACTER VARYING,TEXT) OWNER TO pgbackman_role_rw;
 
 
 
@@ -1410,7 +1411,7 @@ CREATE OR REPLACE FUNCTION delete_backup_definition_id(INTEGER) RETURNS BOOLEAN
   END;
 $$;
 
-ALTER FUNCTION delete_backup_job_definition_id(INTEGER) OWNER TO pgbackman_role_rw;
+ALTER FUNCTION delete_backup_definition_id(INTEGER) OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------------
@@ -1479,7 +1480,7 @@ CREATE OR REPLACE FUNCTION delete_force_backup_definition_id(INTEGER) RETURNS BO
   END;
 $$;
 
-ALTER FUNCTION delete_force_backup_job_definition_id(INTEGER) OWNER TO pgbackman_role_rw;
+ALTER FUNCTION delete_force_backup_definition_id(INTEGER) OWNER TO pgbackman_role_rw;
 
 -- ------------------------------------------------------------
 -- Function: delete_backup_job_definition_database()
@@ -1523,7 +1524,7 @@ CREATE OR REPLACE FUNCTION delete_backup_definition_dbname(INTEGER,TEXT) RETURNS
   END;
 $$;
 
-ALTER FUNCTION delete_backup_job_definition_database(INTEGER,TEXT) OWNER TO pgbackman_role_rw;
+ALTER FUNCTION delete_backup_definition_dbname(INTEGER,TEXT) OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------------
@@ -1596,7 +1597,7 @@ CREATE OR REPLACE FUNCTION delete_force_backup_definition_dbname(INTEGER,TEXT) R
   END;
 $$;
 
-ALTER FUNCTION delete_force_backup_job_definition_database(INTEGER,TEXT) OWNER TO pgbackman_role_rw;
+ALTER FUNCTION delete_force_backup_definition_dbname(INTEGER,TEXT) OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------------
@@ -2411,6 +2412,7 @@ ALTER VIEW show_backup_definitions OWNER TO pgbackman_role_rw;
 CREATE OR REPLACE VIEW show_backup_catalog AS
    SELECT lpad(a.bck_id::text,12,'0') AS "BckID",
        lpad(a.def_id::text,11,'0') AS "DefID",
+       a.def_id,
        date_trunc('seconds',a.finished) AS "Finished",
        a.backup_server_id,
        get_backup_server_fqdn(a.backup_server_id) AS "Backup server",
