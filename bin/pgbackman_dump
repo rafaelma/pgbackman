@@ -230,7 +230,7 @@ def pg_dump_users(db):
                 logs.logger.critical('The command used to generate the tmp schema dump of the database %s has a return value != 0',global_parameters['dbname'])
 
                 global_parameters['execution_status'] = 'ERROR'
-                global_parameters['error_message'] = 'pg_dump returncode: ' + proc.returncode
+                global_parameters['error_message'] = 'pg_dump returncode: ' + str(proc.returncode)
                 register_backup_job_catalog(db)  
                 sys.exit(1)
                 
@@ -289,7 +289,7 @@ def pg_dump_users(db):
                 logs.logger.critical('The command used to generate the role dump for the PgSQL node running the database %s has a return value != 0',global_parameters['dbname'])
             
                 global_parameters['execution_status'] = 'ERROR'
-                global_parameters['error_message'] = 'pg_dumpall returncode: ' + proc.returncode
+                global_parameters['error_message'] = 'pg_dumpall returncode: ' + str(proc.returncode)
                 register_backup_job_catalog(db)  
                 sys.exit(1)
 
@@ -374,7 +374,7 @@ def pg_dump_database_config(db):
                 logs.logger.critical('The command used to generate the dbconfig dump for the PgSQL node running the database %s has a return value != 0',global_parameters['dbname'])
             
                 global_parameters['execution_status'] = 'ERROR'
-                global_parameters['error_message'] = 'pg_dumpall returncode: ' + proc.returncode
+                global_parameters['error_message'] = 'pg_dumpall returncode: ' + str(proc.returncode)
                 register_backup_job_catalog(db)  
                 sys.exit(1)
             
