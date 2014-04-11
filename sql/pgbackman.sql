@@ -1151,7 +1151,7 @@ CREATE OR REPLACE FUNCTION update_backup_server(INTEGER,TEXT) RETURNS VOID
   END;
 $$;
 
-ALTER FUNCTION update_backup_server(INTEGER) OWNER TO pgbackman_role_rw;
+ALTER FUNCTION update_backup_server(INTEGER,TEXT) OWNER TO pgbackman_role_rw;
 
 
 
@@ -1269,6 +1269,55 @@ END;
 $$;
 
 ALTER FUNCTION delete_pgsql_node(INTEGER) OWNER TO pgbackman_role_rw;
+
+-- ------------------------------------------------------------
+-- Function: update_pgsql_node()
+--
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION update_pgsql_node(INTEGER,INTEGER,TEXT,TEXT,TEXT) RETURNS VOID
+ LANGUAGE plpgsql 
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ DECLARE
+  pgsql_node_id_ ALIAS FOR $1;
+  pgport_ ALIAS FOR $2;
+  admin_user_ ALIAS FOR $3;
+  status_ ALIAS FOR $4;
+  remarks_ ALIAS FOR $5;
+  node_cnt INTEGER;
+
+  v_msg     TEXT;
+  v_detail  TEXT;
+  v_context TEXT;
+ BEGIN
+
+   SELECT count(*) FROM pgsql_node WHERE node_id = pgsql_node_id_ INTO node_cnt;
+
+   IF node_cnt != 0 THEN
+
+     EXECUTE 'UPDATE pgsql_node SET pgport = $2, admin_user = $3, status = $4, remarks = $5 WHERE node_id = $1'
+     USING pgsql_node_id_,
+     	   pgport_,
+	   admin_user_,
+	   status_,
+     	   remarks_;
+   
+    ELSE
+      RAISE EXCEPTION 'PgSQL node % does not exist',pgsql_node_id_; 
+    END IF;
+	   
+   EXCEPTION WHEN others THEN
+   	GET STACKED DIAGNOSTICS	
+            v_msg     = MESSAGE_TEXT,
+            v_detail  = PG_EXCEPTION_DETAIL,
+            v_context = PG_EXCEPTION_CONTEXT;
+        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \nCONTEXT: % \n----------------------------------------------\n', v_msg, v_detail, v_context;
+  END;
+$$;
+
+ALTER FUNCTION update_pgsql_node(INTEGER,INTEGER,TEXT,TEXT,TEXT) OWNER TO pgbackman_role_rw;
 
 
 
@@ -2472,7 +2521,7 @@ CREATE OR REPLACE VIEW show_backup_catalog AS
 
 ALTER VIEW show_backup_catalog OWNER TO pgbackman_role_rw;
 
-CREATE OR REPLACE VIEW show_backup_job_details AS
+CREATE OR REPLACE VIEW show_backup_details AS
    SELECT lpad(a.bck_id::text,12,'0') AS "BckID",
        a.bck_id AS bck_id,
        date_trunc('seconds',a.registered) AS "Registered",
@@ -2508,7 +2557,7 @@ CREATE OR REPLACE VIEW show_backup_job_details AS
    JOIN backup_job_definition b ON a.def_id = b.def_id 
    ORDER BY "Finished" DESC,backup_server_id,pgsql_node_id,"DBname","Code","Status";
 
-ALTER VIEW show_backup_job_details OWNER TO pgbackman_role_rw;
+ALTER VIEW show_backup_details OWNER TO pgbackman_role_rw;
 
 CREATE OR REPLACE VIEW get_catalog_entries_to_delete AS
   SELECT del_id,

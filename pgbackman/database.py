@@ -1730,3 +1730,26 @@ class pgbackman_db():
         except psycopg2.Error as e:
             raise e
     
+    # ############################################
+    # Method 
+    # ############################################
+                      
+    def update_pgsql_node(self,pgsql_node_id,port,admin_user,status,remarks):
+        """A function to update a PgSQL node"""
+
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT update_pgsql_node(%s,%s,%s,%s,%s)',(pgsql_node_id,port,admin_user,status,remarks))
+                    self.conn.commit()                        
+              
+                except psycopg2.Error as e:
+                    raise e
+                    
+            self.pg_close()
+   
+        except psycopg2.Error as e:
+            raise e
+    

@@ -1629,14 +1629,14 @@ class pgbackman_cli(cmd.Cmd):
     def do_update_backup_server(self,args):
         """
         DESCRIPTION:
-        This command update the information of a backup server
+        This command updates backup server information
 
         COMMAND:
         update_backup_server [SrvID | FQDN] [remarks]
 
         """    
 
-               #
+        #
         # If a parameter has more than one token, it has to be
         # defined between doble quotes
         #
@@ -1736,9 +1736,131 @@ class pgbackman_cli(cmd.Cmd):
 
     def do_update_pgsql_node(self,args):
         """
-        update_pgsql_node
+        DESCRIPTION:
+        This command updates PgSQL node information
+
+        COMMAND:
+        update_pgsql_node [NodeID | FQDN] [pgport] [admin_user] [status] [remarks]
 
         """    
+
+        #
+        # If a parameter has more than one token, it has to be
+        # defined between doble quotes
+        #
+        
+        try: 
+            arg_list = shlex.split(args)
+        
+        except ValueError as e:
+            print "\n[ERROR]: ",e,"\n"
+            return False
+            
+        try:
+            port_default = self.db.get_default_pgsql_node_parameter("pgport")
+            admin_user_default = self.db.get_default_pgsql_node_parameter("admin_user")
+            status_default = self.db.get_default_pgsql_node_parameter("pgsql_node_status")
+            
+        except Exception as e:
+            print "\n[ERROR]: Problems getting default values for parameters\n",e 
+            return False
+
+        #
+        # Command without parameters
+        #
+        
+        if len(arg_list) == 0:
+            
+            ack = ""
+
+            print "--------------------------------------------------------"
+            pgsql_node = raw_input("# NodeID / FQDN []: ")
+            port = raw_input("# Port [" + port_default + "]: ")
+            admin_user = raw_input("# Admin user [" + admin_user_default + "]: ")
+            status = raw_input("# Status[" + status_default + "]: ")
+            remarks = raw_input("# Remarks []: ")
+            print
+
+            while ack != "yes" and ack != "no":
+                ack = raw_input("# Are all values to update correct (yes/no): ")
+
+            print "--------------------------------------------------------"
+
+            if port == "":
+                port = port_default
+
+            if admin_user == "":
+                admin_user = admin_user_default
+                
+            if status == "":
+                status = status_default
+
+            try:
+                if pgsql_node.isdigit():
+                    pgsql_node_id = pgsql_node
+                else:
+                    pgsql_node_id = self.db.get_pgsql_node_id(pgsql_node)
+
+            except Exception as e:
+                print "\n[ERROR]: ",e 
+                return False
+
+            if ack.lower() == "yes":
+                if self.check_port(port):  
+                    try:
+                        self.db.update_pgsql_node(pgsql_node_id,port.strip(),admin_user.lower().strip(),status.upper().strip(),remarks.strip())
+                        print "\n[Done]\n"
+
+                    except Exception as e:
+                        print '\n[ERROR]: Could not update this PgSQL node\n',e
+
+            elif ack.lower() == "no":
+                print "\n[Aborted]\n"
+            
+    
+        #
+        # Command with the 2 parameters that can be defined.
+        # Server backup and remarks
+        #
+                
+        elif len(arg_list) == 5:
+            
+            pgsql_node = arg_list[0]
+            port = arg_list[1]
+            admin_user = arg_list[2]
+            status = arg_list[3]
+            remarks = arg_list[4]
+            
+            if port == "":
+                port = port_default
+
+            if admin_user == "":
+                admin_user = admin_user_default
+                
+            if status == "":
+                status = status_default
+
+            try:
+                if pgsql_node.isdigit():
+                    pgsql_node_id = pgsql_node
+                else:
+                    pgsql_node_id = self.db.get_pgsql_node_id(pgsql_node)
+
+            except Exception as e:
+                print "\n[ERROR]: ",e 
+                return False
+
+            if self.check_port(port):  
+                try:
+                    self.db.update_pgsql_node(pgsql_node_id,port.strip(),admin_user.lower().strip(),status.upper().strip(),remarks.strip())
+                    print "\n[Done]\n"
+
+                except Exception as e:
+                    print '\n[ERROR]: Could not update this PgSQL node\n',e
+                
+        else:
+            print "\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n"
+
 
     # ############################################
     # Method do_update_pgsql_node
