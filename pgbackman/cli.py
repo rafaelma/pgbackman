@@ -1628,9 +1628,96 @@ class pgbackman_cli(cmd.Cmd):
 
     def do_update_backup_server(self,args):
         """
-        update_backup_server
+        DESCRIPTION:
+        This command update the information of a backup server
+
+        COMMAND:
+        update_backup_server [SrvID | FQDN] [remarks]
 
         """    
+
+               #
+        # If a parameter has more than one token, it has to be
+        # defined between doble quotes
+        #
+        
+        try: 
+            arg_list = shlex.split(args)
+        
+        except ValueError as e:
+            print "\n[ERROR]: ",e,"\n"
+            return False
+                
+        #
+        # Command without parameters
+        #
+        
+        if len(arg_list) == 0:
+            
+            ack = ""
+            
+            print "--------------------------------------------------------"
+            backup_server = raw_input("# SrvID / FQDN []: ")
+            remarks = raw_input("# Remarks []: ")
+            print
+
+            while ack != "yes" and ack != "no":
+                ack = raw_input("# Are all values to update correct (yes/no): ")
+
+            print "--------------------------------------------------------"
+
+            try:
+                if backup_server.isdigit():
+                    backup_server_id = backup_server
+                else:
+                    backup_server_id = self.db.get_backup_server_id(backup_server)
+
+            except Exception as e:
+                print "\n[ERROR]: ",e 
+                return False
+
+            if ack.lower() == "yes":
+                try:
+                    self.db.update_backup_server(backup_server_id,remarks.strip())
+                    print "\n[Done]\n"
+
+                except Exception as e:
+                    print '\n[ERROR]: Could not update this backup server\n',e
+
+            elif ack.lower() == "no":
+                print "\n[Aborted]\n"
+            
+    
+        #
+        # Command with the 2 parameters that can be defined.
+        # Server backup and remarks
+        #
+                
+        elif len(arg_list) == 2:
+            
+            backup_server = arg_list[0]
+            remarks = arg_list[1]
+            
+            try:
+                if backup_server.isdigit():
+                    backup_server_id = backup_server
+                else:
+                    backup_server_id = self.db.get_backup_server_id(backup_server)
+
+            except Exception as e:
+                print "\n[ERROR]: ",e 
+                return False
+
+            try:
+                self.db.update_backup_server(backup_server_id,remarks.strip())
+                print "\n[Done]\n"
+                
+            except Exception as e:
+                print '\n[ERROR]: Could not update this backup server\n',e
+                
+        else:
+            print "\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n"
+        
 
     # ############################################
     # Method do_update_backup_server

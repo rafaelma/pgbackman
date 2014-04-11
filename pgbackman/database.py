@@ -1707,3 +1707,26 @@ class pgbackman_db():
         except psycopg2.Error as e:
             raise e
 
+    # ############################################
+    # Method 
+    # ############################################
+                      
+    def update_backup_server(self,backup_server_id,remarks):
+        """A function to update a backup server"""
+
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT update_backup_server(%s,%s)',(backup_server_id,remarks))
+                    self.conn.commit()                        
+              
+                except psycopg2.Error as e:
+                    raise e
+                    
+            self.pg_close()
+   
+        except psycopg2.Error as e:
+            raise e
+    

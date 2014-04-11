@@ -1110,6 +1110,49 @@ $$;
 
 ALTER FUNCTION delete_backup_server(INTEGER) OWNER TO pgbackman_role_rw;
 
+-- ------------------------------------------------------------
+-- Function: update_backup_server()
+--
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION update_backup_server(INTEGER,TEXT) RETURNS VOID
+ LANGUAGE plpgsql 
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ DECLARE
+  backup_server_id_ ALIAS FOR $1;
+  remarks_ ALIAS FOR $2;
+  server_cnt INTEGER;
+
+  v_msg     TEXT;
+  v_detail  TEXT;
+  v_context TEXT;
+ BEGIN
+
+   SELECT count(*) FROM backup_server WHERE server_id = backup_server_id_ INTO server_cnt;
+
+   IF server_cnt != 0 THEN
+
+     EXECUTE 'UPDATE backup_server SET remarks = $2 WHERE server_id = $1'
+     USING backup_server_id_,
+     	   remarks_;
+   
+    ELSE
+      RAISE EXCEPTION 'Backup server % does not exist',backup_server_id_; 
+    END IF;
+	   
+   EXCEPTION WHEN others THEN
+   	GET STACKED DIAGNOSTICS	
+            v_msg     = MESSAGE_TEXT,
+            v_detail  = PG_EXCEPTION_DETAIL,
+            v_context = PG_EXCEPTION_CONTEXT;
+        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \nCONTEXT: % \n----------------------------------------------\n', v_msg, v_detail, v_context;
+  END;
+$$;
+
+ALTER FUNCTION update_backup_server(INTEGER) OWNER TO pgbackman_role_rw;
+
 
 
 -- ------------------------------------------------------------
