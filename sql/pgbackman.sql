@@ -1319,6 +1319,129 @@ $$;
 
 ALTER FUNCTION update_pgsql_node(INTEGER,INTEGER,TEXT,TEXT,TEXT) OWNER TO pgbackman_role_rw;
 
+-- ------------------------------------------------------------
+-- Function: update_pgsql_node()
+--
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION update_pgsql_node_config(INTEGER,TEXT,TEXT,TEXT,TEXT,TEXT,TEXT,INTERVAL,INTEGER,TEXT,TEXT,TEXT,TEXT,TEXT,INTEGER,TEXT,TEXT,TEXT) RETURNS VOID
+ LANGUAGE plpgsql 
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ DECLARE
+  pgsql_node_id_ ALIAS FOR $1;
+  backup_minutes_interval_ ALIAS FOR $2;
+  backup_hours_interval_ ALIAS FOR $3;
+  backup_weekday_cron_ ALIAS FOR $4;
+  backup_month_cron_ ALIAS FOR $5;	
+  backup_day_month_cron_ ALIAS FOR $6;
+  backup_code_ ALIAS FOR $7;
+  retention_period_ ALIAS FOR $8;
+  retention_redundancy_ ALIAS FOR $9;
+  extra_parameters_ ALIAS FOR $10;
+  backup_job_status_ ALIAS FOR $11;
+  domain_ ALIAS FOR $12;
+  logs_email_ ALIAS FOR $13;
+  admin_user_ ALIAS FOR $14;
+  pgport_ ALIAS FOR $15;
+  pgnode_backup_partition_ ALIAS FOR $16;
+  pgnode_crontab_file_ ALIAS FOR $17;
+  pgsql_node_status_ ALIAS FOR $18;
+
+  node_cnt INTEGER;
+  v_msg     TEXT;
+  v_detail  TEXT;
+  v_context TEXT;
+ BEGIN
+
+   SELECT count(*) FROM pgsql_node WHERE node_id = pgsql_node_id_ INTO node_cnt;
+
+   IF node_cnt != 0 THEN
+
+     EXECUTE 'UPDATE pgsql_node_config SET value = $2 WHERE node_id = $1 AND parameter = ''backup_minutes_interval'''
+     USING pgsql_node_id_,
+     	   backup_minutes_interval_;
+  	  
+     EXECUTE 'UPDATE pgsql_node_config SET value = $2 WHERE node_id = $1 AND parameter = ''backup_hours_interval'''
+     USING pgsql_node_id_,
+     	   backup_hours_interval_;
+
+    EXECUTE 'UPDATE pgsql_node_config SET value = $2 WHERE node_id = $1 AND parameter = ''backup_weekday_cron'''
+     USING pgsql_node_id_,
+     	   backup_weekday_cron_;
+
+    EXECUTE 'UPDATE pgsql_node_config SET value = $2 WHERE node_id = $1 AND parameter = ''backup_month_cron'''
+     USING pgsql_node_id_,
+     	   backup_month_cron_;
+
+    EXECUTE 'UPDATE pgsql_node_config SET value = $2 WHERE node_id = $1 AND parameter = ''backup_day_month_cron'''
+     USING pgsql_node_id_,
+     	   backup_day_month_cron_;
+
+    EXECUTE 'UPDATE pgsql_node_config SET value = $2 WHERE node_id = $1 AND parameter = ''backup_code'''
+     USING pgsql_node_id_,
+     	   backup_code_;
+
+    EXECUTE 'UPDATE pgsql_node_config SET value = $2 WHERE node_id = $1 AND parameter = ''retention_period'''
+     USING pgsql_node_id_,
+     	   retention_period_;
+
+    EXECUTE 'UPDATE pgsql_node_config SET value = $2 WHERE node_id = $1 AND parameter = ''retention_redundancy'''
+     USING pgsql_node_id_,
+     	   retention_redundancy_;
+
+    EXECUTE 'UPDATE pgsql_node_config SET value = $2 WHERE node_id = $1 AND parameter = ''extra_parameters'''
+     USING pgsql_node_id_,
+     	   extra_parameters_;
+
+    EXECUTE 'UPDATE pgsql_node_config SET value = $2 WHERE node_id = $1 AND parameter = ''backup_job_status'''
+     USING pgsql_node_id_,
+     	   backup_job_status_;
+
+    EXECUTE 'UPDATE pgsql_node_config SET value = $2 WHERE node_id = $1 AND parameter = ''domain'''
+     USING pgsql_node_id_,
+     	   domain_;
+
+    EXECUTE 'UPDATE pgsql_node_config SET value = $2 WHERE node_id = $1 AND parameter = ''logs_email'''
+     USING pgsql_node_id_,
+     	   logs_email_;
+
+    EXECUTE 'UPDATE pgsql_node_config SET value = $2 WHERE node_id = $1 AND parameter = ''admin_user'''
+     USING pgsql_node_id_,
+     	   admin_user_;
+
+    EXECUTE 'UPDATE pgsql_node_config SET value = $2 WHERE node_id = $1 AND parameter = ''pgport'''
+     USING pgsql_node_id_,
+     	   pgport_;
+
+    EXECUTE 'UPDATE pgsql_node_config SET value = $2 WHERE node_id = $1 AND parameter = ''pgnode_backup_partition'''
+     USING pgsql_node_id_,
+     	   pgnode_backup_partition_;
+
+    EXECUTE 'UPDATE pgsql_node_config SET value = $2 WHERE node_id = $1 AND parameter = ''pgnode_crontab_file'''
+     USING pgsql_node_id_,
+     	   pgnode_crontab_file_;
+
+    EXECUTE 'UPDATE pgsql_node_config SET value = $2 WHERE node_id = $1 AND parameter = ''pgsql_node_status'''
+     USING pgsql_node_id_,
+     	   pgsql_node_status_;
+
+    ELSE
+      RAISE EXCEPTION 'PgSQL node % does not exist',pgsql_node_id_; 
+    END IF;
+	   
+   EXCEPTION WHEN others THEN
+   	GET STACKED DIAGNOSTICS	
+            v_msg     = MESSAGE_TEXT,
+            v_detail  = PG_EXCEPTION_DETAIL,
+            v_context = PG_EXCEPTION_CONTEXT;
+        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \nCONTEXT: % \n----------------------------------------------\n', v_msg, v_detail, v_context;
+  END;
+$$;
+
+ALTER FUNCTION update_pgsql_node_config(INTEGER,TEXT,TEXT,TEXT,TEXT,TEXT,TEXT,INTERVAL,INTEGER,TEXT,TEXT,TEXT,TEXT,TEXT,INTEGER,TEXT,TEXT,TEXT) OWNER TO pgbackman_role_rw;
+
 
 
 -- ------------------------------------------------------------

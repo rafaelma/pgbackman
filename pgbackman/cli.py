@@ -1893,6 +1893,329 @@ class pgbackman_cli(cmd.Cmd):
         print "Not implemented"
         print "See: help update_backup_server_config"
         print
+        
+        #
+        # If a parameter has more than one token, it has to be
+        # defined between doble quotes
+        #
+        
+        try: 
+            arg_list = shlex.split(args)
+        
+        except ValueError as e:
+            print "\n[ERROR]: ",e,"\n"
+            return False
+            
+        
+        #
+        # Command without parameters
+        #
+        
+        if len(arg_list) == 0:
+            
+            ack = ""
+
+            print "--------------------------------------------------------"
+            pgsql_node = raw_input("# NodeID / FQDN []: ")
+            print
+
+            try:
+                if pgsql_node.isdigit():
+                    pgsql_node_fqdn = self.db.get_pgsql_node_fqdn(pgsql_node)
+                    pgsql_node_id = pgsql_node
+                else:
+                    pgsql_node_id = self.db.get_pgsql_node_id(pgsql_node)
+                    
+            except Exception as e:
+                print "\n[ERROR]: ",e 
+                return False
+        
+            try:
+                backup_minutes_interval_default = self.db.get_pgsql_node_parameter(pgsql_node_id,"backup_minutes_interval")
+                backup_hours_interval_default = self.db.get_pgsql_node_parameter(pgsql_node_id,"backup_hours_interval")
+                backup_weekday_cron_default = self.db.get_pgsql_node_parameter(pgsql_node_id,"backup_weekday_cron")
+                backup_month_cron_default = self.db.get_pgsql_node_parameter(pgsql_node_id,"backup_month_cron")
+                backup_day_month_cron_default = self.db.get_pgsql_node_parameter(pgsql_node_id,"backup_day_month_cron")
+
+                backup_code_default = self.db.get_pgsql_node_parameter(pgsql_node_id,"backup_code")
+                retention_period_default = self.db.get_pgsql_node_parameter(pgsql_node_id,"retention_period")
+                retention_redundancy_default = self.db.get_pgsql_node_parameter(pgsql_node_id,"retention_redundancy")
+                extra_parameters_default = self.db.get_pgsql_node_parameter(pgsql_node_id,"extra_parameters")
+                backup_job_status_default = self.db.get_pgsql_node_parameter(pgsql_node_id,"backup_job_status")
+
+                domain_default = self.db.get_pgsql_node_parameter(pgsql_node_id,"domain")
+                logs_email_default = self.db.get_pgsql_node_parameter(pgsql_node_id,"logs_email")
+                admin_user_default = self.db.get_pgsql_node_parameter(pgsql_node_id,"admin_user")
+                pgport_default = self.db.get_pgsql_node_parameter(pgsql_node_id,"pgport")
+
+                pgnode_backup_partition_default = self.db.get_pgsql_node_parameter(pgsql_node_id,"pgnode_backup_partition")
+                pgnode_crontab_file_default = self.db.get_pgsql_node_parameter(pgsql_node_id,"pgnode_crontab_file")
+                pgsql_node_status_default = self.db.get_pgsql_node_parameter(pgsql_node_id,"pgsql_node_status")
+                                
+            except Exception as e:
+                print "\n[ERROR]: Problems getting default values for parameters\n",e 
+                return False
+
+            backup_minutes_interval = raw_input("# Minutes cron interval [" + backup_minutes_interval_default + "]: ")
+            backup_hours_interval = raw_input("# Hours cron interval [" + backup_hours_interval_default + "]: ")
+            backup_weekday_cron = raw_input("# Weekday cron [" + backup_weekday_cron_default + "]: ")
+            backup_month_cron = raw_input("# Month cron [" + backup_month_cron_default + "]: ")
+            backup_day_month_cron = raw_input("# Day-month cron [" + backup_day_month_cron_default + "]: ")
+            print
+            backup_code = raw_input("# Backup code [" + backup_code_default + "]: ")
+            retention_period = raw_input("# Retention period [" + retention_period_default + "]: ")
+            retention_redundancy = raw_input("# Retention redundancy [" + retention_redundancy_default + "]: ")
+            extra_parameters = raw_input("# Extra parameters [" + extra_parameters_default + "]: ")
+            backup_job_status = raw_input("# Job status [" + backup_job_status_default + "]: ")
+            print
+            domain = raw_input("# Domain [" + domain_default + "]: ")
+            logs_email = raw_input("# Logs e-mail [" + logs_email_default + "]: ")
+            admin_user = raw_input("# PostgreSQL admin user [" + admin_user_default + "]: ")
+            pgport = raw_input("# Port [" + pgport_default + "]: ")
+            print
+            pgnode_backup_partition = raw_input("# Backup directory [" + pgnode_backup_partition_default + "]: ")
+            pgnode_crontab_file = raw_input("# Crontab file [" + pgnode_crontab_file_default + "]: ")
+            pgsql_node_status = raw_input("# PgSQL node status [" + pgsql_node_status_default + "]: ")
+            print
+
+            while ack != "yes" and ack != "no":
+                ack = raw_input("# Are all values to update correct (yes/no): ")
+
+            print "--------------------------------------------------------"
+
+            if backup_minutes_interval != '':
+                if not self.check_minutes_interval(backup_minutes_interval):
+                    print "\n[WARNING]: Wrong minutes interval format, using default." 
+                    backup_minutes_interval = backup_minutes_interval_default
+            else:
+                backup_minutes_interval = backup_minutes_interval_default
+                
+            if backup_hours_interval != '':
+                if not self.check_hours_interval(backup_hours_interval):
+                    print "\n[WARNING]: Wrong hours interval format, using default." 
+                    backup_hours_interval = backup_hours_interval_default
+            else:
+                backup_hours_interval = backup_hours_interval_default
+
+            if backup_weekday_cron == '': 
+                backup_weekday_cron = backup_weekday_cron_default
+
+            if backup_month_cron == '':
+                backup_month_cron = backup_month_cron_default
+
+            if backup_day_month_cron == '':
+                backup_day_month_cron = backup_day_month_cron_default
+
+            if  backup_code != '':
+                if backup_code.upper() not in ['CLUSTER','FULL','DATA','SCHEMA']:
+                    print "\n[WARNING]: Wrong backup code, using default."
+                    backup_code = backup_code_default
+            else:
+                backup_code = backup_code_default
+
+            if retention_period == '':
+                retention_period = retention_period_default
+
+            if retention_redundancy == '':
+                retention_redundancy = retention_redundancy_default
+
+            if extra_parameters == '':
+                extra_parameters = extra_parameters_default
+
+            if backup_job_status != '':
+                if backup_job_status.upper() not in ['ACTIVE','STOPPED']:
+                    print "\n[WARNING]: Wrong job status, using default."
+                    backup_job_status = backup_job_status_default
+            else:
+                backup_job_status = backup_job_status_default
+
+            if domain == '':
+                domain = domain_default
+
+            if logs_email == '':
+                logs_email = logs_email_default
+
+            if admin_user == '':
+                admin_user = admin_user_default
+
+            if not pgport.isdigit() or pgport == '':
+                pgport = pgport_default
+
+            if pgnode_backup_partition == '':
+                pgnode_backup_partition = pgnode_backup_partition_default
+
+            if pgnode_crontab_file == '':
+                pgnode_crontab_file = pgnode_crontab_file_default
+
+            if pgsql_node_status != '':
+                if pgsql_node_status.upper() not in ['RUNNING','STOPPED']:
+                    print "\n[WARNING]: Wrong node status, using default."
+                    pgsql_node_status = pgsql_node_status_default
+            else:
+                pgsql_node_status = pgsql_node_status_default
+
+            if ack.lower() == "yes":
+                try:
+                    self.db.update_pgsql_node_config(pgsql_node_id,backup_minutes_interval.strip(),backup_hours_interval.strip(),backup_weekday_cron.strip(),
+                                                     backup_month_cron.strip(),backup_day_month_cron.strip(),backup_code.strip().upper(),retention_period.strip(),
+                                                     retention_redundancy.strip(),extra_parameters.strip(),backup_job_status.strip().upper(),domain.strip(),
+                                                     logs_email.strip(),admin_user.strip(),pgport,pgnode_backup_partition.strip(),pgnode_crontab_file.strip(),pgsql_node_status.strip().upper())
+                    print "\n[Done]\n"
+
+                except Exception as e:
+                    print '\n[ERROR]: Could not update the default configuration for this PgSQL node \n',e
+
+            elif ack.lower() == "no":
+                print "\n[Aborted]\n"
+            
+    
+        #
+        # Command with the 18 parameters that can be defined.
+        # Server backup and remarks
+        #
+                
+        elif len(arg_list) == 18:
+            
+            pgsql_node = arg_list[0]
+
+            try:
+                if pgsql_node.isdigit():
+                    pgsql_node_fqdn = self.db.get_pgsql_node_fqdn(pgsql_node)
+                    pgsql_node_id = pgsql_node
+                else:
+                    pgsql_node_id = self.db.get_pgsql_node_id(pgsql_node)
+                    
+            except Exception as e:
+                print "\n[ERROR]: ",e 
+                return False
+        
+            try:
+                backup_minutes_interval_default = self.db.get_pgsql_node_parameter(pgsql_node_id,"backup_minutes_interval")
+                backup_hours_interval_default = self.db.get_pgsql_node_parameter(pgsql_node_id,"backup_hours_interval")
+                backup_weekday_cron_default = self.db.get_pgsql_node_parameter(pgsql_node_id,"backup_weekday_cron")
+                backup_month_cron_default = self.db.get_pgsql_node_parameter(pgsql_node_id,"backup_month_cron")
+                backup_day_month_cron_default = self.db.get_pgsql_node_parameter(pgsql_node_id,"backup_day_month_cron")
+
+                backup_code_default = self.db.get_pgsql_node_parameter(pgsql_node_id,"backup_code")
+                retention_period_default = self.db.get_pgsql_node_parameter(pgsql_node_id,"retention_period")
+                retention_redundancy_default = self.db.get_pgsql_node_parameter(pgsql_node_id,"retention_redundancy")
+                extra_parameters_default = self.db.get_pgsql_node_parameter(pgsql_node_id,"extra_parameters")
+                backup_job_status_default = self.db.get_pgsql_node_parameter(pgsql_node_id,"backup_job_status")
+
+                domain_default = self.db.get_pgsql_node_parameter(pgsql_node_id,"domain")
+                logs_email_default = self.db.get_pgsql_node_parameter(pgsql_node_id,"logs_email")
+                admin_user_default = self.db.get_pgsql_node_parameter(pgsql_node_id,"admin_user")
+                pgport_default = self.db.get_pgsql_node_parameter(pgsql_node_id,"pgport")
+
+                pgnode_backup_partition_default = self.db.get_pgsql_node_parameter(pgsql_node_id,"pgnode_backup_partition")
+                pgnode_crontab_file_default = self.db.get_pgsql_node_parameter(pgsql_node_id,"pgnode_crontab_file")
+                pgsql_node_status_default = self.db.get_pgsql_node_parameter(pgsql_node_id,"pgsql_node_status")
+                
+            except Exception as e:
+                print "\n[ERROR]: Problems getting default values for parameters\n",e 
+                return False
+
+            backup_minutes_interval = arg_list[1]
+            backup_hours_interval = arg_list[2]
+            backup_weekday_cron = arg_list[3]        
+            backup_month_cron = arg_list[4]
+            backup_day_month_cron = arg_list[5]
+            backup_code = arg_list[6]
+            retention_period = arg_list[7]
+            retention_redundancy = arg_list[8]
+            extra_parameters = arg_list[9]
+            backup_job_status = arg_list[10]
+            domain = arg_list[11]
+            logs_email = arg_list[12]
+            admin_user = arg_list[13]
+            pgport = arg_list[14]
+            pgnode_backup_partition = arg_list[15]
+            pgnode_crontab_file = arg_list[16]
+            pgsql_node_status = arg_list[17]
+
+            if backup_minutes_interval != '':
+                if not self.check_minutes_interval(backup_minutes_interval):
+                    print "\n[WARNING]: Wrong minutes interval format, using default." 
+                    backup_minutes_interval = backup_minutes_interval_default
+            else:
+                backup_minutes_interval = backup_minutes_interval_default
+                
+            if backup_hours_interval == '':
+                if not self.check_hours_interval(backup_hours_interval):
+                    print "\n[WARNING]: Wrong hours interval format, using default." 
+                    backup_hours_interval = backup_hours_interval_default
+            else:
+                backup_hours_interval = backup_hours_interval_default
+
+            if backup_weekday_cron == '': 
+                backup_weekday_cron = backup_weekday_cron_default
+
+            if backup_month_cron == '':
+                backup_month_cron = backup_month_cron_default
+
+            if backup_day_month_cron == '':
+                backup_day_month_cron = backup_day_month_cron_default
+
+            if  backup_code != '':
+                if backup_code.upper() not in ['CLUSTER','FULL','DATA','SCHEMA']:
+                    print "\n[WARNING]: Wrong backup code, using default."
+                    backup_code = backup_code_default
+            else:
+                backup_code = backup_code_default
+
+            if retention_period == '':
+                retention_period = retention_period_default
+
+            if retention_redundancy == '':
+                retention_redundancy = retention_redundancy_default
+
+            if extra_parameters == '':
+                extra_parameters = extra_parameters_default
+
+            if backup_job_status == '':
+                if backup_job_status.upper() not in ['ACTIVE','STOPPED']:
+                    print "\n[WARNING]: Wrong job status, using default."
+                    backup_job_status = backup_job_status_default
+            else:
+                backup_job_status = backup_job_status_default
+
+            if domain == '':
+                domain = domain_default
+
+            if logs_email == '':
+                logs_email = logs_email_default
+
+            if admin_user == '':
+                admin_user = admin_user_default
+
+            if not pgport.isdigit() or pgport == '':
+                pgport = pgport_default
+
+            if pgnode_backup_partition == '':
+                pgnode_backup_partition = pgnode_backup_partition_default
+
+            if pgnode_crontab_file == '':
+                pgnode_crontab_file = pgnode_crontab_file_default
+
+            if pgsql_node_status == '':
+                if pgsql_node_status.upper() not in ['RUNNING','STOPPED']:
+                    print "\n[WARNING]: Wrong node status, using default."
+                    pgsql_node_status = pgsql_node_status_default
+            else:
+                pgsql_node_status = pgsql_node_status_default
+            
+            try:
+                self.db.update_pgsql_node_config(pgsql_node_id,backup_minutes_interval.strip(),backup_hours_interval.strip(),backup_weekday_cron.strip(),
+                                                 backup_month_cron.strip(),backup_day_month_cron.strip(),backup_code.strip().upper(),retention_period.strip(),
+                                                 retention_redundancy.strip(),extra_parameters.strip(),backup_job_status.strip().upper(),domain.strip(),
+                                                 logs_email.strip(),admin_user.strip(),pgport,pgnode_backup_partition.strip(),pgnode_crontab_file.strip(),pgsql_node_status.strip().upper())
+                print "\n[Done]\n"
+
+            except Exception as e:
+                print '\n[ERROR]: Could not update the default configuration for this PgSQL node \n',e
+                        
+        else:
+            print "\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n"
 
 
     # ############################################
@@ -2111,6 +2434,67 @@ class pgbackman_cli(cmd.Cmd):
     def signal_handler(self,signum, frame):
         cmd.Cmd.onecmd(self,'quit')
         sys.exit(0)
+
+    # ############################################
+    # Method check_minutes_interval()
+    # ############################################
+
+    def check_minutes_interval(self,interval):
+        '''Check if this a valid minute interval, min-min'''
+
+        if len(interval.split('-')) == 2:
+            
+            (a,b) = interval.split('-')
+
+            if a.isdigit() and b.isdigit():
+                min_from = int(a)
+                min_to = int(b)
+
+                if min_from <= min_to:
+                    if min_from >= 0 and min_from <= 59:
+                        if min_to >= 0 and min_to <= 59:
+                            return True
+                        else:
+                            return False
+                    else:
+                        return False
+                else:
+                    return False
+            else:
+                return False
+        else:
+            return False
+
+
+    # ############################################
+    # Method check_hours_interval()
+    # ############################################
+
+    def check_hours_interval(self,interval):
+        '''Check if this a valid hour interval, hour-hour'''
+
+        if len(interval.split('-')) == 2:
+            
+            (a,b) = interval.split('-')
+            
+            if a.isdigit() and b.isdigit():
+                hour_from = int(a)
+                hour_to = int(b)
+
+                if hour_from <= hour_to:
+                    if hour_from >= 0 and hour_from <= 23:
+                        if hour_to >= 0 and hour_to <= 23:
+                            return True
+                        else:
+                            return False
+                    else:
+                        return False
+                else:
+                    return False
+            else:
+                return False
+        else:
+            return False
 
 
     # ############################################
