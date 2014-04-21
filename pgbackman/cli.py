@@ -1379,6 +1379,91 @@ class pgbackman_cli(cmd.Cmd):
         else:
             print "\n[ERROR] - Wrong number of parameters used.\n          Type help or \? to list commands\n"
         
+   # ############################################
+    # Method do_show_backup_definitions
+    # ############################################
+
+    def do_show_snapshot_definitions(self,args):
+        """
+        DESCRIPTION:
+        This command shows all one time snapshot definitions waiting to be run.
+
+        COMMAND:
+        show_snapshot_definitions [SrvID|FQDN] [NodeID|FQDN] [DBname]
+        """
+
+        try: 
+            arg_list = shlex.split(args)
+            
+        except ValueError as e:
+            print "\n[ERROR]: ",e,"\n"
+            return False
+        
+        if len(arg_list) == 0:
+            
+            print "--------------------------------------------------------"
+            server_id = raw_input("# SrvID / FQDN [all]: ")
+            node_id = raw_input("# NodeID / FQDN [all]: ")
+            dbname = raw_input("# DBname [all]: ")
+            print "--------------------------------------------------------"
+
+            if server_id == '' or server_id == 'all':
+                server_list = None
+            else:
+                server_list = server_id.strip().replace(' ','').split(',')
+
+            if node_id == '' or node_id == 'all':
+                node_list = None
+            else:
+                node_list = node_id.strip().replace(' ','').split(',')
+
+            if dbname == '' or dbname == 'all':
+                dbname_list = None
+            else:
+                dbname_list = dbname.strip().replace(' ','').split(',')
+                
+            try:
+                self.db.show_snapshot_definitions(server_list,node_list,dbname_list)
+                                                    
+            except Exception as e:
+                print "\n[ERROR]: ",e
+
+        elif len(arg_list) == 3:
+
+            server_id = arg_list[0]
+            node_id = arg_list[1]
+            dbname = arg_list[2]
+
+            if server_id == '' or server_id == 'all':
+                server_list = None
+            else:
+                server_list = server_id.strip().replace(' ','').split(',')
+
+            if node_id == '' or node_id == 'all':
+                node_list = None
+            else:
+                node_list = node_id.strip().replace(' ','').split(',')
+
+            if dbname == '' or dbname == 'all':
+                dbname_list = None
+            else:
+                dbname_list = dbname.strip().replace(' ','').split(',')
+
+            print "--------------------------------------------------------"
+            print "# SrvID / FQDN: " + server_id
+            print "# NodeID / FQDN: " + node_id
+            print "# DBname: " + dbname
+            print "--------------------------------------------------------"
+
+            try:
+                self.db.show_sbapshot_definitions(server_list,node_list,dbname_list)
+                
+            except Exception as e:
+                print "\n[ERROR]: ",e
+
+        else:
+            print "\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n"
+        
 
     # ############################################
     # Method do_show_backup_details

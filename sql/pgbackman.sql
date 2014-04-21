@@ -389,7 +389,7 @@ ALTER TABLE backup_job_definition OWNER TO pgbackman_role_rw;
 --
 -- Attributes:
 --
--- @def_id
+-- @snapshot_id
 -- @registered
 -- @backup_server_id
 -- @pgsql_node_id
@@ -2726,7 +2726,7 @@ ALTER FUNCTION  delete_backup_job_catalog(INTEGER) OWNER TO pgbackman_role_rw;
 
 CREATE OR REPLACE VIEW show_jobs_queue AS 
 SELECT a.id AS "JobID",
-       a.registered AS "Registered",
+       date_trunc('seconds',a.registered) AS "Registered",
        a.backup_server_id AS "SrvID",
        b.hostname || '.' || b.domain_name AS "Backup server",
        a.pgsql_node_id AS "NodeID",
@@ -2911,7 +2911,7 @@ CREATE OR REPLACE VIEW show_empty_backup_job_catalogs AS
 WITH def_id_list AS (
 SELECT DISTINCT ON (a.def_id)
        lpad(b.def_id::text,11,'0') AS "DefID",
-       b.registered AS "Registered",
+       date_trunc('seconds',b.registered) AS "Registered",
        b.backup_server_id,
        get_backup_server_fqdn(b.backup_server_id) AS "Backup server",
        b.pgsql_node_id,
@@ -2931,5 +2931,24 @@ SELECT * FROM def_id_list
 ORDER BY "Registered",backup_server_id,pgsql_node_id,"DBname","Code","Status";
 
 ALTER VIEW show_empty_backup_job_catalogs OWNER TO pgbackman_role_rw;
+
+
+CREATE OR REPLACE VIEW show_snapshot_definitions AS
+SELECT lpad(snapshot_id::text,11,'0') AS "SnapshotID",
+       date_trunc('seconds',registered) AS "Registered",
+       backup_server_id,
+       get_backup_server_fqdn(backup_server_id) AS "Backup server",
+       pgsql_node_id,
+       get_pgsql_node_fqdn(pgsql_node_id) AS "PgSQL node",
+       dbname AS "DBname",
+       at_time AS "AT time",
+       backup_code AS "Code",
+       retention_period::text AS "Retention",
+       extra_parameters AS "Parameters"
+FROM snapshot_definition
+ORDER BY backup_server_id,pgsql_node_id,"DBname","Code","AT time";
+
+ALTER VIEW show_snapshot_definitions OWNER TO pgbackman_role_rw;
+
 
 COMMIT;
