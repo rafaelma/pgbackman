@@ -2533,7 +2533,7 @@ CREATE OR REPLACE FUNCTION register_backup_job_catalog(INTEGER,INTEGER,INTEGER,I
   	   pg_dump_dbconfig_log_file_,
   	   global_log_file_,
   	   execution_status_,
-	   execution_method,
+	   execution_method_,
 	   error_message_;
 
    RETURN TRUE;

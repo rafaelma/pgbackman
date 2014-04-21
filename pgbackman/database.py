@@ -567,8 +567,8 @@ class pgbackman_db():
                         x.add_row(["Finished:",str(record[4])])
                         x.add_row(["Duration:",str(record[6])])
                         x.add_row(["Total size:",record[27]])
-                        x.add_row(["Execution status:",record[30]])
-                        x.add_row(["Execution method:",record[29]])
+                        x.add_row(["Execution method:",record[30]])
+                        x.add_row(["Execution status:",record[29]])
                         x.add_row(["",""])
                         x.add_row(["DefID:",record[7]])
                         x.add_row(["DBname:",record[17]])
@@ -590,7 +590,7 @@ class pgbackman_db():
                         x.add_row(["DB config log file:",record[25]])
                         x.add_row(["",""])
                         x.add_row(["On disk until:",str(record[5])])
-                        x.add_row(["Error message:",str(record[30])])
+                        x.add_row(["Error message:",str(record[31])])
                         
                         print x
 
