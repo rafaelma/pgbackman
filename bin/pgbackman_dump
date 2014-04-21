@@ -449,7 +449,9 @@ def get_pgsql_node_release(db,db_pgnode):
              
     logs.logger.debug('PgSQl node version: %s',pgsql_node_version)
 
-    if pgsql_node_version == '903':
+    if pgsql_node_version == '904':
+        pgsql_node_release = '9_4'
+    elif pgsql_node_version == '903':
         pgsql_node_release = '9_3'
     elif pgsql_node_version == '902':
         pgsql_node_release = '9_2'
@@ -457,8 +459,6 @@ def get_pgsql_node_release(db,db_pgnode):
         pgsql_node_release = '9_1'
     elif pgsql_node_version == '900':
         pgsql_node_release = '9_0'
-    elif pgsql_node_version == '804':
-        pgsql_node_release = '8_4'
     else:
         pgsql_node_release = None
 
@@ -528,6 +528,15 @@ def register_backup_job_catalog(db):
 
     global_parameters['backup_stop'] = datetime.datetime.now()
     duration = global_parameters['backup_stop'] - global_parameters['backup_start']
+
+    #
+    # Execution method information
+    #
+
+    if global_parameters['def_id'] == 0:
+        global_parameters['execution_method'] = 'AT'
+    else:
+        global_parameters['execution_method'] = 'CRON'
 
     #
     # pg_dump_file information
@@ -629,6 +638,7 @@ def register_backup_job_catalog(db):
                                        pg_dump_dbconfig_log_file,
                                        global_parameters['global_log_file'],
                                        global_parameters['execution_status'],
+                                       global_parameters['execution_method'],
                                        global_parameters['error_message']
                                        )
     
@@ -664,6 +674,7 @@ def register_backup_job_catalog(db):
                                       pg_dump_dbconfig_log_file + '::' +   
                                       global_parameters['global_log_file'] + '::' + 
                                       global_parameters['execution_status'] + '::' +
+                                      global_parameters['execution_method'] + '::' +
                                       global_parameters['error_message'] +
                                       '\n')
                 

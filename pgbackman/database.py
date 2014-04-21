@@ -524,7 +524,7 @@ class pgbackman_db():
                     else:
                         def_id_sql = ''
                   
-                    self.cur.execute('SELECT \"BckID\",\"DefID\",\"Finished\",backup_server_id AS \"ID.\",\"Backup server\",pgsql_node_id AS \"ID\",\"PgSQL node\",\"DBname\",\"Duration\",\"Size\",\"Code\",\"Status\" FROM show_backup_catalog WHERE TRUE ' + server_sql + node_sql + dbname_sql + def_id_sql)
+                    self.cur.execute('SELECT \"BckID\",\"DefID\",\"Finished\",backup_server_id AS \"ID.\",\"Backup server\",pgsql_node_id AS \"ID\",\"PgSQL node\",\"DBname\",\"Duration\",\"Size\",\"Code\",\"Execution\",\"Status\" FROM show_backup_catalog WHERE TRUE ' + server_sql + node_sql + dbname_sql + def_id_sql)
                                      
                     colnames = [desc[0] for desc in self.cur.description]
                     self.print_results_table(self.cur,colnames,["Finished","Backup server","PgSQL node","DBname","Size"])
@@ -567,7 +567,8 @@ class pgbackman_db():
                         x.add_row(["Finished:",str(record[4])])
                         x.add_row(["Duration:",str(record[6])])
                         x.add_row(["Total size:",record[27]])
-                        x.add_row(["Execution status:",record[29]])
+                        x.add_row(["Execution status:",record[30]])
+                        x.add_row(["Execution method:",record[29]])
                         x.add_row(["",""])
                         x.add_row(["DefID:",record[7]])
                         x.add_row(["DBname:",record[17]])
@@ -971,7 +972,7 @@ class pgbackman_db():
            
     def register_backup_job_catalog(self,def_id,procpid,backup_server_id,pgsql_node_id,dbname,started,finished,duration,pg_dump_file,
                                   pg_dump_file_size,pg_dump_log_file,pg_dump_roles_file,pg_dump_roles_file_size,pg_dump_roles_log_file,
-                                  pg_dump_dbconfig_file,pg_dump_dbconfig_file_size,pg_dump_dbconfig_log_file,global_log_file,execution_status,error_message):
+                                  pg_dump_dbconfig_file,pg_dump_dbconfig_file_size,pg_dump_dbconfig_log_file,global_log_file,execution_status,execution_method,error_message):
         
         """A function to update the backup job catalog"""
 
@@ -981,13 +982,13 @@ class pgbackman_db():
  
             if self.cur:
                 try:
-                    self.cur.execute('SELECT register_backup_job_catalog(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',(def_id,procpid,backup_server_id,pgsql_node_id,dbname,
+                    self.cur.execute('SELECT register_backup_job_catalog(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',(def_id,procpid,backup_server_id,pgsql_node_id,dbname,
                                                                                                                                         started,finished,duration,pg_dump_file,
                                                                                                                                         pg_dump_file_size,pg_dump_log_file,pg_dump_roles_file,
                                                                                                                                         pg_dump_roles_file_size,pg_dump_roles_log_file,
                                                                                                                                         pg_dump_dbconfig_file,pg_dump_dbconfig_file_size,
                                                                                                                                         pg_dump_dbconfig_log_file,global_log_file,execution_status,
-                                                                                                                                        error_message))
+                                                                                                                                        execution_method,error_message))
                     self.conn.commit()                        
                     
                 except psycopg2.Error as e:

@@ -229,6 +229,30 @@ CREATE TABLE job_execution_status(
 ALTER TABLE job_execution_status ADD PRIMARY KEY (code);
 ALTER TABLE job_execution_status OWNER TO pgbackman_role_rw;
 
+
+-- ------------------------------------------------------
+-- Table: job_execution_method
+--
+-- @Description: Job execution methods
+--
+-- Attributes:
+--
+-- @code:
+-- @description:
+-- ------------------------------------------------------
+
+\echo '# [Creating table: job_execution_method]\n'
+
+CREATE TABLE job_execution_method(
+
+  code CHARACTER VARYING(20) NOT NULL,
+  description TEXT
+);
+
+ALTER TABLE job_execution_method ADD PRIMARY KEY (code);
+ALTER TABLE job_execution_method OWNER TO pgbackman_role_rw;
+
+
 -- ------------------------------------------------------
 -- Table: backup_server_default_config
 --
@@ -318,7 +342,6 @@ ALTER TABLE job_queue OWNER TO pgbackman_role_rw;
 -- @registered
 -- @backup_server_id
 -- @pgsql_node_id
--- @pg_version
 -- @dbname
 -- @minutes_cron
 -- @hours_cron
@@ -329,7 +352,6 @@ ALTER TABLE job_queue OWNER TO pgbackman_role_rw;
 -- @encryption: NOT IMPLEMENTED
 -- @retention_period
 -- @retention_redundancy
--- @excluded_tables
 -- @job_status
 -- @remarks
 -- ------------------------------------------------------
@@ -360,6 +382,44 @@ CREATE TABLE backup_job_definition(
 ALTER TABLE backup_job_definition ADD PRIMARY KEY (backup_server_id,pgsql_node_id,dbname,backup_code,extra_parameters);
 ALTER TABLE backup_job_definition OWNER TO pgbackman_role_rw;
 
+-- ------------------------------------------------------
+-- Table: snapshots_definition
+--
+-- @Description: snapshots defined in Pgbackman 
+--
+-- Attributes:
+--
+-- @def_id
+-- @registered
+-- @backup_server_id
+-- @pgsql_node_id
+-- @dbname
+-- @execution_time
+-- @backup_code
+-- @encryption: NOT IMPLEMENTED
+-- @retention_period
+-- @remarks
+-- ------------------------------------------------------
+
+\echo '# [Creating table: snapshot_definition]\n'
+
+CREATE TABLE snapshot_definition(
+
+  snapshot_id BIGSERIAL UNIQUE,
+  registered TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  backup_server_id INTEGER NOT NULL,
+  pgsql_node_id INTEGER NOT NULL,
+  dbname TEXT NOT NULL,
+  execution_time TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  backup_code CHARACTER VARYING(10) NOT NULL,
+  encryption boolean DEFAULT false NOT NULL,
+  retention_period interval DEFAULT '7 days'::interval NOT NULL,
+  extra_parameters TEXT DEFAULT '',
+  remarks TEXT
+);
+
+ALTER TABLE snapshot_definition ADD PRIMARY KEY (backup_server_id,pgsql_node_id,dbname,execution_time,backup_code,extra_parameters);
+ALTER TABLE snapshot_definition OWNER TO pgbackman_role_rw;
 
 -- ------------------------------------------------------
 -- Table: backup_job_catalog
@@ -412,6 +472,7 @@ CREATE TABLE backup_job_catalog(
   pg_dump_dbconfig_log_file TEXT,
   global_log_file TEXT NOT NULL,
   execution_status TEXT,
+  execution_method TEXT,
   error_message TEXT
 );
 
@@ -550,6 +611,8 @@ ALTER TABLE ONLY backup_job_catalog
 ALTER TABLE ONLY backup_job_catalog
     ADD FOREIGN KEY (execution_status) REFERENCES job_execution_status (code) MATCH FULL ON DELETE RESTRICT;
 
+ALTER TABLE ONLY backup_job_catalog
+    ADD FOREIGN KEY (execution_method) REFERENCES job_execution_method (code) MATCH FULL ON DELETE RESTRICT;
 
 -- ------------------------------------------------------
 -- Init
@@ -580,6 +643,12 @@ INSERT INTO job_execution_status (code,description) VALUES ('SUCCEEDED','Job fin
 INSERT INTO job_execution_status (code,description) VALUES ('ERROR','Job finnished with an error');
 INSERT INTO job_execution_status (code,description) VALUES ('WARNING','Job finnished with a warning');
 
+\echo '# [Init: job_execution_method]\n'
+
+INSERT INTO job_execution_method (code,description) VALUES ('CRON','Job startet by CRON');
+INSERT INTO job_execution_method (code,description) VALUES ('AT','Job startet by AT');
+
+
 \echo '# [Init: backup_server_default_config]\n'
 
 INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('root_backup_partition','/srv/pgbackman','Main partition used by pgbackman');
@@ -588,11 +657,11 @@ INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('
 INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('backup_server_status','RUNNING','Default backup server status - *Not used*');
 INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('pgbackman_dump','/usr/bin/pgbackman_dump','Program used to take backup dumps');
 INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('admin_user','postgres','postgreSQL admin user');
+INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('pgsql_bin_9_4','/usr/pgsql-9.4/bin','postgreSQL 9.4 bin directory');
 INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('pgsql_bin_9_3','/usr/pgsql-9.3/bin','postgreSQL 9.3 bin directory');
 INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('pgsql_bin_9_2','/usr/pgsql-9.2/bin','postgreSQL 9.2 bin directory');
 INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('pgsql_bin_9_1','/usr/pgsql-9.1/bin','postgreSQL 9.1 bin directory');
 INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('pgsql_bin_9_0','/usr/pgsql-9.0/bin','postgreSQL 9.0 bin directory');
-INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('pgsql_bin_8_4','/usr/pgsql-8.4/bin','postgreSQL 8.4 bin directory');
 
 
 \echo '# [Init: pgsql_node_default_config]\n'
@@ -2389,7 +2458,7 @@ ALTER FUNCTION get_pgsql_node_admin_user(INTEGER) OWNER TO pgbackman_role_rw;
 --
 -- ------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION register_backup_job_catalog(INTEGER,INTEGER,INTEGER,INTEGER,TEXT,TIMESTAMP WITH TIME ZONE,TIMESTAMP WITH TIME ZONE,INTERVAL,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,TEXT,TEXT) RETURNS BOOLEAN
+CREATE OR REPLACE FUNCTION register_backup_job_catalog(INTEGER,INTEGER,INTEGER,INTEGER,TEXT,TIMESTAMP WITH TIME ZONE,TIMESTAMP WITH TIME ZONE,INTERVAL,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,TEXT,TEXT,TEXT) RETURNS BOOLEAN
  LANGUAGE plpgsql 
  SECURITY INVOKER 
  SET search_path = public, pg_temp
@@ -2415,7 +2484,8 @@ CREATE OR REPLACE FUNCTION register_backup_job_catalog(INTEGER,INTEGER,INTEGER,I
   pg_dump_dbconfig_log_file_ ALIAS FOR $17;
   global_log_file_ ALIAS FOR $18;
   execution_status_ ALIAS FOR $19;
-  error_message_ ALIAS FOR $20;
+  execution_method_ ALIAS FOR $20;
+  error_message_ ALIAS FOR $21;
 
   v_msg     TEXT;
   v_detail  TEXT;
@@ -2441,8 +2511,9 @@ CREATE OR REPLACE FUNCTION register_backup_job_catalog(INTEGER,INTEGER,INTEGER,I
 					     pg_dump_dbconfig_log_file,
 					     global_log_file,
 					     execution_status,
+					     execution_method,
 					     error_message) 
-	     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)'
+	     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21)'
     USING  def_id_,
     	   procpid_,
     	   backup_server_id_,
@@ -2462,6 +2533,7 @@ CREATE OR REPLACE FUNCTION register_backup_job_catalog(INTEGER,INTEGER,INTEGER,I
   	   pg_dump_dbconfig_log_file_,
   	   global_log_file_,
   	   execution_status_,
+	   execution_method,
 	   error_message_;
 
    RETURN TRUE;
@@ -2476,7 +2548,7 @@ CREATE OR REPLACE FUNCTION register_backup_job_catalog(INTEGER,INTEGER,INTEGER,I
  END;
 $$;
 
-ALTER FUNCTION register_backup_job_catalog(INTEGER,INTEGER,INTEGER,INTEGER,TEXT,TIMESTAMP WITH TIME ZONE,TIMESTAMP WITH TIME ZONE,INTERVAL,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,TEXT,TEXT) OWNER TO pgbackman_role_rw;
+ALTER FUNCTION register_backup_job_catalog(INTEGER,INTEGER,INTEGER,INTEGER,TEXT,TIMESTAMP WITH TIME ZONE,TIMESTAMP WITH TIME ZONE,INTERVAL,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,TEXT,TEXT,TEXT) OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------------
@@ -2637,6 +2709,7 @@ CREATE OR REPLACE VIEW show_backup_catalog AS
        date_trunc('seconds',a.duration) AS "Duration",
        pg_size_pretty(a.pg_dump_file_size+a.pg_dump_roles_file_size+a.pg_dump_dbconfig_file_size) AS "Size",
        b.backup_code AS "Code",
+       a.execution_method AS "Execution",
        a.execution_status AS "Status" 
    FROM backup_job_catalog a 
    JOIN backup_job_definition b ON a.def_id = b.def_id 
@@ -2675,6 +2748,7 @@ CREATE OR REPLACE VIEW show_backup_details AS
        pg_size_pretty(a.pg_dump_file_size+a.pg_dump_roles_file_size+a.pg_dump_dbconfig_file_size) AS "Total size",
        b.backup_code AS "Code",
        a.execution_status AS "Status",
+       a.execution_method AS "Execution",
        left(a.error_message,60) AS "Error message" 
    FROM backup_job_catalog a 
    JOIN backup_job_definition b ON a.def_id = b.def_id 
