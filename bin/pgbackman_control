@@ -23,12 +23,12 @@
 This program is used by pgbackman to administrate the crontab files running backups 
 in this Backup server. 
 
-pgbackman2cron uses LISTEN/NOTIFY to track changes on PgSQL nodes backups.
-In addition pgbackman2cron will create cache data for the Backup server and all PgSQL nodes, 
+pgbackman_control uses LISTEN/NOTIFY to track changes on PgSQL nodes backups.
+In addition pgbackman_control will create cache data for the Backup server and all PgSQL nodes, 
 in case the pgbackman database is not available when running backups.
 
-pgbackman2cron will catch up with changes that happened during a down period of the program. 
-No changes will be lose if pgbackman2cron is down.
+pgbackman_control will catch up with changes that happened during a down period of the program. 
+No changes will be lose if pgbackman_control is down.
 '''
 
 import shutil
@@ -329,7 +329,7 @@ def process_pgsql_node_to_delete(db,backup_server_id):
 # ############################################
 
 def process_pgsql_node_stopped(db,backup_server_id):
-    '''Update crontab for PgSQL nodes stopped when pgbackman2cron was down.'''
+    '''Update crontab for PgSQL nodes stopped when pgbackman_control was down.'''
     
     try:
         for record in db.get_pgsql_node_stopped():
@@ -338,7 +338,7 @@ def process_pgsql_node_stopped(db,backup_server_id):
             generate_crontab_backup_jobs(db,backup_server_id,record[0])
 
     except Exception as e:
-        logs.logger.error('Problems updating crontab of pgsql nodes stopped when pgbackman2cron was down - %s',e)   
+        logs.logger.error('Problems updating crontab of pgsql nodes stopped when pgbackman_control was down - %s',e)   
 
 
 # ############################################
@@ -440,7 +440,7 @@ def main():
     logs.logger.debug('DSN: host=%s hostaddr=%s port=%s database=%s user=%s ',conf.dbhost,conf.dbhostaddr,conf.dbport,conf.dbname,conf.dbuser)
     logs.logger.debug('Channels check interval: %s',conf.channels_check_interval)
 
-    db = pgbackman_db(dsn,'pgbackman2cron')
+    db = pgbackman_db(dsn,'pgbackman_control')
 
     #
     # We check before starting if the database is available. 
@@ -479,17 +479,17 @@ def main():
         logs.logger.info('Backup server: %s is registered in pgbackman',backup_server_fqdn)
 
     except psycopg2.Error as e:
-        logs.logger.critical('Cannot find backup server %s in pgbackman. Stopping pgbackman2cron.',backup_server_fqdn)
-        logs.logger.info('**** PgBackMan2cron stopped. ****')
+        logs.logger.critical('Cannot find backup server %s in pgbackman. Stopping pgbackman_control.',backup_server_fqdn)
+        logs.logger.info('**** Pgbackman_Control stopped. ****')
         sys.exit()     
 
     create_global_directories(db,backup_server_fqdn,backup_server_id)
     update_backup_server_cache_data(db,backup_server_fqdn,backup_server_id)
 
     #
-    # Start listening to active channels when we start pgbackman2cron. 
+    # Start listening to active channels when we start pgbackman_control. 
     # Create cache and backup directories for new pgsql nodes created
-    # when pgbackman2cron was down.
+    # when pgbackman_control was down.
     #
     
     listen_channels = add_to_listen_channels(db,db_notify,backup_server_id)
@@ -502,9 +502,9 @@ def main():
             create_pgsql_node_backup_directories(db,pgsql_node_id)
 
     # We check if there are some crontab files to generate, and pgsql nodes than 
-    # have been deleted or stopped when we start pgbackman2cron. 
+    # have been deleted or stopped when we start pgbackman_control. 
     #
-    # This is necessary just in case pgbackman2cron has been down and missed some NOTIFYs 
+    # This is necessary just in case pgbackman_control has been down and missed some NOTIFYs 
     # from the central database.
 
     generate_all_crontab_jobs(db,backup_server_id)
@@ -625,7 +625,7 @@ def main():
 # ############################################
     
 def signal_handler(signum, frame):
-    logs.logger.info('**** PgBackMan2cron stopped. ****')
+    logs.logger.info('**** Pgbackman_Control stopped. ****')
     sys.exit(0)
 
 
@@ -635,8 +635,8 @@ def signal_handler(signum, frame):
 
 if __name__ == '__main__':
 
-    logs = logs("pgbackman2cron")
-    logs.logger.info('**** PgBackMan2cron started. ****')
+    logs = logs("pgbackman_control")
+    logs.logger.info('**** Pgbackman_Control started. ****')
 
     signal.signal(signal.SIGINT,signal_handler)
     signal.signal(signal.SIGTERM,signal_handler)
