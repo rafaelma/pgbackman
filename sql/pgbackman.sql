@@ -394,7 +394,7 @@ ALTER TABLE backup_job_definition OWNER TO pgbackman_role_rw;
 -- @backup_server_id
 -- @pgsql_node_id
 -- @dbname
--- @execution_time
+-- @at_time
 -- @backup_code
 -- @encryption: NOT IMPLEMENTED
 -- @retention_period
@@ -410,7 +410,7 @@ CREATE TABLE snapshot_definition(
   backup_server_id INTEGER NOT NULL,
   pgsql_node_id INTEGER NOT NULL,
   dbname TEXT NOT NULL,
-  execution_time TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  at_time TEXT,
   backup_code CHARACTER VARYING(10) NOT NULL,
   encryption boolean DEFAULT false NOT NULL,
   retention_period interval DEFAULT '7 days'::interval NOT NULL,
@@ -418,7 +418,7 @@ CREATE TABLE snapshot_definition(
   remarks TEXT
 );
 
-ALTER TABLE snapshot_definition ADD PRIMARY KEY (backup_server_id,pgsql_node_id,dbname,execution_time,backup_code,extra_parameters);
+ALTER TABLE snapshot_definition ADD PRIMARY KEY (backup_server_id,pgsql_node_id,dbname,at_time,backup_code,extra_parameters);
 ALTER TABLE snapshot_definition OWNER TO pgbackman_role_rw;
 
 -- ------------------------------------------------------
@@ -1882,6 +1882,89 @@ CREATE OR REPLACE FUNCTION delete_force_backup_definition_dbname(INTEGER,TEXT) R
 $$;
 
 ALTER FUNCTION delete_force_backup_definition_dbname(INTEGER,TEXT) OWNER TO pgbackman_role_rw;
+
+
+-- ------------------------------------------------------------
+-- Function: register_snapshot()
+--
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION register_snapshot(INTEGER,INTEGER,TEXT,TEXT,CHARACTER VARYING,INTERVAL,TEXT,TEXT) RETURNS VOID
+ LANGUAGE plpgsql 
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ DECLARE
+ 
+  backup_server_id_ ALIAS FOR $1;
+  pgsql_node_id_ ALIAS FOR $2;
+  dbname_ ALIAS FOR $3; 
+  at_time_ ALIAS FOR $4;
+  backup_code_ ALIAS FOR $5;
+  retention_period_ ALIAS FOR $6;
+  extra_parameters_ ALIAS FOR $7;
+  remarks_ ALIAS FOR $7;
+
+  server_cnt INTEGER;
+  node_cnt INTEGER;  
+
+  v_msg     TEXT;
+  v_detail  TEXT;
+  v_context TEXT;
+ BEGIN
+
+   SELECT count(*) FROM backup_server WHERE server_id = backup_server_id_ INTO server_cnt;
+   SELECT count(*) FROM pgsql_node WHERE node_id = pgsql_node_id_ INTO node_cnt;
+
+   IF server_cnt = 0 THEN
+     RAISE EXCEPTION 'Backup server with SrvID: % does not exist',backup_server_id_ ;
+   ELSIF node_cnt = 0 THEN
+     RAISE EXCEPTION 'PgSQL node with NodeID: % does not exist',pgsql_node_id_ ;
+   ELSIF (dbname_ = '' OR dbname_ IS NULL) AND  backup_code_ != 'CLUSTER' THEN
+     RAISE EXCEPTION 'No database value defined';
+   END IF;
+
+   IF backup_code_ = '' OR backup_code_ IS NULL THEN
+    backup_code_ :=  get_default_pgsql_node_parameter('backup_code');
+   END IF;
+
+   IF retention_period_ IS NULL THEN
+    retention_period_ := get_default_pgsql_node_parameter('retention_period')::INTERVAL;
+   END IF;
+ 
+   IF extra_parameters_ = '' OR extra_parameters_ IS NULL THEN
+    extra_parameters_ := get_default_pgsql_node_parameter('extra_parameters');
+   END IF;
+ 
+    EXECUTE 'INSERT INTO snapshot_definition (backup_server_id,
+						pgsql_node_id,
+						dbname,
+						at_time,
+						backup_code,
+						retention_period,
+						extra_parameters,
+						remarks)
+	     VALUES ($1,$2,$3,$4,$5,$6,$7,$8)'
+    USING backup_server_id_,
+	  pgsql_node_id_,
+	  dbname_,
+	  at_time_,
+	  backup_code_,
+	  retention_period_,
+	  extra_parameters_,
+	  remarks_;         
+
+ EXCEPTION WHEN others THEN
+   	GET STACKED DIAGNOSTICS	
+            v_msg     = MESSAGE_TEXT,
+            v_detail  = PG_EXCEPTION_DETAIL,
+            v_context = PG_EXCEPTION_CONTEXT;
+        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \nCONTEXT: % \n----------------------------------------------\n', v_msg, v_detail, v_context;
+
+END;
+$$;
+
+ALTER FUNCTION register_snapshot(INTEGER,INTEGER,TEXT,TEXT,CHARACTER VARYING,INTERVAL,TEXT,TEXT) OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------------

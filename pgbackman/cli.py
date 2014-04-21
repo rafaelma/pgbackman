@@ -26,6 +26,7 @@ import os
 import time
 import signal
 import shlex
+import datetime
 
 from pgbackman.database import * 
 from pgbackman.config import *
@@ -619,19 +620,20 @@ class pgbackman_cli(cmd.Cmd):
 
         COMMAND:
         register_backup_definition [SrvID | FQDN] 
-                                       [NodeID | FQDN] 
-                                       [DBname] 
-                                       [mincron] [hourcron] [weekdaycron] [monthcron] [daymonthcron] 
-                                       [backup code] 
-                                       [encryption] 
-                                       [retention period] 
-                                       [retention redundancy] 
-                                       [extra params] 
-                                       [job status] 
-                                       [remarks] 
+                                   [NodeID | FQDN] 
+                                   [DBname] 
+                                   [mincron] [hourcron] [weekdaycron] [monthcron] [daymonthcron] 
+                                   [backup code] 
+                                   [encryption] 
+                                   [retention period] 
+                                   [retention redundancy] 
+                                   [extra params] 
+                                   [job status] 
+                                   [remarks] 
 
         [backup code]: 
         --------------
+        CLUSTER: Backup of all databases in a PgSQL node
         FULL: Full Backup of a database. Schema + data + owner globals + db_parameters.
         SCHEMA: Schema backup of a database. Schema + owner globals + db_parameters.
         DATA: Data backup of the database.
@@ -1185,6 +1187,197 @@ class pgbackman_cli(cmd.Cmd):
 
         else:
             print "\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n"
+
+
+    # ############################################
+    # Method do_register_snapshot
+    # ############################################
+
+    def do_register_snapshot(self,args):
+        """
+        DESCRIPTION:
+        This command registers a one time snapshot of a database.
+
+        COMMAND:
+        register_snapshot [SrvID | FQDN] 
+                          [NodeID | FQDN] 
+                          [DBname] 
+                          [Time]
+                          [backup code] 
+                          [retention period] 
+                          [extra params] 
+                          [remarks] 
+
+        [backup code]: 
+        --------------
+        CLUSTER: Backup of all databases in a PgSQL node
+        FULL: Full Backup of a database. Schema + data + owner globals + db_parameters.
+        SCHEMA: Schema backup of a database. Schema + owner globals + db_parameters.
+        DATA: Data backup of the database.
+        
+        """
+
+        #
+        # If a parameter has more than one token, it has to be
+        # defined between doble quotes
+        #
+        
+        try: 
+            arg_list = shlex.split(args)
+        
+        except ValueError as e:
+            print "\n[ERROR]: ",e,"\n"
+            return False
+                
+        #
+        # Command without parameters
+        #
+
+        if len(arg_list) == 0:
+     
+            ack = ""
+         
+            time_default = backup_code_default = retention_period_default = extra_parameters_default = ""
+
+            try:
+                at_time_default = str(datetime.date.today())
+                backup_code_default = self.db.get_default_pgsql_node_parameter("backup_code")
+                retention_period_default = self.db.get_default_pgsql_node_parameter("retention_period")
+                extra_parameters_default = self.db.get_default_pgsql_node_parameter("extra_parameters")
+
+            except Exception as e:
+                print "\n[ERROR]: Problems getting default values for parameters\n",e 
+                return False
+            
+            print "--------------------------------------------------------"
+            backup_server = raw_input("# Backup server SrvID / FQDN []: ")
+            pgsql_node = raw_input("# PgSQL node NodeID / FQDN []: ")
+            dbname = raw_input("# DBname []: ")
+            at_time = raw_input("# AT time [" + at_time_default + "]: ")
+            backup_code = raw_input("# Backup code [" + backup_code_default + "]: ")
+            retention_period = raw_input("# Retention period [" + retention_period_default + "]: ")
+            extra_parameters = raw_input("# Extra parameters [" + extra_parameters_default + "]: ")
+            remarks = raw_input("# Remarks []: ")
+            print
+
+            while ack != "yes" and ack != "no":
+                ack = raw_input("# Are all values correct (yes/no): ")
+
+            print "--------------------------------------------------------"
+
+            try:
+                if backup_server.isdigit():
+                    backup_server_id = backup_server
+                else:
+                    backup_server_id = self.db.get_backup_server_id(backup_server)
+
+                if pgsql_node.isdigit():
+                    pgsql_node_id = pgsql_node
+                    pgsql_node_fqdn = self.db.get_pgsql_node_fqdn(pgsql_node)
+                else:
+                    pgsql_node_id = self.db.get_pgsql_node_id(pgsql_node)
+                    pgsql_node_fqdn = pgsql_node
+
+                dsn_value = self.db.get_pgsql_node_dsn(pgsql_node_id)
+                db_node = pgbackman_db(dsn_value,'pgbackman_cli')
+
+                if dbname != '':
+                    if not db_node.database_exists(dbname):
+                        print ("\n[ERROR]: Database %s does not exist in The PgSQL node %s" % (dbname, pgsql_node_fqdn)) 
+                        print
+                        db_node = None
+                        return False
+
+                db_node = None
+
+            except Exception as e:
+                print "\n[ERROR]: ",e 
+                return False
+
+            if at_time == "":
+                at_time = at_time_default
+
+            if backup_code == "":
+                backup_code = backup_code_default
+
+            if retention_period == "":
+                retention_period = retention_period_default
+
+            if extra_parameters == "":
+                extra_parameters = extra_parameters_default
+            
+            if ack.lower() == "yes":
+                try:
+                    self.db.register_snapshot(backup_server_id,pgsql_node_id,dbname.strip(),at_time.strip(),backup_code.upper().strip(), \
+                                                  retention_period.lower().strip(),extra_parameters.lower().strip(),remarks.strip())
+                    print "\n[Done]\n"
+
+                except Exception as e:
+                    print '\n[ERROR]: Could not register this snapshot\n',e
+
+            elif ack.lower() == "no":
+                print "\n[Aborted]\n"
+
+        #
+        # Command with the 6 parameters that can be defined.
+        # Hostname, domain, pgport, admin_user, status and remarks
+        #
+
+        elif len(arg_list) == 8:
+            
+            backup_server = arg_list[0]
+            pgsql_node = arg_list[1]
+            dbname = arg_list[2]
+            at_time = str(arg_list[3])
+            backup_code = arg_list[4]
+            retention_period = arg_list[5]
+            extra_parameters = arg_list[6]
+            remarks = arg_list[7]
+              
+            try:
+                if backup_server.isdigit():
+                    backup_server_id = backup_server
+                else:
+                    backup_server_id = self.db.get_backup_server_id(backup_server)
+
+                if pgsql_node.isdigit():
+                    pgsql_node_id = pgsql_node
+                    pgsql_node_fqdn = self.db.get_pgsql_node_fqdn(pgsql_node)
+                else:
+                    pgsql_node_id = self.db.get_pgsql_node_id(pgsql_node)
+                    pgsql_node_fqdn = pgsql_node
+
+                dsn_value = self.db.get_pgsql_node_dsn(pgsql_node_id)
+                db_node = pgbackman_db(dsn_value,'pgbackman_cli')
+
+                if dbname != '':
+                    if not db_node.database_exists(dbname):
+                        print ("\n[ERROR]: Database %s does not exist in The PgSQL node %s" % (dbname, pgsql_node_fqdn)) 
+                        print
+                        db_node = None
+                        return False
+
+                db_node = None
+                    
+            except Exception as e:
+                print "\n[ERROR]: ",e 
+                return False
+                
+            try:
+                self.db.register_snapshot(backup_server_id,pgsql_node_id,dbname.strip(),at_time,backup_code.upper().strip(), \
+                                                  retention_period.lower().strip(),extra_parameters.lower().strip(),remarks.strip())
+                
+                print "\n[Done]\n"
+
+            except Exception as e:
+                print '\n[ERROR]: Could not register this snapshot\n',e
+                
+        #
+        # Command with the wrong number of parameters
+        #
+
+        else:
+            print "\n[ERROR] - Wrong number of parameters used.\n          Type help or \? to list commands\n"
         
 
     # ############################################
@@ -1209,7 +1402,7 @@ class pgbackman_cli(cmd.Cmd):
 
         if len(arg_list) == 0:
                    
-            print "--------------------------------------------------------"
+            print "--------------------------------------------------------"            
             bck_id = raw_input("# BckID: ")
             print "--------------------------------------------------------"
             

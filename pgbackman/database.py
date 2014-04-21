@@ -465,6 +465,31 @@ class pgbackman_db():
     # Method 
     # ############################################
 
+    def register_snapshot(self,backup_server,pgsql_node,dbname,attime,backup_code,retention_period,extra_parameters,remarks):
+        """A function to register a snapshot"""
+
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT register_snapshot(%s,%s,%s,%s,%s,%s,%s,%s)',(backup_server,pgsql_node,dbname,attime,backup_code, \
+                                                                                                                             retention_period,extra_parameters,remarks))
+                    self.conn.commit()                        
+                                    
+                except psycopg2.Error as e:
+                    raise e
+            
+            self.pg_close()
+    
+        except psycopg2.Error as e:
+            raise e
+    
+
+    # ############################################
+    # Method 
+    # ############################################
+
     def show_backup_catalog(self,backup_server_list,pgsql_node_list,dbname_list,def_id_list):
         """A function to get a list from a backup catalog"""
 
