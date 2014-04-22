@@ -1092,6 +1092,7 @@ class pgbackman_db():
         except psycopg2.Error as e:
             raise e
 
+
     # ############################################
     # Method 
     # ############################################
@@ -1171,7 +1172,7 @@ class pgbackman_db():
     # ############################################
                       
     def get_cron_catalog_entries_to_delete_by_retention(self,backup_server_id):
-        """A function to get catalog entries to delete"""
+        """A function to get backup catalog entries to delete"""
 
         try:
             self.pg_connect()
@@ -1179,6 +1180,31 @@ class pgbackman_db():
             if self.cur:
                 try:
                     self.cur.execute('SELECT * FROM get_cron_catalog_entries_to_delete_by_retention WHERE backup_server_id = %s',(backup_server_id,))
+                    self.conn.commit()                        
+              
+                    return self.cur
+
+                except psycopg2.Error as e:
+                    raise e
+                    
+            self.pg_close()
+      
+        except psycopg2.Error as e:
+            raise e
+      
+    # ############################################
+    # Method 
+    # ############################################
+                      
+    def get_at_catalog_entries_to_delete_by_retention(self,backup_server_id):
+        """A function to get snapshot catalog entries to delete"""
+
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT * FROM get_at_catalog_entries_to_delete_by_retention WHERE backup_server_id = %s',(backup_server_id,))
                     self.conn.commit()                        
               
                     return self.cur
@@ -1215,6 +1241,30 @@ class pgbackman_db():
         except psycopg2.Error as e:
             raise e
      
+    # ############################################
+    # Method 
+    # ############################################
+                      
+    def delete_snapshot_definition(self,snapshot_id):
+        """A function to delete entries from snapshot_definition"""
+
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT delete_snapshot_definition(%s)',(snapshot_id,))
+                    self.conn.commit()                        
+              
+                except psycopg2.Error as e:
+                    raise e
+                    
+            self.pg_close()
+    
+        except psycopg2.Error as e:
+            raise e
+     
+
     # ############################################
     # Method 
     # ############################################
@@ -1913,11 +1963,60 @@ class pgbackman_db():
 
             if self.cur:
                 try:
-                    self.cur.execute('SELECT "SnapshotID","AT time" FROM show_snapshot_definitions WHERE backup_server_id = %s AND status = %s',(backup_server_id,'WAITING'))
+                    self.cur.execute('SELECT "SnapshotID","AT time" FROM show_snapshot_definitions WHERE backup_server_id = %s AND "Status" = %s',(backup_server_id,'WAITING'))
                     self.conn.commit()
                     
                     return self.cur
                 
+                except psycopg2.Error as e:
+                    raise e
+
+            self.pg_close()
+
+        except psycopg2.Error as e:
+            raise e
+
+    # ############################################
+    # Method 
+    # ############################################
+           
+    def generate_snapshot_at_file(self,snapshot_id):
+        """A function to generate a at file for a snapshot"""
+     
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT generate_snapshot_at_file(%s)',(snapshot_id,))
+                    self.conn.commit()
+                    
+                    return self.cur.fetchone()[0]
+                                    
+                except psycopg2.Error as e:
+                    raise e
+
+            self.pg_close()
+
+        except psycopg2.Error as e:
+            raise e
+
+
+    # ############################################
+    # Method 
+    # ############################################
+           
+    def update_snapshot_status(self,snapshot_id,status):
+        """A function to update the status for a snapshot"""
+     
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT update_snapshot_status(%s,%s)',(snapshot_id,status))
+                    self.conn.commit()
+                                    
                 except psycopg2.Error as e:
                     raise e
 

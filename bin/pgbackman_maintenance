@@ -88,13 +88,13 @@ def delete_files_from_force_deletes(db,backup_server_id):
 
             
 # ############################################
-# Function enforce_retentions()
+# Function enforce_backup_retentions()
 # ############################################
 
-def enforce_retentions(db,backup_server_id):
+def enforce_backup_retentions(db,backup_server_id):
     '''Delete dump and log files according to retention_periods and retention_redundancies'''
 
-    logs.logger.debug('## Enforce file retentions ##')
+    logs.logger.debug('## Enforce backup retentions ##')
 
     try:
         for record in db.get_cron_catalog_entries_to_delete_by_retention(backup_server_id):
@@ -113,7 +113,7 @@ def enforce_retentions(db,backup_server_id):
     
                  except OSError as e:
                     if e.errno != errno.ENOENT:
-                        logs.logger.error('Problems deleting files from enforce retentions: %s',e)
+                        logs.logger.error('Problems deleting files from backup enforce retentions: %s',e)
                         error_cnt = error_cnt + 1
                     else:
                         pass
@@ -136,7 +136,58 @@ def enforce_retentions(db,backup_server_id):
     except psycopg2.OperationalError as e:
         raise e
     except Exception as e:
-        logs.logger.error('Could not get information to enforce file retentions - %s',e)
+        logs.logger.error('Could not get information to enforce backup file retentions - %s',e)
+        
+# ############################################
+# Function enforce_snapshot_retentions()
+# ############################################
+
+def enforce_snapshot_retentions(db,backup_server_id):
+    '''Delete dump and log snapshot files according to retention_periods'''
+
+    logs.logger.debug('## Enforce snapshot retentions ##')
+
+    try:
+        for record in db.get_at_catalog_entries_to_delete_by_retention(backup_server_id):
+
+            error_cnt = 0
+            
+            #
+            # record[7...12] are the files to delete
+            #
+
+            for index in range(7,13):
+
+                 try:
+                    os.unlink(record[index])
+                    logs.logger.debug('File: %s deleted',record[index])
+    
+                 except OSError as e:
+                    if e.errno != errno.ENOENT:
+                        logs.logger.error('Problems deleting files from snapshot enforce retentions: %s',e)
+                        error_cnt = error_cnt + 1
+                    else:
+                        pass
+    
+            #
+            # We can delete the BckID entry from the catalog table only if we can 
+            # delete all the files for the BckID entry without errors
+            #
+
+            if error_cnt == 0:
+                try:
+                    db.delete_snapshot_definition(record[1])
+                    logs.logger.info('Files for catalog ID: %s / SnapshotID: %s deleted',record[0],record[1])
+
+                except psycopg2.OperationalError as e:
+                    raise e
+                except Exception as e:
+                    logs.logger.error('Problems deleting entry from backup job catalog - %s',e)
+
+    except psycopg2.OperationalError as e:
+        raise e
+    except Exception as e:
+        logs.logger.error('Could not get information to enforce snapshot file retentions - %s',e)
         
 
 # ############################################
@@ -161,12 +212,25 @@ def process_pending_catalog_log_file(db,backup_server_id):
                     parameters = line.split('::')
                     
                     if len(parameters) == 22:
-                            
+
+                        #
+                        # Fix when def_id and snapshot_id are like ''. This is not a valid
+                        # integer value
+                        #
+
+                        def_id = parameters[0]
+                        snapshot_id = parameters[21].replace('\n','')
+                        
+                        if def_id == '':
+                            def_id = None
+                        elif snapshot_id == '':
+                            snapshot_id = None
+
                         #
                         # Updating the database with the information in the pending file
                         #
-            
-                        db.register_backup_job_catalog(parameters[0],
+
+                        db.register_backup_job_catalog(def_id,
                                                        parameters[1],
                                                        parameters[2],
                                                        parameters[3],
@@ -187,9 +251,9 @@ def process_pending_catalog_log_file(db,backup_server_id):
                                                        parameters[18],
                                                        parameters[19],
                                                        parameters[20],
-                                                       parameters[21].replace('\n',''))
+                                                       snapshot_id)
 
-                        logs.logger.info('Backup job catalog for DefID: %s in pending file %s updated in the database',parameters[0],pending_log_file)
+                        logs.logger.info('Backup job catalog for DefID: %s or snapshotID: %s in pending file %s updated in the database',def_id,snapshot_id,pending_log_file)
                             
                         #
                         # Deleting the pending file if we can update the database with
@@ -285,7 +349,8 @@ def main():
     while loop == 0:
         try:
             delete_files_from_force_deletes(db,backup_server_id)
-            enforce_retentions(db,backup_server_id)
+            enforce_backup_retentions(db,backup_server_id)
+            enforce_snapshot_retentions(db,backup_server_id)
             process_pending_catalog_log_file(db,backup_server_id)
             
         except psycopg2.OperationalError as e:

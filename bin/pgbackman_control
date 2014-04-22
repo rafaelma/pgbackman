@@ -31,6 +31,8 @@ pgbackman_control will catch up with changes that happened during a down period 
 No changes will be lose if pgbackman_control is down.
 '''
 
+import subprocess
+import tempfile
 import shutil
 import pwd
 import grp
@@ -146,6 +148,47 @@ def generate_crontab_backup_jobs(db,backup_server_id,pgsql_node_id):
             
         except Exception as e:
             logs.logger.error('Problems updating job queue for SrvID: %s and nodeID: %s after a crontab file update error - %s',backup_server_id,pgsql_node_id,e)
+
+
+
+# ############################################
+# Function generate_snapshot_at_files()
+# ############################################
+
+def generate_snapshot_at_files(db,backup_server_id,tmp_dir):
+    """Generate at files for snapshot jobs"""
+
+    try:
+        for record in db.get_new_snapshots(backup_server_id):
+            
+            snapshot_id = record[0]
+            at_time = record[1]
+            
+            at_file_temp_file = tempfile.NamedTemporaryFile(delete=True,dir=tmp_dir)  
+
+            with open(at_file_temp_file.name, 'r+') as at_file:
+                data = db.generate_snapshot_at_file(snapshot_id)
+
+                at_file.write(data)
+                at_file.flush()
+                
+                at_command = 'at -f ' + at_file_temp_file.name + ' -t ' + at_time
+
+                proc = subprocess.Popen([at_command],shell=True)
+                proc.wait()
+                
+                if proc.returncode == 0:
+                    db.update_snapshot_status(snapshot_id,'DEFINED')
+                    logs.logger.debug('AT job for snapshotID: %s has been defined',snapshot_id) 
+                
+                elif proc.returncode != 0:
+                    db.update_snapshot_status(snapshot_id,'ERROR')
+                    logs.logger.error('AT job for snapshotID: %s could not be defined',snapshot_id) 
+
+                at_file.close()
+
+    except Exception as e:
+        logs.logger.error('Could not generate AT file for a snapshot - %s',e)
 
 
 # ############################################
@@ -434,6 +477,7 @@ def main():
 
     conf = configuration()
     dsn = conf.dsn
+    tmp_dir = conf.tmp_dir
 
     logs.logger.debug('Backup server ID from config file: %s',conf.backup_server)
     logs.logger.debug('Backup server FQDN: %s',socket.getfqdn())
@@ -495,14 +539,18 @@ def main():
     listen_channels = add_to_listen_channels(db,db_notify,backup_server_id)
    
     for listen_channel in listen_channels: 
-        if listen_channel != 'channel_pgsql_node_running' and listen_channel != 'channel_pgsql_node_stopped' and listen_channel != 'channel_pgsql_node_deleted':
+        if listen_channel != 'channel_pgsql_node_running' \
+                and listen_channel != 'channel_pgsql_node_stopped' \
+                and listen_channel != 'channel_pgsql_node_deleted' \
+                and listen_channel != 'channel_snapshot_defined':
+
             pgsql_node_id = get_pgsql_node_id_from_channel(listen_channel)
             
             update_pgsql_node_cache_data(db,backup_server_id,pgsql_node_id)
             create_pgsql_node_backup_directories(db,pgsql_node_id)
 
-    # We check if there are some crontab files to generate, and pgsql nodes than 
-    # have been deleted or stopped when we start pgbackman_control. 
+    # We check if there are some crontab/at files to generate or pgsql nodes than 
+    # have been deleted or stopped  when we start pgbackman_control. 
     #
     # This is necessary just in case pgbackman_control has been down and missed some NOTIFYs 
     # from the central database.
@@ -510,6 +558,8 @@ def main():
     generate_all_crontab_jobs(db,backup_server_id)
     process_pgsql_node_to_delete(db,backup_server_id)
     process_pgsql_node_stopped(db,backup_server_id)
+
+    generate_snapshot_at_files(db,backup_server_id,tmp_dir)
 
     #
     # Main loop waiting for notifications
@@ -539,7 +589,11 @@ def main():
                     
                     for listen_channel in listen_channels: 
 
-                        if listen_channel != 'channel_pgsql_node_running' and listen_channel != 'channel_pgsql_node_stopped' and listen_channel != 'channel_pgsql_node_deleted':
+                        if listen_channel != 'channel_pgsql_node_running' \
+                                and listen_channel != 'channel_pgsql_node_stopped' \
+                                and listen_channel != 'channel_pgsql_node_deleted' \
+                                and listen_channel != 'channel_snapshot_defined':
+                            
                             pgsql_node_id = get_pgsql_node_id_from_channel(listen_channel)
                             
                             update_pgsql_node_cache_data(db,backup_server_id,pgsql_node_id)
@@ -559,7 +613,11 @@ def main():
 
                     for unlisten_channel in unlisten_channels:
                         
-                        if unlisten_channel != 'channel_pgsql_node_running' and unlisten_channel != 'channel_pgsql_node_stopped' and unlisten_channel != 'channel_pgsql_node_deleted':
+                        if unlisten_channel != 'channel_pgsql_node_running' \
+                                and unlisten_channel != 'channel_pgsql_node_stopped' \
+                                and unlisten_channel != 'channel_pgsql_node_deleted' \
+                                and unlisten_channel != 'channel_snapshot_defined':
+                            
                             pgsql_node_id = get_pgsql_node_id_from_channel(unlisten_channel)
                             generate_crontab_backup_jobs(db,backup_server_id,pgsql_node_id)
 
@@ -570,6 +628,15 @@ def main():
                     #
                     unlisten_channels = delete_from_listen_channels(db,db_notify,backup_server_id)
                     process_pgsql_node_to_delete(db,backup_server_id)
+
+                elif channel == 'channel_snapshot_defined':
+                    
+                    #
+                    # A snapshot backup has been defined
+                    #
+                    
+                    generate_snapshot_at_files(db,backup_server_id,tmp_dir)
+
                 else:
                     
                     #
@@ -612,7 +679,8 @@ def main():
  
             add_to_listen_channels(db,db_notify,backup_server_id)
             generate_all_crontab_jobs(db,backup_server_id)
-    
+            generate_snapshot_at_files(db,backup_server_id,tmp_dir)
+
         except Exception as e:
             logs.logger.error('General error in main loop - %s',e)   
         

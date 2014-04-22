@@ -28,13 +28,13 @@ execute_command(){
     
     case $COMMAND in
 	start)
-	    pgbackman2cron &
+	    pgbackman_control &
 	    pgbackman_maintenance &
 	    exit 0
 	    ;;
 	
 	stop)
-	    for PID in `pidof -x pgbackman2cron`;
+	    for PID in `pidof -x pgbackman_control`;
 	    do
 		kill -15 $PID
 	    done

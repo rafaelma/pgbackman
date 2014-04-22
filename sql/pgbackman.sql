@@ -2931,6 +2931,50 @@ $$;
 ALTER FUNCTION  delete_backup_job_catalog(INTEGER) OWNER TO pgbackman_role_rw;
 
 -- ------------------------------------------------------------
+-- Function:  delete_snapshot_definition()
+--
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION delete_snapshot_definition(INTEGER) RETURNS VOID
+ LANGUAGE plpgsql 
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ DECLARE
+  snapshot_id_ ALIAS FOR $1;
+  snapshot_cnt INTEGER;
+
+  v_msg     TEXT;
+  v_detail  TEXT;
+  v_context TEXT;
+ BEGIN
+
+   SELECT count(*) FROM snapshot_definition WHERE snapshot_id = snapshot_id_ INTO snapshot_cnt;
+
+   IF snapshot_cnt != 0 THEN
+
+     EXECUTE 'DELETE FROM backup_job_catalog WHERE snapshot_id = $1'
+     USING snapshot_id_;
+
+     EXECUTE 'DELETE FROM snapshot_definition WHERE snapshot_id = $1'
+     USING snapshot_id_;
+
+   ELSE
+      RAISE EXCEPTION 'Snapshot entry with snapshotID % does not exist',snapshot_id_; 
+   END IF;
+	   
+   EXCEPTION WHEN others THEN
+   	GET STACKED DIAGNOSTICS	
+            v_msg     = MESSAGE_TEXT,
+            v_detail  = PG_EXCEPTION_DETAIL,
+            v_context = PG_EXCEPTION_CONTEXT;
+        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \nCONTEXT: % \n----------------------------------------------\n', v_msg, v_detail, v_context;
+  END;
+$$;
+
+ALTER FUNCTION  delete_snapshot_definition(INTEGER) OWNER TO pgbackman_role_rw;
+
+-- ------------------------------------------------------------
 -- Views
 --
 -- ------------------------------------------------------------
@@ -3186,8 +3230,6 @@ WITH
    ORDER BY snapshot_id,finished DESC;
 
 ALTER VIEW get_at_catalog_entries_to_delete_by_retention OWNER TO pgbackman_role_rw;
-
-
 
 CREATE OR REPLACE VIEW show_backup_server_config AS
 SELECT server_id,

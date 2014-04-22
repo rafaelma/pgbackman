@@ -553,6 +553,7 @@ def register_backup_job_catalog(db):
 
     if global_parameters['def_id'] == None:
         global_parameters['execution_method'] = 'AT'
+        
     elif global_parameters['snapshot_id'] == None:
         global_parameters['execution_method'] = 'CRON'
 
@@ -672,7 +673,13 @@ def register_backup_job_catalog(db):
         try:
             procpid = os.getpid()
             pending_log_file = global_parameters['backup_server_pending_registration_dir'] + '/backup_jobs_pending_log_updates_nodeid_' + str(global_parameters['pgsql_node_id']) + '_' + str(procpid) + '.log'
-           
+
+            if global_parameters['def_id'] == None:
+                global_parameters['def_id'] = ''
+        
+            elif global_parameters['snapshot_id'] == None:
+                global_parameters['snapshot_id'] = ''
+                
             with open(pending_log_file,'w+') as catalog_pending:
                 catalog_pending.write(str(global_parameters['def_id']) + '::' +
                                       str(procpid) + '::' +
