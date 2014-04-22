@@ -1193,7 +1193,7 @@ class pgbackman_cli(cmd.Cmd):
     # Method do_register_snapshot
     # ############################################
 
-    def do_register_snapshot(self,args):
+    def do_register_snapshot_definition(self,args):
         """
         DESCRIPTION:
         This command registers a one time snapshot of a database.
@@ -1240,7 +1240,7 @@ class pgbackman_cli(cmd.Cmd):
             time_default = backup_code_default = retention_period_default = extra_parameters_default = ""
 
             try:
-                at_time_default = str(datetime.date.today())
+                at_time_default = datetime.datetime.now()+ datetime.timedelta(minutes=1)
                 backup_code_default = self.db.get_default_pgsql_node_parameter("backup_code")
                 retention_period_default = self.db.get_default_pgsql_node_parameter("retention_period")
                 extra_parameters_default = self.db.get_default_pgsql_node_parameter("extra_parameters")
@@ -1253,7 +1253,7 @@ class pgbackman_cli(cmd.Cmd):
             backup_server = raw_input("# Backup server SrvID / FQDN []: ")
             pgsql_node = raw_input("# PgSQL node NodeID / FQDN []: ")
             dbname = raw_input("# DBname []: ")
-            at_time = raw_input("# AT time [" + at_time_default + "]: ")
+            at_time = raw_input("# AT timestamp [" + str(at_time_default) + "]: ")
             backup_code = raw_input("# Backup code [" + backup_code_default + "]: ")
             retention_period = raw_input("# Retention period [" + retention_period_default + "]: ")
             extra_parameters = raw_input("# Extra parameters [" + extra_parameters_default + "]: ")
@@ -1277,6 +1277,8 @@ class pgbackman_cli(cmd.Cmd):
                 else:
                     pgsql_node_id = self.db.get_pgsql_node_id(pgsql_node)
                     pgsql_node_fqdn = pgsql_node
+
+                self.db.check_pgsql_node_status(pgsql_node_id)
 
                 dsn_value = self.db.get_pgsql_node_dsn(pgsql_node_id)
                 db_node = pgbackman_db(dsn_value,'pgbackman_cli')
@@ -1308,8 +1310,8 @@ class pgbackman_cli(cmd.Cmd):
             
             if ack.lower() == "yes":
                 try:
-                    self.db.register_snapshot(backup_server_id,pgsql_node_id,dbname.strip(),at_time.strip(),backup_code.upper().strip(), \
-                                                  retention_period.lower().strip(),extra_parameters.lower().strip(),remarks.strip())
+                    self.db.register_snapshot_definition(backup_server_id,pgsql_node_id,dbname.strip(),at_time,backup_code.upper().strip(), \
+                                                             retention_period.lower().strip(),extra_parameters.lower().strip(),remarks.strip())
                     print "\n[Done]\n"
 
                 except Exception as e:
@@ -1347,6 +1349,8 @@ class pgbackman_cli(cmd.Cmd):
                     pgsql_node_id = self.db.get_pgsql_node_id(pgsql_node)
                     pgsql_node_fqdn = pgsql_node
 
+                self.db.check_pgsql_node_status(pgsql_node_id)
+
                 dsn_value = self.db.get_pgsql_node_dsn(pgsql_node_id)
                 db_node = pgbackman_db(dsn_value,'pgbackman_cli')
 
@@ -1364,7 +1368,7 @@ class pgbackman_cli(cmd.Cmd):
                 return False
                 
             try:
-                self.db.register_snapshot(backup_server_id,pgsql_node_id,dbname.strip(),at_time,backup_code.upper().strip(), \
+                self.db.register_snapshot_definition(backup_server_id,pgsql_node_id,dbname.strip(),at_time,backup_code.upper().strip(), \
                                                   retention_period.lower().strip(),extra_parameters.lower().strip(),remarks.strip())
                 
                 print "\n[Done]\n"
@@ -1379,7 +1383,8 @@ class pgbackman_cli(cmd.Cmd):
         else:
             print "\n[ERROR] - Wrong number of parameters used.\n          Type help or \? to list commands\n"
         
-   # ############################################
+
+    # ############################################
     # Method do_show_backup_definitions
     # ############################################
 

@@ -465,7 +465,7 @@ class pgbackman_db():
     # Method 
     # ############################################
 
-    def register_snapshot(self,backup_server,pgsql_node,dbname,attime,backup_code,retention_period,extra_parameters,remarks):
+    def register_snapshot_definition(self,backup_server,pgsql_node,dbname,at_time,backup_code,retention_period,extra_parameters,remarks):
         """A function to register a snapshot"""
 
         try:
@@ -473,8 +473,8 @@ class pgbackman_db():
 
             if self.cur:
                 try:
-                    self.cur.execute('SELECT register_snapshot(%s,%s,%s,%s,%s,%s,%s,%s)',(backup_server,pgsql_node,dbname,attime,backup_code, \
-                                                                                                                             retention_period,extra_parameters,remarks))
+                    self.cur.execute('SELECT register_snapshot_definition(%s,%s,%s,%s,%s,%s,%s,%s)',(backup_server,pgsql_node,dbname,at_time,backup_code, \
+                                                                                                         retention_period,extra_parameters,remarks))
                     self.conn.commit()                        
                                     
                 except psycopg2.Error as e:
@@ -538,7 +538,7 @@ class pgbackman_db():
                     else:
                         dbname_sql = ''
     
-                    self.cur.execute('SELECT \"SnapshotID\",\"Registered\",backup_server_id AS \"ID.\",\"Backup server\",pgsql_node_id AS \"ID\",\"PgSQL node\",\"DBname\",\"AT time\",\"Code\",\"Retention\",\"Parameters\" FROM show_snapshot_definitions WHERE TRUE ' + server_sql + node_sql + dbname_sql)
+                    self.cur.execute('SELECT \"SnapshotID\",\"Registered\",backup_server_id AS \"ID.\",\"Backup server\",pgsql_node_id AS \"ID\",\"PgSQL node\",\"DBname\",\"AT time\",\"Code\",\"Retention\",\"Parameters\",\"Status\" FROM show_snapshot_definitions WHERE TRUE ' + server_sql + node_sql + dbname_sql)
                                      
                     colnames = [desc[0] for desc in self.cur.description]
                     self.print_results_table(self.cur,colnames,["Backup server","PgSQL node","DBname","AT time","Code","Parameters"])
@@ -615,7 +615,7 @@ class pgbackman_db():
                     else:
                         def_id_sql = ''
                   
-                    self.cur.execute('SELECT \"BckID\",\"DefID\",\"Finished\",backup_server_id AS \"ID.\",\"Backup server\",pgsql_node_id AS \"ID\",\"PgSQL node\",\"DBname\",\"Duration\",\"Size\",\"Code\",\"Execution\",\"Status\" FROM show_backup_catalog WHERE TRUE ' + server_sql + node_sql + dbname_sql + def_id_sql)
+                    self.cur.execute('SELECT \"BckID\",\"DefID\",\"SnapshotID\",\"Finished\",backup_server_id AS \"ID.\",\"Backup server\",pgsql_node_id AS \"ID\",\"PgSQL node\",\"DBname\",\"Duration\",\"Size\",\"Code\",\"Execution\",\"Status\" FROM show_backup_catalog WHERE TRUE ' + server_sql + node_sql + dbname_sql + def_id_sql)
                                      
                     colnames = [desc[0] for desc in self.cur.description]
                     self.print_results_table(self.cur,colnames,["Finished","Backup server","PgSQL node","DBname","Size"])
@@ -651,37 +651,39 @@ class pgbackman_db():
                     for record in self.cur:
                         
                         x.add_row(["BckID:",record[0]])
-                        x.add_row(["ProcPID:",str(record[8])])
+                        x.add_row(["ProcPID:",str(record[9])])
                         x.add_row(["Registered:",str(record[2])])
                         x.add_row(["",""])
                         x.add_row(["Started:",str(record[3])])
                         x.add_row(["Finished:",str(record[4])])
                         x.add_row(["Duration:",str(record[6])])
-                        x.add_row(["Total size:",record[27]])
-                        x.add_row(["Execution method:",record[30]])
-                        x.add_row(["Execution status:",record[29]])
+                        x.add_row(["Total size:",record[29]])
+                        x.add_row(["Execution method:",record[32]])
+                        x.add_row(["Execution status:",record[31]])
                         x.add_row(["",""])
                         x.add_row(["DefID:",record[7]])
+                        x.add_row(["SnapshotID:",record[8]])
                         x.add_row(["DBname:",record[17]])
-                        x.add_row(["Backup server (ID/FQDN):","[" + str(record[13]) + "] / " + record[14]])
-                        x.add_row(["PgSQL node (ID/FQDN):","[" + str(record[15]) + "] / " + record[16]])
+                        x.add_row(["Backup server (ID/FQDN):","[" + str(record[15]) + "] / " + record[16]])
+                        x.add_row(["PgSQL node (ID/FQDN):","[" + str(record[17]) + "] / " + record[18]])
                         x.add_row(["",""])
-                        x.add_row(["Schedule:",record[10] + " [min hour weekday month day_month]"])
-                        x.add_row(["Retention:",record[9]])
-                        x.add_row(["Backup code:",record[28]])
-                        x.add_row(["Extra parameters:",record[12]])
+                        x.add_row(["Schedule:",record[11] + " [min hour weekday month day_month]"])
+                        x.add_row(["AT time:",record[12]])
+                        x.add_row(["Retention:",record[10]])
+                        x.add_row(["Backup code:",record[30]])
+                        x.add_row(["Extra parameters:",record[14]])
                         x.add_row(["",""])
-                        x.add_row(["DB dump file:", record[18] + " (" + record[20] + ")"])
-                        x.add_row(["DB log file:",record[19]])
+                        x.add_row(["DB dump file:", record[20] + " (" + record[22] + ")"])
+                        x.add_row(["DB log file:",record[21]])
                         x.add_row(["",""])
-                        x.add_row(["DB roles dump file:", record[21] + " (" + record[23] + ")"])
-                        x.add_row(["DB roles log file:",record[22]])
+                        x.add_row(["DB roles dump file:", record[23] + " (" + record[25] + ")"])
+                        x.add_row(["DB roles log file:",record[24]])
                         x.add_row(["",""])
-                        x.add_row(["DB config dump file:", record[24] + " (" + record[26] + ")"])
-                        x.add_row(["DB config log file:",record[25]])
+                        x.add_row(["DB config dump file:", record[26] + " (" + record[28] + ")"])
+                        x.add_row(["DB config log file:",record[27]])
                         x.add_row(["",""])
                         x.add_row(["On disk until:",str(record[5])])
-                        x.add_row(["Error message:",str(record[31])])
+                        x.add_row(["Error message:",str(record[33])])
                         
                         print x
 
@@ -1063,7 +1065,7 @@ class pgbackman_db():
            
     def register_backup_job_catalog(self,def_id,procpid,backup_server_id,pgsql_node_id,dbname,started,finished,duration,pg_dump_file,
                                   pg_dump_file_size,pg_dump_log_file,pg_dump_roles_file,pg_dump_roles_file_size,pg_dump_roles_log_file,
-                                  pg_dump_dbconfig_file,pg_dump_dbconfig_file_size,pg_dump_dbconfig_log_file,global_log_file,execution_status,execution_method,error_message):
+                                  pg_dump_dbconfig_file,pg_dump_dbconfig_file_size,pg_dump_dbconfig_log_file,global_log_file,execution_status,execution_method,error_message,snapshot_id):
         
         """A function to update the backup job catalog"""
 
@@ -1073,13 +1075,13 @@ class pgbackman_db():
  
             if self.cur:
                 try:
-                    self.cur.execute('SELECT register_backup_job_catalog(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',(def_id,procpid,backup_server_id,pgsql_node_id,dbname,
+                    self.cur.execute('SELECT register_backup_job_catalog(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',(def_id,procpid,backup_server_id,pgsql_node_id,dbname,
                                                                                                                                         started,finished,duration,pg_dump_file,
                                                                                                                                         pg_dump_file_size,pg_dump_log_file,pg_dump_roles_file,
                                                                                                                                         pg_dump_roles_file_size,pg_dump_roles_log_file,
                                                                                                                                         pg_dump_dbconfig_file,pg_dump_dbconfig_file_size,
                                                                                                                                         pg_dump_dbconfig_log_file,global_log_file,execution_status,
-                                                                                                                                        execution_method,error_message))
+                                                                                                                                        execution_method,error_message,snapshot_id))
                     self.conn.commit()                        
                     
                 except psycopg2.Error as e:
@@ -1168,7 +1170,7 @@ class pgbackman_db():
     # Method 
     # ############################################
                       
-    def get_catalog_entries_to_delete_by_retention(self,backup_server_id):
+    def get_cron_catalog_entries_to_delete_by_retention(self,backup_server_id):
         """A function to get catalog entries to delete"""
 
         try:
@@ -1176,7 +1178,7 @@ class pgbackman_db():
 
             if self.cur:
                 try:
-                    self.cur.execute('SELECT * FROM get_catalog_entries_to_delete_by_retention WHERE backup_server_id = %s',(backup_server_id,))
+                    self.cur.execute('SELECT * FROM get_cron_catalog_entries_to_delete_by_retention WHERE backup_server_id = %s',(backup_server_id,))
                     self.conn.commit()                        
               
                     return self.cur
@@ -1875,3 +1877,51 @@ class pgbackman_db():
         except psycopg2.Error as e:
             raise e
     
+
+    # ############################################
+    # Method 
+    # ############################################
+                      
+    def check_pgsql_node_status(self,pgsql_node_id):
+        """A function to check if a PgSQL node is stopped"""
+
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT check_pgsql_node_status(%s)',(pgsql_node_id,))
+                    self.conn.commit()                        
+              
+                except psycopg2.Error as e:
+                    raise e
+                    
+            self.pg_close()
+   
+        except psycopg2.Error as e:
+            raise e
+
+    # ############################################
+    # Method 
+    # ############################################
+           
+    def get_new_snapshots(self,backup_server_id):
+        """A function to get new snapshots to be run in a backup server"""
+     
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT "SnapshotID","AT time" FROM show_snapshot_definitions WHERE backup_server_id = %s AND status = %s',(backup_server_id,'WAITING'))
+                    self.conn.commit()
+                    
+                    return self.cur
+                
+                except psycopg2.Error as e:
+                    raise e
+
+            self.pg_close()
+
+        except psycopg2.Error as e:
+            raise e

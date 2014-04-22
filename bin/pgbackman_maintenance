@@ -97,7 +97,7 @@ def enforce_retentions(db,backup_server_id):
     logs.logger.debug('## Enforce file retentions ##')
 
     try:
-        for record in db.get_catalog_entries_to_delete_by_retention(backup_server_id):
+        for record in db.get_cron_catalog_entries_to_delete_by_retention(backup_server_id):
 
             error_cnt = 0
             
@@ -160,7 +160,7 @@ def process_pending_catalog_log_file(db,backup_server_id):
                 for line in pending_file:
                     parameters = line.split('::')
                     
-                    if len(parameters) == 21:
+                    if len(parameters) == 22:
                             
                         #
                         # Updating the database with the information in the pending file
@@ -186,7 +186,8 @@ def process_pending_catalog_log_file(db,backup_server_id):
                                                        parameters[17],
                                                        parameters[18],
                                                        parameters[19],
-                                                       parameters[20].replace('\n',''))
+                                                       parameters[20],
+                                                       parameters[21].replace('\n',''))
 
                         logs.logger.info('Backup job catalog for DefID: %s in pending file %s updated in the database',parameters[0],pending_log_file)
                             

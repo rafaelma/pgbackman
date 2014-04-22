@@ -252,6 +252,28 @@ CREATE TABLE job_execution_method(
 ALTER TABLE job_execution_method ADD PRIMARY KEY (code);
 ALTER TABLE job_execution_method OWNER TO pgbackman_role_rw;
 
+-- ------------------------------------------------------
+-- Table: snapshot_definition_status
+--
+-- @Description: Status codes for snapshot definitions
+--
+-- Attributes:
+--
+-- @code:
+-- @description:
+-- ------------------------------------------------------
+
+\echo '# [Creating table: snapshot_definition_status]\n'
+
+CREATE TABLE snapshot_definition_status(
+
+  code CHARACTER VARYING(20) NOT NULL,
+  description TEXT
+);
+
+ALTER TABLE snapshot_definition_status ADD PRIMARY KEY (code);
+ALTER TABLE snapshot_definition_status OWNER TO pgbackman_role_rw;
+
 
 -- ------------------------------------------------------
 -- Table: backup_server_default_config
@@ -383,7 +405,7 @@ ALTER TABLE backup_job_definition ADD PRIMARY KEY (backup_server_id,pgsql_node_i
 ALTER TABLE backup_job_definition OWNER TO pgbackman_role_rw;
 
 -- ------------------------------------------------------
--- Table: snapshots_definition
+-- Table: snapshot_definition
 --
 -- @Description: snapshots defined in Pgbackman 
 --
@@ -410,11 +432,12 @@ CREATE TABLE snapshot_definition(
   backup_server_id INTEGER NOT NULL,
   pgsql_node_id INTEGER NOT NULL,
   dbname TEXT NOT NULL,
-  at_time TEXT,
+  at_time TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   backup_code CHARACTER VARYING(10) NOT NULL,
   encryption boolean DEFAULT false NOT NULL,
   retention_period interval DEFAULT '7 days'::interval NOT NULL,
   extra_parameters TEXT DEFAULT '',
+  status TEXT DEFAULT 'WAITING',
   remarks TEXT
 );
 
@@ -453,7 +476,8 @@ CREATE TABLE backup_job_catalog(
 
   bck_id BIGSERIAL,
   registered TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-  def_id BIGINT NOT NULL,
+  def_id BIGINT,
+  snapshot_id BIGINT,
   procpid INTEGER,
   backup_server_id INTEGER NOT NULL,
   pgsql_node_id INTEGER NOT NULL,
@@ -598,10 +622,6 @@ ALTER TABLE ONLY backup_job_definition
 ALTER TABLE ONLY backup_job_definition
     ADD FOREIGN KEY (job_status) REFERENCES  job_definition_status(code) MATCH FULL ON DELETE RESTRICT;
 
-
-ALTER TABLE ONLY backup_job_catalog
-    ADD FOREIGN KEY (def_id) REFERENCES  backup_job_definition (def_id) MATCH FULL ON DELETE RESTRICT;
-
 ALTER TABLE ONLY backup_job_catalog
     ADD FOREIGN KEY (backup_server_id) REFERENCES  backup_server (server_id) MATCH FULL ON DELETE RESTRICT;
 
@@ -613,6 +633,20 @@ ALTER TABLE ONLY backup_job_catalog
 
 ALTER TABLE ONLY backup_job_catalog
     ADD FOREIGN KEY (execution_method) REFERENCES job_execution_method (code) MATCH FULL ON DELETE RESTRICT;
+
+ALTER TABLE ONLY snapshot_definition
+    ADD FOREIGN KEY (backup_server_id) REFERENCES backup_server (server_id) MATCH FULL ON DELETE RESTRICT;
+
+ALTER TABLE ONLY snapshot_definition
+    ADD FOREIGN KEY (pgsql_node_id) REFERENCES pgsql_node (node_id) MATCH FULL ON DELETE RESTRICT;
+
+ALTER TABLE ONLY snapshot_definition
+    ADD FOREIGN KEY (backup_code) REFERENCES backup_code (code) MATCH FULL ON DELETE RESTRICT;
+
+ALTER TABLE ONLY snapshot_definition
+    ADD FOREIGN KEY (status) REFERENCES snapshot_definition_status (code) MATCH FULL ON DELETE RESTRICT;
+
+
 
 -- ------------------------------------------------------
 -- Init
@@ -635,6 +669,12 @@ INSERT INTO backup_code (code,description) VALUES ('CONFIG','Backup of the confi
 
 INSERT INTO job_definition_status (code,description) VALUES ('ACTIVE','Backup job activated and in production');
 INSERT INTO job_definition_status (code,description) VALUES ('STOPPED','Backup job stopped');
+
+\echo '# [Init: snapshot_definition_status]\n'
+
+INSERT INTO snapshot_definition_status (code,description) VALUES ('WAITING','Snapshot waiting to be defined in AT');
+INSERT INTO snapshot_definition_status (code,description) VALUES ('DEFINED','Snapshot defined in AT');
+INSERT INTO snapshot_definition_status (code,description) VALUES ('ERROR','Snapshot could not be defined in AT');
 
 
 \echo '# [Init: job_execution_status]\n'
@@ -711,8 +751,7 @@ CREATE OR REPLACE FUNCTION notify_pgsql_node_change() RETURNS TRIGGER
      EXECUTE 'INSERT INTO pgsql_node_stopped (pgsql_node_id) VALUES ($1)'
      USING NEW.node_id; 
 
-     PERFORM pg_notify('channel_pgsql_node_stopped','PgSQL node stopped');
-  END IF;    
+     PERFORM pg_notify('channel_pgsql_node_stopped','PgSQL node stopped');  END IF;    
 
   RETURN NULL;
 END;
@@ -1019,6 +1058,31 @@ ALTER FUNCTION update_job_queue() OWNER TO pgbackman_role_rw;
 CREATE TRIGGER update_job_queue AFTER INSERT OR UPDATE OR DELETE
     ON backup_job_definition FOR EACH ROW 
     EXECUTE PROCEDURE update_job_queue();
+
+
+-- ------------------------------------------------------------
+-- Function: notify_new_snapshot()
+--
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION notify_new_snapshot() RETURNS TRIGGER
+ LANGUAGE plpgsql 
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ BEGIN
+  PERFORM pg_notify('channel_snapshot_defined','Snapshot defined');
+ 
+  RETURN NULL;
+END;
+$$;
+
+ALTER FUNCTION notify_new_snapshot() OWNER TO pgbackman_role_rw;
+
+CREATE TRIGGER notify_new_snapshot AFTER INSERT
+    ON snapshot_definition FOR EACH ROW
+    EXECUTE PROCEDURE notify_new_snapshot();
+
 
 
 -- ------------------------------------------------------------
@@ -1885,11 +1949,11 @@ ALTER FUNCTION delete_force_backup_definition_dbname(INTEGER,TEXT) OWNER TO pgba
 
 
 -- ------------------------------------------------------------
--- Function: register_snapshot()
+-- Function: register_snapshot_definition()
 --
 -- ------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION register_snapshot(INTEGER,INTEGER,TEXT,TEXT,CHARACTER VARYING,INTERVAL,TEXT,TEXT) RETURNS VOID
+CREATE OR REPLACE FUNCTION register_snapshot_definition(INTEGER,INTEGER,TEXT,TIMESTAMP,CHARACTER VARYING,INTERVAL,TEXT,TEXT) RETURNS VOID
  LANGUAGE plpgsql 
  SECURITY INVOKER 
  SET search_path = public, pg_temp
@@ -1964,7 +2028,42 @@ CREATE OR REPLACE FUNCTION register_snapshot(INTEGER,INTEGER,TEXT,TEXT,CHARACTER
 END;
 $$;
 
-ALTER FUNCTION register_snapshot(INTEGER,INTEGER,TEXT,TEXT,CHARACTER VARYING,INTERVAL,TEXT,TEXT) OWNER TO pgbackman_role_rw;
+ALTER FUNCTION register_snapshot_definition(INTEGER,INTEGER,TEXT,TIMESTAMP,CHARACTER VARYING,INTERVAL,TEXT,TEXT) OWNER TO pgbackman_role_rw;
+
+
+-- ------------------------------------------------------------
+-- Function: update_backup_server()
+--
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION update_snapshot_status(INTEGER,TEXT) RETURNS VOID
+ LANGUAGE plpgsql 
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ DECLARE
+  snapshot_id_ ALIAS FOR $1;
+  status_ ALIAS FOR $2;
+
+  v_msg     TEXT;
+  v_detail  TEXT;
+  v_context TEXT;
+ BEGIN
+
+     EXECUTE 'UPDATE snapshot_definition SET status = $2 WHERE snapshot_id = $1'
+     USING snapshot_id_,
+     	   upper(status_);
+   	   
+   EXCEPTION WHEN others THEN
+   	GET STACKED DIAGNOSTICS	
+            v_msg     = MESSAGE_TEXT,
+            v_detail  = PG_EXCEPTION_DETAIL,
+            v_context = PG_EXCEPTION_CONTEXT;
+        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \nCONTEXT: % \n----------------------------------------------\n', v_msg, v_detail, v_context;
+  END;
+$$;
+
+ALTER FUNCTION update_snapshot_status(INTEGER,TEXT) OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------------
@@ -2094,6 +2193,40 @@ CREATE OR REPLACE FUNCTION get_pgsql_node_parameter(INTEGER,TEXT) RETURNS TEXT
 $$;
 
 ALTER FUNCTION get_pgsql_node_parameter(INTEGER,TEXT) OWNER TO pgbackman_role_rw;
+
+
+-- ------------------------------------------------------------
+-- Function: check_pgsql_node_status()
+--
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION check_pgsql_node_status(INTEGER) RETURNS VOID 
+ LANGUAGE plpgsql 
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ DECLARE
+ pgsql_node_id_ ALIAS FOR $1;
+
+ status_ TEXT;
+ BEGIN
+  --
+  -- This function checks if a pgsql node is running or stopped
+  --
+
+
+  SELECT status from pgsql_node WHERE node_id = pgsql_node_id_ INTO status_;
+
+  IF status_ IS NULL OR status_ = '' THEN
+    RAISE EXCEPTION 'PgSQL node ID: % does not have a status',pgsql_node_id_;
+  ELSIF status_ = 'STOPPED' THEN
+    RAISE EXCEPTION 'PgSQL node ID: % has status STOPPED.',pgsql_node_id_;
+  END IF;
+ END;
+$$;
+
+ALTER FUNCTION check_pgsql_node_status(INTEGER) OWNER TO pgbackman_role_rw;
+
 
 -- ------------------------------------------------------------
 -- Function: get_hour_from_interval()
@@ -2340,6 +2473,8 @@ CREATE OR REPLACE FUNCTION get_listen_channel_names(INTEGER) RETURNS SETOF TEXT
   UNION
   SELECT 'channel_pgsql_node_deleted' AS channel
   UNION
+  SELECT 'channel_snapshot_defined' AS channel
+  UNION
   SELECT 'channel_bs' || $1 || '_pg' || node_id AS channel FROM pgsql_node WHERE status = 'RUNNING' ORDER BY channel DESC
 $$;
 
@@ -2454,6 +2589,79 @@ $$;
 
 ALTER FUNCTION generate_crontab_backup_jobs(INTEGER,INTEGER) OWNER TO pgbackman_role_rw;
 
+-- ------------------------------------------------------------
+-- Function: generate_snapshot_at_file()
+--
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION generate_snapshot_at_file(INTEGER) RETURNS TEXT 
+ LANGUAGE plpgsql
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ DECLARE
+  snapshot_id_ ALIAS FOR $1;
+  backup_server_id_ INTEGER;
+  pgsql_node_id_ INTEGER;
+  snapshot_row RECORD;
+
+  backup_server_fqdn TEXT := '';
+  pgsql_node_fqdn TEXT := '';
+  pgsql_node_port TEXT := '';
+  root_backup_dir TEXT := '';
+  admin_user TEXT := '';
+  pgbackman_dump TEXT := '';
+
+  output TEXT := '';
+BEGIN
+
+ SELECT backup_server_id FROM snapshot_definition WHERE snapshot_id = snapshot_id_ INTO backup_server_id_;
+ SELECT pgsql_node_id FROM snapshot_definition WHERE snapshot_id = snapshot_id_ INTO pgsql_node_id_; 
+
+ root_backup_dir := get_backup_server_parameter(backup_server_id_,'root_backup_partition');
+ backup_server_fqdn := get_backup_server_fqdn(backup_server_id_);
+ pgsql_node_fqdn := get_pgsql_node_fqdn(pgsql_node_id_);
+ pgsql_node_port := get_pgsql_node_port(pgsql_node_id_);
+ admin_user := get_pgsql_node_admin_user(pgsql_node_id_);
+ pgbackman_dump := get_backup_server_parameter(backup_server_id_,'pgbackman_dump');
+
+ FOR snapshot_row IN (
+ SELECT *
+ FROM snapshot_definition
+ WHERE snapshot_id = snapshot_id_
+ ) LOOP
+
+  output := output || 'su -l ' || admin_user || ' -c "';
+
+  output := output || pgbackman_dump || 
+  	    	   ' --node-fqdn ' || pgsql_node_fqdn ||
+		   ' --node-id ' || pgsql_node_id_ ||
+		   ' --node-port ' || pgsql_node_port ||
+		   ' --node-user ' || admin_user || 
+		   ' --snapshot-id ' || snapshot_row.snapshot_id::TEXT;
+
+  IF SNAPSHOT_row.backup_code != 'CLUSTER' THEN
+     output := output || ' --dbname ' || snapshot_row.dbname;
+  END IF;
+
+  output := output || ' --encryption ' || snapshot_row.encryption::TEXT || 
+		      ' --backup-code ' || snapshot_row.backup_code ||
+		      ' --root-backup-dir ' || root_backup_dir;
+
+  IF snapshot_row.extra_parameters != '' AND snapshot_row.extra_parameters IS NOT NULL THEN
+    output := output || ' --extra-params \\\"' || snapshot_row.extra_parameters || '\\\"';
+  END IF;
+ 
+  output := output || E'" \n';
+
+ END LOOP;
+
+ RETURN output;
+END;
+$$;
+
+ALTER FUNCTION generate_snapshot_at_file(INTEGER) OWNER TO pgbackman_role_rw;
+
 
 -- ------------------------------------------------------------
 -- Function: get_pgsql_node_dsn()
@@ -2541,7 +2749,7 @@ ALTER FUNCTION get_pgsql_node_admin_user(INTEGER) OWNER TO pgbackman_role_rw;
 --
 -- ------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION register_backup_job_catalog(INTEGER,INTEGER,INTEGER,INTEGER,TEXT,TIMESTAMP WITH TIME ZONE,TIMESTAMP WITH TIME ZONE,INTERVAL,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,TEXT,TEXT,TEXT) RETURNS BOOLEAN
+CREATE OR REPLACE FUNCTION register_backup_job_catalog(INTEGER,INTEGER,INTEGER,INTEGER,TEXT,TIMESTAMP WITH TIME ZONE,TIMESTAMP WITH TIME ZONE,INTERVAL,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,TEXT,TEXT,TEXT,INTEGER) RETURNS BOOLEAN
  LANGUAGE plpgsql 
  SECURITY INVOKER 
  SET search_path = public, pg_temp
@@ -2569,6 +2777,7 @@ CREATE OR REPLACE FUNCTION register_backup_job_catalog(INTEGER,INTEGER,INTEGER,I
   execution_status_ ALIAS FOR $19;
   execution_method_ ALIAS FOR $20;
   error_message_ ALIAS FOR $21;
+  snapshot_id_ ALIAS FOR $22;
 
   v_msg     TEXT;
   v_detail  TEXT;
@@ -2595,8 +2804,9 @@ CREATE OR REPLACE FUNCTION register_backup_job_catalog(INTEGER,INTEGER,INTEGER,I
 					     global_log_file,
 					     execution_status,
 					     execution_method,
-					     error_message) 
-	     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21)'
+					     error_message,
+					     snapshot_id) 
+	     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22)'
     USING  def_id_,
     	   procpid_,
     	   backup_server_id_,
@@ -2617,7 +2827,8 @@ CREATE OR REPLACE FUNCTION register_backup_job_catalog(INTEGER,INTEGER,INTEGER,I
   	   global_log_file_,
   	   execution_status_,
 	   execution_method_,
-	   error_message_;
+	   error_message_,
+	   snapshot_id_;
 
    RETURN TRUE;
  EXCEPTION WHEN others THEN
@@ -2631,7 +2842,7 @@ CREATE OR REPLACE FUNCTION register_backup_job_catalog(INTEGER,INTEGER,INTEGER,I
  END;
 $$;
 
-ALTER FUNCTION register_backup_job_catalog(INTEGER,INTEGER,INTEGER,INTEGER,TEXT,TIMESTAMP WITH TIME ZONE,TIMESTAMP WITH TIME ZONE,INTERVAL,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,TEXT,TEXT,TEXT) OWNER TO pgbackman_role_rw;
+ALTER FUNCTION register_backup_job_catalog(INTEGER,INTEGER,INTEGER,INTEGER,TEXT,TIMESTAMP WITH TIME ZONE,TIMESTAMP WITH TIME ZONE,INTERVAL,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,TEXT,TEXT,TEXT,INTEGER) OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------------
@@ -2780,9 +2991,11 @@ ORDER BY backup_server_id,pgsql_node_id,"DBname","Code","Status";
 ALTER VIEW show_backup_definitions OWNER TO pgbackman_role_rw;
 
 CREATE OR REPLACE VIEW show_backup_catalog AS
-   SELECT lpad(a.bck_id::text,12,'0') AS "BckID",
+   (SELECT lpad(a.bck_id::text,12,'0') AS "BckID",
        lpad(a.def_id::text,11,'0') AS "DefID",
        a.def_id,
+       '' AS "SnapshotID",
+       0 AS snapshot_id,
        date_trunc('seconds',a.finished) AS "Finished",
        a.backup_server_id,
        get_backup_server_fqdn(a.backup_server_id) AS "Backup server",
@@ -2795,13 +3008,32 @@ CREATE OR REPLACE VIEW show_backup_catalog AS
        a.execution_method AS "Execution",
        a.execution_status AS "Status" 
    FROM backup_job_catalog a 
-   JOIN backup_job_definition b ON a.def_id = b.def_id 
+   JOIN backup_job_definition b ON a.def_id = b.def_id) 
+   UNION
+   (SELECT lpad(a.bck_id::text,12,'0') AS "BckID",
+       '' AS "DefID",
+       0 AS def_id,
+       lpad(a.snapshot_id::text,11,'0') AS "SnapshotID",
+       a.snapshot_id,
+       date_trunc('seconds',a.finished) AS "Finished",
+       a.backup_server_id,
+       get_backup_server_fqdn(a.backup_server_id) AS "Backup server",
+       a.pgsql_node_id,
+       get_pgsql_node_fqdn(a.pgsql_node_id) AS "PgSQL node",
+       a.dbname AS "DBname",
+       date_trunc('seconds',a.duration) AS "Duration",
+       pg_size_pretty(a.pg_dump_file_size+a.pg_dump_roles_file_size+a.pg_dump_dbconfig_file_size) AS "Size",
+       b.backup_code AS "Code",
+       a.execution_method AS "Execution",
+       a.execution_status AS "Status" 
+       FROM backup_job_catalog a 
+       JOIN snapshot_definition b ON a.snapshot_id = b.snapshot_id) 
    ORDER BY "Finished" DESC,backup_server_id,pgsql_node_id,"DBname","Code","Status";
 
 ALTER VIEW show_backup_catalog OWNER TO pgbackman_role_rw;
 
 CREATE OR REPLACE VIEW show_backup_details AS
-   SELECT lpad(a.bck_id::text,12,'0') AS "BckID",
+   (SELECT lpad(a.bck_id::text,12,'0') AS "BckID",
        a.bck_id AS bck_id,
        date_trunc('seconds',a.registered) AS "Registered",
        date_trunc('seconds',a.started) AS "Started",
@@ -2809,9 +3041,11 @@ CREATE OR REPLACE VIEW show_backup_details AS
        date_trunc('seconds',a.finished+b.retention_period) AS "Valid until",
        date_trunc('seconds',a.duration) AS "Duration",
        lpad(a.def_id::text,8,'0') AS "DefID",
+       '' AS "SnapshotID",
        a.procpid AS "ProcPID",
        b.retention_period::TEXT || ' (' || b.retention_redundancy::TEXT || ')' AS "Retention",
        b.minutes_cron || ' ' || b.hours_cron || ' ' || b.weekday_cron || ' ' || b.month_cron || ' ' || b.day_month_cron AS "Schedule",
+       '' AS "AT time",
        b.encryption::TEXT AS "Encryption",
        b.extra_parameters As "Extra parameters",
        a.backup_server_id,
@@ -2834,8 +3068,45 @@ CREATE OR REPLACE VIEW show_backup_details AS
        a.execution_method AS "Execution",
        left(a.error_message,60) AS "Error message" 
    FROM backup_job_catalog a 
-   JOIN backup_job_definition b ON a.def_id = b.def_id 
-   ORDER BY "Finished" DESC,backup_server_id,pgsql_node_id,"DBname","Code","Status";
+   JOIN backup_job_definition b ON a.def_id = b.def_id) 
+   UNION
+   (SELECT lpad(a.bck_id::text,12,'0') AS "BckID",
+       a.bck_id AS bck_id,
+       date_trunc('seconds',a.registered) AS "Registered",
+       date_trunc('seconds',a.started) AS "Started",
+       date_trunc('seconds',a.finished) AS "Finished",
+       date_trunc('seconds',a.finished+b.retention_period) AS "Valid until",
+       date_trunc('seconds',a.duration) AS "Duration",
+       '' AS "DefID",
+       lpad(a.snapshot_id::text,8,'0') AS "SnapshotID",
+       a.procpid AS "ProcPID",
+       b.retention_period::TEXT AS "Retention",
+       '' AS "Schedule",
+       to_char(b.at_time, 'YYYYMMDDHH24MI'::text) AS "AT time",
+       b.encryption::TEXT AS "Encryption",
+       b.extra_parameters As "Extra parameters",
+       a.backup_server_id,
+       get_backup_server_fqdn(a.backup_server_id) AS "Backup server",
+       a.pgsql_node_id,
+       get_pgsql_node_fqdn(a.pgsql_node_id) AS "PgSQL node",
+       a.dbname AS "DBname",
+       a.pg_dump_file AS "DB dump file",
+       a.pg_dump_log_file AS "DB log file",
+       pg_size_pretty(a.pg_dump_file_size) AS "DB dump size",
+       a.pg_dump_roles_file AS "DB roles dump file",
+       a.pg_dump_roles_log_file AS "DB roles log file",
+       pg_size_pretty(a.pg_dump_roles_file_size) AS "DB roles dump size",
+       a.pg_dump_dbconfig_file AS "DB config dump file",
+       a.pg_dump_dbconfig_log_file AS "DB config log file",
+       pg_size_pretty(a.pg_dump_dbconfig_file_size) AS "DB config dump size",
+       pg_size_pretty(a.pg_dump_file_size+a.pg_dump_roles_file_size+a.pg_dump_dbconfig_file_size) AS "Total size",
+       b.backup_code AS "Code",
+       a.execution_status AS "Status",
+       a.execution_method AS "Execution",
+       left(a.error_message,60) AS "Error message" 
+   FROM backup_job_catalog a 
+   JOIN snapshot_definition b ON a.snapshot_id = b.snapshot_id)
+ ORDER BY "Finished" DESC,backup_server_id,pgsql_node_id,"DBname","Code","Status";
 
 ALTER VIEW show_backup_details OWNER TO pgbackman_role_rw;
 
@@ -2856,7 +3127,7 @@ CREATE OR REPLACE VIEW get_catalog_entries_to_delete AS
 
 ALTER VIEW get_catalog_entries_to_delete OWNER TO pgbackman_role_rw;
 
-CREATE OR REPLACE VIEW get_catalog_entries_to_delete_by_retention AS
+CREATE OR REPLACE VIEW get_cron_catalog_entries_to_delete_by_retention AS
 WITH 
   all_backup_jobs_catalog AS (
    SELECT 
@@ -2877,7 +3148,7 @@ WITH
       a.pg_dump_dbconfig_log_file 
    FROM backup_job_catalog a 
    INNER JOIN backup_job_definition b ON a.def_id=b.def_id
-   ORDER BY a.def_id,a.finished DESC
+   ORDER BY a.def_id,a.finished ASC
    )
    SELECT * 
    FROM all_backup_jobs_catalog
@@ -2885,7 +3156,38 @@ WITH
    AND row_id > retention_redundancy 
    ORDER BY def_id,finished DESC;
 
-ALTER VIEW get_catalog_entries_to_delete_by_retention OWNER TO pgbackman_role_rw;
+ALTER VIEW get_cron_catalog_entries_to_delete_by_retention OWNER TO pgbackman_role_rw;
+
+
+CREATE OR REPLACE VIEW get_at_catalog_entries_to_delete_by_retention AS
+WITH 
+  all_backup_jobs_catalog AS (
+   SELECT 
+      a.bck_id, 
+      a.snapshot_id,
+      a.backup_server_id,
+      a.pgsql_node_id,
+      a.dbname, 
+      a.finished,
+      b.retention_period,
+      a.pg_dump_file, 
+      a.pg_dump_log_file,
+      a.pg_dump_roles_file,
+      a.pg_dump_roles_log_file,
+      a.pg_dump_dbconfig_file,
+      a.pg_dump_dbconfig_log_file 
+   FROM backup_job_catalog a 
+   INNER JOIN snapshot_definition b ON a.snapshot_id=b.snapshot_id
+   ORDER BY a.snapshot_id,a.finished ASC
+   )
+   SELECT * 
+   FROM all_backup_jobs_catalog
+   WHERE finished < now() - retention_period
+   ORDER BY snapshot_id,finished DESC;
+
+ALTER VIEW get_at_catalog_entries_to_delete_by_retention OWNER TO pgbackman_role_rw;
+
+
 
 CREATE OR REPLACE VIEW show_backup_server_config AS
 SELECT server_id,
@@ -2941,10 +3243,11 @@ SELECT lpad(snapshot_id::text,11,'0') AS "SnapshotID",
        pgsql_node_id,
        get_pgsql_node_fqdn(pgsql_node_id) AS "PgSQL node",
        dbname AS "DBname",
-       at_time AS "AT time",
+       to_char(at_time, 'YYYYMMDDHH24MI'::text) AS "AT time",
        backup_code AS "Code",
        retention_period::text AS "Retention",
-       extra_parameters AS "Parameters"
+       extra_parameters AS "Parameters",
+       status AS "Status"
 FROM snapshot_definition
 ORDER BY backup_server_id,pgsql_node_id,"DBname","Code","AT time";
 
