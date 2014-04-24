@@ -19,7 +19,11 @@
 # You should have received a copy of the GNU General Public License
 # along with Pgbackman.  If not, see <http://www.gnu.org/licenses/>.
 
+import subprocess
 import sys
+import os
+import pwd
+import grp
 from setuptools import setup
 
 '''
@@ -34,7 +38,36 @@ try:
         raise SystemExit('ERROR: pgbackman needs at least python 2.6 to work')
     else:
         install_requires = ['psycopg2','argparse']
+
         
+    #
+    # Creating pgbackman users and groups
+    #
+        
+
+    groupadd_command = '/usr/sbin/groupadd -f -r pgbackman'
+    proc = subprocess.Popen([groupadd_command],shell=True)
+    proc.wait()
+
+    if proc.returncode == 0:
+        print 'Group pgbackman created'
+        
+    elif proc.returncode != 0:
+        raise SystemExit('ERROR: Problems creating group pgbackman. Returncode: ' + str(proc.returncode))
+    
+    useradd_command = '/usr/sbin/useradd -m -n -g pgbackman -r -d /var/lib/pgbackman -s /bin/bash -c "PostgreSQL Backup Manager" pgbackman'
+    proc = subprocess.Popen([useradd_command],shell=True)
+    proc.wait()
+
+    if proc.returncode == 0:
+        print 'User pgbackman created'
+        
+    elif proc.returncode == 9:
+        print 'User pgbackman already exists'
+
+    else:
+        raise SystemExit('ERROR: Problems creating user pgbackman. Returncode: ' + str(proc.returncode))
+    
     setup(name='pgbackman',
           version=pgbackman['__version__'],
           description='PGBACKMAN - PostgreSQL Backup Manager',
@@ -60,8 +93,22 @@ try:
             'Programming Language :: Python :: 2.6',
             'Programming Language :: Python :: 2.7',
             ],
-          
           )
+    try:
+        root_uid = pwd.getpwnam('root').pw_uid
+        pgbackman_uid = pwd.getpwnam('pgbackman').pw_uid
+        pgbackman_gid = grp.getgrnam('pgbackman').gr_gid
+        
+        os.chown('/var/log/pgbackman',pgbackman_uid, pgbackman_gid)
+        os.chmod('/var/log/pgbackman',01775)
+
+        os.chown('/var/log/pgbackman/pgbackman.log',pgbackman_uid, pgbackman_gid)
+        os.chmod('/var/log/pgbackman/pgbackman.log',00664)
+
+        print "Privileges defined for user pgbackman"
+
+    except Exception as e:
+        print e
 
 except Exception as e:
     print e

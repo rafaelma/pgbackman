@@ -36,13 +36,14 @@ from pgbackman.prettytable import *
 
 # ############################################
 # class pgbackman_cli
-#
-# This class implements the pgbackman shell.
-# It is based on the python module cmd
 # ############################################
 
+
 class pgbackman_cli(cmd.Cmd):
-    
+    '''
+    This class implements the pgbackman shell. It is based on the python module cmd
+    '''
+  
     # ###############################
     # Constructor
     # ###############################
@@ -79,12 +80,8 @@ class pgbackman_cli(cmd.Cmd):
         
         COMMAND:
         show_backup_servers
+
         """
-        
-        #
-        # If a parameter has more than one token, it has to be
-        # defined between doble quotes
-        #
         
         try: 
             arg_list = shlex.split(args)
@@ -116,16 +113,7 @@ class pgbackman_cli(cmd.Cmd):
         COMMAND:
         register_backup_server [hostname] [domain] [remarks]
 
-        [Status]:
-        ---------
-        RUNNING: Backup server running and online
-        DOWN: Backup server not online.
         """
-        
-        #
-        # If a parameter has more than one token, it has to be
-        # defined between doble quotes
-        #
         
         try: 
             arg_list = shlex.split(args)
@@ -176,8 +164,7 @@ class pgbackman_cli(cmd.Cmd):
                 print "\n[Aborted]\n"
 
         #
-        # Command with the 4 parameters that can be defined.
-        # Hostname, domain, status and remarks
+        # Command with parameters
         #
 
         elif len(arg_list) == 3:
@@ -212,12 +199,16 @@ class pgbackman_cli(cmd.Cmd):
         DESCRIPTION:
         This command deletes a backup server registered in PgBackMan.
 
-        NOTE: This command will not work if there are backup job definitions 
+        NOTE: This command will not work if there are backup definitions 
         registered in the server we want to delete. This is done on purpose 
         to avoid operator errors with catastrophic consequences.
 
+        You will have to delete or move to another server all backup definitions
+        running on the server that you want to delete.
+
         COMMAND:
         delete_backup_server [SrvID | FQDN]
+
         """
         
         try: 
@@ -260,11 +251,11 @@ class pgbackman_cli(cmd.Cmd):
 
             elif ack.lower() == "no":
                 print "\n[Aborted]\n"
-                
+              
         #
-        # Command with the 1 parameter that can be defined.
+        # Command with parameters
         #
-
+  
         elif len(arg_list) == 1:
 
             server_id = arg_list[0]
@@ -300,8 +291,9 @@ class pgbackman_cli(cmd.Cmd):
         
         COMMAND:
         show_pgsql_nodes
-        """
         
+        """
+               
         try: 
             arg_list = shlex.split(args)
             
@@ -336,12 +328,8 @@ class pgbackman_cli(cmd.Cmd):
         ---------
         RUNNING: PostgreSQL node running and online
         DOWN: PostgreSQL node not online.
+
         """
-        
-        #
-        # If a parameter has more than one token, it has to be
-        # defined between doble quotes
-        #
  
         try: 
             arg_list = shlex.split(args)
@@ -407,9 +395,8 @@ class pgbackman_cli(cmd.Cmd):
                 print "\n[Aborted]\n"
 
         #
-        # Command with the 6 parameters that can be defined.
-        # Hostname, domain, pgport, admin_user, status and remarks
-        #
+        # Command with parameters
+        #        
 
         elif len(arg_list) == 6:
 
@@ -450,8 +437,12 @@ class pgbackman_cli(cmd.Cmd):
         registered in the server we want to delete. This is done on purpose 
         to avoid operator errors with catastrophic consequences.
 
+        You will have to delete all backup definitions for the server that
+        you want to delete.
+        
         COMMAND:
         delete_pgsql_node [NodeID | FQDN]
+        
         """
        
         try: 
@@ -496,8 +487,8 @@ class pgbackman_cli(cmd.Cmd):
                 print "\n[Aborted]\n"
 
         #
-        # Command with the 1 parameter that can be defined.
-        #
+        # Command with parameters
+        #             
 
         elif len(arg_list) == 1:
 
@@ -530,10 +521,12 @@ class pgbackman_cli(cmd.Cmd):
     def do_show_backup_definitions(self,args):
         """
         DESCRIPTION:
-        This command shows all backup definitions for a particular combination of search values.
+        This command shows all backup definitions 
+        for a particular combination of search values.
 
         COMMAND:
         show_backup_definitions [SrvID|FQDN] [NodeID|FQDN] [DBname]
+        
         """
 
         try: 
@@ -543,6 +536,10 @@ class pgbackman_cli(cmd.Cmd):
             print "\n[ERROR]: ",e,"\n"
             return False
         
+        #
+        # Command without parameters
+        #             
+
         if len(arg_list) == 0:
             
             print "--------------------------------------------------------"
@@ -571,6 +568,10 @@ class pgbackman_cli(cmd.Cmd):
                                                     
             except Exception as e:
                 print "\n[ERROR]: ",e
+
+        #
+        # Command with parameters
+        #             
 
         elif len(arg_list) == 3:
 
@@ -605,6 +606,10 @@ class pgbackman_cli(cmd.Cmd):
             except Exception as e:
                 print "\n[ERROR]: ",e
 
+        #
+        # Command with the wrong number of parameters
+        #
+
         else:
             print "\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n"
         
@@ -616,7 +621,8 @@ class pgbackman_cli(cmd.Cmd):
     def do_register_backup_definition(self,args):
         """
         DESCRIPTION:
-        This command registers a backup job definition in PgBackMan.
+        This command registers a backup definition that 
+        will be run periodically by PgBackMan.
 
         COMMAND:
         register_backup_definition [SrvID | FQDN] 
@@ -631,28 +637,41 @@ class pgbackman_cli(cmd.Cmd):
                                    [job status] 
                                    [remarks] 
 
+        [*cron]:
+        --------
+        CRON format, e.g. 15 01 * * * 
+
         [backup code]: 
         --------------
         CLUSTER: Backup of all databases in a PgSQL node
-        FULL: Full Backup of a database. Schema + data + owner globals + db_parameters.
-        SCHEMA: Schema backup of a database. Schema + owner globals + db_parameters.
+        FULL: Full Backup of a database. Schema + data + owner globals + DB globals.
+        SCHEMA: Schema backup of a database. Schema + owner globals + DB globals.
         DATA: Data backup of the database.
+
+        [encryption]:
+        ------------
+        TRUE: GnuPG encryption activated.
+        FALSE: GnuPG encryption NOT activated.
+
+        [retention period]:
+        -------------------
+        Time interval, e.g. 2 hours, 3 days, 1 week, 1 month, 2 years, ... 
+
+        [retention redundancy]:
+        -----------------------
+        Integer: 1,2,3, .... Minimun number of backups to keep in the catalog
+        regardless of the retention period used.
+
+        [extra params]:
+        ---------------
+        Extra parameters that can be used with pg_dump / pg_dumpall
 
         [job status]:
         -------------
         ACTIVE: Backup job activated and in production.
         STOPPED: Backup job stopped.
 
-        [encryption]:
-        -----------
-        TRUE: GnuPG encryption activated.
-        FALSE: GnuPG encryption NOT activated.
         """
-
-        #
-        # If a parameter has more than one token, it has to be
-        # defined between doble quotes
-        #
         
         try: 
             arg_list = shlex.split(args)
@@ -789,9 +808,8 @@ class pgbackman_cli(cmd.Cmd):
                 print "\n[Aborted]\n"
 
         #
-        # Command with the 6 parameters that can be defined.
-        # Hostname, domain, pgport, admin_user, status and remarks
-        #
+        # Command with parameters
+        #             
 
         elif len(arg_list) == 15:
             
@@ -864,14 +882,21 @@ class pgbackman_cli(cmd.Cmd):
     def do_delete_backup_definition_id(self,args):
         """
         DESCRIPTION:
-        This command deletes a backup job definition ID
+        This command deletes a backup definition by ID
 
         NOTE: You have to use the parameter force-deletion 
-        if you want to force the deletion backup job 
-        definitions with active backups in the catalog 
+        if you want to force the deletion of backup definitions 
+        with active backups in the catalog 
+
+        If you use force-deletion, all backups in the catalog for
+        the backup definition deleted, will be deleted regardless of 
+        the retention period or retention redundancy used.
+
+        *** Use with precaution ***
 
         COMMAND:
         delete_backup_definition_id [DefID] [force-deletion]
+
         """
 
         try: 
@@ -899,7 +924,7 @@ class pgbackman_cli(cmd.Cmd):
             print
             
             while ack != "yes" and ack != "no":
-                ack = raw_input("# Are you sure you want to delete this backup job definition? (yes/no): ")
+                ack = raw_input("# Are you sure you want to delete this backup definition? (yes/no): ")
     
             print "--------------------------------------------------------"
             
@@ -922,10 +947,9 @@ class pgbackman_cli(cmd.Cmd):
             elif ack.lower() == "no":
                 print "\n[Aborted]\n"
 
-        
         #
-        # Command with the parameters that can be defined.
-        #   
+        # Command with parameters
+        #             
 
         elif len(arg_list) == 1:
             def_id = arg_list[0]
@@ -975,14 +999,21 @@ class pgbackman_cli(cmd.Cmd):
     def do_delete_backup_definition_dbname(self,args):
         """
         DESCRIPTION:
-        This command deletes a backup job definition for a database
-
+        This command deletes all backup definition for a database
+        
         NOTE: You have to use the parameter force-deletion 
-        if you want to force the deletion of backup job 
-        definitions with active backups in the catalog 
+        if you want to force the deletion of backup definitions 
+        with active backups in the catalog 
 
+        If you use force-deletion, all backups in the catalog for
+        the backup definition deleted, will be deleted regardless of 
+        the retention period or retention redundancy used.
+
+        *** Use with precaution ***
+        
         COMMAND:
-        delete_backup_job_definition_dbname NodeID/FQDN DBname [force-deletion]
+        delete_backup_definition_dbname [NodeID/FQDN] [DBname] [force-deletion]
+
         """
 
         try: 
@@ -1011,7 +1042,7 @@ class pgbackman_cli(cmd.Cmd):
             print
 
             while ack != "yes" and ack != "no":
-                ack = raw_input("# Are you sure you want to delete this backup job definition? (yes/no): ")
+                ack = raw_input("# Are you sure you want to delete this backup definition? (yes/no): ")
     
             print "--------------------------------------------------------"
             
@@ -1040,10 +1071,9 @@ class pgbackman_cli(cmd.Cmd):
             elif ack.lower() == "no":
                 print "\n[Aborted]\n"
 
-        
         #
-        # Command with the parameters that can be defined.
-        #   
+        # Command with parameters
+        #             
 
         elif len(arg_list) == 2:
             pgsql_node_id = arg_list[0]
@@ -1097,10 +1127,12 @@ class pgbackman_cli(cmd.Cmd):
     def do_show_backup_catalog(self,args):
         """
         DESCRIPTION:
-        This command shows all catalog entries for a particular combination of search values.
+        This command shows all catalog entries for a particular 
+        combination of search values.
 
         COMMAND:
         show_backup_catalog [SrvID|FQDN] [NodeID|FQDN] [DBname] [DefID]
+        
         """
 
         try: 
@@ -1109,6 +1141,10 @@ class pgbackman_cli(cmd.Cmd):
         except ValueError as e:
             print "\n[ERROR]: ",e,"\n"
             return False
+
+        #
+        # Command without parameters
+        #             
         
         if len(arg_list) == 0:
             
@@ -1144,6 +1180,10 @@ class pgbackman_cli(cmd.Cmd):
                                                     
             except Exception as e:
                 print "\n[ERROR]: ",e
+
+        #
+        # Command with parameters
+        #             
 
         elif len(arg_list) == 4:
 
@@ -1196,7 +1236,7 @@ class pgbackman_cli(cmd.Cmd):
     def do_register_snapshot_definition(self,args):
         """
         DESCRIPTION:
-        This command registers a one time snapshot of a database.
+        This command registers a one time snapshot backup of a database.
 
         COMMAND:
         register_snapshot [SrvID | FQDN] 
@@ -1208,20 +1248,28 @@ class pgbackman_cli(cmd.Cmd):
                           [extra params] 
                           [remarks] 
 
+                          
+        [time]:
+        -------
+        Timestamp to run the snapshot, e.g. 2014-04-23 16:01
+
         [backup code]: 
         --------------
         CLUSTER: Backup of all databases in a PgSQL node
-        FULL: Full Backup of a database. Schema + data + owner globals + db_parameters.
-        SCHEMA: Schema backup of a database. Schema + owner globals + db_parameters.
+        FULL: Full Backup of a database. Schema + data + owner globals + DB globals.
+        SCHEMA: Schema backup of a database. Schema + owner globals + DB globals.
         DATA: Data backup of the database.
+
+        [retention period]:
+        -------------------
+        Time interval, e.g. 2 hours, 3 days, 1 week, 1 month, 2 years, ... 
+
+        [extra params]:
+        ---------------
+        Extra parameters that can be used with pg_dump / pg_dumpall
         
         """
 
-        #
-        # If a parameter has more than one token, it has to be
-        # defined between doble quotes
-        #
-        
         try: 
             arg_list = shlex.split(args)
         
@@ -1321,9 +1369,8 @@ class pgbackman_cli(cmd.Cmd):
                 print "\n[Aborted]\n"
 
         #
-        # Command with the 6 parameters that can be defined.
-        # Hostname, domain, pgport, admin_user, status and remarks
-        #
+        # Command with parameters
+        #             
 
         elif len(arg_list) == 8:
             
@@ -1391,10 +1438,19 @@ class pgbackman_cli(cmd.Cmd):
     def do_show_snapshot_definitions(self,args):
         """
         DESCRIPTION:
-        This command shows all one time snapshot definitions waiting to be run.
+        This command shows all one time snapshot backup definitions 
+        with the status information.
+
+        Status:
+        -------
+        WAITING: Waiting to define an AT job to run this snapshot 
+        DEFINED: AT job for this snapshot has been defined
+        ERROR:   Could not define the AT job for this snapshot. 
+                 Is 'at' installed and running?
 
         COMMAND:
         show_snapshot_definitions [SrvID|FQDN] [NodeID|FQDN] [DBname]
+        
         """
 
         try: 
@@ -1403,6 +1459,10 @@ class pgbackman_cli(cmd.Cmd):
         except ValueError as e:
             print "\n[ERROR]: ",e,"\n"
             return False
+
+        #
+        # Command without parameters
+        #
         
         if len(arg_list) == 0:
             
@@ -1432,6 +1492,10 @@ class pgbackman_cli(cmd.Cmd):
                                                     
             except Exception as e:
                 print "\n[ERROR]: ",e
+
+        #
+        # Command with parameters
+        #             
 
         elif len(arg_list) == 3:
 
@@ -1465,6 +1529,10 @@ class pgbackman_cli(cmd.Cmd):
                 
             except Exception as e:
                 print "\n[ERROR]: ",e
+                
+        #
+        # Command with the wrong number of parameters
+        #
 
         else:
             print "\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n"
@@ -1481,6 +1549,7 @@ class pgbackman_cli(cmd.Cmd):
 
         COMMAND:
         show_backup_details [BckID]
+        
         """
 
         try: 
@@ -1489,6 +1558,10 @@ class pgbackman_cli(cmd.Cmd):
         except ValueError as e:
             print "\n[ERROR]: ",e,"\n"
             return False
+
+        #
+        # Command without parameters
+        #             
 
         if len(arg_list) == 0:
                    
@@ -1503,6 +1576,10 @@ class pgbackman_cli(cmd.Cmd):
             except Exception as e:
                 print "\n[ERROR]: ",e     
                 
+        #
+        # Command with parameters
+        #             
+
         elif len(arg_list) == 1:
 
             bck_id = arg_list[0]
@@ -1529,7 +1606,8 @@ class pgbackman_cli(cmd.Cmd):
         """
         DESCRIPTION:
         This command shows the configuration parameters
-        used by this pgbackman installation.
+        used by the PgBackMan installation running in 
+        this backup server.
 
         COMMAND:
         show_pgbackman_config
@@ -1542,6 +1620,10 @@ class pgbackman_cli(cmd.Cmd):
         except ValueError as e:
             print "\n[ERROR]: ",e,"\n"
             return False
+
+        #
+        # Command without parameters
+        #             
         
         if len(arg_list) == 0:
             
@@ -1560,7 +1642,7 @@ class pgbackman_cli(cmd.Cmd):
             x.add_row(["DBuser:",self.conf.dbuser])
             x.add_row(["Connection retry interval:",str(self.conf.pg_connect_retry_interval) + " sec."])
             x.add_row(["",""])
-            x.add_row(["PGBACKMAN2CRON",""])
+            x.add_row(["PGBACKMAN_CONTROL",""])
             x.add_row(["LISTEN/NOTIFY channel check interval:", str(self.conf.channels_check_interval) + " sec."])
             x.add_row(["",""])
             x.add_row(["PGBACKMAN_DUMP",""])
@@ -1587,8 +1669,7 @@ class pgbackman_cli(cmd.Cmd):
     def do_show_pgbackman_stats(self,args):
         """
         DESCRIPTION:
-        This command shows global statistics for this 
-        pgbackman installation
+        This command shows global statistics for this PgBackMan installation
         
         COOMAND:
         show_pgbackman_stats
@@ -1632,6 +1713,10 @@ class pgbackman_cli(cmd.Cmd):
             print "\n[ERROR]: ",e,"\n"
             return False
         
+        #
+        # Command without parameters
+        #             
+
         if len(arg_list) == 0:
 
             print "--------------------------------------------------------"
@@ -1646,6 +1731,10 @@ class pgbackman_cli(cmd.Cmd):
 
             except Exception as e:
                 print "\n[ERROR]: ",e
+
+        #
+        # Command with parameters
+        #             
    
         elif len(arg_list) == 1:
 
@@ -1688,6 +1777,10 @@ class pgbackman_cli(cmd.Cmd):
         except ValueError as e:
             print "\n[ERROR]: ",e,"\n"
             return False
+
+        #
+        # Command without parameters
+        #             
         
         if len(arg_list) == 0:
 
@@ -1704,6 +1797,10 @@ class pgbackman_cli(cmd.Cmd):
             except Exception as e:
                 print "\n[ERROR]: ",e
    
+        #
+        # Command with parameters
+        #             
+
         elif len(arg_list) == 1:
 
             node_id = arg_list[0]
@@ -1733,10 +1830,10 @@ class pgbackman_cli(cmd.Cmd):
         """
         DESCRIPTION:
         This command shows the queue of jobs waiting 
-        to be processed by pgbackman2cron
+        to be processed by pgbackman_control
         
         COMMAND:
-        show_pgsql_jobs_queue
+        show_jobs_queue
 
         """   
         
@@ -1765,7 +1862,8 @@ class pgbackman_cli(cmd.Cmd):
     def do_show_backup_server_config(self,args):
         """
         DESCRIPTION:
-        This command shows a backup server configuration
+        This command shows the default configuration 
+        for a backup server
 
         COMMAND:
         show_backup_server_config [SrvID | FQDN]
@@ -1778,6 +1876,10 @@ class pgbackman_cli(cmd.Cmd):
         except ValueError as e:
             print "\n[ERROR]: ",e,"\n"
             return False
+
+        #
+        # Command without parameters
+        #             
         
         if len(arg_list) == 0:
             
@@ -1793,6 +1895,10 @@ class pgbackman_cli(cmd.Cmd):
                                     
             except Exception as e:
                 print "\n[ERROR]: ",e
+
+        #
+        # Command with parameters
+        #             
 
         elif len(arg_list) == 1:
 
@@ -1822,7 +1928,8 @@ class pgbackman_cli(cmd.Cmd):
     def do_show_pgsql_node_config(self,args):
         """
         DESCRIPTION:
-        This command shows a PgSQL node configuration
+        This command shows the default configuration 
+        for a PgSQL node
         
         COMMAND
         show_pgsql_node_config [NodeID | FQDN]
@@ -1835,6 +1942,10 @@ class pgbackman_cli(cmd.Cmd):
         except ValueError as e:
             print "\n[ERROR]: ",e,"\n"
             return False
+
+        #
+        # Command without parameters
+        #             
                 
         if len(arg_list) == 0:
             
@@ -1851,6 +1962,10 @@ class pgbackman_cli(cmd.Cmd):
                                     
             except Exception as e:
                 print "\n[ERROR]: ",e
+
+        #
+        # Command with parameters
+        #             
 
         elif len(arg_list) == 1:
 
@@ -1879,11 +1994,11 @@ class pgbackman_cli(cmd.Cmd):
 
     def do_show_empty_backup_job_catalogs(self,args):
         """
-        COMMAND:
-        show_empty_backup_job_catalogs
-
         DESCRIPTION:
         Command to get a list with all backup definitions with empty catalogs
+
+        COMMAND:
+        show_empty_backup_job_catalogs
 
         """     
 
@@ -1912,17 +2027,12 @@ class pgbackman_cli(cmd.Cmd):
     def do_update_backup_server(self,args):
         """
         DESCRIPTION:
-        This command updates backup server information
+        This command updates the information for a backup server
 
         COMMAND:
         update_backup_server [SrvID | FQDN] [remarks]
 
         """    
-
-        #
-        # If a parameter has more than one token, it has to be
-        # defined between doble quotes
-        #
         
         try: 
             arg_list = shlex.split(args)
@@ -1969,13 +2079,11 @@ class pgbackman_cli(cmd.Cmd):
 
             elif ack.lower() == "no":
                 print "\n[Aborted]\n"
+
+        #
+        # Command with parameters
+        #
             
-    
-        #
-        # Command with the 2 parameters that can be defined.
-        # Server backup and remarks
-        #
-                
         elif len(arg_list) == 2:
             
             backup_server = arg_list[0]
@@ -2031,17 +2139,12 @@ class pgbackman_cli(cmd.Cmd):
     def do_update_pgsql_node(self,args):
         """
         DESCRIPTION:
-        This command updates PgSQL node information
+        This command updates the information for a PgSQL node
 
         COMMAND:
         update_pgsql_node [NodeID | FQDN] [pgport] [admin_user] [status] [remarks]
 
         """    
-
-        #
-        # If a parameter has more than one token, it has to be
-        # defined between doble quotes
-        #
         
         try: 
             arg_list = shlex.split(args)
@@ -2110,13 +2213,11 @@ class pgbackman_cli(cmd.Cmd):
 
             elif ack.lower() == "no":
                 print "\n[Aborted]\n"
-            
-    
+
         #
-        # Command with the 2 parameters that can be defined.
-        # Server backup and remarks
+        # Command with parameters
         #
-                
+
         elif len(arg_list) == 5:
             
             pgsql_node = arg_list[0]
@@ -2162,26 +2263,15 @@ class pgbackman_cli(cmd.Cmd):
 
     def do_update_pgsql_node_config(self,args):
         """
-        Not implemented
-
         DESCRIPTION:
         This command updates the default configuration parameters 
         for a PgSQl node 
 
         COMMAND:
-        update_pgsql_node_config [parameter] [value]
+        update_pgsql_node_config
 
         """    
-        
-        print "Not implemented"
-        print "See: help update_backup_server_config"
-        print
-        
-        #
-        # If a parameter has more than one token, it has to be
-        # defined between doble quotes
-        #
-        
+
         try: 
             arg_list = shlex.split(args)
         
@@ -2351,10 +2441,8 @@ class pgbackman_cli(cmd.Cmd):
             elif ack.lower() == "no":
                 print "\n[Aborted]\n"
             
-    
         #
-        # Command with the 18 parameters that can be defined.
-        # Server backup and remarks
+        # Command with parameters
         #
                 
         elif len(arg_list) == 18:
@@ -2504,7 +2592,7 @@ class pgbackman_cli(cmd.Cmd):
     # ############################################
     # Method do_move_backup_definition
     # ############################################
-
+    '''
     def do_move_backup_definition(self,args):
         """
         Not implemented
@@ -2514,19 +2602,19 @@ class pgbackman_cli(cmd.Cmd):
         backup servers.
 
         COMMAND:
-        move_backup_definition [SrvID source | FQDN source] [SrvID target | FQDN target]
+        move_backup_definition [DefID] [SrvID source | FQDN source] [SrvID target | FQDN target]
 
         """    
 
         print "Not implemented"
         print "See: help move_backup_definition"
         print
-        
+    '''    
 
     # ############################################
     # Method do_copy_database
     # ############################################
-
+    '''
     def do_copy_database(self,args):
         """
         Not implemented
@@ -2539,19 +2627,19 @@ class pgbackman_cli(cmd.Cmd):
         to the one used in the SOURCE PgSQL node.
         
         COMMAND:
-        copy_database [NodeID source | FQDN source] [NodeID target | FQDN target] [9.0 | 9.1 | 9.2 | 9.3]
+        copy_database [DBname] [NodeID source | FQDN source] [NodeID target | FQDN target] [9.0 | 9.1 | 9.2 | 9.3]
 
         """    
 
         print "Not implemented"
         print "See: help copy_database"
         print
-
+    '''
 
     # ############################################
-    # Method do_copy_database
+    # Method do_restore_backup
     # ############################################
-
+    '''
     def do_restore_backup(self,args):
         """
         Not implemented
@@ -2567,7 +2655,7 @@ class pgbackman_cli(cmd.Cmd):
         print "Not implemented"
         print "See: help restore_backup"
         print
-
+    '''
 
     # ############################################
     # Method do_clear
@@ -2614,8 +2702,6 @@ class pgbackman_cli(cmd.Cmd):
             line_out = "hist"    
         elif line_out == "\q":
             line_out = "quit" 
-        elif line_out == "\!":
-            line_out = "shell"
     
         self._hist += [ line_out.strip() ]
           

@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 #
-# Copyright (c) 2013 Rafael Martinez Guerrero (PostgreSQL-es)
+# Copyright (c) 2014 Rafael Martinez Guerrero (PostgreSQL-es)
 # rafael@postgresql.org.es / http://www.postgresql.org.es/
 #
-# This file is part of Pgbackman
+# This file is part of PgBackMan
 # https://github.com/rafaelma/pgbackman
 #
 # PgBackMan is free software: you can redistribute it and/or modify
@@ -20,12 +20,13 @@
 # along with Pgbackman.  If not, see <http://www.gnu.org/licenses/>.
 
 '''
-This program is used by pgbackman to administrate the crontab files running backups 
-in this Backup server. 
+This program is used by PgBackMan to control the crontab and at jobs running
+backups in this backup server.
 
-pgbackman_control uses LISTEN/NOTIFY to track changes on PgSQL nodes backups.
+pgbackman_control uses LISTEN/NOTIFY to track when it has to take action.
+
 In addition pgbackman_control will create cache data for the Backup server and all PgSQL nodes, 
-in case the pgbackman database is not available when running backups.
+in case the pgbackman database is not available when backups have to be executed.
 
 pgbackman_control will catch up with changes that happened during a down period of the program. 
 No changes will be lose if pgbackman_control is down.
@@ -54,7 +55,7 @@ listen_list = []
 # ############################################
 
 def add_to_listen_channels(db,db_notify,backup_server_id):
-    """LISTEN to all active channels"""
+    '''LISTEN to all active channels'''
     
     global listen_list
     
@@ -83,7 +84,7 @@ def add_to_listen_channels(db,db_notify,backup_server_id):
 # ############################################
 
 def delete_from_listen_channels(db,db_notify,backup_server_id):
-    """UNLISTEN to channels"""
+    '''UNLISTEN to channels'''
 
     global listen_list
     
@@ -113,7 +114,7 @@ def delete_from_listen_channels(db,db_notify,backup_server_id):
 # ############################################
 
 def get_pgsql_node_id_from_channel(channel):
-    '''Extract PgSQL node ID from channel name'''
+    '''Extract PgSQL node ID from the channel name'''
 
     pgsql_id = channel.split('_pg')[1]
     return pgsql_id
@@ -124,7 +125,7 @@ def get_pgsql_node_id_from_channel(channel):
 # ############################################
 
 def generate_crontab_backup_jobs(db,backup_server_id,pgsql_node_id):
-    """Generate a crontab file for a PgSQL node"""
+    '''Generate a crontab file for a PgSQL node'''
 
     try:
         crontab_file = db.get_pgsql_node_parameter(pgsql_node_id,'pgnode_crontab_file')
@@ -136,7 +137,7 @@ def generate_crontab_backup_jobs(db,backup_server_id,pgsql_node_id):
             file.close()
             
             logs.logger.info('Crontab file: %s created/updated',crontab_file)
-            
+      
     except Exception as e:
             
         # If we cannot create the crontab file, we have to update
@@ -150,13 +151,12 @@ def generate_crontab_backup_jobs(db,backup_server_id,pgsql_node_id):
             logs.logger.error('Problems updating job queue for SrvID: %s and nodeID: %s after a crontab file update error - %s',backup_server_id,pgsql_node_id,e)
 
 
-
 # ############################################
-# Function generate_snapshot_at_files()
+# Function generate_snapshot_at_jobs()
 # ############################################
 
-def generate_snapshot_at_files(db,backup_server_id,tmp_dir):
-    """Generate at files for snapshot jobs"""
+def generate_snapshot_at_jobs(db,backup_server_id,tmp_dir):
+    '''Generate at jobs for snapshot jobs'''
 
     try:
         for record in db.get_new_snapshots(backup_server_id):
@@ -196,7 +196,11 @@ def generate_snapshot_at_files(db,backup_server_id,tmp_dir):
 # ############################################
                          
 def generate_all_crontab_jobs(db,backup_server_id):
-    """Get all the PgSQL node IDs that need to get a new crontab file installed"""
+    '''
+    Get all the PgSQL node IDs that need to get a new crontab file installed
+    when starting pgbackman_control or after the pgbackman database has not been 
+    available for pgbackman_control
+    '''
     
     try:
         pgsql_node_id = db.get_next_crontab_id_to_generate(backup_server_id)
@@ -219,6 +223,13 @@ def create_global_directories(db,backup_server_fqdn,backup_server_id):
     '''Create global directories used for cache and pending database registrations'''
     
     try:
+        uid = pwd.getpwnam('pgbackman').pw_uid
+        gid = grp.getgrnam('pgbackman').gr_gid
+
+    except Exception as e:
+        logs.logger.error('Problems getting UID and GID values for pgbackman - %s',e)  
+
+    try:
         root_backup_partition = db.get_backup_server_parameter(backup_server_id,'root_backup_partition')
 
     except Exception as e:
@@ -227,31 +238,53 @@ def create_global_directories(db,backup_server_fqdn,backup_server_id):
     backup_server_pending_registration_dir = root_backup_partition + '/pending_updates'
     backup_server_cache_dir = root_backup_partition +  '/cache_dir'
 
+    #
+    # Pending log registration directory
+    #
+
     if os.path.exists(backup_server_pending_registration_dir):
         logs.logger.debug('Pending log registration directory exists: %s',backup_server_pending_registration_dir)
     else:
         logs.logger.debug('Pending log registration directory does not exist: %s',backup_server_pending_registration_dir)
         
         try:
-            os.makedirs(backup_server_pending_registration_dir,0777)
+            os.makedirs(backup_server_pending_registration_dir,0700)
             logs.logger.info('Pending log registration directory created: %s',backup_server_pending_registration_dir)
         except OSError as e:
             logs.logger.critical('OS error when creating the pending log registration directory: %s',e)
             sys.exit(1)
             
+    try:
+        os.chown(backup_server_pending_registration_dir, uid, gid)
+        logs.logger.info('UID: %s and GID: %s defined for the directory %s',uid,gid,backup_server_pending_registration_dir)
+
+    except OSError as e:
+        logs.logger.critical('OS error when defining privileges for the pending registration directory - %s',e)
+
+    #
+    # Cache directory
+    #
+
     if os.path.exists(backup_server_cache_dir):
         logs.logger.debug('Cache directory exists: %s',backup_server_cache_dir)
     else:
         logs.logger.debug('Cache directory does not exist: %s',backup_server_cache_dir)
         
         try:
-            os.makedirs(backup_server_cache_dir,0755)
+            os.makedirs(backup_server_cache_dir,0700)
             logs.logger.info('Cache directory created: %s',backup_server_cache_dir)
 
         except OSError as e:
             logs.logger.critical('OS error when creating the cache directory: %s',e)
             sys.exit(1)
-            
+
+    try:
+        os.chown(backup_server_cache_dir, uid, gid)
+        logs.logger.info('UID: %s and GID: %s defined for the directory %s',uid,gid,backup_server_cache_dir)
+
+    except OSError as e:
+        logs.logger.critical('OS error when defining privileges for the cache directory - %s',e)
+                
 
 # ############################################
 # Function create_pgsql_node_backup_directories()
@@ -263,19 +296,21 @@ def create_pgsql_node_backup_directories(db,pgsql_node_id):
     '''
 
     try:
-        admin_user = db.get_pgsql_node_parameter(pgsql_node_id,'admin_user')
-
-        uid = pwd.getpwnam(admin_user).pw_uid
-        gid = grp.getgrnam(admin_user).gr_gid
+        uid = pwd.getpwnam('pgbackman').pw_uid
+        gid = grp.getgrnam('pgbackman').gr_gid
 
     except Exception as e:
-        logs.logger.error('Problems getting UID and GID values for NodeID: %s - %s',pgsql_node_id,e)  
+        logs.logger.error('Problems getting UID and GID values for pgbackman - %s',e)  
 
     try:
         pgnode_backup_partition = db.get_pgsql_node_parameter(pgsql_node_id,'pgnode_backup_partition')
 
     except Exception as e:
         logs.logger.error('Problems getting backup partition used for NodeID: %s - %s',pgsql_node_id,e)   
+
+    #
+    # Dump directory
+    #
 
     if os.path.exists(pgnode_backup_partition + '/dump'):
         logs.logger.debug('Dump directory %s exists',pgnode_backup_partition + '/dump')
@@ -286,14 +321,23 @@ def create_pgsql_node_backup_directories(db,pgsql_node_id):
             os.makedirs(pgnode_backup_partition + '/dump',0700)
             logs.logger.info('Dump directory %s created',pgnode_backup_partition + '/dump')
 
-            os.chown(pgnode_backup_partition, uid, gid)
-            os.chown(pgnode_backup_partition + '/dump', uid, gid)
-            logs.logger.info('UID: %s abd GID: %s defined for the directory %s',uid,gid,pgnode_backup_partition + '/dump')
-
         except OSError as e:
-            logs.logger.critical('OS error when creating the dump directory: %s',e)
+            logs.logger.critical('OS error when creating the dump directory - %s',e)
             sys.exit(1)
-                
+
+    try:
+        os.chown(pgnode_backup_partition, uid, gid)
+        os.chown(pgnode_backup_partition + '/dump', uid, gid)
+        logs.logger.info('UID: %s and GID: %s defined for the directory %s',uid,gid,pgnode_backup_partition + '/dump')
+
+    except OSError as e:
+        logs.logger.critical('OS error when defining privileges for the dump directory - %s',e)
+        sys.exit(1)
+     
+    #
+    # Log directory
+    #
+           
     if os.path.exists(pgnode_backup_partition + '/log'):
         logs.logger.debug('Log directory %s exists',pgnode_backup_partition + '/log')
     else:
@@ -303,13 +347,19 @@ def create_pgsql_node_backup_directories(db,pgsql_node_id):
             os.makedirs(pgnode_backup_partition + '/log',0700)
             logs.logger.info('Log directory %s created',pgnode_backup_partition + '/log')
 
-            os.chown(pgnode_backup_partition, uid, gid)
-            os.chown(pgnode_backup_partition + '/log', uid, gid)
-            logs.logger.info('UID: %s abd GID: %s defined for the directory %s',uid,gid,pgnode_backup_partition + '/log')
-
         except OSError as e:
-            logs.logger.critical('OS error when creating the log directory: %s',e)
+            logs.logger.critical('OS error when creating the log directory - %s',e)
             sys.exit(1)       
+
+    try:
+        os.chown(pgnode_backup_partition, uid, gid)
+        os.chown(pgnode_backup_partition + '/log', uid, gid)
+        logs.logger.info('UID: %s abd GID: %s defined for the directory %s',uid,gid,pgnode_backup_partition + '/log')
+
+    except OSError as e:
+        logs.logger.critical('OS error when defining privileges for the log directory - %s',e)
+        sys.exit(1)       
+
 
 # ############################################
 # Function process_pgsql_node_to_delete()
@@ -430,7 +480,7 @@ def update_backup_server_cache_data(db,backup_server_fqdn,backup_server_id):
 # ############################################
 
 def update_pgsql_node_cache_data(db,backup_server_id,pgsql_node_id):
-    '''Update the cache data for the backup server'''
+    '''Update the cache data for a PgSQL node'''
 
     try:
         pgsql_node_fqdn = db.get_pgsql_node_fqdn(pgsql_node_id)
@@ -501,6 +551,10 @@ def main():
         
     logs.logger.debug('Database server is up and running and pgbackman database is available')
     
+    #
+    # Instance used to have a persistance connection to the database 
+    # So we can use LISTEN/NOTIFY
+    #
     db_notify = pgbackman_db(dsn,'pgbackman_notify')
     
     try:
@@ -525,15 +579,15 @@ def main():
     except psycopg2.Error as e:
         logs.logger.critical('Cannot find backup server %s in pgbackman. Stopping pgbackman_control.',backup_server_fqdn)
         logs.logger.info('**** Pgbackman_Control stopped. ****')
-        sys.exit()     
+        sys.exit(1)     
 
     create_global_directories(db,backup_server_fqdn,backup_server_id)
     update_backup_server_cache_data(db,backup_server_fqdn,backup_server_id)
 
     #
     # Start listening to active channels when we start pgbackman_control. 
-    # Create cache and backup directories for new pgsql nodes created
-    # when pgbackman_control was down.
+    # Create cache and backup directories for new pgsql nodes with active backup definitions 
+    # created when pgbackman_control was down.
     #
     
     listen_channels = add_to_listen_channels(db,db_notify,backup_server_id)
@@ -549,21 +603,24 @@ def main():
             update_pgsql_node_cache_data(db,backup_server_id,pgsql_node_id)
             create_pgsql_node_backup_directories(db,pgsql_node_id)
 
-    # We check if there are some crontab/at files to generate or pgsql nodes than 
+    #
+    # Check if there are some crontab/at jobs to generate or pgsql nodes that 
     # have been deleted or stopped  when we start pgbackman_control. 
     #
     # This is necessary just in case pgbackman_control has been down and missed some NOTIFYs 
     # from the central database.
+    #
 
     generate_all_crontab_jobs(db,backup_server_id)
     process_pgsql_node_to_delete(db,backup_server_id)
     process_pgsql_node_stopped(db,backup_server_id)
 
-    generate_snapshot_at_files(db,backup_server_id,tmp_dir)
+    generate_snapshot_at_jobs(db,backup_server_id,tmp_dir)
 
     #
     # Main loop waiting for notifications
     #
+
     while True:
         channels = []        
  
@@ -635,7 +692,7 @@ def main():
                     # A snapshot backup has been defined
                     #
                     
-                    generate_snapshot_at_files(db,backup_server_id,tmp_dir)
+                    generate_snapshot_at_jobs(db,backup_server_id,tmp_dir)
 
                 else:
                     
@@ -679,7 +736,7 @@ def main():
  
             add_to_listen_channels(db,db_notify,backup_server_id)
             generate_all_crontab_jobs(db,backup_server_id)
-            generate_snapshot_at_files(db,backup_server_id,tmp_dir)
+            generate_snapshot_at_jobs(db,backup_server_id,tmp_dir)
 
         except Exception as e:
             logs.logger.error('General error in main loop - %s',e)   
@@ -704,7 +761,7 @@ def signal_handler(signum, frame):
 if __name__ == '__main__':
 
     logs = logs("pgbackman_control")
-    logs.logger.info('**** Pgbackman_Control started. ****')
+    logs.logger.info('**** pgbackman_control started. ****')
 
     signal.signal(signal.SIGINT,signal_handler)
     signal.signal(signal.SIGTERM,signal_handler)

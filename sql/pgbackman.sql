@@ -1835,7 +1835,7 @@ ALTER FUNCTION delete_force_backup_definition_id(INTEGER) OWNER TO pgbackman_rol
 --
 -- ------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION delete_backup_definition_dbname(INTEGER,TEXT) RETURNS BOOLEAN
+CREATE OR REPLACE FUNCTION delete_backup_definition_dbname(INTEGER,TEXT) RETURNS VOID
  LANGUAGE plpgsql 
  SECURITY INVOKER 
  SET search_path = public, pg_temp
@@ -1858,7 +1858,36 @@ CREATE OR REPLACE FUNCTION delete_backup_definition_dbname(INTEGER,TEXT) RETURNS
      USING pgsql_node_id_,
      	   dbname_;
    
-     RETURN TRUE;
+     EXECUTE 'WITH del_catid AS (
+               DELETE FROM backup_job_catalog 
+               WHERE pgsql_node_id = $1 AND dbname = $2
+               RETURNING def_id,
+			   bck_id,
+			   backup_server_id,
+			   pg_dump_file,
+			   pg_dump_log_file,
+			   pg_dump_roles_file,
+			   pg_dump_roles_log_file,
+			   pg_dump_dbconfig_file,
+			   pg_dump_dbconfig_log_file
+             ),save_catinfo AS (
+	       INSERT INTO catalog_entries_to_delete(
+	       	      	   def_id,
+			   bck_id,
+			   backup_server_id,
+			   pg_dump_file,
+			   pg_dump_log_file,
+			   pg_dump_roles_file,
+			   pg_dump_roles_log_file,
+			   pg_dump_dbconfig_file,
+			   pg_dump_dbconfig_log_file)
+		SELECT * FROM del_catid	
+             )
+             DELETE FROM backup_job_definition
+	     WHERE pgsql_node_id = $1 AND dbname = $2'
+      USING pgsql_node_id_,
+     	    dbname_; 
+
     ELSE
       RAISE EXCEPTION 'No backup job definition for dbname: %s and PgSQL node: %s',dbname_,pgsql_node_id_; 
     END IF;
@@ -2559,7 +2588,7 @@ BEGIN
 
   output := output || COALESCE(job_row.minutes_cron, '*') || ' ' || COALESCE(job_row.hours_cron, '*') || ' ' || COALESCE(job_row.day_month_cron, '*') || ' ' || COALESCE(job_row.month_cron, '*') || ' ' || COALESCE(job_row.weekday_cron, '*');
 
-  output := output || ' ' || admin_user;
+  output := output || ' pgbackman';
   output := output || ' ' || pgbackman_dump || 
   	    	   ' --node-fqdn ' || pgsql_node_fqdn ||
 		   ' --node-id ' || pgsql_node_id_ ||
@@ -2630,8 +2659,7 @@ BEGIN
  FROM snapshot_definition
  WHERE snapshot_id = snapshot_id_
  ) LOOP
-
-  output := output || 'su -l ' || admin_user || ' -c "';
+  output := output || 'su -l pgbackman -c "';
 
   output := output || pgbackman_dump || 
   	    	   ' --node-fqdn ' || pgsql_node_fqdn ||

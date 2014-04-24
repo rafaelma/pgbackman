@@ -32,6 +32,10 @@ from pgbackman.logs import *
 from pgbackman.database import * 
 from pgbackman.config import *
 
+'''
+This program is used by PgBackMan to run backup definitions and snapshots.
+'''
+
 global_parameters = {}
 backup_server_cache_data = {}
 pgsql_node_cache_data = {}
@@ -42,7 +46,7 @@ pgsql_node_cache_data = {}
 # ############################################
     
 def pg_dumpall(db):
-    '''pg_dumpall function'''
+    '''Used to take backups with code CLUSTER'''
     
     global global_parameters
 
@@ -94,7 +98,7 @@ def pg_dumpall(db):
 # ############################################
     
 def pg_dump(db):
-    '''pg_dump function'''
+    '''Used to take database backups with codes FULL, SCHEMA and DATA'''
 
     global global_parameters
 
@@ -176,7 +180,7 @@ def pg_dump(db):
 # ############################################
     
 def pg_dump_users(db):
-    '''pg_dump_users function'''
+    '''Used to backup roles information associated with a database.'''
     
     global global_parameters
     roles = []
@@ -193,7 +197,7 @@ def pg_dump_users(db):
     #   of the roles extracted from the first temp file
     #
     # We do all this process via temp files insteed of piping the outputs from process to process
-    # to avoid problems with huge sql dumps
+    # to avoid allocation problems with huge sql dumps
     #
 
     # 
@@ -336,7 +340,7 @@ def pg_dump_users(db):
 # ############################################
     
 def pg_dump_database_config(db):
-    '''pg_dump_database_config function'''
+    '''Used to backup database configuration information associated with a database'''
 
     global global_parameters
 
@@ -421,7 +425,7 @@ def pg_dump_database_config(db):
 # ############################################
     
 def get_pgsql_node_dsn():
-    '''Get the DSN values for a pgsql_node'''
+    '''Get the DSN values needed to connect to a PgSQL node'''
 
     global global_parameters
 
@@ -436,7 +440,7 @@ def get_pgsql_node_dsn():
 # ############################################
     
 def get_pgsql_node_release(db,db_pgnode):
-    '''Get the release pgsql_node is running'''
+    '''Get the postgreSQL release version a PgSQL node is running'''
     
     pgsql_node_version = ''
 
@@ -540,7 +544,7 @@ def get_filename_id(dump_type,file_type):
 # ############################################
   
 def register_backup_job_catalog(db):
-    '''Update the catalog information in the database'''
+    '''Update the backup catalog information in the database'''
 
     global global_parameters
 
@@ -663,10 +667,16 @@ def register_backup_job_catalog(db):
                                        )
     
 
-        logs.logger.info('Backup job catalog for DefID: %s updated in the database',global_parameters['def_id'])
+        logs.logger.info('Backup job catalog for DefID: %s or SnapshotID: %s updated in the database',str(global_parameters['def_id']),str(global_parameters['snapshot_id']))
         
     except Exception as e:
-        logs.logger.warning('Problems updating the backup job catalog for DefID: %s in the database - %s',global_parameters['def_id'],e)
+
+        #
+        # We create a pending log file if we can not update the database. 
+        # This file will be processed bt pgbackman_maintenence later.
+        # 
+
+        logs.logger.warning('Problems updating the backup job catalog for DefID: %s or SnapshotID: %s in the database - %s',str(global_parameters['def_id']),str(global_parameters['snapshot_id']),e)
 
         pending_log_file = ''
         
@@ -872,11 +882,10 @@ def main():
     # We check before starting if the database we are going to backup is available. 
     # If it is not available, we will stop the backup job with an error
     #
-    # pgbackman_dump has to work and take the backups defined
-    # in the system even if the pgbackman database is not available.
-    #
-    # If the pgbackman database is not available, pgbackman_dump will get the
-    # necessary parameters from the cache files saved in the backup server
+    # pgbackman_dump has to work and take the backups defined in the system even 
+    # if the pgbackman database is not available. If the pgbackman database is 
+    # not available, pgbackman_dump will get the necessary parameters from the 
+    # cache files saved in the backup server
     #
     
     check_pgnode_db = check_pgsql_node_database_connection(db_pgnode)
@@ -888,11 +897,9 @@ def main():
                              str(global_parameters['def_id']))
         
         global_parameters['execution_status'] = 'ERROR'
-        global_parameters['error_message'] = 'Database not available'
+        global_parameters['error_message'] = 'Database to backup not available'
         register_backup_job_catalog(db)
         sys.exit(1) 
-
-    
 
     try:
         global_parameters['pgsql_node_backup_dir'] = db.get_pgsql_node_parameter(global_parameters['pgsql_node_id'],'pgnode_backup_partition')

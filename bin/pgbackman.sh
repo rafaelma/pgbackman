@@ -24,13 +24,35 @@
 # Execute command
 #
 
+USER='pgbackman'
+SU=su
+
 execute_command(){
     
     case $COMMAND in
 	start)
-	    pgbackman_control &
-	    pgbackman_maintenance &
-	    exit 0
+	    /usr/bin/pgbackman_control &
+	    
+	    RETVAL=$?
+	    if [ $RETVAL -ne 0 ]
+	    then
+		echo "pgbackman_control could not be started!"
+		exit 1
+	    else
+		echo "pgbackman_control started"
+	    fi
+
+	    $SU -l $USER -c "/usr/bin/pgbackman_maintenance &"
+
+	    RETVAL=$?
+	    if [ $RETVAL -ne 0 ]
+	    then
+		echo "pgbackman_maintenance could not be started!"
+		exit 1
+	    else
+		echo "pgbackman_maintenance started"
+		exit 0
+	    fi
 	    ;;
 	
 	stop)
