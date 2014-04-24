@@ -1,6 +1,11 @@
 --
+-- PgBackMan database
 --
+-- Copyright (c) 2014 Rafael Martinez Guerrero (PostgreSQL-es)
+-- rafael@postgresql.org.es / http://www.postgresql.org.es/
 --
+-- This file is part of PgBackMan
+-- https://github.com/rafaelma/pgbackman
 --
 
 \echo '# [Creating user: pgbackman_role_rw]\n'
@@ -906,7 +911,7 @@ CREATE TRIGGER update_pgsql_node_configuration AFTER INSERT
 --
 -- ------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION update_job_queue(INTEGER,INTEGER) RETURNS BOOLEAN
+CREATE OR REPLACE FUNCTION update_job_queue(INTEGER,INTEGER) RETURNS VOID
  LANGUAGE plpgsql 
  SECURITY INVOKER 
  SET search_path = public, pg_temp
@@ -916,6 +921,10 @@ CREATE OR REPLACE FUNCTION update_job_queue(INTEGER,INTEGER) RETURNS BOOLEAN
   pgsql_node_id_ ALIAS FOR $2;
 
   srv_cnt INTEGER := -1;
+
+  v_msg     TEXT;
+  v_detail  TEXT;
+  v_context TEXT;
  BEGIN
 
   SELECT count(*) FROM job_queue WHERE backup_server_id = backup_server_id_ AND pgsql_node_id = pgsql_node_id_ AND is_assigned IS FALSE INTO srv_cnt;
@@ -927,16 +936,19 @@ CREATE OR REPLACE FUNCTION update_job_queue(INTEGER,INTEGER) RETURNS BOOLEAN
          pgsql_node_id_;
 
    PERFORM pg_notify('channel_bs' || backup_server_id_ || '_pg' || pgsql_node_id_,'Backup job inserted after crontab generation error');
-   RETURN TRUE;  
-  ELSE
-   RETURN FALSE;
-  END IF;
+   END IF;
+
+ EXCEPTION WHEN others THEN
+   	GET STACKED DIAGNOSTICS	
+            v_msg     = MESSAGE_TEXT,
+            v_detail  = PG_EXCEPTION_DETAIL,
+            v_context = PG_EXCEPTION_CONTEXT;
+        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \nCONTEXT: % \n----------------------------------------------', v_msg, v_detail, v_context;
 
  END;
 $$;
 
 ALTER FUNCTION update_job_queue(INTEGER,INTEGER) OWNER TO pgbackman_role_rw;
-
 
 
 -- ------------------------------------------------------------
@@ -1062,7 +1074,6 @@ CREATE TRIGGER update_job_queue AFTER INSERT OR UPDATE OR DELETE
 
 -- ------------------------------------------------------------
 -- Function: notify_new_snapshot()
---
 -- ------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION notify_new_snapshot() RETURNS TRIGGER
@@ -1084,10 +1095,8 @@ CREATE TRIGGER notify_new_snapshot AFTER INSERT
     EXECUTE PROCEDURE notify_new_snapshot();
 
 
-
 -- ------------------------------------------------------------
 -- Function: get_next_crontab_id_to_generate()
---
 -- ------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION get_next_crontab_id_to_generate(INTEGER) RETURNS INTEGER
@@ -1146,10 +1155,9 @@ ALTER FUNCTION get_next_crontab_id_to_generate(INTEGER) OWNER TO pgbackman_role_
 
 -- ------------------------------------------------------------
 -- Function: register_backup_server()
---
 -- ------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION register_backup_server(TEXT,TEXT,CHARACTER VARYING,TEXT) RETURNS BOOLEAN
+CREATE OR REPLACE FUNCTION register_backup_server(TEXT,TEXT,CHARACTER VARYING,TEXT) RETURNS VOID
  LANGUAGE plpgsql 
  SECURITY INVOKER 
  SET search_path = public, pg_temp
@@ -1184,7 +1192,6 @@ CREATE OR REPLACE FUNCTION register_backup_server(TEXT,TEXT,CHARACTER VARYING,TE
          status_,
          remarks_;         
 
-   RETURN TRUE;
  EXCEPTION WHEN others THEN
    	GET STACKED DIAGNOSTICS	
             v_msg     = MESSAGE_TEXT,
@@ -1200,10 +1207,9 @@ ALTER FUNCTION register_backup_server(TEXT,TEXT,CHARACTER VARYING,TEXT) OWNER TO
 
 -- ------------------------------------------------------------
 -- Function: delete_backup_server()
---
 -- ------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION delete_backup_server(INTEGER) RETURNS BOOLEAN
+CREATE OR REPLACE FUNCTION delete_backup_server(INTEGER) RETURNS VOID
  LANGUAGE plpgsql 
  SECURITY INVOKER 
  SET search_path = public, pg_temp
@@ -1227,10 +1233,9 @@ CREATE OR REPLACE FUNCTION delete_backup_server(INTEGER) RETURNS BOOLEAN
      EXECUTE 'DELETE FROM backup_server WHERE server_id = $1'
      USING backup_server_id_;
 
-     RETURN TRUE;
-    ELSE
+   ELSE
       RAISE EXCEPTION 'Backup server % does not exist',backup_server_id_; 
-    END IF;
+   END IF;
 	   
    EXCEPTION WHEN others THEN
    	GET STACKED DIAGNOSTICS	
@@ -1245,7 +1250,6 @@ ALTER FUNCTION delete_backup_server(INTEGER) OWNER TO pgbackman_role_rw;
 
 -- ------------------------------------------------------------
 -- Function: update_backup_server()
---
 -- ------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION update_backup_server(INTEGER,TEXT) RETURNS VOID
@@ -1286,14 +1290,11 @@ $$;
 
 ALTER FUNCTION update_backup_server(INTEGER,TEXT) OWNER TO pgbackman_role_rw;
 
-
-
 -- ------------------------------------------------------------
 -- Function: register_pgsql_node()
---
 -- ------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION register_pgsql_node(TEXT,TEXT,INTEGER,TEXT,CHARACTER VARYING,TEXT) RETURNS BOOLEAN
+CREATE OR REPLACE FUNCTION register_pgsql_node(TEXT,TEXT,INTEGER,TEXT,CHARACTER VARYING,TEXT) RETURNS VOID
  LANGUAGE plpgsql 
  SECURITY INVOKER 
  SET search_path = public, pg_temp
@@ -1340,7 +1341,6 @@ CREATE OR REPLACE FUNCTION register_pgsql_node(TEXT,TEXT,INTEGER,TEXT,CHARACTER 
           status_,
           remarks_;         
 
-    RETURN TRUE;
  EXCEPTION WHEN others THEN
    	GET STACKED DIAGNOSTICS	
             v_msg     = MESSAGE_TEXT,
@@ -1356,10 +1356,9 @@ ALTER FUNCTION register_pgsql_node(TEXT,TEXT,INTEGER,TEXT,CHARACTER VARYING,TEXT
 
 -- ------------------------------------------------------------
 -- Function: delete_pgsql_node()
---
 -- ------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION delete_pgsql_node(INTEGER) RETURNS BOOLEAN
+CREATE OR REPLACE FUNCTION delete_pgsql_node(INTEGER) RETURNS VOID
  LANGUAGE plpgsql 
  SECURITY INVOKER 
  SET search_path = public, pg_temp
@@ -1386,7 +1385,6 @@ CREATE OR REPLACE FUNCTION delete_pgsql_node(INTEGER) RETURNS BOOLEAN
     EXECUTE 'DELETE FROM pgsql_node WHERE node_id = $1'
     USING pgsql_node_id_;
 
-    RETURN TRUE;
    ELSE
     RAISE EXCEPTION 'PgSQL node % does not exist',pgsql_node_id_;
    END IF; 
@@ -1403,9 +1401,9 @@ $$;
 
 ALTER FUNCTION delete_pgsql_node(INTEGER) OWNER TO pgbackman_role_rw;
 
+
 -- ------------------------------------------------------------
 -- Function: update_pgsql_node()
---
 -- ------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION update_pgsql_node(INTEGER,INTEGER,TEXT,TEXT,TEXT) RETURNS VOID
@@ -1575,11 +1573,8 @@ $$;
 
 ALTER FUNCTION update_pgsql_node_config(INTEGER,TEXT,TEXT,TEXT,TEXT,TEXT,TEXT,INTERVAL,INTEGER,TEXT,TEXT,TEXT,TEXT,TEXT,INTEGER,TEXT,TEXT,TEXT) OWNER TO pgbackman_role_rw;
 
-
-
 -- ------------------------------------------------------------
 -- Function: register_backup_definition()
---
 -- ------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION register_backup_definition(INTEGER,INTEGER,TEXT,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,BOOLEAN,INTERVAL,INTEGER,TEXT,CHARACTER VARYING,TEXT) RETURNS VOID
@@ -1718,13 +1713,11 @@ $$;
 ALTER FUNCTION register_backup_definition(INTEGER,INTEGER,TEXT,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,CHARACTER VARYING,BOOLEAN,INTERVAL,INTEGER,TEXT,CHARACTER VARYING,TEXT) OWNER TO pgbackman_role_rw;
 
 
-
 -- ------------------------------------------------------------
 -- Function: delete_backup_definition_id()
---
 -- ------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION delete_backup_definition_id(INTEGER) RETURNS BOOLEAN
+CREATE OR REPLACE FUNCTION delete_backup_definition_id(INTEGER) RETURNS VOID
  LANGUAGE plpgsql 
  SECURITY INVOKER 
  SET search_path = public, pg_temp
@@ -1745,7 +1738,6 @@ CREATE OR REPLACE FUNCTION delete_backup_definition_id(INTEGER) RETURNS BOOLEAN
      EXECUTE 'DELETE FROM backup_job_definition WHERE def_id = $1'
      USING def_id_;
    
-     RETURN TRUE;
     ELSE
       RAISE EXCEPTION 'Backup job definition ID:% does not exist',def_id_; 
     END IF;
@@ -1764,10 +1756,9 @@ ALTER FUNCTION delete_backup_definition_id(INTEGER) OWNER TO pgbackman_role_rw;
 
 -- ------------------------------------------------------------
 -- Function: delete_force_backup_definition_id()
---
 -- ------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION delete_force_backup_definition_id(INTEGER) RETURNS BOOLEAN
+CREATE OR REPLACE FUNCTION delete_force_backup_definition_id(INTEGER) RETURNS VOID
  LANGUAGE plpgsql 
  SECURITY INVOKER 
  SET search_path = public, pg_temp
@@ -1814,7 +1805,6 @@ CREATE OR REPLACE FUNCTION delete_force_backup_definition_id(INTEGER) RETURNS BO
 	     WHERE def_id = $1;'
     USING def_id_;
 
-     RETURN TRUE;
     ELSE
       RAISE EXCEPTION 'Backup job definition ID:% does not exist',def_id_; 
     END IF;
@@ -1830,9 +1820,9 @@ $$;
 
 ALTER FUNCTION delete_force_backup_definition_id(INTEGER) OWNER TO pgbackman_role_rw;
 
+
 -- ------------------------------------------------------------
 -- Function: delete_backup_job_definition_database()
---
 -- ------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION delete_backup_definition_dbname(INTEGER,TEXT) RETURNS VOID
@@ -1906,10 +1896,9 @@ ALTER FUNCTION delete_backup_definition_dbname(INTEGER,TEXT) OWNER TO pgbackman_
 
 -- ------------------------------------------------------------
 -- Function: delete_force_backup_job_definition_database()
---
 -- ------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION delete_force_backup_definition_dbname(INTEGER,TEXT) RETURNS BOOLEAN
+CREATE OR REPLACE FUNCTION delete_force_backup_definition_dbname(INTEGER,TEXT) RETURNS VOID
  LANGUAGE plpgsql 
  SECURITY INVOKER 
  SET search_path = public, pg_temp
@@ -1960,7 +1949,6 @@ CREATE OR REPLACE FUNCTION delete_force_backup_definition_dbname(INTEGER,TEXT) R
     USING pgsql_node_id_,
     	  dbname_;
 
-     RETURN TRUE;
     ELSE
       RAISE EXCEPTION 'No backup job definition for dbname: %s and PgSQL node: %s',dbname_,pgsql_node_id_; 
     END IF;
@@ -1979,7 +1967,6 @@ ALTER FUNCTION delete_force_backup_definition_dbname(INTEGER,TEXT) OWNER TO pgba
 
 -- ------------------------------------------------------------
 -- Function: register_snapshot_definition()
---
 -- ------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION register_snapshot_definition(INTEGER,INTEGER,TEXT,TIMESTAMP,CHARACTER VARYING,INTERVAL,TEXT,TEXT) RETURNS VOID
@@ -2062,7 +2049,6 @@ ALTER FUNCTION register_snapshot_definition(INTEGER,INTEGER,TEXT,TIMESTAMP,CHARA
 
 -- ------------------------------------------------------------
 -- Function: update_backup_server()
---
 -- ------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION update_snapshot_status(INTEGER,TEXT) RETURNS VOID
@@ -2097,7 +2083,6 @@ ALTER FUNCTION update_snapshot_status(INTEGER,TEXT) OWNER TO pgbackman_role_rw;
 
 -- ------------------------------------------------------------
 -- Function: get_default_backup_server_parameter()
---
 -- ------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION get_default_backup_server_parameter(TEXT) RETURNS TEXT 
@@ -2110,9 +2095,6 @@ CREATE OR REPLACE FUNCTION get_default_backup_server_parameter(TEXT) RETURNS TEX
  value_ TEXT := '';
 
  BEGIN
-  --
-  -- This function returns the default value for a configuration parameter
-  --
 
   SELECT value from backup_server_default_config WHERE parameter = parameter_ INTO value_;
 
@@ -2129,7 +2111,6 @@ ALTER FUNCTION get_default_backup_server_parameter(TEXT) OWNER TO pgbackman_role
 
 -- ------------------------------------------------------------
 -- Function: get_backup_server_parameter()
---
 -- ------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION get_backup_server_parameter(INTEGER,TEXT) RETURNS TEXT 
@@ -2143,9 +2124,6 @@ CREATE OR REPLACE FUNCTION get_backup_server_parameter(INTEGER,TEXT) RETURNS TEX
  value_ TEXT := '';
 
  BEGIN
-  --
-  -- This function returns the default value for a configuration parameter
-  --
 
   SELECT value from backup_server_config WHERE server_id = server_id_ AND parameter = parameter_ INTO value_;
 
@@ -2159,9 +2137,9 @@ $$;
 
 ALTER FUNCTION get_backup_server_parameter(INTEGER,TEXT) OWNER TO pgbackman_role_rw;
 
+
 -- ------------------------------------------------------------
 -- Function: get_default_pgsql_node_parameter()
---
 -- ------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION get_default_pgsql_node_parameter(TEXT) RETURNS TEXT 
@@ -2174,9 +2152,6 @@ CREATE OR REPLACE FUNCTION get_default_pgsql_node_parameter(TEXT) RETURNS TEXT
  value_ TEXT := '';
 
  BEGIN
-  --
-  -- This function returns the default value for a configuration parameter
-  --
 
   SELECT value from pgsql_node_default_config WHERE parameter = parameter_ INTO value_;
 
@@ -2193,7 +2168,6 @@ ALTER FUNCTION get_default_pgsql_node_parameter(TEXT) OWNER TO pgbackman_role_rw
 
 -- ------------------------------------------------------------
 -- Function: get_pgsql_node_parameter()
---
 -- ------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION get_pgsql_node_parameter(INTEGER,TEXT) RETURNS TEXT 
@@ -2207,9 +2181,6 @@ CREATE OR REPLACE FUNCTION get_pgsql_node_parameter(INTEGER,TEXT) RETURNS TEXT
  value_ TEXT := '';
 
  BEGIN
-  --
-  -- This function returns the value for a configuration parameter for a pgsql_node
-  --
 
   SELECT value from pgsql_node_config WHERE node_id = node_id_ AND parameter = parameter_ INTO value_;
 
@@ -2226,7 +2197,6 @@ ALTER FUNCTION get_pgsql_node_parameter(INTEGER,TEXT) OWNER TO pgbackman_role_rw
 
 -- ------------------------------------------------------------
 -- Function: check_pgsql_node_status()
---
 -- ------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION check_pgsql_node_status(INTEGER) RETURNS VOID 
@@ -2243,7 +2213,6 @@ CREATE OR REPLACE FUNCTION check_pgsql_node_status(INTEGER) RETURNS VOID
   -- This function checks if a pgsql node is running or stopped
   --
 
-
   SELECT status from pgsql_node WHERE node_id = pgsql_node_id_ INTO status_;
 
   IF status_ IS NULL OR status_ = '' THEN
@@ -2259,7 +2228,6 @@ ALTER FUNCTION check_pgsql_node_status(INTEGER) OWNER TO pgbackman_role_rw;
 
 -- ------------------------------------------------------------
 -- Function: get_hour_from_interval()
---
 -- ------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION get_hour_from_interval(TEXT) RETURNS TEXT
@@ -2302,7 +2270,6 @@ CREATE OR REPLACE FUNCTION get_hour_from_interval(TEXT) RETURNS TEXT
             v_context = PG_EXCEPTION_CONTEXT;
         RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \nCONTEXT: % \n----------------------------------------------\n', v_msg, v_detail, v_context;
 
-
  END;
 $$;
 
@@ -2311,7 +2278,6 @@ ALTER FUNCTION get_hour_from_interval(TEXT) OWNER TO pgbackman_role_rw;
 
 -- ------------------------------------------------------------
 -- Function: get_minute_from_interval()
---
 -- ------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION get_minute_from_interval(TEXT) RETURNS TEXT
@@ -2359,9 +2325,9 @@ $$;
 
 ALTER FUNCTION get_minute_from_interval(TEXT) OWNER TO pgbackman_role_rw;
 
+
 -- ------------------------------------------------------------
 -- Function: get_backup_server_fqdn()
---
 -- ------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION get_backup_server_fqdn(INTEGER) RETURNS TEXT 
@@ -2393,7 +2359,6 @@ ALTER FUNCTION get_backup_server_fqdn(INTEGER) OWNER TO pgbackman_role_rw;
 
 -- ------------------------------------------------------------
 -- Function: get_backup_server_id()
---
 -- ------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION get_backup_server_id(TEXT) RETURNS INTEGER 
@@ -2424,7 +2389,6 @@ ALTER FUNCTION get_backup_server_id(TEXT) OWNER TO pgbackman_role_rw;
 
 -- ------------------------------------------------------------
 -- Function: get_pgsql_node_fqdn()
---
 -- ------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION get_pgsql_node_fqdn(INTEGER) RETURNS TEXT 
@@ -2456,7 +2420,6 @@ ALTER FUNCTION get_pgsql_node_fqdn(INTEGER) OWNER TO pgbackman_role_rw;
 
 -- ------------------------------------------------------------
 -- Function: get_pgsql_node_id()
---
 -- ------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION get_pgsql_node_id(TEXT) RETURNS INTEGER 
@@ -2488,7 +2451,6 @@ ALTER FUNCTION get_pgsql_node_id(TEXT) OWNER TO pgbackman_role_rw;
 
 -- ------------------------------------------------------------
 -- Function: get_listen_channel_names()
---
 -- ------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION get_listen_channel_names(INTEGER) RETURNS SETOF TEXT 
@@ -2512,7 +2474,6 @@ ALTER FUNCTION get_listen_channel_names(INTEGER) OWNER TO pgbackman_role_rw;
 
 -- ------------------------------------------------------------
 -- Function: generate_crontab_file()
---
 -- ------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION generate_crontab_backup_jobs(INTEGER,INTEGER) RETURNS TEXT 
@@ -2618,9 +2579,9 @@ $$;
 
 ALTER FUNCTION generate_crontab_backup_jobs(INTEGER,INTEGER) OWNER TO pgbackman_role_rw;
 
+
 -- ------------------------------------------------------------
 -- Function: generate_snapshot_at_file()
---
 -- ------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION generate_snapshot_at_file(INTEGER) RETURNS TEXT 
@@ -2693,7 +2654,6 @@ ALTER FUNCTION generate_snapshot_at_file(INTEGER) OWNER TO pgbackman_role_rw;
 
 -- ------------------------------------------------------------
 -- Function: get_pgsql_node_dsn()
---
 -- ------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION get_pgsql_node_dsn(INTEGER) RETURNS TEXT 
@@ -2720,7 +2680,6 @@ ALTER FUNCTION get_pgsql_node_dsn(INTEGER) OWNER TO pgbackman_role_rw;
 
 -- ------------------------------------------------------------
 -- Function: get_pgsql_node_port()
---
 -- ------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION get_pgsql_node_port(INTEGER) RETURNS TEXT 
@@ -2747,7 +2706,6 @@ ALTER FUNCTION get_pgsql_node_port(INTEGER) OWNER TO pgbackman_role_rw;
 
 -- ------------------------------------------------------------
 -- Function: get_pgsql_node_admin_user()
---
 -- ------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION get_pgsql_node_admin_user(INTEGER) RETURNS TEXT 
@@ -2774,10 +2732,9 @@ ALTER FUNCTION get_pgsql_node_admin_user(INTEGER) OWNER TO pgbackman_role_rw;
 
 -- ------------------------------------------------------------
 -- Function: register_backup_job_catalog()
---
 -- ------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION register_backup_job_catalog(INTEGER,INTEGER,INTEGER,INTEGER,TEXT,TIMESTAMP WITH TIME ZONE,TIMESTAMP WITH TIME ZONE,INTERVAL,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,TEXT,TEXT,TEXT,INTEGER) RETURNS BOOLEAN
+CREATE OR REPLACE FUNCTION register_backup_job_catalog(INTEGER,INTEGER,INTEGER,INTEGER,TEXT,TIMESTAMP WITH TIME ZONE,TIMESTAMP WITH TIME ZONE,INTERVAL,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,TEXT,TEXT,TEXT,INTEGER) RETURNS VOID
  LANGUAGE plpgsql 
  SECURITY INVOKER 
  SET search_path = public, pg_temp
@@ -2858,7 +2815,6 @@ CREATE OR REPLACE FUNCTION register_backup_job_catalog(INTEGER,INTEGER,INTEGER,I
 	   error_message_,
 	   snapshot_id_;
 
-   RETURN TRUE;
  EXCEPTION WHEN others THEN
    	GET STACKED DIAGNOSTICS	
             v_msg     = MESSAGE_TEXT,
@@ -2866,7 +2822,6 @@ CREATE OR REPLACE FUNCTION register_backup_job_catalog(INTEGER,INTEGER,INTEGER,I
             v_context = PG_EXCEPTION_CONTEXT;
         RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \nCONTEXT: % \n----------------------------------------------\n', v_msg, v_detail, v_context;
   
-
  END;
 $$;
 
@@ -2875,10 +2830,9 @@ ALTER FUNCTION register_backup_job_catalog(INTEGER,INTEGER,INTEGER,INTEGER,TEXT,
 
 -- ------------------------------------------------------------
 -- Function: delete_catalog_entries_to_delete()
---
 -- ------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION delete_catalog_entries_to_delete(INTEGER) RETURNS BOOLEAN
+CREATE OR REPLACE FUNCTION delete_catalog_entries_to_delete(INTEGER) RETURNS VOID
  LANGUAGE plpgsql 
  SECURITY INVOKER 
  SET search_path = public, pg_temp
@@ -2899,7 +2853,6 @@ CREATE OR REPLACE FUNCTION delete_catalog_entries_to_delete(INTEGER) RETURNS BOO
      EXECUTE 'DELETE FROM catalog_entries_to_delete WHERE del_id = $1'
      USING del_id_;
    
-     RETURN TRUE;
     ELSE
       RAISE EXCEPTION 'Cataloginfo DelID % does not exist',del_id_; 
     END IF;
@@ -2918,10 +2871,9 @@ ALTER FUNCTION delete_catalog_entries_to_delete(INTEGER) OWNER TO pgbackman_role
 
 -- ------------------------------------------------------------
 -- Function:  delete_backup_job_catalog()
---
 -- ------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION  delete_backup_job_catalog(INTEGER) RETURNS BOOLEAN
+CREATE OR REPLACE FUNCTION  delete_backup_job_catalog(INTEGER) RETURNS VOID
  LANGUAGE plpgsql 
  SECURITY INVOKER 
  SET search_path = public, pg_temp
@@ -2942,7 +2894,6 @@ CREATE OR REPLACE FUNCTION  delete_backup_job_catalog(INTEGER) RETURNS BOOLEAN
      EXECUTE 'DELETE FROM backup_job_catalog WHERE bck_id = $1'
      USING bck_id_;
    
-     RETURN TRUE;
     ELSE
       RAISE EXCEPTION 'Catalog entry with BckID % does not exist',bck_id_; 
     END IF;
@@ -2958,9 +2909,9 @@ $$;
 
 ALTER FUNCTION  delete_backup_job_catalog(INTEGER) OWNER TO pgbackman_role_rw;
 
+
 -- ------------------------------------------------------------
 -- Function:  delete_snapshot_definition()
---
 -- ------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION delete_snapshot_definition(INTEGER) RETURNS VOID
@@ -3004,7 +2955,6 @@ ALTER FUNCTION  delete_snapshot_definition(INTEGER) OWNER TO pgbackman_role_rw;
 
 -- ------------------------------------------------------------
 -- Views
---
 -- ------------------------------------------------------------
 
 CREATE OR REPLACE VIEW show_jobs_queue AS 

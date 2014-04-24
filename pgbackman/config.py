@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 #
-# Copyright (c) 2013 Rafael Martinez Guerrero (PostgreSQL-es)
+# Copyright (c) 2014 Rafael Martinez Guerrero (PostgreSQL-es)
 # rafael@postgresql.org.es / http://www.postgresql.org.es/
 #
-# This file is part of Pgbackman
+# This file is part of PgBackMan
 # https://github.com/rafaelma/pgbackman
 #
 # PgBackMan is free software: you can redistribute it and/or modify
@@ -71,7 +71,7 @@ class configuration():
     def set_configuration_file(self):
         """Set the pgbackman configuration file"""
         
-        config_file_list = (os.getenv('HOME') + '/.pgbackman/pgbackman.conf','/etc/pgbackman/pgbackman.conf','/etc/pgbackman.conf','/home/rafael/Devel/GIT/pgbackman/etc/pgbackman.conf')
+        config_file_list = (os.getenv('HOME') + '/.pgbackman/pgbackman.conf','/etc/pgbackman/pgbackman.conf','/etc/pgbackman.conf')
         
         for file in config_file_list:
             if os.path.isfile(file):
@@ -162,25 +162,3 @@ class configuration():
         for parameter in dsn_parameters:
             self.dsn = self.dsn + parameter + ' '
 
-"""        
-if __name__ == '__main__':
-  
-    print os.getenv('HOME')
-    config_file_list = ('/etc/pgbackman/pgbackman.conf','/etc/pgbackman.conf',os.getenv('HOME') + '/.pgbackup/pgbackman.conf')
-    print config_file_list
-
-    conf = configuration()
-
-
-    print conf.config_file
-    print conf.backup_server
-    print conf.dbhost
-    print conf.dbhostaddr
-    print conf.dbport
-    print conf.dbname
-    print conf.dbuser
-    print conf.dbpassword
-    print conf.channels_check_interval
-        
-    print conf.dsn
-"""

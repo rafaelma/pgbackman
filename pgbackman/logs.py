@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 #
-# Copyright (c) 2013 Rafael Martinez Guerrero (PostgreSQL-es)
+# Copyright (c) 2014 Rafael Martinez Guerrero (PostgreSQL-es)
 # rafael@postgresql.org.es / http://www.postgresql.org.es/
 #
-# This file is part of Pgbackman
+# This file is part of PgBackMan
 # https://github.com/rafaelma/pgbackman
 #
-# Pgbackman is free software: you can redistribute it and/or modify
+# PgBackMan is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
@@ -23,8 +23,6 @@ import os
 import sys
 import logging
 
-sys.path.append('/home/rafael/Devel/GIT/pgbackman')
-
 from pgbackman.config import *
 
 class logs(logging.Logger):
@@ -36,6 +34,8 @@ class logs(logging.Logger):
     def __init__(self, logger_name):
         """ The Constructor."""
      
+    try:
+
         self.logger_name = logger_name
         self.conf = configuration()
         
@@ -44,16 +44,15 @@ class logs(logging.Logger):
         
         self.logger.setLevel(level)
         
-        try:
-            self.fh = logging.FileHandler(self.conf.log_file)
-            self.fh.setLevel(level)
-
-            self.formatter = logging.Formatter("%(asctime)s [%(name)s][%(process)d][%(levelname)s]: %(message)s")
-            self.fh.setFormatter(self.formatter)
-            self.logger.addHandler(self.fh)
+        self.fh = logging.FileHandler(self.conf.log_file)
+        self.fh.setLevel(level)
         
-        except IOError as e:
+        self.formatter = logging.Formatter("%(asctime)s [%(name)s][%(process)d][%(levelname)s]: %(message)s")
+        self.fh.setFormatter(self.formatter)
+        self.logger.addHandler(self.fh)
+        
+    except Exception as e:
             print "ERROR: Problems with the log configuration needed by pgbackman: %s" % e
-            sys.exit()
+            sys.exit(1)
         
         
