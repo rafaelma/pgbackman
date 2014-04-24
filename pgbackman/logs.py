@@ -34,8 +34,6 @@ class logs(logging.Logger):
     def __init__(self, logger_name):
         """ The Constructor."""
      
-    try:
-
         self.logger_name = logger_name
         self.conf = configuration()
         
@@ -43,15 +41,16 @@ class logs(logging.Logger):
         level = logging.getLevelName(self.conf.log_level.upper())
         
         self.logger.setLevel(level)
-        
-        self.fh = logging.FileHandler(self.conf.log_file)
-        self.fh.setLevel(level)
-        
-        self.formatter = logging.Formatter("%(asctime)s [%(name)s][%(process)d][%(levelname)s]: %(message)s")
-        self.fh.setFormatter(self.formatter)
-        self.logger.addHandler(self.fh)
-        
-    except Exception as e:
+    
+        try:
+            self.fh = logging.FileHandler(self.conf.log_file)
+            self.fh.setLevel(level)
+            
+            self.formatter = logging.Formatter("%(asctime)s [%(name)s][%(process)d][%(levelname)s]: %(message)s")
+            self.fh.setFormatter(self.formatter)
+            self.logger.addHandler(self.fh)
+            
+        except Exception as e:
             print "ERROR: Problems with the log configuration needed by pgbackman: %s" % e
             sys.exit(1)
         
