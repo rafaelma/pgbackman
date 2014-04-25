@@ -27,6 +27,7 @@ import time
 import signal
 import shlex
 import datetime
+import subprocess
 
 from pgbackman.database import * 
 from pgbackman.config import *
@@ -2716,9 +2717,12 @@ class pgbackman_cli(cmd.Cmd):
         "Run a shell command"
         
         try:
-            os.system(line)
+            proc = subprocess.Popen([line],stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=True)
+            output, errors = proc.communicate()
+            print output
             print
-        except:
+
+        except Exception as e:
             print "\n[ERROR]: Problems running '%s'" % line
 
 
