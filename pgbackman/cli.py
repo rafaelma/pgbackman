@@ -936,7 +936,7 @@ class pgbackman_cli(cmd.Cmd):
                             print "\n[Done]\n"
                             
                         elif force_deletion == "n":
-                            self.db.delete_backup_job_definition_id(def_id)
+                            self.db.delete_backup_definition_id(def_id)
                             print "\n[Done]\n"
                             
                     except Exception as e:
