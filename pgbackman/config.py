@@ -42,7 +42,7 @@ class configuration():
         self.dbhostaddr = ''
         self.dbport = ''
         self.dbname = 'pgbackman'
-        self.dbuser = 'pgbackman_user_rw'
+        self.dbuser = 'pgbackman_role_rw'
         self.dbpassword = ''
         self.dsn = ''
         self.pg_connect_retry_interval = 10
@@ -54,7 +54,7 @@ class configuration():
         self.tmp_dir = '/tmp'
 
         # pgbackman_maintenance section
-        self.maintenance_interval = 3600
+        self.maintenance_interval = 70
 
         # Logging section
         self.log_level = 'ERROR'
@@ -120,8 +120,8 @@ class configuration():
                 self.pg_connect_retry_interval = int(config.get('pgbackman_database','pg_connect_retry_interval'))
               
             # pgbackman2cron section
-            if config.has_option('pgbackman2cron','channels_check_interval'):
-                self.channels_check_interval = int(config.get('pgbackman2cron','channels_check_interval'))
+            if config.has_option('pgbackman_control','channels_check_interval'):
+                self.channels_check_interval = int(config.get('pgbackman_control','channels_check_interval'))
 
             # pgbackman_dump section
             if config.has_option('pgbackman_dump','tmp_dir'):
