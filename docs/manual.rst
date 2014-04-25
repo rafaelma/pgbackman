@@ -16,21 +16,40 @@ PgBackMan - PostgreSQL Backup Manager
 Introduction
 ============
 
-PgBackMan is a system to manage PostgreSQL backup dumps created with pg_dump and pg_dumpall.
+PgBackMan is an open source tool to manage PostgreSQL backup dumps
+created with ``pg_dump`` and ``pg_dumpall``.
+
+It is designed to manage backups from thousands of databases running
+in multiple PostgreSQL nodes, and it supports a multiple backup
+servers topology.
+
+Even though a backup created with ``pg_dump`` / ``pg_dumpall`` can never
+guarantee a full disaster recovery of all data changed between the
+moment when the backup was taken and the moment of a future crash,
+they are necessary if you need to archive versions of a database, move
+databases between PgSQL nodes, clone databases between production /
+pre-production and/or development servers.
+
+They are also an easy way of taken backups of databases not requiring
+PITR backups.
+	
+PgBackMan is not a tool for managing PITR (Point in time recovery)
+backups. There are several other solutions out there that can be use
+for PITR backups, such as PITRTools, OmniPITR, and Barman. 
 
 Main features
 =============
 
-The main features og PgBackMan are:
+The main features of PgBackMan are:
 
 * Central database with metadata information.
 * PgBackMan shell for interaction with the system.
 
 * Management of multiple backup servers
 * Management of multiple PostgreSQL servers
-* Management of backups dumps through a catalogue
+* Management of thousands of backups dumps through a catalogue
 * Manual and scheduled backups 
-* Management of retention policies for backups and WAL files.
+* Management of retention policies for backups dumps..
 * Fully detailed backup reports.
 * Multiple database backup types, CLUSTER, FULL, SCHEMA, DATA.
 * Full backup of role information for a database.
@@ -38,6 +57,14 @@ The main features og PgBackMan are:
 * Autonomous pgbackman_dump program that function even if the central database is not available.
 * Handling of error situations
 * Totally written in Python and PL/PgSQL
+
+Future features will include:
+
+* Automatic definitions of backups according to defined retention policies
+* Automatic definitions of backups for all databases running in a PgSQL node.
+* Semi-automatic restore procedures
+* Automatic cloning / move of databases between PgSQL nodes.
+* Disk space management / planning 
 
 
 Architecture and components
@@ -48,6 +75,10 @@ Architecture and components
 
 Installation
 ============
+
+You will have to install the requirements and the PgBackMan software
+in all the servers that are going to be used as backup servers by
+PgBackMan.
 
 System requirements
 -------------------
@@ -61,6 +92,27 @@ System requirements
 * PostgreSQL >= 9.0
 * AT and CRON installed and running.
 
+Before you install PgBackMan you have to install the software needed
+by this tool
+
+In systems using YUM::
+
+  yum install python-psycopg2 python-argparse at
+
+In system using apt-get::
+
+  apt-get install python-psycopg2 python-argparse at
+
+If you are going to install from source, you need to install also
+these packages:
+
+In systems using YUM::
+
+  yum install python-devel python-setuptools
+
+In system using apt-get::
+
+  apt-get install python-devel python-setuptools
 
 From source
 -----------
@@ -72,13 +124,13 @@ version from the master branch at the GitHub repository.
 
  [root@server]# cd
  [root@server]# git clone https://github.com/rafaelma/pgbackman.git
- 
+
  [root@server]# cd pgbackman
  [root@server]# ./setup.py install
  .....
 
-This will install all programs and the pgbackman module in your
-system.
+This will install all users, groups, programs, configuration files, logfiles and the
+pgbackman module in your system.
 
 
 Via RPM packages
@@ -95,6 +147,10 @@ Deb packages are available ...
 pgbackman Database
 ------------------
 
+After the requirements and the PgBackMan software are installed, you
+have to install the pgbackman database in a server running PostgreSQL
+
+
 Configuration
 =============
 
@@ -104,7 +160,7 @@ System administration and maintenance
 PgBackMan shell
 ===============
 
-The PgBackMan interactive shell can be started running the program
+The PgBackMan interactive shell can be started by running the program
 ``/usr/bin/pgbackman``
 
 ::
@@ -173,8 +229,8 @@ In alphabetical order:
 License and Contributions
 =========================
 
-PgBackman is the exclusive property of Rafael Martinez Guerrero and
+PgBackMan is the property of Rafael Martinez Guerrero and
 PostgreSQL-es and its code is distributed under GNU General Public
-License 3.  
+License 3.
 
 Copyright © 2013-2014 Rafael Martinez Guerrero - PostgreSQL-es.
