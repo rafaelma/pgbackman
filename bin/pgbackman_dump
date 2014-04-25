@@ -957,7 +957,6 @@ if __name__ == '__main__':
     parser.add_argument('--extra-params', metavar='EXTRA-PARAMETERS', required=False, help='extra pg_dump parameters', dest='extra_parameters')
 
     args = parser.parse_args()    
-    print args
 
     logs.logger.info('**** pgbackman_dump started. ****')
     
