@@ -658,7 +658,7 @@ class pgbackman_db():
                         x.add_row(["",""])
                         x.add_row(["DefID:",record[7]])
                         x.add_row(["SnapshotID:",record[8]])
-                        x.add_row(["DBname:",record[17]])
+                        x.add_row(["DBname:",record[19]])
                         x.add_row(["Backup server (ID/FQDN):","[" + str(record[15]) + "] / " + record[16]])
                         x.add_row(["PgSQL node (ID/FQDN):","[" + str(record[17]) + "] / " + record[18]])
                         x.add_row(["",""])
