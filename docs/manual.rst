@@ -26,8 +26,8 @@ servers topology.
 Even though a backup created with ``pg_dump`` / ``pg_dumpall`` can never
 guarantee a full disaster recovery of all data changed between the
 moment when the backup was taken and the moment of a future crash,
-they are necessary if you need to archive versions of a database, move
-databases between PgSQL nodes, clone databases between production /
+they are still necessary if you need to archive versions of a database, move
+databases between PgSQL nodes and clone databases between production /
 pre-production and/or development servers.
 
 They are also an easy way of taken backups of databases not requiring
@@ -150,9 +150,93 @@ pgbackman Database
 After the requirements and the PgBackMan software are installed, you
 have to install the pgbackman database in a server running PostgreSQL
 
+You can get 
+
 
 Configuration
 =============
+
+Backup servers
+--------------
+
+A backup server needs to have access to the ``pgbackman`` database and
+to all PgSQL nodes is taken backups for. This can be done like this:
+
+#. Update ``/etc/pgbackman/pgbackman.conf`` with the database
+   parameters needed by PgBackMan to access the central metadata
+   database. You need to define ``host`` or ``hostaddr``, ``port``,
+   ``dbname``, ``database`` under the section
+   ``[pgbackman_database]``.
+
+   You can also define ``password`` in this section but we discourage
+   to do this and recommend to define a ``.pgpass`` file in the home
+   directory of the users ``root`` and ``pgbackman`` with this
+   information, e.g.::
+
+     dbhost.domain:5432:pgbackman:pgbackman_role_rw:PASSWORD
+
+   and set the privileges of this file with ``chmod 400 ~/.pgpass``.
+
+   Even a better solution will be to use the ``cert`` autentication for
+   the pgbackman database user so we do not need to save passwords
+   around.
+
+#. Update and reload the ``pg_hba.conf`` file in the postgreSQL server
+   running the pgbackman database, with a line that gives access to
+   the pgbackman database from the new backup server. We recommend to
+   use a SSL connection to encrypt all the trafikk between the database
+   server and the backup server, e.g.::
+
+     hostssl   pgbackman   pgbackman_role_rw    10.20.20.20.200/32     md5 
+
+#. Define the backup server in PgBackMan via the PgBackMan shell::
+
+     [pgbackman@pg-backup01 ~]# pgbackman
+
+     ########################################################
+     Welcome to the PostgreSQL Backup Manager shell (v.1.0.0)
+     ########################################################
+     Type help or \? to list commands.
+
+     [pgbackman]$ register_backup_server
+     --------------------------------------------------------
+     # Hostname []: pg-backup01 
+     # Domain [uio.no]: 
+     # Remarks []: Main backup server
+
+     # Are all values correct (yes/no): yes
+     --------------------------------------------------------
+
+     [Done]
+
+     [pgbackman]$ show_backup_servers
+     +-------+------------------+----------------------+
+     | SrvID | FQDN               | Remarks            |
+     +-------+--------------------+--------------------+
+     | 00001 | pg-backup01.uio.no | Main backup server |
+     +-------+------------------+----------------------+
+
+#. Create the root directory / partition in the backup derver that
+   will be used to save all backups, logfiles, and syem data needed by
+   PgBackMan in
+
+
+
+PgSQL nodes
+-----------
+
+Every PgSQL node defined in PgBackMan will need to update and reload
+his ``pg_hba.conf`` file also to give access to the admin user
+(``postgres`` per default) from the backup serveres defined in
+PgBackMan, e.g.::
+
+    hostssl   *   postgres    10.20.20.20.200/32     md5 
+
+Remember that the ``.pgpass`` file of the ``pgbackman`` user in the
+backup server has to be updated with the information needed to access
+every PgSQL node we are goint to take backups for.
+
+
 
 System administration and maintenance
 =====================================
