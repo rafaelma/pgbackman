@@ -449,30 +449,47 @@ CREATE TABLE snapshot_definition(
 ALTER TABLE snapshot_definition ADD PRIMARY KEY (backup_server_id,pgsql_node_id,dbname,at_time,backup_code,extra_parameters);
 ALTER TABLE snapshot_definition OWNER TO pgbackman_role_rw;
 
+
+-- ------------------------------------------------------
+-- Table: restore_definition
+--
+-- @Description: restore definitions 
+--
+-- Attributes:
+--
+-- @restore_id
+-- @registered
+-- @backup_server_id
+-- @pgsql_node_id
+-- @bck_id
+-- @at_time
+-- @status
+-- @remarks
+-- ------------------------------------------------------
+
+\echo '# [Creating table: restore_definition]\n'
+
+CREATE TABLE restore_definition(
+
+  restore_id BIGSERIAL UNIQUE,
+  registered TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  backup_server_id INTEGER NOT NULL,
+  pgsql_node_id INTEGER NOT NULL,
+  bck_id BIGINT NOT NULL,
+  at_time TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  status TEXT DEFAULT 'WAITING',
+  remarks TEXT
+);
+
+ALTER TABLE restore_definition ADD PRIMARY KEY (restore_id);
+ALTER TABLE restore_definition OWNER TO pgbackman_role_rw;
+
 -- ------------------------------------------------------
 -- Table: backup_job_catalog
 --
 -- @Description: Catalog information about executed
 --               backup jobs.
 --
--- Attributes:
---
--- @id
--- @registered
--- @def_id
--- @backup_server
--- @pgsql_node
--- @dbname
--- @started
--- @finnished
--- @duration
--- @pg_dump_file_size
--- @pg_dump_file
--- @global_data_file
--- @db_parameters_file
--- @log_file
--- @execution_status
--- @error_message
 -- ------------------------------------------------------
 
 \echo '# [Creating table: backup_job_catalog]\n'
