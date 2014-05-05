@@ -214,6 +214,7 @@ def pg_dump_users(db):
             ' -p ' + global_parameters['pgsql_node_port'] + \
             ' -U ' + global_parameters['pgsql_node_admin_user'] + \
             ' -s' + \
+            ' -C' + \
             ' --file=' + pg_dump_schema_temp_file.name + \
             ' --verbose' + \
             ' ' + global_parameters['dbname']
