@@ -638,6 +638,15 @@ class pgbackman_cli(cmd.Cmd):
                                    [job status] 
                                    [remarks] 
 
+        
+        [Dbname]:
+        ---------
+        Database name.
+
+        You can use the special value '#all_databases#' if you want to
+        register the backup definition for all databases in the cluster
+        except 'template0' and 'template1'.
+                                           
         [*cron]:
         --------
         CRON format, e.g. 15 01 * * * 
@@ -674,6 +683,8 @@ class pgbackman_cli(cmd.Cmd):
 
         """
         
+        database_list = []
+
         try: 
             arg_list = shlex.split(args)
         
@@ -693,6 +704,10 @@ class pgbackman_cli(cmd.Cmd):
                 backup_code_default = encryption_default = retention_period_default = retention_redundancy_default = \
                 extra_parameters_default = backup_job_status_default = ""
 
+            #
+            # Getting some default values
+            #
+
             try:
                 minutes_cron_default = self.db.get_minute_from_interval(self.db.get_default_pgsql_node_parameter("backup_minutes_interval"))
                 hours_cron_default = self.db.get_hour_from_interval(self.db.get_default_pgsql_node_parameter("backup_hours_interval"))
@@ -710,12 +725,20 @@ class pgbackman_cli(cmd.Cmd):
                 print "\n[ERROR]: Problems getting default values for parameters\n",e 
                 return False
             
+            #
+            # Getting the backup definition parameters
+            #
+            
             print "--------------------------------------------------------"
             backup_server = raw_input("# Backup server SrvID / FQDN []: ")
             pgsql_node = raw_input("# PgSQL node NodeID / FQDN []: ")
             dbname = raw_input("# DBname []: ")
-            minutes_cron = raw_input("# Minutes cron [" + str(minutes_cron_default) + "]: ")
-            hours_cron = raw_input("# Hours cron [" + str(hours_cron_default) + "]: ")
+
+            if dbname != '#all_databases#':
+
+                minutes_cron = raw_input("# Minutes cron [" + str(minutes_cron_default) + "]: ")
+                hours_cron = raw_input("# Hours cron [" + str(hours_cron_default) + "]: ")
+            
             weekday_cron = raw_input("# Weekday cron [" + weekday_cron_default + "]: ")
             month_cron = raw_input("# Month cron [" + month_cron_default + "]: ")
             day_month_cron = raw_input("# Day-month cron [" + day_month_cron_default + "]: ")
@@ -733,80 +756,143 @@ class pgbackman_cli(cmd.Cmd):
 
             print "--------------------------------------------------------"
 
-            try:
-                if backup_server.isdigit():
-                    backup_server_id = backup_server
-                else:
-                    backup_server_id = self.db.get_backup_server_id(backup_server)
-
-                if pgsql_node.isdigit():
-                    pgsql_node_id = pgsql_node
-                    pgsql_node_fqdn = self.db.get_pgsql_node_fqdn(pgsql_node)
-                else:
-                    pgsql_node_id = self.db.get_pgsql_node_id(pgsql_node)
-                    pgsql_node_fqdn = pgsql_node
-
-                dsn_value = self.db.get_pgsql_node_dsn(pgsql_node_id)
-                db_node = pgbackman_db(dsn_value,'pgbackman_cli')
-
-                if dbname != '':
-                    if not db_node.database_exists(dbname):
-                        print ("\n[ERROR]: Database %s does not exist in The PgSQL node %s" % (dbname, pgsql_node_fqdn)) 
-                        print
-                        db_node = None
-                        return False
-
-                db_node = None
-
-            except Exception as e:
-                print "\n[ERROR]: ",e 
-                return False
-
-            if minutes_cron == "":
-                minutes_cron = str(minutes_cron_default)
-
-            if hours_cron == "":
-                hours_cron = str(hours_cron_default)
-
-            if weekday_cron == "":
-                weekday_cron = weekday_cron_default
-
-            if month_cron == "":
-                month_cron = month_cron_default
-
-            if day_month_cron == "":
-                day_month_cron = day_month_cron_default
-
-            if backup_code == "":
-                backup_code = backup_code_default
-
-            if encryption == "":
-                encryption = encryption_default
-
-            if retention_period == "":
-                retention_period = retention_period_default
-
-            if retention_redundancy == "":
-                retention_redundancy = retention_redundancy_default
-
-            if extra_parameters == "":
-                extra_parameters = extra_parameters_default
-
-            if backup_job_status == "":
-                backup_job_status = backup_job_status_default
-            
             if ack.lower() == "yes":
+
                 try:
-                    self.db.register_backup_definition(backup_server_id,pgsql_node_id,dbname.strip(),minutes_cron,hours_cron, \
-                                                    weekday_cron.strip(),month_cron.strip(),day_month_cron.strip(),backup_code.upper().strip(),encryption.lower().strip(), \
-                                                    retention_period.lower().strip(),retention_redundancy.strip(),extra_parameters.lower().strip(),backup_job_status.upper().strip(),remarks.strip())
-                    print "\n[Done]\n"
+                    if backup_server.isdigit():
+                        backup_server_id = backup_server
+                    else:
+                        backup_server_id = self.db.get_backup_server_id(backup_server)
+                        
+                    if pgsql_node.isdigit():
+                        pgsql_node_id = pgsql_node
+                        pgsql_node_fqdn = self.db.get_pgsql_node_fqdn(pgsql_node)
+                    else:
+                        pgsql_node_id = self.db.get_pgsql_node_id(pgsql_node)
+                        pgsql_node_fqdn = pgsql_node
+
+                    dsn_value = self.db.get_pgsql_node_dsn(pgsql_node_id)
+                    db_node = pgbackman_db(dsn_value,'pgbackman_cli')
+
+                    #
+                    # Generating a list of databases that will get a backup definition
+                    #
+
+                    if dbname == '#all_databases#':
+
+                        for database in db_node.get_pgsql_node_database_list():
+                            database_list.append(database[0])
+                    
+                    else:
+                        database_list = dbname.strip().replace(' ','').split(',')
 
                 except Exception as e:
-                    print '\n[ERROR]: Could not register this backup job definition\n',e
+                    print "\n[ERROR]: ",e 
+                    return False
+
+                #
+                # Loop through the list of databases that will get a backup definition
+                #
+
+                for index,database in enumerate(database_list):
+
+                    error = False
+
+                    #
+                    # Check if the database exists in the PgSQL node
+                    #
+
+                    if database != '' and database != '#all_databases#':
+
+                        try:
+                            if not db_node.database_exists(database):
+                                print ("\n[ERROR]: Database %s does not exist in The PgSQL node %s" % (database, pgsql_node_fqdn)) 
+                                print
+
+                                error = True
+                            
+                                if index == len(database_list) - 1: 
+                                    db_node = None
+                                    return False
+                        
+                        except Exception as e:
+                            print "\n[ERROR]: ",e 
+                            
+                            error = True
+                            
+                            if index == len(database_list) - 1:
+                                return False
+
+                    #
+                    # If we have defined more than one database, generate a random value for cron minutes and cron hours. 
+                    #
+
+                    if database == '#all_databases#' or len(database_list) > 1:
+
+                        try:
+                            minutes_cron = self.db.get_minute_from_interval(self.db.get_default_pgsql_node_parameter("backup_minutes_interval"))
+                            hours_cron = self.db.get_hour_from_interval(self.db.get_default_pgsql_node_parameter("backup_hours_interval"))
+                                    
+                        except Exception as e:
+                            print "\n[ERROR]: Problems getting default values for parameters\n",e 
+                            
+                            error = True
+
+                            if index == len(database_list) - 1:
+                                return False
+
+                    else:
+                        if minutes_cron == "":
+                            minutes_cron = str(minutes_cron_default)
+
+                        if hours_cron == "":
+                            hours_cron = str(hours_cron_default)
+
+                    if weekday_cron == "":
+                        weekday_cron = weekday_cron_default
+
+                    if month_cron == "":
+                        month_cron = month_cron_default
+
+                    if day_month_cron == "":
+                        day_month_cron = day_month_cron_default
+
+                    if backup_code == "":
+                        backup_code = backup_code_default
+
+                    if encryption == "":
+                        encryption = encryption_default
+                    
+                    if retention_period == "":
+                        retention_period = retention_period_default
+
+                    if retention_redundancy == "":
+                        retention_redundancy = retention_redundancy_default
+
+                    if extra_parameters == "":
+                        extra_parameters = extra_parameters_default
+
+                    if backup_job_status == "":
+                        backup_job_status = backup_job_status_default
+            
+                    try:
+
+                        if error == False:
+                            
+                            self.db.register_backup_definition(backup_server_id,pgsql_node_id,database.strip(),minutes_cron,hours_cron, \
+                                                                   weekday_cron.strip(),month_cron.strip(),day_month_cron.strip(),backup_code.upper().strip(),encryption.lower().strip(), \
+                                                                   retention_period.lower().strip(),retention_redundancy.strip(),extra_parameters.lower().strip(), \
+                                                                   backup_job_status.upper().strip(),remarks.strip())
+                            
+                            print "\n[Done] Backup definition for dbname: " + database.strip() + " created.\n"
+
+                    except Exception as e:
+                        print '\n[ERROR]: Could not register this backup definition\n',e
 
             elif ack.lower() == "no":
                 print "\n[Aborted]\n"
+
+            db_node = None
 
         #
         # Command with parameters
@@ -846,27 +932,108 @@ class pgbackman_cli(cmd.Cmd):
                 dsn_value = self.db.get_pgsql_node_dsn(pgsql_node_id)
                 db_node = pgbackman_db(dsn_value,'pgbackman_cli')
 
-                if dbname != '':
-                    if not db_node.database_exists(dbname):
-                        print ("\n[ERROR]: Database %s does not exist in The PgSQL node %s" % (dbname, pgsql_node_fqdn)) 
-                        print
-                        db_node = None
-                        return False
+                if dbname == '#all_databases#':
 
-                db_node = None
+                    for database in db_node.get_pgsql_node_database_list():
+                        database_list.append(database[0])
                     
+                else:
+                    database_list = dbname.strip().replace(' ','').split(',')
+
             except Exception as e:
                 print "\n[ERROR]: ",e 
                 return False
-                
-            try:
-                self.db.register_backup_definition(backup_server_id,pgsql_node_id,dbname.strip(),minutes_cron,hours_cron, \
-                                                weekday_cron.strip(),month_cron.strip(),day_month_cron.strip(),backup_code.upper().strip(),encryption.lower().strip(), \
-                                                retention_period.lower().strip(),retention_redundancy.strip(),extra_parameters.lower().strip(),backup_job_status.upper().strip(),remarks.strip())
-                print "\n[Done]\n"
 
-            except Exception as e:
-                print '\n[ERROR]: Could not register this backup job definition\n',e
+            for index,database in enumerate(database_list):
+                print index,database
+
+                error = False
+
+                if database != '':
+
+                    try:
+                        if not db_node.database_exists(database):
+                            print ("\n[ERROR]: Database %s does not exist in The PgSQL node %s" % (database, pgsql_node_fqdn)) 
+                            print
+                            
+                            error = True
+
+                            if index == len(database_list) - 1: 
+                                db_node = None
+                                return False
+                        
+                    except Exception as e:
+                        print "\n[ERROR]: ",e 
+
+                        error = true
+
+                        if index == len(database_list) - 1:
+                            return False
+
+                if database == '#all_databases#' or len(database_list) > 1:
+
+                    try:
+                        minutes_cron = self.db.get_minute_from_interval(self.db.get_default_pgsql_node_parameter("backup_minutes_interval"))
+                        hours_cron = self.db.get_hour_from_interval(self.db.get_default_pgsql_node_parameter("backup_hours_interval"))
+
+                    except Exception as e:
+                        print "\n[ERROR]: Problems getting default values for parameters\n",e 
+
+                        error = True
+
+                        if index == len(database_list) - 1:
+                            return False
+
+                else:
+                    if minutes_cron == "":
+                        minutes_cron = str(minutes_cron_default)
+
+                    if hours_cron == "":
+                        hours_cron = str(hours_cron_default)
+
+                if weekday_cron == "":
+                    weekday_cron = weekday_cron_default
+
+                if month_cron == "":
+                    month_cron = month_cron_default
+
+                if day_month_cron == "":
+                    day_month_cron = day_month_cron_default
+
+                if backup_code == "":
+                    backup_code = backup_code_default
+
+                if encryption == "":
+                    encryption = encryption_default
+                    
+                if retention_period == "":
+                    retention_period = retention_period_default
+
+                if retention_redundancy == "":
+                    retention_redundancy = retention_redundancy_default
+
+                if extra_parameters == "":
+                    extra_parameters = extra_parameters_default
+
+                if backup_job_status == "":
+                    backup_job_status = backup_job_status_default
+            
+                try:
+
+                    if error == False:
+
+                        self.db.register_backup_definition(backup_server_id,pgsql_node_id,database.strip(),minutes_cron,hours_cron, \
+                                                               weekday_cron.strip(),month_cron.strip(),day_month_cron.strip(),backup_code.upper().strip(),encryption.lower().strip(), \
+                                                               retention_period.lower().strip(),retention_redundancy.strip(),extra_parameters.lower().strip(), \
+                                                               backup_job_status.upper().strip(),remarks.strip())
+                        
+                        print "\n[Done] Backup definition for dbname: " + database.strip() + " created.\n"
+
+                except Exception as e:
+                    print '\n[ERROR]: Could not register this backup definition\n',e
+
+            db_node = None
+
                 
         #
         # Command with the wrong number of parameters
@@ -2690,10 +2857,15 @@ class pgbackman_cli(cmd.Cmd):
     # ############################################
 
     def precmd(self, line_in):
-        if line_in != 'EOF':
-            line_out = line_in.lower()
+        if line_in != '':
+            split_line = line_in.split()
+            
+            if split_line[0] not in ['EOF','shell','SHELL','!']:
+                line_out = line_in.lower()
+            else:
+                line_out = line_in
         else:
-            line_out = line_in
+            line_out = ''
 
         if line_out == "\h":
             line_out = "help"

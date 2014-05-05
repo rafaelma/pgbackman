@@ -1854,6 +1854,32 @@ class pgbackman_db():
     # ############################################
     # Method 
     # ############################################
+
+    def get_pgsql_node_database_list(self):
+        """A function to get a list with all the databases in a PgSQL node"""
+
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT datname FROM pg_database WHERE datname NOT IN (\'template0\',\'template1\') ORDER BY datname')
+                    self.conn.commit()
+
+                    return self.cur
+                                        
+                except psycopg2.Error as e:
+                    raise e
+
+            self.pg_close()
+    
+        except psycopg2.Error as e:
+            raise e
+
+
+    # ############################################
+    # Method 
+    # ############################################
                       
     def update_backup_server(self,backup_server_id,remarks):
         """A function to update a backup server"""
