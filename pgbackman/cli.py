@@ -2147,7 +2147,7 @@ class pgbackman_cli(cmd.Cmd):
                 if pgsql_node_id.isdigit():
                     self.db.show_pgsql_node_config(pgsql_node_id)
                 else:
-                    self.db.show_pgsql_node_backup_catalog(self.db.get_backup_pgsql_node_id(pgsql_node_id))
+                    self.db.show_pgsql_node_config(self.db.get_pgsql_node_id(pgsql_node_id))
                     
             except Exception as e:
                 print "\n[ERROR]: ",e
