@@ -1958,7 +1958,7 @@ class pgbackman_cli(cmd.Cmd):
 
             try:
                 if node_id.isdigit():
-                    self.db.show_pgsql_node_stats(server_id)
+                    self.db.show_pgsql_node_stats(node_id)
                 else:
                     self.db.show_pgsql_node_stats(self.db.get_pgsql_node_id(node_id))
 
