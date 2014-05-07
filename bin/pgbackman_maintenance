@@ -210,6 +210,8 @@ def enforce_snapshot_retentions(db,backup_server_id):
 def process_pending_catalog_log_file(db,backup_server_id):
     '''Process all pending catalog log files in the server '''
 
+    role_list = []
+
     logs.logger.debug('## Processing pending catalog log files ##')
     
     try:
@@ -224,7 +226,7 @@ def process_pending_catalog_log_file(db,backup_server_id):
                 for line in pending_file:
                     parameters = line.split('::')
                     
-                    if len(parameters) == 22:
+                    if len(parameters) == 23:
 
                         #
                         # Fix when def_id and snapshot_id are like ''. This is not a valid
@@ -238,6 +240,12 @@ def process_pending_catalog_log_file(db,backup_server_id):
                             def_id = None
                         elif snapshot_id == '':
                             snapshot_id = None
+
+                        
+                        # Generate role list    
+
+                        for role in parameters[22]:
+                            role_list.append(role)
 
                         #
                         # Updating the database with the information in the pending file
@@ -264,7 +272,8 @@ def process_pending_catalog_log_file(db,backup_server_id):
                                                        parameters[18],
                                                        parameters[19],
                                                        parameters[20],
-                                                       snapshot_id)
+                                                       snapshot_id,
+                                                       role_list)
 
                         logs.logger.info('Backup job catalog for DefID: %s or snapshotID: %s in pending file %s updated in the database',def_id,snapshot_id,pending_log_file)
                             

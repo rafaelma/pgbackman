@@ -529,7 +529,8 @@ CREATE TABLE backup_job_catalog(
   global_log_file TEXT NOT NULL,
   execution_status TEXT,
   execution_method TEXT,
-  error_message TEXT
+  error_message TEXT,
+  role_list TEXT[]
 );
 
 ALTER TABLE backup_job_catalog ADD PRIMARY KEY (bck_id);
@@ -2764,7 +2765,7 @@ ALTER FUNCTION get_pgsql_node_admin_user(INTEGER) OWNER TO pgbackman_role_rw;
 -- Function: register_backup_job_catalog()
 -- ------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION register_backup_job_catalog(INTEGER,INTEGER,INTEGER,INTEGER,TEXT,TIMESTAMP WITH TIME ZONE,TIMESTAMP WITH TIME ZONE,INTERVAL,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,TEXT,TEXT,TEXT,INTEGER) RETURNS VOID
+CREATE OR REPLACE FUNCTION register_backup_job_catalog(INTEGER,INTEGER,INTEGER,INTEGER,TEXT,TIMESTAMP WITH TIME ZONE,TIMESTAMP WITH TIME ZONE,INTERVAL,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,TEXT,TEXT,TEXT,INTEGER,TEXT[]) RETURNS VOID
  LANGUAGE plpgsql 
  SECURITY INVOKER 
  SET search_path = public, pg_temp
@@ -2793,6 +2794,7 @@ CREATE OR REPLACE FUNCTION register_backup_job_catalog(INTEGER,INTEGER,INTEGER,I
   execution_method_ ALIAS FOR $20;
   error_message_ ALIAS FOR $21;
   snapshot_id_ ALIAS FOR $22;
+  role_list ALIAS FOR $23;
 
   v_msg     TEXT;
   v_detail  TEXT;
@@ -2820,8 +2822,9 @@ CREATE OR REPLACE FUNCTION register_backup_job_catalog(INTEGER,INTEGER,INTEGER,I
 					     execution_status,
 					     execution_method,
 					     error_message,
-					     snapshot_id) 
-	     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22)'
+					     snapshot_id,
+					     role_list) 
+	     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23)'
     USING  def_id_,
     	   procpid_,
     	   backup_server_id_,
@@ -2843,7 +2846,8 @@ CREATE OR REPLACE FUNCTION register_backup_job_catalog(INTEGER,INTEGER,INTEGER,I
   	   execution_status_,
 	   execution_method_,
 	   error_message_,
-	   snapshot_id_;
+	   snapshot_id_,
+	   role_list;
 
  EXCEPTION WHEN others THEN
    	GET STACKED DIAGNOSTICS	
@@ -2855,7 +2859,7 @@ CREATE OR REPLACE FUNCTION register_backup_job_catalog(INTEGER,INTEGER,INTEGER,I
  END;
 $$;
 
-ALTER FUNCTION register_backup_job_catalog(INTEGER,INTEGER,INTEGER,INTEGER,TEXT,TIMESTAMP WITH TIME ZONE,TIMESTAMP WITH TIME ZONE,INTERVAL,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,TEXT,TEXT,TEXT,INTEGER) OWNER TO pgbackman_role_rw;
+ALTER FUNCTION register_backup_job_catalog(INTEGER,INTEGER,INTEGER,INTEGER,TEXT,TIMESTAMP WITH TIME ZONE,TIMESTAMP WITH TIME ZONE,INTERVAL,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,TEXT,TEXT,TEXT,INTEGER,TEXT[]) OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------------
@@ -3118,7 +3122,8 @@ CREATE OR REPLACE VIEW show_backup_details AS
        b.backup_code AS "Code",
        a.execution_status AS "Status",
        a.execution_method AS "Execution",
-       left(a.error_message,60) AS "Error message" 
+       left(a.error_message,60) AS "Error message",
+       array_to_string(a.role_list,',') AS "Role list" 
    FROM backup_job_catalog a 
    JOIN backup_job_definition b ON a.def_id = b.def_id) 
    UNION
@@ -3155,7 +3160,8 @@ CREATE OR REPLACE VIEW show_backup_details AS
        b.backup_code AS "Code",
        a.execution_status AS "Status",
        a.execution_method AS "Execution",
-       left(a.error_message,60) AS "Error message" 
+       left(a.error_message,60) AS "Error message",
+       array_to_string(a.role_list,',') AS "Role list"
    FROM backup_job_catalog a 
    JOIN snapshot_definition b ON a.snapshot_id = b.snapshot_id)
  ORDER BY "Finished" DESC,backup_server_id,pgsql_node_id,"DBname","Code","Status";
