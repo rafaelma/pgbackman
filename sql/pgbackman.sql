@@ -407,6 +407,11 @@ CREATE TABLE backup_job_definition(
 );
 
 ALTER TABLE backup_job_definition ADD PRIMARY KEY (backup_server_id,pgsql_node_id,dbname,backup_code,extra_parameters);
+
+CREATE INDEX ON backup_job_definition(backup_server_id);
+CREATE INDEX ON backup_job_definition(pgsql_node_id);
+CREATE INDEX ON backup_job_definition(dbname);
+
 ALTER TABLE backup_job_definition OWNER TO pgbackman_role_rw;
 
 -- ------------------------------------------------------
@@ -447,6 +452,11 @@ CREATE TABLE snapshot_definition(
 );
 
 ALTER TABLE snapshot_definition ADD PRIMARY KEY (backup_server_id,pgsql_node_id,dbname,at_time,backup_code,extra_parameters);
+
+CREATE INDEX ON snapshot_definition(backup_server_id);
+CREATE INDEX ON snapshot_definition(pgsql_node_id);
+CREATE INDEX ON snapshot_definition(dbname);
+
 ALTER TABLE snapshot_definition OWNER TO pgbackman_role_rw;
 
 
@@ -498,8 +508,8 @@ CREATE TABLE backup_job_catalog(
 
   bck_id BIGSERIAL,
   registered TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-  def_id BIGINT,
-  snapshot_id BIGINT,
+  def_id BIGINT DEFAULT NULL,
+  snapshot_id BIGINT DEFAULT NULL,
   procpid INTEGER,
   backup_server_id INTEGER NOT NULL,
   pgsql_node_id INTEGER NOT NULL,
@@ -523,7 +533,9 @@ CREATE TABLE backup_job_catalog(
 );
 
 ALTER TABLE backup_job_catalog ADD PRIMARY KEY (bck_id);
+
 CREATE INDEX ON backup_job_catalog(def_id);
+CREATE INDEX ON backup_job_catalog(snapshot_id);
 CREATE INDEX ON backup_job_catalog(backup_server_id);
 CREATE INDEX ON backup_job_catalog(pgsql_node_id);
 CREATE INDEX ON backup_job_catalog(dbname);
@@ -537,11 +549,6 @@ ALTER TABLE backup_job_catalog OWNER TO pgbackman_role_rw;
 -- @Description: Table with files to delete after a
 --               force delete of backup definitions
 --
--- Attributes:
---
--- @server_id
--- @parameter
--- @value
 -- ------------------------------------------------------
 
 \echo '# [Creating table: catalog_entries_to_delete]\n'
@@ -655,6 +662,12 @@ ALTER TABLE ONLY backup_job_catalog
 
 ALTER TABLE ONLY backup_job_catalog
     ADD FOREIGN KEY (execution_method) REFERENCES job_execution_method (code) MATCH FULL ON DELETE RESTRICT;
+
+ALTER TABLE ONLY backup_job_catalog
+    ADD FOREIGN KEY (def_id) REFERENCES backup_job_definition (def_id) MATCH FULL ON DELETE RESTRICT;
+
+ALTER TABLE ONLY backup_job_catalog
+    ADD FOREIGN KEY (snapshot_id) REFERENCES snapshot_definition (snapshot_id) MATCH FULL ON DELETE RESTRICT;
 
 ALTER TABLE ONLY snapshot_definition
     ADD FOREIGN KEY (backup_server_id) REFERENCES backup_server (server_id) MATCH FULL ON DELETE RESTRICT;
@@ -960,7 +973,7 @@ CREATE OR REPLACE FUNCTION update_job_queue(INTEGER,INTEGER) RETURNS VOID
             v_msg     = MESSAGE_TEXT,
             v_detail  = PG_EXCEPTION_DETAIL,
             v_context = PG_EXCEPTION_CONTEXT;
-        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \nCONTEXT: % \n----------------------------------------------', v_msg, v_detail, v_context;
+        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \n----------------------------------------------', v_msg, v_detail;
 
  END;
 $$;
@@ -1214,7 +1227,7 @@ CREATE OR REPLACE FUNCTION register_backup_server(TEXT,TEXT,CHARACTER VARYING,TE
             v_msg     = MESSAGE_TEXT,
             v_detail  = PG_EXCEPTION_DETAIL,
             v_context = PG_EXCEPTION_CONTEXT;
-        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \nCONTEXT: % \n----------------------------------------------', v_msg, v_detail, v_context;
+        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \n----------------------------------------------', v_msg, v_detail;
   
 END;
 $$;
@@ -1259,7 +1272,7 @@ CREATE OR REPLACE FUNCTION delete_backup_server(INTEGER) RETURNS VOID
             v_msg     = MESSAGE_TEXT,
             v_detail  = PG_EXCEPTION_DETAIL,
             v_context = PG_EXCEPTION_CONTEXT;
-        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \nCONTEXT: % \n----------------------------------------------\n', v_msg, v_detail, v_context;
+        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \n----------------------------------------------\n', v_msg, v_detail;
   END;
 $$;
 
@@ -1301,7 +1314,7 @@ CREATE OR REPLACE FUNCTION update_backup_server(INTEGER,TEXT) RETURNS VOID
             v_msg     = MESSAGE_TEXT,
             v_detail  = PG_EXCEPTION_DETAIL,
             v_context = PG_EXCEPTION_CONTEXT;
-        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \nCONTEXT: % \n----------------------------------------------\n', v_msg, v_detail, v_context;
+        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \n----------------------------------------------\n', v_msg, v_detail;
   END;
 $$;
 
@@ -1363,7 +1376,7 @@ CREATE OR REPLACE FUNCTION register_pgsql_node(TEXT,TEXT,INTEGER,TEXT,CHARACTER 
             v_msg     = MESSAGE_TEXT,
             v_detail  = PG_EXCEPTION_DETAIL,
             v_context = PG_EXCEPTION_CONTEXT;
-        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \nCONTEXT: % \n----------------------------------------------\n', v_msg, v_detail, v_context;
+        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \n----------------------------------------------\n', v_msg, v_detail;
   
 END;
 $$;
@@ -1411,7 +1424,7 @@ CREATE OR REPLACE FUNCTION delete_pgsql_node(INTEGER) RETURNS VOID
             v_msg     = MESSAGE_TEXT,
             v_detail  = PG_EXCEPTION_DETAIL,
             v_context = PG_EXCEPTION_CONTEXT;
-        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \nCONTEXT: % \n----------------------------------------------\n', v_msg, v_detail, v_context;
+        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \n----------------------------------------------\n', v_msg, v_detail;
 
 END;
 $$;
@@ -1461,7 +1474,7 @@ CREATE OR REPLACE FUNCTION update_pgsql_node(INTEGER,INTEGER,TEXT,TEXT,TEXT) RET
             v_msg     = MESSAGE_TEXT,
             v_detail  = PG_EXCEPTION_DETAIL,
             v_context = PG_EXCEPTION_CONTEXT;
-        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \nCONTEXT: % \n----------------------------------------------\n', v_msg, v_detail, v_context;
+        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \n----------------------------------------------\n', v_msg, v_detail;
   END;
 $$;
 
@@ -1584,7 +1597,7 @@ CREATE OR REPLACE FUNCTION update_pgsql_node_config(INTEGER,TEXT,TEXT,TEXT,TEXT,
             v_msg     = MESSAGE_TEXT,
             v_detail  = PG_EXCEPTION_DETAIL,
             v_context = PG_EXCEPTION_CONTEXT;
-        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \nCONTEXT: % \n----------------------------------------------\n', v_msg, v_detail, v_context;
+        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \n----------------------------------------------\n', v_msg, v_detail;
   END;
 $$;
 
@@ -1722,7 +1735,7 @@ CREATE OR REPLACE FUNCTION register_backup_definition(INTEGER,INTEGER,TEXT,CHARA
             v_msg     = MESSAGE_TEXT,
             v_detail  = PG_EXCEPTION_DETAIL,
             v_context = PG_EXCEPTION_CONTEXT;
-        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \nCONTEXT: % \n----------------------------------------------\n', v_msg, v_detail, v_context;
+        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \n----------------------------------------------\n', v_msg, v_detail;
 
 END;
 $$;
@@ -1764,7 +1777,7 @@ CREATE OR REPLACE FUNCTION delete_backup_definition_id(INTEGER) RETURNS VOID
             v_msg     = MESSAGE_TEXT,
             v_detail  = PG_EXCEPTION_DETAIL,
             v_context = PG_EXCEPTION_CONTEXT;
-        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \nCONTEXT: % \n----------------------------------------------\n', v_msg, v_detail, v_context;
+        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \n----------------------------------------------\n', v_msg, v_detail;
   END;
 $$;
 
@@ -1831,7 +1844,7 @@ CREATE OR REPLACE FUNCTION delete_force_backup_definition_id(INTEGER) RETURNS VO
             v_msg     = MESSAGE_TEXT,
             v_detail  = PG_EXCEPTION_DETAIL,
             v_context = PG_EXCEPTION_CONTEXT;
-        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \nCONTEXT: % \n----------------------------------------------\n', v_msg, v_detail, v_context;
+        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \n----------------------------------------------\n', v_msg, v_detail;
   END;
 $$;
 
@@ -1904,7 +1917,7 @@ CREATE OR REPLACE FUNCTION delete_backup_definition_dbname(INTEGER,TEXT) RETURNS
             v_msg     = MESSAGE_TEXT,
             v_detail  = PG_EXCEPTION_DETAIL,
             v_context = PG_EXCEPTION_CONTEXT;
-        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \nCONTEXT: % \n----------------------------------------------\n', v_msg, v_detail, v_context;
+        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \n----------------------------------------------\n', v_msg, v_detail;
   END;
 $$;
 
@@ -1975,7 +1988,7 @@ CREATE OR REPLACE FUNCTION delete_force_backup_definition_dbname(INTEGER,TEXT) R
             v_msg     = MESSAGE_TEXT,
             v_detail  = PG_EXCEPTION_DETAIL,
             v_context = PG_EXCEPTION_CONTEXT;
-        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \nCONTEXT: % \n----------------------------------------------\n', v_msg, v_detail, v_context;
+        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \n----------------------------------------------\n', v_msg, v_detail;
   END;
 $$;
 
@@ -2056,7 +2069,7 @@ CREATE OR REPLACE FUNCTION register_snapshot_definition(INTEGER,INTEGER,TEXT,TIM
             v_msg     = MESSAGE_TEXT,
             v_detail  = PG_EXCEPTION_DETAIL,
             v_context = PG_EXCEPTION_CONTEXT;
-        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \nCONTEXT: % \n----------------------------------------------\n', v_msg, v_detail, v_context;
+        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \n----------------------------------------------\n', v_msg, v_detail;
 
 END;
 $$;
@@ -2091,7 +2104,7 @@ CREATE OR REPLACE FUNCTION update_snapshot_status(INTEGER,TEXT) RETURNS VOID
             v_msg     = MESSAGE_TEXT,
             v_detail  = PG_EXCEPTION_DETAIL,
             v_context = PG_EXCEPTION_CONTEXT;
-        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \nCONTEXT: % \n----------------------------------------------\n', v_msg, v_detail, v_context;
+        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \n----------------------------------------------\n', v_msg, v_detail;
   END;
 $$;
 
@@ -2285,7 +2298,7 @@ CREATE OR REPLACE FUNCTION get_hour_from_interval(TEXT) RETURNS TEXT
             v_msg     = MESSAGE_TEXT,
             v_detail  = PG_EXCEPTION_DETAIL,
             v_context = PG_EXCEPTION_CONTEXT;
-        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \nCONTEXT: % \n----------------------------------------------\n', v_msg, v_detail, v_context;
+        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \n----------------------------------------------\n', v_msg, v_detail;
 
  END;
 $$;
@@ -2335,7 +2348,7 @@ CREATE OR REPLACE FUNCTION get_minute_from_interval(TEXT) RETURNS TEXT
             v_msg     = MESSAGE_TEXT,
             v_detail  = PG_EXCEPTION_DETAIL,
             v_context = PG_EXCEPTION_CONTEXT;
-        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \nCONTEXT: % \n----------------------------------------------\n', v_msg, v_detail, v_context;
+        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \n----------------------------------------------\n', v_msg, v_detail;
 
  END;
 $$;
@@ -2837,7 +2850,7 @@ CREATE OR REPLACE FUNCTION register_backup_job_catalog(INTEGER,INTEGER,INTEGER,I
             v_msg     = MESSAGE_TEXT,
             v_detail  = PG_EXCEPTION_DETAIL,
             v_context = PG_EXCEPTION_CONTEXT;
-        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \nCONTEXT: % \n----------------------------------------------\n', v_msg, v_detail, v_context;
+        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \n----------------------------------------------\n', v_msg, v_detail;
   
  END;
 $$;
@@ -2879,7 +2892,7 @@ CREATE OR REPLACE FUNCTION delete_catalog_entries_to_delete(INTEGER) RETURNS VOI
             v_msg     = MESSAGE_TEXT,
             v_detail  = PG_EXCEPTION_DETAIL,
             v_context = PG_EXCEPTION_CONTEXT;
-        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \nCONTEXT: % \n----------------------------------------------\n', v_msg, v_detail, v_context;
+        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \n----------------------------------------------\n', v_msg, v_detail;
   END;
 $$;
 
@@ -2920,7 +2933,7 @@ CREATE OR REPLACE FUNCTION  delete_backup_job_catalog(INTEGER) RETURNS VOID
             v_msg     = MESSAGE_TEXT,
             v_detail  = PG_EXCEPTION_DETAIL,
             v_context = PG_EXCEPTION_CONTEXT;
-        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \nCONTEXT: % \n----------------------------------------------\n', v_msg, v_detail, v_context;
+        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \n----------------------------------------------\n', v_msg, v_detail;
   END;
 $$;
 
@@ -2964,7 +2977,7 @@ CREATE OR REPLACE FUNCTION delete_snapshot_definition(INTEGER) RETURNS VOID
             v_msg     = MESSAGE_TEXT,
             v_detail  = PG_EXCEPTION_DETAIL,
             v_context = PG_EXCEPTION_CONTEXT;
-        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \nCONTEXT: % \n----------------------------------------------\n', v_msg, v_detail, v_context;
+        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \n----------------------------------------------\n', v_msg, v_detail;
   END;
 $$;
 
