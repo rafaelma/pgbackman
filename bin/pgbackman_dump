@@ -246,14 +246,14 @@ def pg_dump_users(db):
                         role = line.split(' OWNER TO ')
                         
                         if len(role) == 2:
-                            if role.find(' ') < 0:
+                            if role[1].replace(';\n','').find(' ') < 0:
                                 roles.append(role[1].replace(';\n',''))
                             
                     if 'GRANT' in line:
                         role = line.split(' TO ')
                         
                         if len(role) == 2:
-                            if role.find(' ') < 0:
+                            if role[1].replace(';\n','').find(' ') < 0:
                                 if role[1].replace(';\n','') != 'PUBLIC':
                                     roles.append(role[1].replace(';\n',''))
                              
