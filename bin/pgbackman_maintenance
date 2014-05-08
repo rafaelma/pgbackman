@@ -234,7 +234,7 @@ def process_pending_catalog_log_file(db,backup_server_id):
                         #
 
                         def_id = parameters[0]
-                        snapshot_id = parameters[21].replace('\n','')
+                        snapshot_id = parameters[21]
                         
                         if def_id == '':
                             def_id = None
@@ -244,8 +244,7 @@ def process_pending_catalog_log_file(db,backup_server_id):
                         
                         # Generate role list    
 
-                        for role in parameters[22]:
-                            role_list.append(role)
+                        role_list = parameters[22].replace('\n','').split(' ')
 
                         #
                         # Updating the database with the information in the pending file

@@ -1072,6 +1072,7 @@ class pgbackman_db():
  
             if self.cur:
                 try:
+
                     self.cur.execute('SELECT register_backup_job_catalog(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',(def_id,procpid,backup_server_id,pgsql_node_id,dbname,
                                                                                                                                         started,finished,duration,pg_dump_file,
                                                                                                                                         pg_dump_file_size,pg_dump_log_file,pg_dump_roles_file,
