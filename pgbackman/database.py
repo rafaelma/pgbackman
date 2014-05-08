@@ -661,6 +661,7 @@ class pgbackman_db():
                         x.add_row(["DBname:",record[19]])
                         x.add_row(["Backup server (ID/FQDN):","[" + str(record[15]) + "] / " + record[16]])
                         x.add_row(["PgSQL node (ID/FQDN):","[" + str(record[17]) + "] / " + record[18]])
+                        x.add_row(["Pg_dump/all release:",record[35]])
                         x.add_row(["",""])
                         x.add_row(["Schedule:",record[11] + " [min hour weekday month day_month]"])
                         x.add_row(["AT time:",record[12]])
@@ -1061,8 +1062,9 @@ class pgbackman_db():
     # ############################################
            
     def register_backup_job_catalog(self,def_id,procpid,backup_server_id,pgsql_node_id,dbname,started,finished,duration,pg_dump_file,
-                                  pg_dump_file_size,pg_dump_log_file,pg_dump_roles_file,pg_dump_roles_file_size,pg_dump_roles_log_file,
-                                  pg_dump_dbconfig_file,pg_dump_dbconfig_file_size,pg_dump_dbconfig_log_file,global_log_file,execution_status,execution_method,error_message,snapshot_id,role_list):
+                                    pg_dump_file_size,pg_dump_log_file,pg_dump_roles_file,pg_dump_roles_file_size,pg_dump_roles_log_file,
+                                    pg_dump_dbconfig_file,pg_dump_dbconfig_file_size,pg_dump_dbconfig_log_file,global_log_file,execution_status,
+                                    execution_method,error_message,snapshot_id,role_list,pgsql_node_release):
         
         """A function to update the backup job catalog"""
 
@@ -1073,13 +1075,30 @@ class pgbackman_db():
             if self.cur:
                 try:
 
-                    self.cur.execute('SELECT register_backup_job_catalog(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',(def_id,procpid,backup_server_id,pgsql_node_id,dbname,
-                                                                                                                                        started,finished,duration,pg_dump_file,
-                                                                                                                                        pg_dump_file_size,pg_dump_log_file,pg_dump_roles_file,
-                                                                                                                                        pg_dump_roles_file_size,pg_dump_roles_log_file,
-                                                                                                                                        pg_dump_dbconfig_file,pg_dump_dbconfig_file_size,
-                                                                                                                                        pg_dump_dbconfig_log_file,global_log_file,execution_status,
-                                                                                                                                        execution_method,error_message,snapshot_id,role_list))
+                    self.cur.execute('SELECT register_backup_job_catalog(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',(def_id,
+                                                                                                                                                    procpid,
+                                                                                                                                                    backup_server_id,
+                                                                                                                                                    pgsql_node_id,
+                                                                                                                                                    dbname,
+                                                                                                                                                    started,
+                                                                                                                                                    finished,
+                                                                                                                                                    duration,
+                                                                                                                                                    pg_dump_file,
+                                                                                                                                                    pg_dump_file_size,
+                                                                                                                                                    pg_dump_log_file,
+                                                                                                                                                    pg_dump_roles_file,
+                                                                                                                                                    pg_dump_roles_file_size,
+                                                                                                                                                    pg_dump_roles_log_file,
+                                                                                                                                                    pg_dump_dbconfig_file,
+                                                                                                                                                    pg_dump_dbconfig_file_size,
+                                                                                                                                                    pg_dump_dbconfig_log_file,
+                                                                                                                                                    global_log_file,
+                                                                                                                                                    execution_status,
+                                                                                                                                                    execution_method,
+                                                                                                                                                    error_message,
+                                                                                                                                                    snapshot_id,
+                                                                                                                                                    role_list,
+                                                                                                                                                    pgsql_node_release))
                     self.conn.commit()                        
                     
                 except psycopg2.Error as e:

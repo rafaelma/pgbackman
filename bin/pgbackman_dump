@@ -669,7 +669,8 @@ def register_backup_job_catalog(db):
                                        global_parameters['execution_method'],
                                        global_parameters['error_message'],
                                        global_parameters['snapshot_id'],
-                                       global_parameters['role_list']
+                                       global_parameters['role_list'],
+                                       global_parameters['pgsql_node_release'].replace('_','.')
                                        )
     
 
@@ -719,7 +720,8 @@ def register_backup_job_catalog(db):
                                       global_parameters['execution_method'] + '::' +
                                       global_parameters['error_message'] + '::' +
                                       global_parameters['snapshot_id'] + '::' + 
-                                      ' '.join(global_parameters['role_list']) +
+                                      ' '.join(global_parameters['role_list']) + '::' +
+                                      global_parameters['pgsql_node_release'].replace('_','.') +
                                       '\n')
                 
                 logs.logger.info('Catalog pending log file: %s created',pending_log_file)
@@ -850,6 +852,8 @@ def main():
 
     global_parameters['error_message'] = ''
     global_parameters['role_list'] = [] 
+
+    global_parameters['pgsql_node_release'] = ''
        
     db = pgbackman_db(pgbackman_dsn,'pgbackman_dump')
  
