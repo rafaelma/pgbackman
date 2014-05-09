@@ -483,9 +483,11 @@ CREATE TABLE restore_definition(
 
   restore_id BIGSERIAL UNIQUE,
   registered TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  bck_id BIGINT NOT NULL,
+  roles_to_restore TEXT [],
   backup_server_id INTEGER NOT NULL,
   target_pgsql_node_id INTEGER NOT NULL,
-  bck_id BIGINT NOT NULL,
+  target_dbname TEXT NOT NULL,
   at_time TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   status TEXT DEFAULT 'WAITING',
   remarks TEXT
