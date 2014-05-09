@@ -1872,6 +1872,37 @@ class pgbackman_db():
         except psycopg2.Error as e:
             raise e
 
+    # ############################################
+    # Method 
+    # ############################################
+
+    def role_exists(self,role):
+        """A function to check if a role exists in a pgsql node"""
+
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT count(*) AS role_cnt FROM pg_roles WHERE rolname = %s',(role,))
+                    self.conn.commit()
+
+                    role_cnt = self.cur.fetchone()[0]
+
+                    if role_cnt > 0:
+                        return True
+                    
+                    elif role_cnt == 0:
+                        return False
+                                        
+                except psycopg2.Error as e:
+                    raise e
+
+            self.pg_close()
+    
+        except psycopg2.Error as e:
+            raise e
+
 
     # ############################################
     # Method 
@@ -2076,3 +2107,83 @@ class pgbackman_db():
 
         except psycopg2.Error as e:
             raise e
+
+
+    # ############################################
+    # Method 
+    # ############################################
+           
+    def get_dbname_from_bckid(self,bck_id):
+        """A function to get the dbname from a bckID"""
+
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT get_dbname_from_bckid(%s)',(bck_id,))
+                    
+                    data = self.cur.fetchone()[0]
+                    return data
+
+                except psycopg2.Error as e:
+                    raise e
+            
+            self.pg_close()
+
+        except Exception as e:
+            raise e
+
+
+    # ############################################
+    # Method 
+    # ############################################
+           
+    def get_backup_server_id_from_bckid(self,bck_id):
+        """A function to get the backup server ID from a bckID"""
+
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT get_backup_server_id_from_bckid(%s)',(bck_id,))
+                    
+                    data = self.cur.fetchone()[0]
+                    return data
+
+                except psycopg2.Error as e:
+                    raise e
+            
+            self.pg_close()
+
+        except Exception as e:
+            raise e
+
+
+    # ############################################
+    # Method 
+    # ############################################
+           
+    def get_role_list_from_bckid(self,bck_id):
+        """A function to get the role list from a bckID"""
+
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT get_role_list_from_bckid(%s)',(bck_id,))
+                    
+                    data = self.cur.fetchone()[0]
+                    print data
+                    return data
+
+                except psycopg2.Error as e:
+                    raise e
+            
+            self.pg_close()
+
+        except Exception as e:
+            raise e
+

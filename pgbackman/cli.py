@@ -1398,7 +1398,7 @@ class pgbackman_cli(cmd.Cmd):
 
 
     # ############################################
-    # Method do_register_snapshot
+    # Method do_register_snapshot_definition
     # ############################################
 
     def do_register_snapshot_definition(self,args):
@@ -1705,6 +1705,194 @@ class pgbackman_cli(cmd.Cmd):
         else:
             print "\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n"
         
+    # ############################################
+    # Method do_register_restore_definition
+    # ############################################
+
+    def do_register_restore_definition(self,args):
+        '''
+        DESCRIPTION:
+        This command registers the restore of a backup. 
+        It can be run only interactively.
+
+        COMMAND:
+        register_restore_definition 
+
+        [AT time]:
+        -------
+        Timestamp to run the snapshot, e.g. 2014-04-23 16:01
+
+        [BckID]:
+        --------
+        ID of the backup to restore
+
+        [Target NodeID | FQDN]:
+        -----------------------
+        PgSQL node where we want to restore the backup
+
+        [Target DBname]:
+        ----------------
+        Database name where we want to restore the backup if 
+        different from DBname defined in BckID 
+        
+        '''
+
+        try: 
+            arg_list = shlex.split(args)
+        
+        except ValueError as e:
+            print "\n[ERROR]: ",e,"\n"
+            return False
+                
+        #
+        # Command without parameters
+        #
+
+        if len(arg_list) == 0:
+     
+            ack = ack_rename = ack_use = ""
+            roles_to_restore = []
+
+            try:
+                at_time_default = datetime.datetime.now()+ datetime.timedelta(minutes=1)
+
+            except Exception as e:
+                print "\n[ERROR]: Problems getting default values for parameters\n",e 
+                return False
+            
+            print "--------------------------------------------------------"
+            at_time = raw_input("# AT timestamp [" + str(at_time_default) + "]: ")
+            bck_id = raw_input("# BckID []: ")
+
+            try:
+                if bck_id == '':
+                    target_dbname_default = self.db.get_dbname_from_bckid(-1)
+                else:
+                    target_dbname_default = self.db.get_dbname_from_bckid(bck_id)
+                    backup_server_id = self.db.get_backup_server_id_from_bckid(bck_id)
+                    backup_server_fqdn = self.db.get_backup_server_fqdn(backup_server_id)
+                    role_list = self.db.get_role_list_from_bckid(bck_id)
+
+            except Exception as e:
+                print "\n[ERROR]:",e 
+                return False
+
+            target_pgsql_node = raw_input("# Target NodeID / FQDN []: ")
+            target_dbname = raw_input("# Target DBname [" + target_dbname_default + "]: ")
+            print
+
+            while ack.lower() != "yes" and ack.lower() != "no":
+                ack = raw_input("# Are all values correct (yes/no): ")
+
+            if ack.lower() == 'yes':
+
+                print "--------------------------------------------------------"
+                print "[Processing restore data]"
+                print "--------------------------------------------------------"
+
+                try:
+                    if target_pgsql_node.isdigit():
+                        pgsql_node_id = target_pgsql_node
+                        pgsql_node_fqdn = self.db.get_pgsql_node_fqdn(target_pgsql_node)
+                    else:
+                        pgsql_node_id = self.db.get_pgsql_node_id(target_pgsql_node)
+                        pgsql_node_fqdn = target_pgsql_node
+
+                    if at_time == "":
+                        at_time = at_time_default
+
+                    self.db.check_pgsql_node_status(pgsql_node_id)
+
+                    dsn_value = self.db.get_pgsql_node_dsn(pgsql_node_id)
+                    db_node = pgbackman_db(dsn_value,'pgbackman_cli')
+
+                    if target_dbname == '':
+                        target_dbname = target_dbname_default
+
+                    if not db_node.database_exists(target_dbname):
+                        print "[OK]: Target DBname " + target_dbname + " does not exist on target PgSQL node."
+                    
+                    else:
+                        print "[WARNING]: Target DBname already exists on target PgSQL node.\n"
+                        
+                        while ack_rename.lower() != "yes" and ack_rename.lower() != "no":
+                            ack_rename = raw_input("# Rename it? (yes/no): ")
+                            
+                        if ack_rename.lower() == 'no':
+                            print "\n[ABORTED]: Cannot continue with this restore definition without \nrenaming the existing database or using another Target DBname value\n"
+                            return False
+                
+                        elif ack_rename.lower() == 'yes':
+                            target_dbname_renamed_default = target_dbname + '_' + datetime.datetime.now().strftime('%Y_%m_%dT%H%M%S')
+                            target_dbname = raw_input("# Rename existing database to [" + target_dbname_renamed_default + "]: ")
+                    
+                            if target_dbname == "":
+                                target_dbname = target_dbname_renamed_default
+
+                            while db_node.database_exists(target_dbname):
+                                print "\n[WARNING]: Renamed database already exist on target PgSQL node.\n"
+                                target_dbname = raw_input("# Rename existing database to [" + target_dbname_renamed_default + "]: ")
+                            
+                                if target_dbname == "":
+                                    target_dbname = target_dbname_renamed_default
+                                            
+                            print "\n[OK]: Target DBname " + target_dbname + " does not exist on target PgSQL node."
+
+                except Exception as e:
+                    print "\n[ERROR]: ",e 
+                    return False
+
+                for role in role_list:
+                    
+                    if not db_node.role_exists(role):
+                        print "[OK]: Role '" + role + "' does not exist on target PgSQL node."
+                        roles_to_restore.append(role)
+                    else:
+                        print "[WARNING]: Role '" + role + "' already exists on target PgSQL node.\n"
+
+                        while ack_use.lower() != "yes" and ack_use.lower() != "no":
+                            ack_use = raw_input("# Use the existing role? (yes/no): ")
+                            
+                        if ack_use.lower() == 'no':
+                            print "\n[ABORTED]: Cannot continue with this restore definition when some roles we need\n to restore already exist and we can not reuse them.\n"
+                            return False
+                
+                print "\n--------------------------------------------------------"
+                print "[Restore definition accepted]" 
+                print "--------------------------------------------------------"
+                print "AT time: " + str(at_time)
+                print "BckID to restore: " + bck_id
+                print "Roles to restore: " + ", ".join(roles_to_restore)
+                print "Backup server: [" + backup_server_id + "] " + backup_server_fqdn
+                print "Target PgSQL node: [" + pgsql_node_id + "] " + pgsql_node_fqdn
+                print "Target DBname: " + target_dbname
+                print "--------------------------------------------------------"
+                
+                ack = ""
+                
+                while ack.lower() != "yes" and ack.lower() != "no":
+                    ack = raw_input("# Are all values correct (yes/no): ")
+
+                print "--------------------------------------------------------"
+
+                if ack.lower() == "yes":
+
+                    try:
+                        self.db.register_restore(backup_server_id,pgsql_node_id,target_dbname,at_time)
+                        print "\n[Done]\n"
+                        
+                    except Exception as e:
+                        print '\n[ERROR]: Could not register this restore definition\n',e
+
+                elif ack.lower() == "no":
+                    print "\n[Aborted]\n"
+
+            elif ack.lower() == "no":
+                print "\n[Aborted]\n"
+
+        else:
+            print "\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n"
+                  
 
     # ############################################
     # Method do_show_backup_details
@@ -2979,6 +3167,7 @@ class pgbackman_cli(cmd.Cmd):
     def signal_handler(self,signum, frame):
         cmd.Cmd.onecmd(self,'quit')
         sys.exit(0)
+
 
     # ############################################
     # Method check_minutes_interval()

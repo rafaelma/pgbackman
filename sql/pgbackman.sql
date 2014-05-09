@@ -484,7 +484,7 @@ CREATE TABLE restore_definition(
   restore_id BIGSERIAL UNIQUE,
   registered TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   backup_server_id INTEGER NOT NULL,
-  pgsql_node_id INTEGER NOT NULL,
+  target_pgsql_node_id INTEGER NOT NULL,
   bck_id BIGINT NOT NULL,
   at_time TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   status TEXT DEFAULT 'WAITING',
@@ -492,6 +492,10 @@ CREATE TABLE restore_definition(
 );
 
 ALTER TABLE restore_definition ADD PRIMARY KEY (restore_id);
+
+CREATE INDEX ON restore_definition(backup_server_id);
+CREATE INDEX ON restore_definition(target_pgsql_node_id);
+
 ALTER TABLE restore_definition OWNER TO pgbackman_role_rw;
 
 -- ------------------------------------------------------
@@ -2990,6 +2994,98 @@ CREATE OR REPLACE FUNCTION delete_snapshot_definition(INTEGER) RETURNS VOID
 $$;
 
 ALTER FUNCTION  delete_snapshot_definition(INTEGER) OWNER TO pgbackman_role_rw;
+
+
+-- ------------------------------------------------------------
+-- Function: get_dbname_from_bckid()
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION get_dbname_from_bckid(INTEGER) RETURNS TEXT 
+ LANGUAGE plpgsql 
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ DECLARE
+ bck_id_ ALIAS FOR $1; 
+ dbname_ TEXT := '';
+
+ BEGIN
+  --
+  -- This function returns the dbname from a bck_id
+  --
+
+  SELECT dbname from backup_job_catalog WHERE bck_id = bck_id_ INTO dbname_;
+
+  IF dbname_ IS NULL OR dbname_ = '' THEN
+    RAISE EXCEPTION 'BckID: % does not exist or does not have a valid database',bck_id_;
+  END IF;
+
+  RETURN dbname_;
+ END;
+$$;
+
+ALTER FUNCTION get_dbname_from_bckid(INTEGER) OWNER TO pgbackman_role_rw;
+
+-- ------------------------------------------------------------
+-- Function: get_backup_server_id_from_bckid()
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION get_backup_server_id_from_bckid(INTEGER) RETURNS TEXT 
+ LANGUAGE plpgsql 
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ DECLARE
+ bck_id_ ALIAS FOR $1; 
+ backup_server_id_ TEXT := '';
+
+ BEGIN
+  --
+  -- This function returns the backup server id from a bck_id
+  --
+
+  SELECT backup_server_id from backup_job_catalog WHERE bck_id = bck_id_ INTO backup_server_id_;
+
+  IF backup_server_id_ IS NULL OR backup_server_id_ = '' THEN
+    RAISE EXCEPTION 'BckID: % does not exist or does not have a valid backup server ID',bck_id_;
+  END IF;
+
+  RETURN backup_server_id_;
+ END;
+$$;
+
+ALTER FUNCTION get_backup_server_id_from_bckid(INTEGER) OWNER TO pgbackman_role_rw;
+
+-- ------------------------------------------------------------
+-- Function: get_roles_from_bckid()
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION get_role_list_from_bckid(INTEGER) RETURNS TEXT[] 
+ LANGUAGE plpgsql 
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ DECLARE
+ bck_id_ ALIAS FOR $1; 
+ role_list_ TEXT [] := '{}';
+
+ BEGIN
+  --
+  -- This function returns the role list from a bck_id
+  --
+
+  SELECT role_list from backup_job_catalog WHERE bck_id = bck_id_ INTO role_list_;
+
+  IF role_list_ IS NULL OR role_list_ = '{}' THEN
+    RAISE EXCEPTION 'BckID: % does not exist or does not have a valid role list',bck_id_;
+  END IF;
+
+  RETURN role_list_;
+ END;
+$$;
+
+ALTER FUNCTION get_role_list_from_bckid(INTEGER) OWNER TO pgbackman_role_rw;
+
 
 -- ------------------------------------------------------------
 -- Views
