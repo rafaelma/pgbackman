@@ -287,6 +287,61 @@ The PgBackMan interactive shell can be started by running the program
    
    [pgbackman]$ 
 
+register_backup_server
+----------------------
+
+This command registers a backup server in PgBackMan::
+
+  Command: register_backup_server [hostname] [domain] [remarks]
+
+It can be run with or without parameters. e.g::
+
+  [pgbackman]$ register_backup_server backup01 example.org "Test server"
+ 
+  [pgbackman]$ register_backup_server
+  --------------------------------------------------------
+  # Hostname []: backup02
+  # Domain [example.org]: 
+  # Remarks []: Test server 2
+
+  # Are all values correct (yes/no): yes
+  --------------------------------------------------------
+
+
+update_backup_server
+--------------------
+
+update_backup_server_config
+---------------------------
+
+delete_backup_server
+--------------------
+
+show_backup_servers 
+-------------------
+
+show_backup_server_config
+-------------------------
+
+show_backup_server_stats
+------------------------
+
+
+register_restore
+----------------
+
+This command can be used to restore a backup from the catalog. 
+
+There are some issues we have to take care when running a restore of a
+backup. What happens if we want to restore a backup of a database or a
+role that already exists in the target server?
+
+This flowchar figure explains the logic used when restoring a backup:
+
+.. figure:: img/register_restore.jpg
+   :scale: 100 %
+
+
 
 Submitting a bug
 ================
