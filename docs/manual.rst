@@ -70,8 +70,8 @@ Future features will include:
 Architecture and components
 ===========================
 
-.. figure:: img/main.png
-   :scale: 50 %
+.. figure:: img/architecture.jpg
+   :scale: 100 %
 
 Installation
 ============
