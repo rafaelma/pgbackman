@@ -1750,7 +1750,8 @@ class pgbackman_cli(cmd.Cmd):
 
         if len(arg_list) == 0:
      
-            ack = ack_rename = ack_use = ""
+            ack_input = ack_rename = ack_reuse = ack_confirm = ""
+            at_time = bck_id = target_dbname = renamed_dbname = None
             roles_to_restore = []
 
             try:
@@ -1781,10 +1782,10 @@ class pgbackman_cli(cmd.Cmd):
             target_dbname = raw_input("# Target DBname [" + target_dbname_default + "]: ")
             print
 
-            while ack.lower() != "yes" and ack.lower() != "no":
-                ack = raw_input("# Are all values correct (yes/no): ")
+            while ack_input.lower() != "yes" and ack_input.lower() != "no":
+                ack_input = raw_input("# Are all values correct (yes/no): ")
 
-            if ack.lower() == 'yes':
+            if ack_input.lower() == 'yes':
 
                 print "--------------------------------------------------------"
                 print "[Processing restore data]"
@@ -1801,6 +1802,10 @@ class pgbackman_cli(cmd.Cmd):
                     if at_time == "":
                         at_time = at_time_default
 
+                    #
+                    # Check if PGnode is online.
+                    # Stop the restore process if it is down.
+                    #
                     self.db.check_pgsql_node_status(pgsql_node_id)
 
                     dsn_value = self.db.get_pgsql_node_dsn(pgsql_node_id)
@@ -1808,6 +1813,12 @@ class pgbackman_cli(cmd.Cmd):
 
                     if target_dbname == '':
                         target_dbname = target_dbname_default
+
+                    #
+                    # Check if Target DBname already exists in PGnode.  
+                    # If it exists, ask if we should rename the existing database before
+                    # continuing. Stop the restore process if it is not renamed.
+                    #
 
                     if not db_node.database_exists(target_dbname):
                         print "[OK]: Target DBname " + target_dbname + " does not exist on target PgSQL node."
@@ -1823,24 +1834,30 @@ class pgbackman_cli(cmd.Cmd):
                             return False
                 
                         elif ack_rename.lower() == 'yes':
-                            target_dbname_renamed_default = target_dbname + '_' + datetime.datetime.now().strftime('%Y_%m_%dT%H%M%S')
-                            target_dbname = raw_input("# Rename existing database to [" + target_dbname_renamed_default + "]: ")
+                            renamed_dbname_default = target_dbname + '_' + datetime.datetime.now().strftime('%Y_%m_%dT%H%M%S')
+                            renamed_dbname = raw_input("# Rename existing database to [" + renamed_dbname_default + "]: ")
                     
-                            if target_dbname == "":
-                                target_dbname = target_dbname_renamed_default
+                            if renamed_dbname == "":
+                                renamed_dbname = renamed_dbname_default
 
-                            while db_node.database_exists(target_dbname):
+                            while db_node.database_exists(renamed_dbname):
                                 print "\n[WARNING]: Renamed database already exist on target PgSQL node.\n"
-                                target_dbname = raw_input("# Rename existing database to [" + target_dbname_renamed_default + "]: ")
+                                renamed_dbname = raw_input("# Rename existing database to [" + renamed_dbname_default + "]: ")
                             
-                                if target_dbname == "":
-                                    target_dbname = target_dbname_renamed_default
+                                if renamed_dbname == "":
+                                    renamed_dbname = renamed_dbname_default
                                             
-                            print "\n[OK]: Target DBname " + target_dbname + " does not exist on target PgSQL node."
+                            print "\n[OK]: Renamed DBname " + renamed_dbname + " does not exist on target PgSQL node."
 
                 except Exception as e:
                     print "\n[ERROR]: ",e 
                     return False
+
+                #
+                # Check if some of the roles to restore already exist in PGnode
+                # If a role already exists, ask if we can use it
+                # without having to restore it
+                #
 
                 for role in role_list:
                     
@@ -1850,10 +1867,10 @@ class pgbackman_cli(cmd.Cmd):
                     else:
                         print "[WARNING]: Role '" + role + "' already exists on target PgSQL node.\n"
 
-                        while ack_use.lower() != "yes" and ack_use.lower() != "no":
-                            ack_use = raw_input("# Use the existing role? (yes/no): ")
+                        while ack_reuse.lower() != "yes" and ack_reuse.lower() != "no":
+                            ack_reuse = raw_input("# Use the existing role? (yes/no): ")
                             
-                        if ack_use.lower() == 'no':
+                        if ack_reuse.lower() == 'no':
                             print "\n[ABORTED]: Cannot continue with this restore definition when some roles we need\n to restore already exist and we can not reuse them.\n"
                             return False
                 
@@ -1866,28 +1883,27 @@ class pgbackman_cli(cmd.Cmd):
                 print "Backup server: [" + backup_server_id + "] " + backup_server_fqdn
                 print "Target PgSQL node: [" + pgsql_node_id + "] " + pgsql_node_fqdn
                 print "Target DBname: " + target_dbname
+                print "Existing database will be renamed to : " + renamed_dbname
                 print "--------------------------------------------------------"
                 
-                ack = ""
-                
-                while ack.lower() != "yes" and ack.lower() != "no":
-                    ack = raw_input("# Are all values correct (yes/no): ")
+                while ack_confirm.lower() != "yes" and ack_confirm.lower() != "no":
+                    ack_confirm = raw_input("# Are all values correct (yes/no): ")
 
                 print "--------------------------------------------------------"
 
-                if ack.lower() == "yes":
+                if ack_confirm.lower() == "yes":
 
                     try:
-                        self.db.register_restore(backup_server_id,pgsql_node_id,target_dbname,at_time)
+                        self.db.register_restore_definition(at_time,backup_server_id,pgsql_node_id,bck_id,target_dbname,renamed_dbname,roles_to_restore)
                         print "\n[Done]\n"
                         
                     except Exception as e:
                         print '\n[ERROR]: Could not register this restore definition\n',e
 
-                elif ack.lower() == "no":
+                elif ack_confirm.lower() == "no":
                     print "\n[Aborted]\n"
 
-            elif ack.lower() == "no":
+            elif ack_input.lower() == "no":
                 print "\n[Aborted]\n"
 
         else:

@@ -2187,3 +2187,27 @@ class pgbackman_db():
         except Exception as e:
             raise e
 
+                
+    # ############################################
+    # Method 
+    # ############################################
+
+    def register_restore_definition(self,at_time,backup_server_id,pgsql_node_id,bck_id,target_dbname,renamed_dbname,roles_to_restore):
+        """A function to register a restore job"""
+
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT register_restore_definition(%s,%s,%s,%s,%s,%s)',(at_time,backup_server_id,pgsql_node_id,bck_id,target_dbname,renamed_dbname,roles_to_restore))
+                    self.conn.commit()                        
+                
+                except psycopg2.Error as  e:
+                    raise e
+
+            self.pg_close()
+        
+        except psycopg2.Error as e:
+            raise e
+        

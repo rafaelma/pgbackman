@@ -469,9 +469,12 @@ ALTER TABLE snapshot_definition OWNER TO pgbackman_role_rw;
 --
 -- @restore_id
 -- @registered
--- @backup_server_id
--- @pgsql_node_id
 -- @bck_id
+-- @roles_to_restore
+-- @backup_server_id
+-- @target_pgsql_node_id
+-- @target_dbname
+-- @renamed_dbname
 -- @at_time
 -- @status
 -- @remarks
@@ -488,6 +491,7 @@ CREATE TABLE restore_definition(
   backup_server_id INTEGER NOT NULL,
   target_pgsql_node_id INTEGER NOT NULL,
   target_dbname TEXT NOT NULL,
+  renamed_dbname TEXT,
   at_time TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   status TEXT DEFAULT 'WAITING',
   remarks TEXT
@@ -689,7 +693,14 @@ ALTER TABLE ONLY snapshot_definition
 ALTER TABLE ONLY snapshot_definition
     ADD FOREIGN KEY (status) REFERENCES snapshot_definition_status (code) MATCH FULL ON DELETE RESTRICT;
 
+ALTER TABLE ONLY restore_definition
+    ADD FOREIGN KEY (backup_server_id) REFERENCES backup_server (server_id) MATCH FULL ON DELETE RESTRICT;
 
+ALTER TABLE ONLY restore_definition
+    ADD FOREIGN KEY (target_pgsql_node_id) REFERENCES pgsql_node (node_id) MATCH FULL ON DELETE RESTRICT;
+
+ALTER TABLE ONLY restore_definition
+    ADD FOREIGN KEY (bck_id) REFERENCES backup_job_catalog (bck_id) MATCH FULL ON DELETE RESTRICT;
 
 -- ------------------------------------------------------
 -- Init
@@ -3087,6 +3098,75 @@ CREATE OR REPLACE FUNCTION get_role_list_from_bckid(INTEGER) RETURNS TEXT[]
 $$;
 
 ALTER FUNCTION get_role_list_from_bckid(INTEGER) OWNER TO pgbackman_role_rw;
+
+
+-- ------------------------------------------------------------
+-- Function: register_restore_definition()
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION register_restore_definition(TIMESTAMP,INTEGER,INTEGER,INTEGER,TEXT,TEXT,TEXT[]) RETURNS VOID
+ LANGUAGE plpgsql 
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ DECLARE
+ 
+  at_time_ ALIAS FOR $1;
+  backup_server_id_ ALIAS FOR $2;
+  target_pgsql_node_id_ ALIAS FOR $3; 
+  bck_id_ ALIAS FOR $4;
+  target_dbname_ ALIAS FOR $5;
+  renamed_dbname_ ALIAS FOR $6;
+  roles_to_restore_ ALIAS FOR $7;
+
+  server_cnt INTEGER;
+  node_cnt INTEGER;  
+  bck_cnt INTEGER; 
+
+  v_msg     TEXT;
+  v_detail  TEXT;
+  v_context TEXT;
+ BEGIN
+
+   SELECT count(*) FROM backup_server WHERE server_id = backup_server_id_ INTO server_cnt;
+   SELECT count(*) FROM pgsql_node WHERE node_id = target_pgsql_node_id_ INTO node_cnt;
+   SELECT count(*) FROM backup_job_catalog WHERE bck_id = bck_id_ INTO bck_cnt;
+
+   IF server_cnt = 0 THEN
+     RAISE EXCEPTION 'Backup server with SrvID: % does not exist',backup_server_id_ ;
+   ELSIF node_cnt = 0 THEN
+     RAISE EXCEPTION 'Target PgSQL node with NodeID: % does not exist',target_pgsql_node_id_ ;
+   ELSIF bck_cnt = 0 THEN
+     RAISE EXCEPTION 'Backup with BckID:  % does not exist',bck_id_;
+   END IF;
+ 
+   EXECUTE 'INSERT INTO restore_definition (bck_id,
+					    roles_to_restore,
+					    backup_server_id,
+					    target_pgsql_node_id,
+					    target_dbname,
+                                            renamed_dbname,
+					    at_time)
+	     VALUES ($1,$2,$3,$4,$5,$6,$7)'
+    USING bck_id_,
+    	  roles_to_restore_,
+    	  backup_server_id_,
+	  target_pgsql_node_id_,
+	  target_dbname_,
+	  renamed_dbname_,
+	  at_time_;
+
+ EXCEPTION WHEN others THEN
+   	GET STACKED DIAGNOSTICS	
+            v_msg     = MESSAGE_TEXT,
+            v_detail  = PG_EXCEPTION_DETAIL,
+            v_context = PG_EXCEPTION_CONTEXT;
+        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \n----------------------------------------------\n', v_msg, v_detail;
+
+END;
+$$;
+
+ALTER FUNCTION register_restore_definition(TIMESTAMP,INTEGER,INTEGER,INTEGER,TEXT,TEXT,TEXT[]) OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------------
