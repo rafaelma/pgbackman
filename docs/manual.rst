@@ -23,6 +23,9 @@ It is designed to manage backups from thousands of databases running
 in multiple PostgreSQL nodes, and it supports a multiple backup
 servers topology.
 
+It will also manage role and database configuration information when
+creating a backup of a database.
+
 Even though a backup created with ``pg_dump`` / ``pg_dumpall`` can never
 guarantee a full disaster recovery of all data changed between the
 moment when the backup was taken and the moment of a future crash,
@@ -54,21 +57,49 @@ The main features of PgBackMan are:
 * Multiple database backup types, CLUSTER, FULL, SCHEMA, DATA.
 * Full backup of role information for a database.
 * Full backup of database configuration for a database.
+* Automatic definitions of backups for all databases running in a PgSQL node.
+* Semi-automatic restore procedures
 * Autonomous pgbackman_dump program that function even if the central database is not available.
-* Handling of error situations
+* Handling of error situations.
 * Totally written in Python and PL/PgSQL
 
 Future features will include:
 
-* Automatic definitions of backups according to defined retention policies
-* Automatic definitions of backups for all databases running in a PgSQL node.
-* Semi-automatic restore procedures
 * Automatic cloning / move of databases between PgSQL nodes.
 * Disk space management / planning 
 
 
 Architecture and components
 ===========================
+
+The components forming part of PgBackMan could be listed as follows:
+
+* **Backup servers:** One or several backup servers running
+  PgBackMan. All SQL dumps and logfiles are saved in these
+  servers. They need access via ``libpq`` to the postgreSQL nodes that
+  will be allow to have backups in a backup server.
+
+* **PGnodes**: PostgreSQL servers running postgreSQL databases.
+
+* **PgBackMan DB**: Central postgreSQL metadata database used by PgBackMan. All
+  backup servers need access to this database.
+
+* **PgBackMan shell:** This is a program that can be run in a text
+  terminal. It can be run in any of the backup servers registered in
+  the system. It is the console used to manage PgBackMan.
+
+* **pgbackman_control:** This program runs in every backup server and
+  takes care of updating crontab files and creating AT jobs when
+  backup, snapshots or restore definitions are created.
+
+* **pgbackman_maintenence:** This programs runs in every backup server
+  and runs some maintenance jobs needed by PgBackMan.
+
+* **pgbackman_dump:** This program runs in the backup servers when a backup
+  or snapshot has to be taken.
+
+* **pgbackman_restore:** This program runs in the backup servers when
+  a restore has to be run.
 
 .. figure:: img/architecture.jpg
    :scale: 100 %
@@ -311,32 +342,148 @@ It can be run with or without parameters. e.g::
 update_backup_server
 --------------------
 
+This command updates some parameters of a backup server defined in
+PgbackMan::
+
+  Command: update_backup_server [SrvID | FQDN] [remarks]
+
+It can be run with or without parameters. e.g.::
+
+  update_backup_server 1 "Main backup server"
+
+  [pgbackman]$ update_backup_server
+  --------------------------------------------------------
+  # SrvID / FQDN []: 1
+  # Remarks []: Main backup server
+
+  # Are all values to update correct (yes/no): yes
+  --------------------------------------------------------
+
+You can use the backup server ID in PgBackMan or the FQDN to choose
+the server to be updated.
+
+
 update_backup_server_config
 ---------------------------
+
+Not implemented.
+
 
 delete_backup_server
 --------------------
 
+This command deletes a backup server defined in PgBackMan::
+
+  Command: delete_backup_server [SrvID | FQDN]
+
+It can be run with or without parameters. e.g.::
+
+  [pgbackman]$ delete_backup_server 2
+
+  [pgbackman]$ delete_backup_server
+  --------------------------------------------------------
+  # SrvID / FQDN: 2
+  
+  # Are you sure you want to delete this server? (yes/no): yes
+  --------------------------------------------------------
+
+You can use the backup server ID in PgBackMan or the FQDN to choose
+the server to be deleted.
+
+You will get an error if you try to delete a backup server that has
+active backups in the catalog.
+
 show_backup_servers 
--------------------
+---------------------
+
+This command shows all the backup servers defined in PgbackMan
+
 
 show_backup_server_config
 -------------------------
 
+This command shows the configuration parameters for a backup server.
+
+It can be run with or without parameters. e.g.
+
+
 show_backup_server_stats
 ------------------------
 
+This command shows some statistics for a backup server defined in
+PgBackMan.
 
-register_restore
+
+register_pgsql_node
+-------------------
+
+update_pgsql_node
+-----------------
+
+update_pgsql_node_config
+------------------------
+
+delete_pgsql_node
+-----------------
+
+show_pgsql_nodes
 ----------------
 
-This command can be used to restore a backup from the catalog. 
+show_pgsql_node_config
+----------------------
+
+show_pgsql_node_stats
+---------------------
+
+register_backup_definition
+--------------------------
+
+delete_backup_definition_id
+---------------------------
+
+delete_backup_definition_dbname
+-------------------------------
+
+show_backup_definition
+----------------------
+
+show_backup_catalog
+-------------------
+
+show_backup_details
+-------------------
+
+register_snapshot_definition
+----------------------------
+
+show_snapshot_definitions
+-------------------------
+
+show_empty_backup_catalogs
+--------------------------
+
+show_pgbackman_config
+---------------------
+
+show_pgbackman_stats
+--------------------
+
+
+
+register_restore_definition
+----------------------------
+
+This command defines a restore job of a backup from the catalog.
+
+It will work with parameters only if there are not conflicts in the
+definition.
 
 There are some issues we have to take care when running a restore of a
 backup. What happens if we want to restore a backup of a database or a
 role that already exists in the target server?
 
-This flowchar figure explains the logic used when restoring a backup:
+This flowchar figure explains the logic used when restoring a backup
+if our restore definition create some conflicts:
 
 .. figure:: img/register_restore.jpg
    :scale: 100 %
