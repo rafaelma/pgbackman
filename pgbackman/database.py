@@ -2176,7 +2176,6 @@ class pgbackman_db():
                     self.cur.execute('SELECT get_role_list_from_bckid(%s)',(bck_id,))
                     
                     data = self.cur.fetchone()[0]
-                    print data
                     return data
 
                 except psycopg2.Error as e:
@@ -2200,7 +2199,7 @@ class pgbackman_db():
 
             if self.cur:
                 try:
-                    self.cur.execute('SELECT register_restore_definition(%s,%s,%s,%s,%s,%s)',(at_time,backup_server_id,pgsql_node_id,bck_id,target_dbname,renamed_dbname,roles_to_restore))
+                    self.cur.execute('SELECT register_restore_definition(%s,%s,%s,%s,%s,%s,%s)',(at_time,backup_server_id,pgsql_node_id,bck_id,target_dbname,renamed_dbname,roles_to_restore))
                     self.conn.commit()                        
                 
                 except psycopg2.Error as  e:

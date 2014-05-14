@@ -1878,12 +1878,12 @@ class pgbackman_cli(cmd.Cmd):
                 print "[Restore definition accepted]" 
                 print "--------------------------------------------------------"
                 print "AT time: " + str(at_time)
-                print "BckID to restore: " + bck_id
+                print "BckID to restore: " + str(bck_id)
                 print "Roles to restore: " + ", ".join(roles_to_restore)
-                print "Backup server: [" + backup_server_id + "] " + backup_server_fqdn
-                print "Target PgSQL node: [" + pgsql_node_id + "] " + pgsql_node_fqdn
-                print "Target DBname: " + target_dbname
-                print "Existing database will be renamed to : " + renamed_dbname
+                print "Backup server: [" + str(backup_server_id) + "] " + str(backup_server_fqdn)
+                print "Target PgSQL node: [" + str(pgsql_node_id) + "] " + str(pgsql_node_fqdn)
+                print "Target DBname: " + str(target_dbname)
+                print "Existing database will be renamed to : " + str(renamed_dbname)
                 print "--------------------------------------------------------"
                 
                 while ack_confirm.lower() != "yes" and ack_confirm.lower() != "no":
