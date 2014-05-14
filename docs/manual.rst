@@ -40,6 +40,47 @@ PgBackMan is not a tool for managing PITR (Point in time recovery)
 backups. There are several other solutions out there that can be use
 for PITR backups, such as PITRTools, OmniPITR, and Barman. 
 
+
+About backups in PostgreSQL
+===========================
+
+PostgreSQL has two utilities ``pg_dump`` and ``pg_dumpall`` for
+backing up databases. These utilities make consistent backups of a
+database or the hole cluster even if the databases are being used
+concurrently. At the same time ``pg_dump`` and ``pg_dumpall`` do not
+block other users accessing the database when backups are been taking.
+
+When taking a backup of a database we need this information to be sure
+we can make a restore that includes 100% of the data and definitions
+from the target database:
+
+#. Database schema.
+#. Database data.
+#. Roles owning objects in the database.
+#. Roles with privileges on objects in the database.
+#. Roles with privileges on the database or schemas.
+#. Creation of all the roles owning something or with privileges.
+#. Configuration parameters defined explicitly for a role.
+#. Configuration parameters defined explicitly for the database. 
+
+
+Unfortunately all this information cannot be obtained in a single
+execution for only one database. 1, 2, 3 and 4 can be obtained with
+``pg_dump``. 5, 7 and 8 can be obtained with a full ``pg_dumpall`` and
+6 with a ``pg_dumpall -r``.
+
+At the same time, ``pg_dumpall`` will return all this information for
+all databases in a cluster, not only the one we want to take a backup
+of.
+
+This is something that PostgreSQL will have to improve in the future
+so it gets easier to take a backup/snapshot of a database.
+
+In the meantime, PgBackMan takes care of all this and it delivers all
+the information needed to run a 100% restore of a database when we
+define a backup in the system.
+
+
 Main features
 =============
 
