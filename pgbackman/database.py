@@ -1354,7 +1354,7 @@ class pgbackman_db():
     # ############################################
 
     def show_jobs_queue(self):
-        """A function to get a list with all jobs waiting to be processed by pgbackman2cron"""
+        """A function to get a list with all jobs waiting to be processed by pgbackman_control"""
 
         try:
             self.pg_connect()
@@ -1524,7 +1524,7 @@ class pgbackman_db():
                     x.add_row(["Oldest backup in catalog:",str(oldest_backup_job)])
                     x.add_row(["Newest backup in catalog:",str(newest_backup_job)])
                     x.add_row(["",""])
-                    x.add_row(["Jobs waiting to be processed by pgbackman2cron:",str(job_queue_cnt)])
+                    x.add_row(["Jobs waiting to be processed by pgbackman_control:",str(job_queue_cnt)])
                     x.add_row(["Forced deletion of backups in catalog waiting to be processed:",str(defid_force_deletion_cnt)])
                     
                     print x
