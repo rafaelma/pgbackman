@@ -186,8 +186,8 @@ def pg_dump_users(db):
     roles = []
 
     #
-    # We need a list with all the roles that own an object in the database we are
-    # taking a backup for. We do this in this way:
+    # We need a list with all the roles that own an object in the
+    # database we are taking a backup for. We do this in this way:
     #
     # - We generate a temp file with a schema dump of the database
     # - We extract all the roles used in sql statements that use OWNER TO
@@ -196,8 +196,9 @@ def pg_dump_users(db):
     # - We extract all the lines from the second temp file that have information about some
     #   of the roles extracted from the first temp file
     #
-    # We do all this process via temp files insteed of piping the outputs from process to process
-    # to avoid allocation problems with huge sql dumps
+    # We do all this process via temp files insteed of piping the
+    # outputs from process to process to avoid allocation problems
+    # with huge sql dumps
     #
 
     # 
@@ -269,7 +270,8 @@ def pg_dump_users(db):
         sys.exit(1)
         
     #
-    # Extracting sql statements for our roles from the pg_dumpall -r dump of the cluster
+    # Extracting sql statements for our roles from the pg_dumpall -r
+    # dump of the cluster
     # 
     
     try:
@@ -352,10 +354,11 @@ def pg_dump_database_config(db):
     global global_parameters
 
     #
-    # Extracting sql statements for our database from the pg_dumpall -s dump of the cluster
+    # Extracting sql statements for our database from the pg_dumpall
+    # -s dump of the cluster
     # 
-    # We extract all the ALTER DATABASE and GRANT/REVOKE ... ON DATABASE statements for 
-    # our database
+    # We extract all the CREATE DATABASE, ALTER DATABASE and
+    # GRANT/REVOKE ... ON DATABASE statements for our database
     #
     
     try:
@@ -396,6 +399,12 @@ def pg_dump_database_config(db):
 
                 with open(pg_dumpall_dbconfig_temp_file.name, 'r') as sqldump_dbconfig:
                     for line in sqldump_dbconfig:
+
+                        #
+                        # CREATE DATABASE
+                        #
+                        if 'CREATE DATABASE ' + global_parameters['dbname'] in line:
+                            dbconfig_dump_file.write(line)
                                                          
                         #
                         # ALTER DATABASE statements
@@ -681,8 +690,9 @@ def register_backup_job_catalog(db):
     except Exception as e:
 
         #
-        # We create a pending log file if we can not update the database. 
-        # This file will be processed bt pgbackman_maintenence later.
+        # We create a pending log file if we can not update the
+        # database.  This file will be processed by
+        # pgbackman_maintenence later.
         # 
 
         logs.logger.warning('Problems updating the backup job catalog for DefID: %s or SnapshotID: %s in the database - %s',str(global_parameters['def_id']),str(global_parameters['snapshot_id']),e)
@@ -732,9 +742,9 @@ def register_backup_job_catalog(db):
             logs.logger.error('Could not generate the catalog pending log file: %s - %s',pending_log_file,e)
 
 
-# ############################################
+# ##################################################
 # Function get_backup_server_parameters_from_cache()
-# ############################################
+# ##################################################
 
 def get_backup_server_parameters_from_cache(db,backup_server_fqdn):  
     '''Get backup server parameters from cache file'''
@@ -759,9 +769,9 @@ def get_backup_server_parameters_from_cache(db,backup_server_fqdn):
         sys.exit(1)
 
 
-# ############################################
+# ###############################################
 # Function get_pgsql_node_parameters_from_cache()
-# ############################################
+# ###############################################
 
 def get_pgsql_node_parameters_from_cache(db):  
     '''Get pgsql_node parameters from cache file'''
@@ -786,9 +796,9 @@ def get_pgsql_node_parameters_from_cache(db):
         sys.exit(1)
 
 
-# ############################################
+# ##############################################
 # Function check_pgbackman_database_connection()
-# ############################################
+# ##############################################
   
 def check_pgbackman_database_connection(db):
     '''Check if we can connect to the pgbackman database'''
@@ -800,9 +810,9 @@ def check_pgbackman_database_connection(db):
         logs.logger.error('The pgbackman database is not available - %s',e)
         return False
 
-# ############################################
+# ###############################################
 # Function check_pgsql_node_database_connection()
-# ############################################
+# ###############################################
   
 def check_pgsql_node_database_connection(db_pgnode):
     '''Check if we can connect to the pgsql node database'''
@@ -863,12 +873,13 @@ def main():
     db_pgnode = pgbackman_db(pgsql_node_dsn,'pgbackman_dump')
 
     # 
-    # The backup server FQDN to be used can be defined in the pgbackman configuration file.
-    # If the configuration parameter 'backup_server' is not defined, the return value of  
+    # The backup server FQDN to be used can be defined in the
+    # pgbackman configuration file.  If the configuration parameter
+    # 'backup_server' is not defined, the return value of
     # socket.getfqdn() will be used.
     #
-    # The FQDN of the backup server will be used to find out the internal pgbackman ID of the backup 
-    # server
+    # The FQDN of the backup server will be used to find out the
+    # internal pgbackman ID of the backup server
     #
 
     if conf.backup_server != '':
@@ -893,13 +904,15 @@ def main():
     get_pgsql_node_parameters_from_cache(db)
 
     #
-    # We check before starting if the database we are going to backup is available. 
-    # If it is not available, we will stop the backup job with an error
+    # We check before starting if the database we are going to backup
+    # is available.  If it is not available, we will stop the backup
+    # job with an error
     #
-    # pgbackman_dump has to work and take the backups defined in the system even 
-    # if the pgbackman database is not available. If the pgbackman database is 
-    # not available, pgbackman_dump will get the necessary parameters from the 
-    # cache files saved in the backup server
+    # pgbackman_dump has to work and take the backups defined in the
+    # system even if the pgbackman database is not available. If the
+    # pgbackman database is not available, pgbackman_dump will get the
+    # necessary parameters from the cache files saved in the backup
+    # server
     #
     
     check_pgnode_db = check_pgsql_node_database_connection(db_pgnode)
