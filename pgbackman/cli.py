@@ -1861,6 +1861,8 @@ class pgbackman_cli(cmd.Cmd):
 
                 for role in role_list:
                     
+                    ack_reuse = ""
+
                     if not db_node.role_exists(role):
                         print "[OK]: Role '" + role + "' does not exist on target PgSQL node."
                         roles_to_restore.append(role)
