@@ -694,13 +694,13 @@ ALTER TABLE ONLY snapshot_definition
     ADD FOREIGN KEY (status) REFERENCES snapshot_definition_status (code) MATCH FULL ON DELETE RESTRICT;
 
 ALTER TABLE ONLY restore_definition
-    ADD FOREIGN KEY (backup_server_id) REFERENCES backup_server (server_id) MATCH FULL ON DELETE RESTRICT;
+    ADD FOREIGN KEY (backup_server_id) REFERENCES backup_server (server_id) MATCH FULL ON DELETE CASCADE;
 
 ALTER TABLE ONLY restore_definition
-    ADD FOREIGN KEY (target_pgsql_node_id) REFERENCES pgsql_node (node_id) MATCH FULL ON DELETE RESTRICT;
+    ADD FOREIGN KEY (target_pgsql_node_id) REFERENCES pgsql_node (node_id) MATCH FULL ON DELETE CASCADE;
 
 ALTER TABLE ONLY restore_definition
-    ADD FOREIGN KEY (bck_id) REFERENCES backup_job_catalog (bck_id) MATCH FULL ON DELETE RESTRICT;
+    ADD FOREIGN KEY (bck_id) REFERENCES backup_job_catalog (bck_id) MATCH FULL ON DELETE CASCADE;
 
 -- ------------------------------------------------------
 -- Init
