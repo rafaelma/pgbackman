@@ -2860,10 +2860,10 @@ BEGIN
    END IF;
 
    IF restore_row.role_list != '' AND restore_row.role_list IS NOT NULL THEN
-         output := output || ' --role_list ' || restore_row.role_list;
+         output := output || ' --role-list ' || restore_row.role_list;
    END IF;
 
-   output := output || ' --pg_release ' || restore_row.pgsql_node_release;
+   output := output || ' --pg-release ' || restore_row.pgsql_node_release;
 		     		   
   output := output || E'" \n';
 
