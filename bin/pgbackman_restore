@@ -35,3 +35,349 @@ from pgbackman.config import *
 '''
 This program is used by PgBackMan to restore backups from the pgbackman catalog.
 '''
+
+global_parameters = {}
+
+# ############################################
+# Function restore_roles()
+# ############################################
+
+def restore_roles(db):
+    '''Restore roles'''
+
+    global global_parameters
+
+    try:
+        pg_restore_roles_temp_file = tempfile.NamedTemporaryFile(delete=True,dir=global_parameters['tmp_dir'])
+        logs.logger.debug('pg_dump schema temp file created %s',pg_dump_schema_temp_file.name)
+        
+        with open(global_parameters['pgdump_role_file'], 'r') as sqldump_in:
+            with open(pg_restore_roles_temp_file.name, 'w') as sqldump_out:
+                sqldump_out.write('BEGIN;\n')
+                 
+                for line in sqldump_in:
+                    for role in global_parameters['role_list']:
+                         
+                        #
+                        # CREATE ROLE statements
+                        #
+                        if 'CREATE ROLE ' + role in line:
+                            sqldump_out.write(line)
+
+                        #
+                        # ALTER ROLE statements
+                        #
+                        if 'ALTER ROLE ' + role in line:
+                            sqldump_out.write(line)
+
+                sqldump_out.write('COMMIT;\n')
+                logs.logger.debug('Role restore file generated.')
+
+                role_restore_command = global_parameters['backup_server_pgsql_bin_dir'] + '/psql' + \
+                    ' -h ' + global_parameters['pgsql_node_fqdn'] + \
+                    ' -p ' + global_parameters['pgsql_node_port'] + \
+                    ' -U ' + global_parameters['pgsql_node_admin_user'] + \
+                    ' -d template1' + \
+                    ' -f ' + pg_restore_roles_temp_file.name
+
+                DEVNULL = open(os.devnull, 'wb')
+                 
+                proc = subprocess.Popen([role_restore_command],stdout=DEVNULL,stderr=subprocess.STDOUT,shell=True)
+                proc.wait()
+
+                if proc.returncode != 0:
+                    logs.logger.critical('The command used to restore the roles needed by the target database %s has a return value != 0',global_parameters['target_dbname'])
+                    
+                    global_parameters['status'] = 'ERROR'
+                    global_parameters['error_message'] = 'Roles restore returncode: ' + str(proc.returncode)
+                     #update_restore_definition(db)
+                    sys.exit(1)
+
+    except Exception as e:
+        logs.logger.critical('Could not restore the roles needed by the database %s - %s',global_parameters['target_dbname'],e)
+        
+        global_parameters['status'] = 'ERROR'
+        global_parameters['error_message'] = 'Problems restoring roles - ' + e
+        #update_restore_definition(db)
+        sys.exit(1)
+           
+
+
+# ############################################
+# Function restore_dbconfig()
+# ############################################
+
+def restore_dbconfig(db):
+    '''Restore dbconfig'''
+    print
+
+# ############################################
+# Function restore_database()
+# ############################################
+
+def restore_database(db):
+    '''Restore database'''
+    print 
+    
+
+# ############################################
+# Function get_pgsql_node_dsn()
+# ############################################
+    
+def get_pgsql_node_dsn():
+    '''Get the DSN values needed to connect to a PgSQL node'''
+
+    global global_parameters
+
+    dsn_value = 'host=' + global_parameters['pgsql_node_fqdn'] + ' port=' + global_parameters['pgsql_node_port'] + ' dbname=template1 user=' + global_parameters['pgsql_node_admin_user']
+
+    logs.logger.debug('DSN value for PgSQL node %s is %s',global_parameters['pgsql_node_fqdn'],dsn_value)
+    return dsn_value
+
+
+# ############################################
+# Function get_backup_server_pgsql_bin_dir()
+# ############################################
+    
+def get_backup_server_pgsql_bin_dir(db):
+    '''Get the directory with postgreSQL binaries to use'''
+
+    global global_parameters
+
+    try:
+        pgsql_bin_dir = db.get_backup_server_parameter(global_parameters['backup_server_id'],'pgsql_bin_' + global_parameters['pgsql_node_release'])
+        logs.logger.debug('pgsql bin directory to use: %s',pgsql_bin_dir)
+        
+        return pgsql_bin_dir
+
+    except Exception as e:
+
+        pgsql_bin_dir = backup_server_cache_data['pgsql_bin_' + global_parameters['pgsql_node_release']]
+        logs.logger.debug('pgsql bin directory to use: %s',pgsql_bin_dir)
+        
+        return pgsql_bin_dir
+        
+
+# ##############################################
+# Function check_pgbackman_database_connection()
+# ##############################################
+  
+def check_pgbackman_database_connection(db):
+    '''Check if we can connect to the pgbackman database'''
+
+    try:
+        db.pg_connect()
+        return True
+    except Exception as e: 
+        logs.logger.error('The pgbackman database is not available - %s',e)
+        return False
+
+
+# ###############################################
+# Function check_pgsql_node_database_connection()
+# ###############################################
+  
+def check_pgsql_node_database_connection(db_pgnode):
+    '''Check if we can connect to the pgsql node database'''
+
+    try:
+        db_pgnode.pg_connect()
+        return True
+    except Exception as e: 
+        logs.logger.critical('The %s database is not available - %s',global_parameters['dbname'],e)
+        return False    
+
+
+# ############################################
+# Function Main()
+# ############################################
+   
+def main():
+    '''Main function'''
+    
+    global global_parameters
+
+    conf = configuration()
+    pgbackman_dsn = conf.dsn
+
+    global_parameters['tmp_dir'] = conf.tmp_dir
+
+    db = pgbackman_db(pgbackman_dsn,'pgbackman_restore')
+ 
+    pgsql_node_dsn = get_pgsql_node_dsn()
+    db_pgnode = pgbackman_db(pgsql_node_dsn,'pgbackman_restore')
+
+    # 
+    # The backup server FQDN to be used can be defined in the
+    # pgbackman configuration file.  If the configuration parameter
+    # 'backup_server' is not defined, the return value of
+    # socket.getfqdn() will be used.
+    #
+    # The FQDN of the backup server will be used to find out the
+    # internal pgbackman ID of the backup server
+    #
+
+    if conf.backup_server != '':
+        backup_server_fqdn = conf.backup_server
+    else:
+        backup_server_fqdn = socket.getfqdn()
+
+    try:
+        backup_server_id = db.get_backup_server_id(backup_server_fqdn)
+        logs.logger.info('Backup server: %s is registered in pgbackman',backup_server_fqdn)
+
+    except psycopg2.Error as e:
+        get_backup_server_parameters_from_cache(db,backup_server_fqdn)
+        backup_server_id = backup_server_cache_data['backup_server_id']
+        logs.logger.info('Backup server: %s is registered in the cache',backup_server_fqdn)
+
+    global_parameters['backup_server_id'] = backup_server_id
+
+    global_parameters['backup_server_pending_registration_dir'] = global_parameters['root_backup_dir'] + '/pending_updates'
+    global_parameters['backup_server_cache_dir'] =  global_parameters['root_backup_dir'] + '/cache_dir'
+
+    get_pgsql_node_parameters_from_cache(db)
+
+    #
+    # We check before starting if the PgNode where we are going to
+    # restore the database is available.  If it is not available, we
+    # will stop the backup job with an error
+    #
+
+    check_pgnode_db = check_pgsql_node_database_connection(db_pgnode)
+
+    if not check_pgnode_db:
+        logs.logger.critical('The PgSQL node "%s" is not available. Shutting down the restore job with RestoreID: %s',
+                             global_parameters['pgsql_node_fqdn'],
+                             str(global_parameters['restore_id']))
+        
+        global_parameters['status'] = 'ERROR'
+        global_parameters['error_message'] = 'Target PgSQL node not available'
+        #update_restore_definition(db)
+        sys.exit(1) 
+
+
+    restore_roles(db)
+    restore_dbconfig(db)
+    restore_database(db)
+    
+    #update_restore_definition(db)
+
+
+# ############################################
+# Function signal_handler()
+# ############################################
+    
+def signal_handler(signum, frame):
+    logs.logger.info('**** pgbackman_dump stopped. ****')
+    sys.exit(0)
+
+
+# ############################################
+# 
+# ############################################
+
+if __name__ == '__main__':
+
+    logs = logs("pgbackman_restore")
+
+    signal.signal(signal.SIGINT,signal_handler)
+    signal.signal(signal.SIGTERM,signal_handler)
+
+    parser = argparse.ArgumentParser(prog=sys.argv[0])
+    parser.add_argument('--node-fqdn', metavar='PGSQL-NODE-FQDN', required=True, help='PgSQL node FQDN', dest='pgsql_node_fqdn')
+    parser.add_argument('--node-id', metavar='PGSQL-ID', required=True, help='PgSQL node ID', dest='pgsql_node_id')
+    parser.add_argument('--node-port', metavar='PGSQL-NODE-PORT', required=True, help='PgSQL node port', dest='pgsql_node_port')
+    parser.add_argument('--node-user', metavar='PGSQL-NODE_ADMIN-USER', required=True, help='PgSQL node admin user', dest='pgsql_node_admin_user')
+    parser.add_argument('--restore-id', metavar='RESTORE-ID', required=True, help='Restore ID', dest='restore_id')
+    parser.add_argument('--pgdump-file', metavar='PGDUMP-FILE', required=True, help='Pg_dump file', dest='pgdump_file')
+    parser.add_argument('--pgdump-roles-file', metavar='PGDUMP-ROLES-FILE', required=True, help='Pg_dump role file', dest='pgdump_roles_file')
+    parser.add_argument('--pgdump-dbconfig-file', metavar='PGDUMP-DBCONFIG-FILE', required=True, help='Pg_dump dbconfig file', dest='pgdump_dbconfig_file')
+    parser.add_argument('--source-dbname', metavar='SOURCE-NAME', required=True, help='Source database name', dest='source_dbname')
+    parser.add_argument('--target-dbname', metavar='TARGET-NAME', required=True, help='Target database name', dest='target_dbname')
+    parser.add_argument('--renamed-dbname', metavar='RENAMED-DBNAME', required=False, help='Renamed database', dest='renamed_dbname')
+    parser.add_argument('--role-list', metavar='ROLE-LIST', required=False, help='Roles to restore', dest='role_list')
+    parser.add_argument('--pg-release', metavar='PG-RELEASE', required=True, help='PG release from backup', dest='pg_release')
+
+    args = parser.parse_args()    
+
+    logs.logger.info('**** pgbackman_restore started. ****')
+    
+    if args.pgsql_node_fqdn:
+        global_parameters['pgsql_node_fqdn'] = args.pgsql_node_fqdn
+    else:
+        logs.logger.error('PgSQL node fqdn parameter not defined')
+        sys.exit(1)
+
+    if args.pgsql_node_id:
+        global_parameters['pgsql_node_id'] = args.pgsql_node_id
+    else:
+        logs.logger.error('PgSQL node id parameter not defined')
+        sys.exit(1)
+
+    if args.pgsql_node_port:
+        global_parameters['pgsql_node_port'] = args.pgsql_node_port
+    else:
+        logs.logger.error('PgSQL node port parameter not defined')
+        sys.exit(1)
+    
+    if args.pgsql_node_admin_user:
+        global_parameters['pgsql_node_admin_user'] = args.pgsql_node_admin_user
+    else:
+        logs.logger.error('PgSQL node admin user parameter not defined')
+        sys.exit(1)
+    
+    if args.restore_id:
+        global_parameters['restore_id'] = args.restore_id
+    else:
+        logs.logger.error('RestoreID parameter not defined')
+        sys.exit(1)
+        
+    if args.pgdump_file:
+        global_parameters['pgdump_file'] = args.pgdump_file
+    else:
+        logs.logger.error('pg_dump file parameter not defined')
+        sys.exit(1)
+
+    if args.pgdump_roles_file:
+        global_parameters['pgdump_roles_file'] = args.pgdump_roles_file
+    else:
+        logs.logger.error('pg_dump role file parameter not defined')
+        sys.exit(1)
+
+    if args.pgdump_dbconfig_file:
+        global_parameters['pgdump_dbconfig_file'] = args.pgdump_dbconfig_file
+    else:
+        logs.logger.error('pg_dump dbconfig file parameter not defined')
+        sys.exit(1)
+
+    if args.source_dbname:
+        global_parameters['source_dbname'] = args.source_dbname
+    else:
+        logs.logger.error('Source dbname parameter not defined')
+        sys.exit(1)   
+
+    if args.target_dbname:
+        global_parameters['target_dbname'] = args.target_dbname
+    else:
+        logs.logger.error('Target dbname parameter not defined')
+        sys.exit(1)
+
+    if args.renamed_dbname:
+        global_parameters['renamed_dbname'] = args.renamed_dbname
+    else:
+        global_parameters['renamed_dbname'] = ''
+        
+        
+    if args.role_list:
+        global_parameters['role_list'] = args.role_list.replace(' ','').split(',')
+    else:
+        global_parameters['role_list'] = []
+
+    if args.pg_release:
+        global_parameters['pg_release'] = args.pg_release
+    else:
+        logs.logger.error('PG release parameter not defined')
+        sys.exit(1)
+
+    main()
