@@ -2210,3 +2210,79 @@ class pgbackman_db():
         except psycopg2.Error as e:
             raise e
         
+
+    # ############################################
+    # Method 
+    # ############################################
+           
+    def get_new_restore(self,backup_server_id):
+        """A function to get new restore jobs to be run in a backup server"""
+     
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT "RestoreID","AT time" FROM show_restore_definitions WHERE backup_server_id = %s AND "Status" = %s',(backup_server_id,'WAITING'))
+                    self.conn.commit()
+                    
+                    return self.cur
+                
+                except psycopg2.Error as e:
+                    raise e
+
+            self.pg_close()
+
+        except psycopg2.Error as e:
+            raise e
+
+
+    # ############################################
+    # Method 
+    # ############################################
+           
+    def generate_restore_at_file(self,restore_id):
+        """A function to generate a at file for a restore"""
+     
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT generate_restore_at_file(%s)',(restore_id,))
+                    self.conn.commit()
+                    
+                    return self.cur.fetchone()[0]
+                                    
+                except psycopg2.Error as e:
+                    raise e
+
+            self.pg_close()
+
+        except psycopg2.Error as e:
+            raise e
+
+
+    # ############################################
+    # Method 
+    # ############################################
+           
+    def update_restore_status(self,restore_id,status):
+        """A function to update the status for a restore"""
+     
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT update_restore_status(%s,%s)',(restore_id,status))
+                    self.conn.commit()
+                                    
+                except psycopg2.Error as e:
+                    raise e
+
+            self.pg_close()
+
+        except psycopg2.Error as e:
+            raise e
+

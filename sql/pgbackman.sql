@@ -281,6 +281,29 @@ ALTER TABLE snapshot_definition_status OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------
+-- Table: restore_definition_status
+--
+-- @Description: Status codes for restore definitions
+--
+-- Attributes:
+--
+-- @code:
+-- @description:
+-- ------------------------------------------------------
+
+\echo '# [Creating table: restore_definition_status]\n'
+
+CREATE TABLE restore_definition_status(
+
+  code CHARACTER VARYING(20) NOT NULL,
+  description TEXT
+);
+
+ALTER TABLE restore_definition_status ADD PRIMARY KEY (code);
+ALTER TABLE restore_definition_status OWNER TO pgbackman_role_rw;
+
+
+-- ------------------------------------------------------
 -- Table: backup_server_default_config
 --
 -- @Description: Default configuration values for 
@@ -494,6 +517,7 @@ CREATE TABLE restore_definition(
   renamed_dbname TEXT,
   at_time TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   status TEXT DEFAULT 'WAITING',
+  error_message TEXT,
   remarks TEXT
 );
 
@@ -692,7 +716,7 @@ ALTER TABLE ONLY snapshot_definition
 
 ALTER TABLE ONLY snapshot_definition
     ADD FOREIGN KEY (status) REFERENCES snapshot_definition_status (code) MATCH FULL ON DELETE RESTRICT;
-
+    
 ALTER TABLE ONLY restore_definition
     ADD FOREIGN KEY (backup_server_id) REFERENCES backup_server (server_id) MATCH FULL ON DELETE CASCADE;
 
@@ -701,6 +725,10 @@ ALTER TABLE ONLY restore_definition
 
 ALTER TABLE ONLY restore_definition
     ADD FOREIGN KEY (bck_id) REFERENCES backup_job_catalog (bck_id) MATCH FULL ON DELETE CASCADE;
+
+ALTER TABLE ONLY restore_definition
+    ADD FOREIGN KEY (status) REFERENCES restore_definition_status (code) MATCH FULL ON DELETE RESTRICT;
+    
 
 -- ------------------------------------------------------
 -- Init
@@ -730,6 +758,12 @@ INSERT INTO snapshot_definition_status (code,description) VALUES ('WAITING','Sna
 INSERT INTO snapshot_definition_status (code,description) VALUES ('DEFINED','Snapshot defined in AT');
 INSERT INTO snapshot_definition_status (code,description) VALUES ('ERROR','Snapshot could not be defined in AT');
 
+\echo '# [Init: restore_definition_status]\n'
+
+INSERT INTO restore_definition_status (code,description) VALUES ('WAITING','Restore waiting to be defined in AT');
+INSERT INTO restore_definition_status (code,description) VALUES ('DEFINED','Restore defined in AT');
+INSERT INTO restore_definition_status (code,description) VALUES ('RESTORED','Backup restored');
+INSERT INTO restore_definition_status (code,description) VALUES ('ERROR','Problems defining or running a restore');
 
 \echo '# [Init: job_execution_status]\n'
 
@@ -750,6 +784,7 @@ INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('
 INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('domain','example.org','Default domain');
 INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('backup_server_status','RUNNING','Default backup server status - *Not used*');
 INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('pgbackman_dump','/usr/bin/pgbackman_dump','Program used to take backup dumps');
+INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('pgbackman_restore','/usr/bin/pgbackman_restore','Program used to restore backup dumps');
 INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('admin_user','postgres','postgreSQL admin user');
 INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('pgsql_bin_9_4','/usr/pgsql-9.4/bin','postgreSQL 9.4 bin directory');
 INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('pgsql_bin_9_3','/usr/pgsql-9.3/bin','postgreSQL 9.3 bin directory');
@@ -1142,6 +1177,29 @@ ALTER FUNCTION notify_new_snapshot() OWNER TO pgbackman_role_rw;
 CREATE TRIGGER notify_new_snapshot AFTER INSERT
     ON snapshot_definition FOR EACH ROW
     EXECUTE PROCEDURE notify_new_snapshot();
+
+
+-- ------------------------------------------------------------
+-- Function: notify_new_snapshot()
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION notify_new_restore() RETURNS TRIGGER
+ LANGUAGE plpgsql 
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ BEGIN
+  PERFORM pg_notify('channel_restore_defined','Restore defined');
+ 
+  RETURN NULL;
+END;
+$$;
+
+ALTER FUNCTION notify_new_restore() OWNER TO pgbackman_role_rw;
+
+CREATE TRIGGER notify_new_restore AFTER INSERT
+    ON restore_definition FOR EACH ROW
+    EXECUTE PROCEDURE notify_new_restore();
 
 
 -- ------------------------------------------------------------
@@ -2097,7 +2155,7 @@ ALTER FUNCTION register_snapshot_definition(INTEGER,INTEGER,TEXT,TIMESTAMP,CHARA
 
 
 -- ------------------------------------------------------------
--- Function: update_backup_server()
+-- Function: update_snapshot_status()
 -- ------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION update_snapshot_status(INTEGER,TEXT) RETURNS VOID
@@ -2128,6 +2186,39 @@ CREATE OR REPLACE FUNCTION update_snapshot_status(INTEGER,TEXT) RETURNS VOID
 $$;
 
 ALTER FUNCTION update_snapshot_status(INTEGER,TEXT) OWNER TO pgbackman_role_rw;
+
+-- ------------------------------------------------------------
+-- Function: update_restore_status()
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION update_restore_status(INTEGER,TEXT) RETURNS VOID
+ LANGUAGE plpgsql 
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ DECLARE
+  restore_id_ ALIAS FOR $1;
+  status_ ALIAS FOR $2;
+
+  v_msg     TEXT;
+  v_detail  TEXT;
+  v_context TEXT;
+ BEGIN
+
+     EXECUTE 'UPDATE restore_definition SET status = $2 WHERE restore_id = $1'
+     USING restore_id_,
+     	   upper(status_);
+   	   
+   EXCEPTION WHEN others THEN
+   	GET STACKED DIAGNOSTICS	
+            v_msg     = MESSAGE_TEXT,
+            v_detail  = PG_EXCEPTION_DETAIL,
+            v_context = PG_EXCEPTION_CONTEXT;
+        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \n----------------------------------------------\n', v_msg, v_detail;
+  END;
+$$;
+
+ALTER FUNCTION update_restore_status(INTEGER,TEXT) OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------------
@@ -2515,6 +2606,8 @@ CREATE OR REPLACE FUNCTION get_listen_channel_names(INTEGER) RETURNS SETOF TEXT
   UNION
   SELECT 'channel_snapshot_defined' AS channel
   UNION
+  SELECT 'channel_restore_defined' AS channel
+  UNION
   SELECT 'channel_bs' || $1 || '_pg' || node_id AS channel FROM pgsql_node WHERE status = 'RUNNING' ORDER BY channel DESC
 $$;
 
@@ -2699,6 +2792,88 @@ END;
 $$;
 
 ALTER FUNCTION generate_snapshot_at_file(INTEGER) OWNER TO pgbackman_role_rw;
+
+
+-- ------------------------------------------------------------
+-- Function: generate_restore_at_file()
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION generate_restore_at_file(INTEGER) RETURNS TEXT 
+ LANGUAGE plpgsql
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ DECLARE
+  restore_id_ ALIAS FOR $1;
+  backup_server_id_ INTEGER;
+  pgsql_node_id_ INTEGER;
+  restore_row RECORD;
+
+  pgsql_node_fqdn TEXT := '';
+  pgsql_node_port TEXT := '';
+  admin_user TEXT := '';
+  pgbackman_restore TEXT := '';
+
+  output TEXT := '';
+BEGIN
+
+ SELECT backup_server_id FROM restore_definition WHERE restore_id = restore_id_ INTO backup_server_id_;
+ SELECT target_pgsql_node_id FROM restore_definition WHERE restore_id = restore_id_ INTO pgsql_node_id_; 
+
+ pgsql_node_fqdn := get_pgsql_node_fqdn(pgsql_node_id_);
+ pgsql_node_port := get_pgsql_node_port(pgsql_node_id_);
+ admin_user := get_pgsql_node_admin_user(pgsql_node_id_);
+ pgbackman_restore := get_backup_server_parameter(backup_server_id_,'pgbackman_restore');
+
+ FOR restore_row IN (
+  SELECT a.restore_id,
+	 array_to_string(a.roles_to_restore,',') AS role_list,
+	 a.backup_server_id,
+	 a.target_pgsql_node_id,
+	 a.target_dbname,
+	 b.dbname AS source_dbname,
+	 a.renamed_dbname,
+	 b.pg_dump_file,
+	 b.pg_dump_roles_file,
+	 b.pg_dump_dbconfig_file,
+	 b.pgsql_node_release 
+  FROM restore_definition a 
+  JOIN backup_job_catalog b ON a.bck_id = b.bck_id 
+  WHERE restore_id = restore_id_
+ ) LOOP
+  output := output || 'su -l pgbackman -c "';
+
+  output := output || pgbackman_restore || 
+  	    	   ' --node-fqdn ' || pgsql_node_fqdn ||
+		   ' --node-id ' || pgsql_node_id_ ||
+		   ' --node-port ' || pgsql_node_port ||
+		   ' --node-user ' || admin_user || 
+		   ' --restore-id ' || restore_row.restore_id::TEXT ||
+		   ' --pgdump-file ' || restore_row.pg_dump_file ||
+		   ' --pgdump-roles-file ' || restore_row.pg_dump_roles_file ||
+		   ' --pgdump-dbconfig-file ' || restore_row.pg_dump_dbconfig_file ||
+ 		   ' --source-dbname ' || restore_row.source_dbname ||
+		   ' --target-dbname ' || restore_row.target_dbname;
+
+   IF restore_row.renamed_dbname != '' AND restore_row.renamed_dbname IS NOT NULL THEN
+	 output := output || ' --renamed-dbname ' || restore_row.renamed_dbname;
+   END IF;
+
+   IF restore_row.role_list != '' AND restore_row.role_list IS NOT NULL THEN
+         output := output || ' --role_list ' || restore_row.role_list;
+   END IF;
+
+   output := output || ' --pg_release ' || restore_row.pgsql_node_release;
+		     		   
+  output := output || E'" \n';
+
+ END LOOP;
+
+ RETURN output;
+END;
+$$;
+
+ALTER FUNCTION generate_restore_at_file(INTEGER) OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------------
@@ -3493,5 +3668,22 @@ ORDER BY backup_server_id,pgsql_node_id,"DBname","Code","AT time";
 
 ALTER VIEW show_snapshot_definitions OWNER TO pgbackman_role_rw;
 
+
+CREATE OR REPLACE VIEW show_restore_definitions AS
+SELECT lpad(restore_id::text,8,'0') AS "RestoreID",
+       date_trunc('seconds',registered) AS "Registered",
+       bck_id AS "BckID",
+       backup_server_id,
+       get_backup_server_fqdn(backup_server_id) AS "Backup server",
+       target_pgsql_node_id,
+       get_pgsql_node_fqdn(target_pgsql_node_id) AS "Target PgSQL node",
+       target_dbname AS "Target DBname",
+       renamed_dbname AS "Renamed database",
+       to_char(at_time, 'YYYYMMDDHH24MI'::text) AS "AT time",
+       status AS "Status"
+FROM restore_definition
+ORDER BY backup_server_id,target_pgsql_node_id,"Target DBname","AT time";
+
+ALTER VIEW show_restore_definitions OWNER TO pgbackman_role_rw;
 
 COMMIT;

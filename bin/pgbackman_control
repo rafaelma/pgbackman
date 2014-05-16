@@ -192,6 +192,46 @@ def generate_snapshot_at_jobs(db,backup_server_id,tmp_dir):
 
 
 # ############################################
+# Function generate_restore_at_jobs()
+# ############################################
+
+def generate_restore_at_jobs(db,backup_server_id,tmp_dir):
+    '''Generate at jobs for restore jobs'''
+
+    try:
+        for record in db.get_new_restore(backup_server_id):
+            
+            restore_id = record[0]
+            at_time = record[1]
+            
+            at_file_temp_file = tempfile.NamedTemporaryFile(delete=True,dir=tmp_dir)  
+
+            with open(at_file_temp_file.name, 'r+') as at_file:
+                data = db.generate_restore_at_file(restore_id)
+
+                at_file.write(data)
+                at_file.flush()
+                
+                at_command = 'at -f ' + at_file_temp_file.name + ' -t ' + at_time
+
+                proc = subprocess.Popen([at_command],shell=True)
+                proc.wait()
+                
+                if proc.returncode == 0:
+                    db.update_restore_status(restore_id,'DEFINED')
+                    logs.logger.debug('AT job for restoreID: %s has been defined',restore_id) 
+                
+                elif proc.returncode != 0:
+                    db.update_restore_status(restore_id,'ERROR')
+                    logs.logger.error('AT job for restoreID: %s could not be defined',restore_id) 
+
+                at_file.close()
+
+    except Exception as e:
+        logs.logger.error('Could not generate AT file for a restore - %s',e)
+
+
+# ############################################
 # Function generate_all_crontab_jobs()
 # ############################################
                          
@@ -596,7 +636,8 @@ def main():
         if listen_channel != 'channel_pgsql_node_running' \
                 and listen_channel != 'channel_pgsql_node_stopped' \
                 and listen_channel != 'channel_pgsql_node_deleted' \
-                and listen_channel != 'channel_snapshot_defined':
+                and listen_channel != 'channel_snapshot_defined' \
+                and listen_channel != 'channel_restore_defined':
 
             pgsql_node_id = get_pgsql_node_id_from_channel(listen_channel)
             
@@ -616,6 +657,7 @@ def main():
     process_pgsql_node_stopped(db,backup_server_id)
 
     generate_snapshot_at_jobs(db,backup_server_id,tmp_dir)
+    generate_restore_at_jobs(db,backup_server_id,tmp_dir)
 
     #
     # Main loop waiting for notifications
@@ -649,7 +691,8 @@ def main():
                         if listen_channel != 'channel_pgsql_node_running' \
                                 and listen_channel != 'channel_pgsql_node_stopped' \
                                 and listen_channel != 'channel_pgsql_node_deleted' \
-                                and listen_channel != 'channel_snapshot_defined':
+                                and listen_channel != 'channel_snapshot_defined' \
+                                and listen_channel != 'channel_restore_defined':
                             
                             pgsql_node_id = get_pgsql_node_id_from_channel(listen_channel)
                             
@@ -673,7 +716,8 @@ def main():
                         if unlisten_channel != 'channel_pgsql_node_running' \
                                 and unlisten_channel != 'channel_pgsql_node_stopped' \
                                 and unlisten_channel != 'channel_pgsql_node_deleted' \
-                                and unlisten_channel != 'channel_snapshot_defined':
+                                and unlisten_channel != 'channel_snapshot_defined' \
+                                and unlisten_channel != 'channel_restore_defined':
                             
                             pgsql_node_id = get_pgsql_node_id_from_channel(unlisten_channel)
                             generate_crontab_backup_jobs(db,backup_server_id,pgsql_node_id)
@@ -693,6 +737,14 @@ def main():
                     #
                     
                     generate_snapshot_at_jobs(db,backup_server_id,tmp_dir)
+
+                elif channel == 'channel_restore_defined':
+                    
+                    #
+                    # A restore job has been defined
+                    #
+                    
+                    generate_restore_at_jobs(db,backup_server_id,tmp_dir)
 
                 else:
                     
@@ -737,6 +789,7 @@ def main():
             add_to_listen_channels(db,db_notify,backup_server_id)
             generate_all_crontab_jobs(db,backup_server_id)
             generate_snapshot_at_jobs(db,backup_server_id,tmp_dir)
+            generate_restore_at_jobs(db,backup_server_id,tmp_dir)
 
         except Exception as e:
             logs.logger.error('General error in main loop - %s',e)   
