@@ -75,7 +75,7 @@ try:
           author_email='rafael@postgresql.org.es',
           url='https://github.com/rafaelma/pgbackman',
           packages=['pgbackman',],
-          scripts=['bin/pgbackman','bin/pgbackman_control','bin/pgbackman_maintenance','bin/pgbackman_dump'],
+          scripts=['bin/pgbackman','bin/pgbackman_control','bin/pgbackman_maintenance','bin/pgbackman_dump','bin/pgbackman_restore'],
           data_files=[('/etc/init.d', ['bin/pgbackman.sh']),
                       ('/etc/pgbackman', ['etc/pgbackman.conf']),
                       ('/var/log/pgbackman',['etc/pgbackman.log'])],
