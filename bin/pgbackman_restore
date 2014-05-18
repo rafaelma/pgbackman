@@ -37,6 +37,9 @@ This program is used by PgBackMan to restore backups from the pgbackman catalog.
 '''
 
 global_parameters = {}
+backup_server_cache_data = {}
+pgsql_node_cache_data = {}
+
 
 # ############################################
 # Function restore_roles()
@@ -48,10 +51,10 @@ def restore_roles(db):
     global global_parameters
 
     try:
-        pg_restore_roles_temp_file = tempfile.NamedTemporaryFile(delete=True,dir=global_parameters['tmp_dir'])
-        logs.logger.debug('pg_dump schema temp file created %s',pg_dump_schema_temp_file.name)
+        pg_restore_roles_temp_file = tempfile.NamedTemporaryFile(delete=False,dir=global_parameters['tmp_dir'])
+        logs.logger.debug('Restore roles temp file created %s',pg_restore_roles_temp_file.name)
         
-        with open(global_parameters['pgdump_role_file'], 'r') as sqldump_in:
+        with open(global_parameters['pgdump_roles_file'], 'r') as sqldump_in:
             with open(pg_restore_roles_temp_file.name, 'w') as sqldump_out:
                 sqldump_out.write('BEGIN;\n')
                  
@@ -62,16 +65,19 @@ def restore_roles(db):
                         # CREATE ROLE statements
                         #
                         if 'CREATE ROLE ' + role in line:
+                            print line
                             sqldump_out.write(line)
 
                         #
                         # ALTER ROLE statements
                         #
                         if 'ALTER ROLE ' + role in line:
+                            print line
                             sqldump_out.write(line)
 
                 sqldump_out.write('COMMIT;\n')
                 logs.logger.debug('Role restore file generated.')
+                sqldump_out.flush()
 
                 role_restore_command = global_parameters['backup_server_pgsql_bin_dir'] + '/psql' + \
                     ' -h ' + global_parameters['pgsql_node_fqdn'] + \
@@ -81,9 +87,11 @@ def restore_roles(db):
                     ' -f ' + pg_restore_roles_temp_file.name
 
                 DEVNULL = open(os.devnull, 'wb')
-                 
+                print role_restore_command
                 proc = subprocess.Popen([role_restore_command],stdout=DEVNULL,stderr=subprocess.STDOUT,shell=True)
                 proc.wait()
+
+                print proc.returncode
 
                 if proc.returncode != 0:
                     logs.logger.critical('The command used to restore the roles needed by the target database %s has a return value != 0',global_parameters['target_dbname'])
@@ -92,12 +100,15 @@ def restore_roles(db):
                     global_parameters['error_message'] = 'Roles restore returncode: ' + str(proc.returncode)
                      #update_restore_definition(db)
                     sys.exit(1)
+        
+                else:
+                    logs.logger.info('Roles restored.')
 
     except Exception as e:
         logs.logger.critical('Could not restore the roles needed by the database %s - %s',global_parameters['target_dbname'],e)
         
         global_parameters['status'] = 'ERROR'
-        global_parameters['error_message'] = 'Problems restoring roles - ' + e
+        global_parameters['error_message'] = 'Problems restoring roles - ' + str(e)
         #update_restore_definition(db)
         sys.exit(1)
            
@@ -109,7 +120,92 @@ def restore_roles(db):
 
 def restore_dbconfig(db):
     '''Restore dbconfig'''
-    print
+
+    global global_parameters
+
+    try:
+        pg_restore_dbconfig_temp_file = tempfile.NamedTemporaryFile(delete=False,dir=global_parameters['tmp_dir'])
+        logs.logger.debug('Temp dbconfig restore file created %s',pg_restore_dbconfig_temp_file.name)
+        
+        with open(global_parameters['pgdump_dbconfig_file'], 'r') as sqldump_in:
+            with open(pg_restore_dbconfig_temp_file.name, 'w') as sqldump_out:
+                 
+                for line in sqldump_in:
+
+                    #
+                    # CREATE DATABASE statements
+                    #
+                    if 'CREATE DATABASE ' + global_parameters['source_dbname']  in line:
+
+                        if global_parameters['source_dbname'] == global_parameters['target_dbname']:
+                            sqldump_out.write(line)
+                            
+                        elif global_parameters['source_dbname'] != global_parameters['target_dbname']:
+                            sqldump_out.write(line.replace('CREATE DATABASE ' + global_parameters['source_dbname'],'CREATE DATABASE ' + global_parameters['target_dbname']))
+
+                        sqldump_out.write('BEGIN;\n')
+
+                    #
+                    # GRANT / REVOKE statements
+                    #
+                    elif ' ON DATABASE ' + global_parameters['source_dbname']  in line:
+
+                        if global_parameters['source_dbname'] == global_parameters['target_dbname']:
+                            sqldump_out.write(line)
+                            
+                        elif global_parameters['source_dbname'] != global_parameters['target_dbname']:
+                            sqldump_out.write(line.replace(' ON DATABASE ' + global_parameters['source_dbname'],' ON DATABASE ' + global_parameters['target_dbname']))
+                        
+                    #
+                    # ALTER DATABASE statements
+                    #
+                    elif 'ALTER DATABASE ' + global_parameters['source_dbname']  in line:
+
+                        if global_parameters['source_dbname'] == global_parameters['target_dbname']:
+                            sqldump_out.write(line)
+                            
+                        elif global_parameters['source_dbname'] != global_parameters['target_dbname']:
+                            sqldump_out.write(line.replace('ALTER DATABASE ' + global_parameters['source_dbname'],'ALTER DATABASE ' + global_parameters['target_dbname']))
+                        
+
+                sqldump_out.write('COMMIT;\n')    
+
+                logs.logger.debug('Temp dbconfig restore file generated.')
+                sqldump_out.flush()
+
+                dbconfig_restore_command = global_parameters['backup_server_pgsql_bin_dir'] + '/psql' + \
+                    ' -h ' + global_parameters['pgsql_node_fqdn'] + \
+                    ' -p ' + global_parameters['pgsql_node_port'] + \
+                    ' -U ' + global_parameters['pgsql_node_admin_user'] + \
+                    ' -d template1' + \
+                    ' -f ' + pg_restore_dbconfig_temp_file.name
+
+                DEVNULL = open(os.devnull, 'wb')
+                print dbconfig_restore_command
+                proc = subprocess.Popen([dbconfig_restore_command],stdout=DEVNULL,stderr=subprocess.STDOUT,shell=True)
+                proc.wait()
+
+                print proc.returncode
+
+                if proc.returncode != 0:
+                    logs.logger.critical('The command used to restore the global database statements needed by the target database %s has a return value != 0',global_parameters['target_dbname'])
+                    
+                    global_parameters['status'] = 'ERROR'
+                    global_parameters['error_message'] = 'DBconfig restore returncode: ' + str(proc.returncode)
+                     #update_restore_definition(db)
+                    sys.exit(1)
+        
+                else:
+                    logs.logger.info('DBconfig restored.')
+
+    except Exception as e:
+        logs.logger.critical('Could not restore the global database statements needed by the database %s - %s',global_parameters['target_dbname'],e)
+        
+        global_parameters['status'] = 'ERROR'
+        global_parameters['error_message'] = 'Problems restoring DBconfig - ' + str(e)
+        #update_restore_definition(db)
+        sys.exit(1)
+           
 
 # ############################################
 # Function restore_database()
@@ -117,8 +213,45 @@ def restore_dbconfig(db):
 
 def restore_database(db):
     '''Restore database'''
-    print 
     
+    global global_parameters
+
+    try:
+        
+        database_restore_command = global_parameters['backup_server_pgsql_bin_dir'] + '/pg_restore' + \
+            ' -1 ' + \
+            ' -h ' + global_parameters['pgsql_node_fqdn'] + \
+            ' -p ' + global_parameters['pgsql_node_port'] + \
+            ' -U ' + global_parameters['pgsql_node_admin_user'] + \
+            ' -d ' + global_parameters['target_dbname'] + \
+            ' ' + global_parameters['pgdump_file']
+
+        DEVNULL = open(os.devnull, 'wb')
+        print database_restore_command
+        proc = subprocess.Popen([database_restore_command],stdout=DEVNULL,stderr=subprocess.STDOUT,shell=True)
+        proc.wait()
+            
+        print proc.returncode
+            
+        if proc.returncode != 0:
+            logs.logger.critical('The command used to restore the database %s has a return value != 0',global_parameters['target_dbname'])
+            
+            global_parameters['status'] = 'ERROR'
+            global_parameters['error_message'] = 'Database restore returncode: ' + str(proc.returncode)
+                #update_restore_definition(db)
+            sys.exit(1)
+        
+        else:
+            logs.logger.info('Database restored.')
+
+    except Exception as e:
+        logs.logger.critical('Could not restore the database %s - %s',global_parameters['target_dbname'],e)
+        
+        global_parameters['status'] = 'ERROR'
+        global_parameters['error_message'] = 'Problems restoring Database - ' + str(e)
+        #update_restore_definition(db)
+        sys.exit(1)
+
 
 # ############################################
 # Function get_pgsql_node_dsn()
@@ -145,18 +278,72 @@ def get_backup_server_pgsql_bin_dir(db):
     global global_parameters
 
     try:
-        pgsql_bin_dir = db.get_backup_server_parameter(global_parameters['backup_server_id'],'pgsql_bin_' + global_parameters['pgsql_node_release'])
+        pgsql_bin_dir = db.get_backup_server_parameter(global_parameters['backup_server_id'],'pgsql_bin_' + global_parameters['pg_release'])
         logs.logger.debug('pgsql bin directory to use: %s',pgsql_bin_dir)
         
         return pgsql_bin_dir
 
     except Exception as e:
 
-        pgsql_bin_dir = backup_server_cache_data['pgsql_bin_' + global_parameters['pgsql_node_release']]
+        pgsql_bin_dir = backup_server_cache_data['pgsql_bin_' + global_parameters['pg_release']]
         logs.logger.debug('pgsql bin directory to use: %s',pgsql_bin_dir)
         
         return pgsql_bin_dir
         
+
+# ##################################################
+# Function get_backup_server_parameters_from_cache()
+# ##################################################
+
+def get_backup_server_parameters_from_cache(db,backup_server_fqdn):  
+    '''Get backup server parameters from cache file'''
+
+    global backup_server_cache_data
+    global global_parameters
+
+    try:
+        backup_server_cache_file = global_parameters['root_backup_dir'] + '/cache_dir/backup_server_' + backup_server_fqdn + '.cache'
+        
+        with open(backup_server_cache_file,'r') as backup_server_cache:
+            for line in backup_server_cache:
+                (key, val) = line.split('::')
+                backup_server_cache_data[key] = val.replace('\n','')
+                
+    except Exception as e:
+        logs.logger.error('Could not read the cache file for the backup server: %s - %s',backup_server_fqdn,e)
+        global_parameters['status'] = 'ERROR'
+        global_parameters['error_message'] = 'Problems getting backup server cache data'
+        #update_restore_definition(db)
+
+        sys.exit(1)
+
+
+# ###############################################
+# Function get_pgsql_node_parameters_from_cache()
+# ###############################################
+
+def get_pgsql_node_parameters_from_cache(db):  
+    '''Get pgsql_node parameters from cache file'''
+
+    global pgsql_node_cache_data
+
+    try:
+        pgsql_node_cache_file = global_parameters['root_backup_dir'] + '/cache_dir/pgsql_node_' + global_parameters['pgsql_node_id'] + '.cache'
+
+
+        with open(pgsql_node_cache_file,'r') as pgsql_node_cache:
+            for line in pgsql_node_cache:
+                (key, val) = line.split('::')
+                pgsql_node_cache_data[key] = val.replace('\n','')
+                    
+    except Exception as e:
+        logs.logger.critical('Could not read the cache file for the PgSQL node: %s - %s',global_parameters['pgsql_node_fqdn'],e)
+        global_parameters['status'] = 'ERROR'
+        global_parameters['error_message'] = 'Problems getting pgsql node cache data'
+         #update_restore_definition(db)
+
+        sys.exit(1)
+
 
 # ##############################################
 # Function check_pgbackman_database_connection()
@@ -255,7 +442,8 @@ def main():
         global_parameters['error_message'] = 'Target PgSQL node not available'
         #update_restore_definition(db)
         sys.exit(1) 
-
+        
+    global_parameters['backup_server_pgsql_bin_dir'] = get_backup_server_pgsql_bin_dir(db)
 
     restore_roles(db)
     restore_dbconfig(db)
@@ -298,6 +486,7 @@ if __name__ == '__main__':
     parser.add_argument('--renamed-dbname', metavar='RENAMED-DBNAME', required=False, help='Renamed database', dest='renamed_dbname')
     parser.add_argument('--role-list', metavar='ROLE-LIST', required=False, help='Roles to restore', dest='role_list')
     parser.add_argument('--pg-release', metavar='PG-RELEASE', required=True, help='PG release from backup', dest='pg_release')
+    parser.add_argument('--root-backup-dir', metavar='ROOT-BACKUP-DIR', default=True, required=True, help='Root backup dir', dest='root_backup_dir')
 
     args = parser.parse_args()    
 
@@ -375,9 +564,16 @@ if __name__ == '__main__':
         global_parameters['role_list'] = []
 
     if args.pg_release:
-        global_parameters['pg_release'] = args.pg_release
+        global_parameters['pg_release'] = args.pg_release.replace('.','_')
     else:
         logs.logger.error('PG release parameter not defined')
         sys.exit(1)
+
+    if args.root_backup_dir:
+        global_parameters['root_backup_dir'] = args.root_backup_dir
+    else:
+        logs.logger.error('Root backup directory parameter not defined')
+        sys.exit(1)
+
 
     main()

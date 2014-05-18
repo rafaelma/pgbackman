@@ -2813,6 +2813,7 @@ CREATE OR REPLACE FUNCTION generate_restore_at_file(INTEGER) RETURNS TEXT
   pgsql_node_port TEXT := '';
   admin_user TEXT := '';
   pgbackman_restore TEXT := '';
+  root_backup_dir TEXT := '';
 
   output TEXT := '';
 BEGIN
@@ -2820,6 +2821,7 @@ BEGIN
  SELECT backup_server_id FROM restore_definition WHERE restore_id = restore_id_ INTO backup_server_id_;
  SELECT target_pgsql_node_id FROM restore_definition WHERE restore_id = restore_id_ INTO pgsql_node_id_; 
 
+ root_backup_dir := get_backup_server_parameter(backup_server_id_,'root_backup_partition');
  pgsql_node_fqdn := get_pgsql_node_fqdn(pgsql_node_id_);
  pgsql_node_port := get_pgsql_node_port(pgsql_node_id_);
  admin_user := get_pgsql_node_admin_user(pgsql_node_id_);
@@ -2863,7 +2865,8 @@ BEGIN
          output := output || ' --role-list ' || restore_row.role_list;
    END IF;
 
-   output := output || ' --pg-release ' || restore_row.pgsql_node_release;
+   output := output || ' --pg-release ' || restore_row.pgsql_node_release ||
+   	     	    ' --root-backup-dir ' || root_backup_dir;
 		     		   
   output := output || E'" \n';
 
