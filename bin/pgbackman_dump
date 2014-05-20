@@ -81,7 +81,7 @@ def pg_dumpall(db):
                 
                 global_parameters['execution_status'] = 'ERROR'
                 global_parameters['error_message'] = 'pgdumpall returncode: ' + proc.returncode
-                register_backup_job_catalog(db)
+                register_backup_catalog(db)
                 sys.exit(1)
                 
     except Exception as e:
@@ -89,7 +89,7 @@ def pg_dumpall(db):
         
         global_parameters['execution_status'] = 'ERROR'
         global_parameters['error_message'] = e
-        register_backup_job_catalog(db)  
+        register_backup_catalog(db)  
         sys.exit(1)
         
 
@@ -160,7 +160,7 @@ def pg_dump(db):
                 
                 global_parameters['execution_status'] = 'ERROR'
                 global_parameters['error_message'] = 'pg_dump returncode: ' + proc.returncode
-                register_backup_job_catalog(db)  
+                register_backup_catalog(db)  
                 sys.exit(1)
                 
             logs.logger.info('Database dump file created - %s',global_parameters['database_dump_file'])
@@ -171,7 +171,7 @@ def pg_dump(db):
 
         global_parameters['execution_status'] = 'ERROR'
         global_parameters['error_message'] = e
-        register_backup_job_catalog(db)  
+        register_backup_catalog(db)  
         sys.exit(1)
         
 
@@ -237,7 +237,7 @@ def pg_dump_users(db):
 
                 global_parameters['execution_status'] = 'ERROR'
                 global_parameters['error_message'] = 'pg_dump returncode: ' + str(proc.returncode)
-                register_backup_job_catalog(db)  
+                register_backup_catalog(db)  
                 sys.exit(1)
                 
             with open(pg_dump_schema_temp_file.name, 'r') as sqldump:
@@ -266,7 +266,7 @@ def pg_dump_users(db):
         
         global_parameters['execution_status'] = 'ERROR'
         global_parameters['error_message'] = e
-        register_backup_job_catalog(db)  
+        register_backup_catalog(db)  
         sys.exit(1)
         
     #
@@ -302,7 +302,7 @@ def pg_dump_users(db):
             
                 global_parameters['execution_status'] = 'ERROR'
                 global_parameters['error_message'] = 'pg_dumpall returncode: ' + str(proc.returncode)
-                register_backup_job_catalog(db)  
+                register_backup_catalog(db)  
                 sys.exit(1)
 
             with open(global_parameters['roles_dump_file'],'w') as roles_dump_file:
@@ -340,7 +340,7 @@ def pg_dump_users(db):
         
         global_parameters['execution_status'] = 'ERROR'
         global_parameters['error_message'] = e
-        register_backup_job_catalog(db)  
+        register_backup_catalog(db)  
         sys.exit(1)
         
 
@@ -389,7 +389,7 @@ def pg_dump_database_config(db):
             
                 global_parameters['execution_status'] = 'ERROR'
                 global_parameters['error_message'] = 'pg_dumpall returncode: ' + str(proc.returncode)
-                register_backup_job_catalog(db)  
+                register_backup_catalog(db)  
                 sys.exit(1)
             
             with open(global_parameters['dbconfig_dump_file'],'w') as dbconfig_dump_file:
@@ -432,7 +432,7 @@ def pg_dump_database_config(db):
         
         global_parameters['execution_status'] = 'ERROR'
         global_parameters['error_message'] = e
-        register_backup_job_catalog(db)  
+        register_backup_catalog(db)  
         sys.exit(1)
 
 
@@ -489,7 +489,7 @@ def get_pgsql_node_release(db,db_pgnode):
         logs.logger.critical('Could not get the postgreSQL release for this PgSQL node: %s',global_parameters['pgsql_node_fqdn'])
         global_parameters['execution_status'] = 'ERROR'
         global_parameters['error_message'] = 'Problems getting pgsql release'
-        register_backup_job_catalog(db)
+        register_backup_catalog(db)
 
         sys.exit(1)
     
@@ -556,10 +556,10 @@ def get_filename_id(dump_type,file_type):
 
 
 # ############################################
-# Function register_backup_job_catalog()
+# Function register_backup_catalog()
 # ############################################
   
-def register_backup_job_catalog(db):
+def register_backup_catalog(db):
     '''Update the backup catalog information in the database'''
 
     global global_parameters
@@ -658,7 +658,7 @@ def register_backup_job_catalog(db):
 
     try:
         procpid = os.getpid()
-        db.register_backup_job_catalog(global_parameters['def_id'],
+        db.register_backup_catalog(global_parameters['def_id'],
                                        procpid,
                                        global_parameters['backup_server_id'],  
                                        global_parameters['pgsql_node_id'],
@@ -764,7 +764,7 @@ def get_backup_server_parameters_from_cache(db,backup_server_fqdn):
         logs.logger.error('Could not read the cache file for the backup server: %s - %s',backup_server_fqdn,e)
         global_parameters['execution_status'] = 'ERROR'
         global_parameters['error_message'] = 'Problems getting backup server cache data'
-        register_backup_job_catalog(db)
+        register_backup_catalog(db)
 
         sys.exit(1)
 
@@ -791,7 +791,7 @@ def get_pgsql_node_parameters_from_cache(db):
         logs.logger.critical('Could not read the cache file for the PgSQL node: %s - %s',global_parameters['pgsql_node_fqdn'],e)
         global_parameters['execution_status'] = 'ERROR'
         global_parameters['error_message'] = 'Problems getting pgsql node cache data'
-        register_backup_job_catalog(db)
+        register_backup_catalog(db)
 
         sys.exit(1)
 
@@ -925,7 +925,7 @@ def main():
         
         global_parameters['execution_status'] = 'ERROR'
         global_parameters['error_message'] = 'Database to backup not available'
-        register_backup_job_catalog(db)
+        register_backup_catalog(db)
         sys.exit(1) 
 
     try:
@@ -956,7 +956,7 @@ def main():
         pg_dump_users(db)
         pg_dump_database_config(db)
 
-    register_backup_job_catalog(db)
+    register_backup_catalog(db)
 
 
 # ############################################

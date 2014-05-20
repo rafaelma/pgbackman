@@ -2826,7 +2826,7 @@ CREATE OR REPLACE FUNCTION generate_restore_at_file(INTEGER) RETURNS TEXT
  SET search_path = public, pg_temp
  AS $$
  DECLARE
-  restore_id_ ALIAS FOR $1;
+  restore_def_ ALIAS FOR $1;
   backup_server_id_ INTEGER;
   pgsql_node_id_ INTEGER;
   restore_row RECORD;
@@ -2840,8 +2840,8 @@ CREATE OR REPLACE FUNCTION generate_restore_at_file(INTEGER) RETURNS TEXT
   output TEXT := '';
 BEGIN
 
- SELECT backup_server_id FROM restore_definition WHERE restore_id = restore_id_ INTO backup_server_id_;
- SELECT target_pgsql_node_id FROM restore_definition WHERE restore_id = restore_id_ INTO pgsql_node_id_; 
+ SELECT backup_server_id FROM restore_definition WHERE restore_def = restore_def_ INTO backup_server_id_;
+ SELECT target_pgsql_node_id FROM restore_definition WHERE restore_def = restore_def_ INTO pgsql_node_id_; 
 
  root_backup_dir := get_backup_server_parameter(backup_server_id_,'root_backup_partition');
  pgsql_node_fqdn := get_pgsql_node_fqdn(pgsql_node_id_);
@@ -2850,7 +2850,7 @@ BEGIN
  pgbackman_restore := get_backup_server_parameter(backup_server_id_,'pgbackman_restore');
 
  FOR restore_row IN (
-  SELECT a.restore_id,
+  SELECT a.restore_def,
 	 array_to_string(a.roles_to_restore,',') AS role_list,
 	 a.backup_server_id,
 	 a.target_pgsql_node_id,
@@ -2863,7 +2863,7 @@ BEGIN
 	 b.pgsql_node_release 
   FROM restore_definition a 
   JOIN backup_catalog b ON a.bck_id = b.bck_id 
-  WHERE restore_id = restore_id_
+  WHERE restore_def = restore_def_
  ) LOOP
   output := output || 'su -l pgbackman -c "';
 

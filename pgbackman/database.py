@@ -2223,7 +2223,7 @@ class pgbackman_db():
 
             if self.cur:
                 try:
-                    self.cur.execute('SELECT "RestoreID","AT time" FROM show_restore_definitions WHERE backup_server_id = %s AND "Status" = %s',(backup_server_id,'WAITING'))
+                    self.cur.execute('SELECT "RestoreDef","AT time" FROM show_restore_definitions WHERE backup_server_id = %s AND "Status" = %s',(backup_server_id,'WAITING'))
                     self.conn.commit()
                     
                     return self.cur
@@ -2241,7 +2241,7 @@ class pgbackman_db():
     # Method 
     # ############################################
            
-    def generate_restore_at_file(self,restore_id):
+    def generate_restore_at_file(self,restore_def):
         """A function to generate a at file for a restore"""
      
         try:
@@ -2249,7 +2249,7 @@ class pgbackman_db():
 
             if self.cur:
                 try:
-                    self.cur.execute('SELECT generate_restore_at_file(%s)',(restore_id,))
+                    self.cur.execute('SELECT generate_restore_at_file(%s)',(restore_def,))
                     self.conn.commit()
                     
                     return self.cur.fetchone()[0]

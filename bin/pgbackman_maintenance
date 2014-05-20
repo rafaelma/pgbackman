@@ -137,7 +137,7 @@ def enforce_backup_retentions(db,backup_server_id):
 
             if error_cnt == 0:
                 try:
-                    db.delete_backup_job_catalog(record[1])
+                    db.delete_backup_catalog(record[1])
                     logs.logger.info('Files for catalog ID: %s / DefID: %s deleted',record[1],record[2])
 
                 except psycopg2.OperationalError as e:
@@ -249,7 +249,7 @@ def process_pending_catalog_log_file(db,backup_server_id):
                         # Updating the database with the information in the pending file
                         #
 
-                        db.register_backup_job_catalog(def_id,
+                        db.register_backup_catalog(def_id,
                                                        parameters[1],
                                                        parameters[2],
                                                        parameters[3],
