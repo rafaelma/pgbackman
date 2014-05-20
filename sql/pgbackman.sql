@@ -466,7 +466,7 @@ ALTER TABLE snapshot_definition OWNER TO pgbackman_role_rw;
 --
 -- Attributes:
 --
--- @restore_id
+-- @restore_def
 -- @registered
 -- @bck_id
 -- @roles_to_restore
@@ -2219,7 +2219,7 @@ CREATE OR REPLACE FUNCTION update_restore_status(INTEGER,TEXT) RETURNS VOID
  SET search_path = public, pg_temp
  AS $$
  DECLARE
-  restore_id_ ALIAS FOR $1;
+  restore_def_ ALIAS FOR $1;
   status_ ALIAS FOR $2;
 
   v_msg     TEXT;
@@ -2227,8 +2227,8 @@ CREATE OR REPLACE FUNCTION update_restore_status(INTEGER,TEXT) RETURNS VOID
   v_context TEXT;
  BEGIN
 
-     EXECUTE 'UPDATE restore_definition SET status = $2 WHERE restore_id = $1'
-     USING restore_id_,
+     EXECUTE 'UPDATE restore_definition SET status = $2 WHERE restore_def = $1'
+     USING restore_def_,
      	   upper(status_);
    	   
    EXCEPTION WHEN others THEN
@@ -2872,7 +2872,7 @@ BEGIN
 		   ' --node-id ' || pgsql_node_id_ ||
 		   ' --node-port ' || pgsql_node_port ||
 		   ' --node-user ' || admin_user || 
-		   ' --restore-id ' || restore_row.restore_id::TEXT ||
+		   ' --restore-id ' || restore_row.restore_def::TEXT ||
 		   ' --pgdump-file ' || restore_row.pg_dump_file ||
 		   ' --pgdump-roles-file ' || restore_row.pg_dump_roles_file ||
 		   ' --pgdump-dbconfig-file ' || restore_row.pg_dump_dbconfig_file ||
