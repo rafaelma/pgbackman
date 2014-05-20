@@ -3226,10 +3226,10 @@ CREATE OR REPLACE FUNCTION register_restore_catalog(BIGINT,INTEGER,INTEGER,INTEG
   restore_def_ ALIAS FOR $1;
   procpid_ ALIAS FOR $2;
   backup_server_id_ ALIAS FOR $3;
-  pgsql_node_id_ ALIAS FOR $4;
+  target_pgsql_node_id_ ALIAS FOR $4;
   source_dbname_ ALIAS FOR $5;
   target_dbname_ ALIAS FOR $6;
-  renamed_dbname ALIAS FOR $7;
+  renamed_dbname_ ALIAS FOR $7;
   started_ ALIAS FOR $8;
   finished_ ALIAS FOR $9;
   duration_ ALIAS FOR $10;
@@ -3796,5 +3796,28 @@ FROM restore_definition
 ORDER BY backup_server_id,target_pgsql_node_id,"Target DBname","AT time";
 
 ALTER VIEW show_restore_definitions OWNER TO pgbackman_role_rw;
+
+CREATE OR REPLACE VIEW show_restore_catalog AS
+   (SELECT lpad(a.restore_id::text,10,'0') AS "RestoreID",
+       lpad(a.restore_def::text,10,'0') AS "RestoreDef",
+       a.restore_def,
+       b.bck_id AS "BckID",
+       date_trunc('seconds',a.finished) AS "Finished",
+       a.backup_server_id,
+       get_backup_server_fqdn(a.backup_server_id) AS "Backup server",
+       a.target_pgsql_node_id,
+       get_pgsql_node_fqdn(a.target_pgsql_node_id) AS "Target PgSQL node",
+       a.target_dbname AS "Target DBname",
+       a.renamed_dbname AS "Renamed DBname",
+       date_trunc('seconds',a.duration) AS "Duration",
+       a.execution_status AS "Status" 
+   FROM restore_catalog a 
+   JOIN restore_definition b ON a.restore_def = b.restore_def) 
+   ORDER BY "Finished" DESC, backup_server_id,target_pgsql_node_id,"Target DBname","Status";
+
+ALTER VIEW show_restore_catalog OWNER TO pgbackman_role_rw;
+
+
+
 
 COMMIT;

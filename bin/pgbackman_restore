@@ -410,7 +410,7 @@ def register_restore_catalog(db):
         db.register_restore_catalog(global_parameters['restore_def'],
                                     procpid,
                                     global_parameters['backup_server_id'],  
-                                    global_parameters['target_pgsql_node_id'],
+                                    global_parameters['pgsql_node_id'],
                                     global_parameters['source_dbname'],
                                     global_parameters['target_dbname'],
                                     global_parameters['renamed_dbname'],
@@ -443,13 +443,13 @@ def register_restore_catalog(db):
         
         try:
             procpid = os.getpid()
-            pending_log_file = global_parameters['backup_server_pending_registration_dir'] + '/restore_jobs_pending_log_updates_nodeid_' + str(global_parameters['target_pgsql_node_id']) + '_' + str(procpid) + '.log'
+            pending_log_file = global_parameters['backup_server_pending_registration_dir'] + '/restore_jobs_pending_log_updates_nodeid_' + str(global_parameters['pgsql_node_id']) + '_' + str(procpid) + '.log'
                 
             with open(pending_log_file,'w+') as catalog_pending:
                 catalog_pending.write(str(global_parameters['restore_def']) + '::' +
                                       str(procpid) + '::' +
                                       str(global_parameters['backup_server_id']) + '::' +   
-                                      str(global_parameters['target_pgsql_node_id']) + '::' +
+                                      str(global_parameters['pgsql_node_id']) + '::' +
                                       global_parameters['source_dbname'] + '::' +
                                       global_parameters['target_dbname'] + '::' +
                                       global_parameters['renamed_dbname'] + '::' +
@@ -460,7 +460,7 @@ def register_restore_catalog(db):
                                       global_parameters['global_log_file'] + '::' +
                                       global_parameters['execution_status'] + '::' +
                                       global_parameters['error_message'] + '::' +
-                                      global_parameters['role_list'] + '::' +
+                                      ",".join(global_parameters['role_list']) + '::' +
                                       global_parameters['target_pgsql_node_release'].replace('_','.') + '::' +
                                       global_parameters['pg_release'].replace('_','.') + '::' +
                                       '\n')
@@ -469,6 +469,20 @@ def register_restore_catalog(db):
         
         except Exception as e:
             logs.logger.error('Could not generate the restore catalog pending log file: %s - %s',pending_log_file,e)
+
+# ############################################
+# Function get_logfile_id()
+# ############################################
+    
+def get_logfile_id():
+    '''Generate the filename used for the log files of a restore job'''
+    
+    global global_parameters
+    timestamp = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
+
+    logfile_id =  global_parameters['pgsql_node_backup_dir'] + '/log/' + global_parameters['target_dbname'] + '-' + global_parameters['pgsql_node_fqdn'] + '-v' + global_parameters['pg_release'] + '-restoredef' + global_parameters['restore_def'] + '.log'
+
+    return logfile_id
 
 
 # ##############################################
@@ -576,9 +590,17 @@ def main():
         register_restore_catalog(db)
         sys.exit(1) 
         
-    global_parameters['backup_server_pgsql_bin_dir'] = get_backup_server_pgsql_bin_dir(db)
+    try:
+        global_parameters['pgsql_node_backup_dir'] = db.get_pgsql_node_parameter(global_parameters['pgsql_node_id'],'pgnode_backup_partition')
 
+    except psycopg2.Error as e:
+        global_parameters['pgsql_node_backup_dir'] = pgsql_node_cache_data['pgnode_backup_partition']
+    
+
+    global_parameters['backup_server_pgsql_bin_dir'] = get_backup_server_pgsql_bin_dir(db)
     global_parameters['target_pgsql_node_release'] = get_pgsql_node_release(db,db_pgnode)
+
+    global_parameters['restore_log_file'] = get_logfile_id()
 
     target_pgsql_node_release = int(global_parameters['target_pgsql_node_release'].replace('_',''))
     backup_release = int(global_parameters['pg_release'].replace('_',''))
@@ -604,7 +626,7 @@ def main():
     # node. Stop the backup with an error it it exists.
     #
         
-    if db_node.database_exists(global_parameters['target_dbname']):
+    if db_pgnode.database_exists(global_parameters['target_dbname']):
         logs.logger.critical('The target database %s already exists in the target PgSQL node %s',
                               global_parameters['target_dbname'],
                               global_parameters['pgsql_node_fqdn'])
@@ -617,7 +639,8 @@ def main():
     restore_roles(db)
     restore_dbconfig(db)
     restore_database(db)
-    
+
+    global_parameters['execution_status'] = 'SUCCEEDED'
     register_restore_catalog(db)
 
 
