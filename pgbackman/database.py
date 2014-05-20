@@ -546,6 +546,72 @@ class pgbackman_db():
         except psycopg2.Error as e:
             raise e
    
+    # ############################################
+    # Method 
+    # ############################################
+
+    def show_restore_definitions(self,backup_server_list,pgsql_node_list,dbname_list):
+        """A function to get a list with restore definitions"""
+
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+
+                    if backup_server_list != None:
+                        server_sql = 'AND (FALSE '
+                        
+                        for server in backup_server_list:
+                            if server.isdigit():
+                                server_sql = server_sql + 'OR backup_server_id = ' + str(server) + ' '
+                            else:
+                                server_sql = server_sql + 'OR backup_server_id = ' +  str(self.get_backup_server_id(server.lower())) + ' '
+                                                                                   
+                        server_sql = server_sql + ') '
+                        
+                    else:
+                        server_sql = ''
+                        
+                    if pgsql_node_list != None:
+                        node_sql = 'AND (FALSE '
+                        
+                        for node in pgsql_node_list:
+                            if node.isdigit():
+                                node_sql = node_sql + 'OR target_pgsql_node_id = ' + str(node) + ' '
+                            else:
+                                node_sql = node_sql + 'OR target_pgsql_node_id = ' +  str(self.get_pgsql_node_id(node.lower())) + ' '
+                                                                                   
+                        node_sql = node_sql + ') '
+                        
+                    else:
+                        node_sql = ''   
+
+
+                    if dbname_list != None:
+                        dbname_sql = 'AND (FALSE '
+                        
+                        for dbname in dbname_list:
+                            dbname_sql = dbname_sql + 'OR "Target DBname" = \'' + dbname + '\' '
+                                                                                   
+                        dbname_sql = dbname_sql + ') '
+                        
+                    else:
+                        dbname_sql = ''
+    
+                    self.cur.execute('SELECT \"RestoreDef\",\"Registered\",\"BckID\",backup_server_id AS \"ID.\",\"Backup server\",target_pgsql_node_id AS \"ID\",\"Target PgSQL node\",\"Target DBname\",\"Renamed database\",\"AT time\",\"Status\" FROM show_restore_definitions WHERE TRUE ' + server_sql + node_sql + dbname_sql)
+                                     
+                    colnames = [desc[0] for desc in self.cur.description]
+                    self.print_results_table(self.cur,colnames,["Backup server","Target PgSQL node","Target DBname","AT time"])
+            
+                except psycopg2.Error as e:
+                    raise e
+                
+            self.pg_close()
+    
+        except psycopg2.Error as e:
+            raise e
+   
 
     # ############################################
     # Method 
