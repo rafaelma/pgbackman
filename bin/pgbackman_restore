@@ -98,7 +98,7 @@ def restore_roles(db):
                     
                     global_parameters['execution_status'] = 'ERROR'
                     global_parameters['error_message'] = 'Roles restore returncode: ' + str(proc.returncode)
-                     #register_restore_catalog(db)
+                    register_restore_catalog(db)
                     sys.exit(1)
         
                 else:
@@ -109,7 +109,7 @@ def restore_roles(db):
         
         global_parameters['execution_status'] = 'ERROR'
         global_parameters['error_message'] = 'Problems restoring roles - ' + str(e)
-        #register_restore_catalog(db)
+        register_restore_catalog(db)
         sys.exit(1)
            
 
@@ -192,7 +192,7 @@ def restore_dbconfig(db):
                     
                     global_parameters['execution_status'] = 'ERROR'
                     global_parameters['error_message'] = 'DBconfig restore returncode: ' + str(proc.returncode)
-                     #register_restore_catalog(db)
+                    register_restore_catalog(db)
                     sys.exit(1)
         
                 else:
@@ -203,7 +203,7 @@ def restore_dbconfig(db):
         
         global_parameters['execution_status'] = 'ERROR'
         global_parameters['error_message'] = 'Problems restoring DBconfig - ' + str(e)
-        #register_restore_catalog(db)
+        register_restore_catalog(db)
         sys.exit(1)
            
 
@@ -238,7 +238,7 @@ def restore_database(db):
             
             global_parameters['execution_status'] = 'ERROR'
             global_parameters['error_message'] = 'Database restore returncode: ' + str(proc.returncode)
-                #register_restore_catalog(db)
+            register_restore_catalog(db)
             sys.exit(1)
         
         else:
@@ -249,7 +249,7 @@ def restore_database(db):
         
         global_parameters['execution_status'] = 'ERROR'
         global_parameters['error_message'] = 'Problems restoring Database - ' + str(e)
-        #register_restore_catalog(db)
+        register_restore_catalog(db)
         sys.exit(1)
 
 
@@ -306,7 +306,7 @@ def get_pgsql_node_release(db,db_pgnode):
         logs.logger.critical('Could not get the postgreSQL release for this PgSQL node: %s',global_parameters['pgsql_node_fqdn'])
         global_parameters['execution_status'] = 'ERROR'
         global_parameters['error_message'] = 'Problems getting pgsql release'
-        #register_restore_catalog(db)
+        register_restore_catalog(db)
         sys.exit(1)
     
 
@@ -355,7 +355,7 @@ def get_backup_server_parameters_from_cache(db,backup_server_fqdn):
         logs.logger.error('Could not read the cache file for the backup server: %s - %s',backup_server_fqdn,e)
         global_parameters['execution_status'] = 'ERROR'
         global_parameters['error_message'] = 'Problems getting backup server cache data'
-        #register_restore_catalog(db)
+        register_restore_catalog(db)
 
         sys.exit(1)
 
@@ -382,7 +382,7 @@ def get_pgsql_node_parameters_from_cache(db):
         logs.logger.critical('Could not read the cache file for the PgSQL node: %s - %s',global_parameters['pgsql_node_fqdn'],e)
         global_parameters['execution_status'] = 'ERROR'
         global_parameters['error_message'] = 'Problems getting pgsql node cache data'
-         #register_restore_catalog(db)
+        register_restore_catalog(db)
 
         sys.exit(1)
 
@@ -573,7 +573,7 @@ def main():
         
         global_parameters['execution_status'] = 'ERROR'
         global_parameters['error_message'] = 'Target PgSQL node not available'
-        #register_restore_catalog(db)
+        register_restore_catalog(db)
         sys.exit(1) 
         
     global_parameters['backup_server_pgsql_bin_dir'] = get_backup_server_pgsql_bin_dir(db)
@@ -596,7 +596,7 @@ def main():
 
         global_parameters['execution_status'] = 'ERROR'
         global_parameters['error_message'] = 'Backup release > Target pgsql node release'
-        #register_restore_catalog(db)
+        register_restore_catalog(db)
         sys.exit(1) 
 
     #
@@ -611,14 +611,14 @@ def main():
 
         global_parameters['execution_status'] = 'ERROR'
         global_parameters['error_message'] = 'The target database already exists in the target PgSQL node'
-        #register_restore_catalog(db)
+        register_restore_catalog(db)
         sys.exit(1) 
         
     restore_roles(db)
     restore_dbconfig(db)
     restore_database(db)
     
-    #register_restore_catalog(db)
+    register_restore_catalog(db)
 
 
 # ############################################
