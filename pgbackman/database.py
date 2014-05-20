@@ -1179,6 +1179,51 @@ class pgbackman_db():
     # ############################################
     # Method 
     # ############################################
+           
+    def register_restore_catalog(self,restore_def,procpid,backup_server_id,target_pgsql_node_id,source_dbname,target_dbname,renamed_dbname,started,finished,duration,restore_log_file,
+                                 global_log_file,execution_status,error_message,role_list,target_pgsql_node_release,backup_pg_release):
+        
+        """A function to update the restore job catalog"""
+
+
+        try:
+            self.pg_connect()
+ 
+            if self.cur:
+                try:
+
+                    self.cur.execute('SELECT register_restore_catalog(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',(restore_def,
+                                                                                                                            procpid,
+                                                                                                                            backup_server_id,
+                                                                                                                            target_pgsql_node_id,
+                                                                                                                            source_dbname,
+                                                                                                                            target_dbname,
+                                                                                                                            renamed_dbname,
+                                                                                                                            started,
+                                                                                                                            finished,
+                                                                                                                            duration,
+                                                                                                                            restore_log_file,
+                                                                                                                            global_log_file,
+                                                                                                                            execution_status,
+                                                                                                                            error_message,
+                                                                                                                            role_list,
+                                                                                                                            target_pgsql_node_release,
+                                                                                                                            backup_pg_release))
+
+                    self.conn.commit()                        
+                    
+                except psycopg2.Error as e:
+                    raise e
+
+            self.pg_close() 
+
+        except psycopg2.Error as e:
+            raise e
+
+
+    # ############################################
+    # Method 
+    # ############################################
             
     def print_results_table(self,cur,colnames,left_columns):
         '''A function to print a table with sql results'''

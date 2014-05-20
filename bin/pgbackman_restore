@@ -98,7 +98,7 @@ def restore_roles(db):
                     
                     global_parameters['execution_status'] = 'ERROR'
                     global_parameters['error_message'] = 'Roles restore returncode: ' + str(proc.returncode)
-                     #update_restore_definition(db)
+                     #register_restore_catalog(db)
                     sys.exit(1)
         
                 else:
@@ -109,7 +109,7 @@ def restore_roles(db):
         
         global_parameters['execution_status'] = 'ERROR'
         global_parameters['error_message'] = 'Problems restoring roles - ' + str(e)
-        #update_restore_definition(db)
+        #register_restore_catalog(db)
         sys.exit(1)
            
 
@@ -192,7 +192,7 @@ def restore_dbconfig(db):
                     
                     global_parameters['execution_status'] = 'ERROR'
                     global_parameters['error_message'] = 'DBconfig restore returncode: ' + str(proc.returncode)
-                     #update_restore_definition(db)
+                     #register_restore_catalog(db)
                     sys.exit(1)
         
                 else:
@@ -203,7 +203,7 @@ def restore_dbconfig(db):
         
         global_parameters['execution_status'] = 'ERROR'
         global_parameters['error_message'] = 'Problems restoring DBconfig - ' + str(e)
-        #update_restore_definition(db)
+        #register_restore_catalog(db)
         sys.exit(1)
            
 
@@ -238,7 +238,7 @@ def restore_database(db):
             
             global_parameters['execution_status'] = 'ERROR'
             global_parameters['error_message'] = 'Database restore returncode: ' + str(proc.returncode)
-                #update_restore_definition(db)
+                #register_restore_catalog(db)
             sys.exit(1)
         
         else:
@@ -249,7 +249,7 @@ def restore_database(db):
         
         global_parameters['execution_status'] = 'ERROR'
         global_parameters['error_message'] = 'Problems restoring Database - ' + str(e)
-        #update_restore_definition(db)
+        #register_restore_catalog(db)
         sys.exit(1)
 
 
@@ -306,7 +306,7 @@ def get_pgsql_node_release(db,db_pgnode):
         logs.logger.critical('Could not get the postgreSQL release for this PgSQL node: %s',global_parameters['pgsql_node_fqdn'])
         global_parameters['execution_status'] = 'ERROR'
         global_parameters['error_message'] = 'Problems getting pgsql release'
-        #update_restore_definition(db)
+        #register_restore_catalog(db)
         sys.exit(1)
     
 
@@ -355,7 +355,7 @@ def get_backup_server_parameters_from_cache(db,backup_server_fqdn):
         logs.logger.error('Could not read the cache file for the backup server: %s - %s',backup_server_fqdn,e)
         global_parameters['execution_status'] = 'ERROR'
         global_parameters['error_message'] = 'Problems getting backup server cache data'
-        #update_restore_definition(db)
+        #register_restore_catalog(db)
 
         sys.exit(1)
 
@@ -382,9 +382,93 @@ def get_pgsql_node_parameters_from_cache(db):
         logs.logger.critical('Could not read the cache file for the PgSQL node: %s - %s',global_parameters['pgsql_node_fqdn'],e)
         global_parameters['execution_status'] = 'ERROR'
         global_parameters['error_message'] = 'Problems getting pgsql node cache data'
-         #update_restore_definition(db)
+         #register_restore_catalog(db)
 
         sys.exit(1)
+
+
+# ############################################
+# Function register_restore_catalog()
+# ############################################
+  
+def register_restore_catalog(db):
+    '''Update the restore catalog information in the database'''
+
+    global global_parameters
+
+    global_parameters['restore_stop'] = datetime.datetime.now()
+    duration = global_parameters['restore_stop'] - global_parameters['restore_start']
+
+    restore_log_file = global_parameters['restore_log_file']
+
+    #
+    # Updating database
+    #
+
+    try:
+        procpid = os.getpid()
+        db.register_restore_catalog(global_parameters['restore_def'],
+                                    procpid,
+                                    global_parameters['backup_server_id'],  
+                                    global_parameters['target_pgsql_node_id'],
+                                    global_parameters['source_dbname'],
+                                    global_parameters['target_dbname'],
+                                    global_parameters['renamed_dbname'],
+                                    global_parameters['restore_start'],
+                                    global_parameters['restore_stop'],
+                                    duration,
+                                    restore_log_file,
+                                    global_parameters['global_log_file'],
+                                    global_parameters['execution_status'],
+                                    global_parameters['error_message'],
+                                    global_parameters['role_list'],
+                                    global_parameters['target_pgsql_node_release'].replace('_','.'),
+                                    global_parameters['pg_release'].replace('_','.')
+                                    )
+    
+
+        logs.logger.info('Restore job catalog for RestoreDef: %s updated in the database',str(global_parameters['restore_def']))
+        
+    except Exception as e:
+
+        #
+        # We create a pending log file if we can not update the
+        # database.  This file will be processed by
+        # pgbackman_maintenance later.
+        # 
+
+        logs.logger.warning('Problems updating the restore job catalog for RestoreDef: %s in the database - %s',str(global_parameters['restore_def']),e)
+
+        pending_log_file = ''
+        
+        try:
+            procpid = os.getpid()
+            pending_log_file = global_parameters['backup_server_pending_registration_dir'] + '/restore_jobs_pending_log_updates_nodeid_' + str(global_parameters['target_pgsql_node_id']) + '_' + str(procpid) + '.log'
+                
+            with open(pending_log_file,'w+') as catalog_pending:
+                catalog_pending.write(str(global_parameters['restore_def']) + '::' +
+                                      str(procpid) + '::' +
+                                      str(global_parameters['backup_server_id']) + '::' +   
+                                      str(global_parameters['target_pgsql_node_id']) + '::' +
+                                      global_parameters['source_dbname'] + '::' +
+                                      global_parameters['target_dbname'] + '::' +
+                                      global_parameters['renamed_dbname'] + '::' +
+                                      str(global_parameters['restore_start']) + '::' +
+                                      str(global_parameters['restore_stop']) + '::' +
+                                      str(duration) + '::' +
+                                      restore_log_file + '::' +
+                                      global_parameters['global_log_file'] + '::' +
+                                      global_parameters['execution_status'] + '::' +
+                                      global_parameters['error_message'] + '::' +
+                                      global_parameters['role_list'] + '::' +
+                                      global_parameters['target_pgsql_node_release'].replace('_','.') + '::' +
+                                      global_parameters['pg_release'].replace('_','.') + '::' +
+                                      '\n')
+                
+                logs.logger.info('Restore catalog pending log file: %s created',pending_log_file)
+        
+        except Exception as e:
+            logs.logger.error('Could not generate the restore catalog pending log file: %s - %s',pending_log_file,e)
 
 
 # ##############################################
@@ -430,6 +514,13 @@ def main():
     pgbackman_dsn = conf.dsn
 
     global_parameters['tmp_dir'] = conf.tmp_dir
+    global_parameters['global_log_file'] = conf.log_file
+    global_parameters['restore_start'] = datetime.datetime.now()
+
+    global_parameters['error_message'] = ''
+    global_parameters['role_list'] = [] 
+
+    global_parameters['target_pgsql_node_release'] = ''
 
     db = pgbackman_db(pgbackman_dsn,'pgbackman_restore')
  
@@ -482,13 +573,15 @@ def main():
         
         global_parameters['execution_status'] = 'ERROR'
         global_parameters['error_message'] = 'Target PgSQL node not available'
-        #update_restore_definition(db)
+        #register_restore_catalog(db)
         sys.exit(1) 
         
     global_parameters['backup_server_pgsql_bin_dir'] = get_backup_server_pgsql_bin_dir(db)
 
-    version_target_pgsql_node = int(get_pgsql_node_release(db,db_pgnode).replace('_',''))
-    version_backup = int(global_parameters['pg_release'].replace('_',''))
+    global_parameters['target_pgsql_node_release'] = get_pgsql_node_release(db,db_pgnode)
+
+    target_pgsql_node_release = int(global_parameters['target_pgsql_node_release'].replace('_',''))
+    backup_release = int(global_parameters['pg_release'].replace('_',''))
 
     #
     # Check if the postgreSQL version of the tools used for the backup
@@ -496,14 +589,14 @@ def main():
     # the backup job with an error if it is newer
     #
 
-    if version_backup > version_target_pgsql_node:
+    if backup_release > target_pgsql_node_release:
         logs.logger.critical('The postgreSQL version (%s) of the tools used for the backup is newer than the version (%s) running in the target pgsql node. Stopping restore process.',
-                             version_backup,
-                             version_target_pgsql_node)
+                             global_parameters['pg_release'],
+                             global_parameters['target_pgsql_node_release'].replace('_','.'))
 
         global_parameters['execution_status'] = 'ERROR'
-        global_parameters['error_message'] = 'Backup version > Target pgsql node version'
-        #update_restore_definition(db)
+        global_parameters['error_message'] = 'Backup release > Target pgsql node release'
+        #register_restore_catalog(db)
         sys.exit(1) 
 
     #
@@ -518,14 +611,14 @@ def main():
 
         global_parameters['execution_status'] = 'ERROR'
         global_parameters['error_message'] = 'The target database already exists in the target PgSQL node'
-        #update_restore_definition(db)
+        #register_restore_catalog(db)
         sys.exit(1) 
         
     restore_roles(db)
     restore_dbconfig(db)
     restore_database(db)
     
-    #update_restore_definition(db)
+    #register_restore_catalog(db)
 
 
 # ############################################

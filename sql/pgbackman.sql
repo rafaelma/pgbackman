@@ -575,14 +575,17 @@ CREATE TABLE restore_catalog(
   target_pgsql_node_id INTEGER NOT NULL,
   source_dbname TEXT NOT NULL,
   target_dbname TEXT NOT NULL,
+  renamed_dbname TEXT, 
   started TIMESTAMP WITH TIME ZONE,
   finished TIMESTAMP WITH TIME ZONE,
   duration INTERVAL,
   restore_log_file TEXT,
+  global_log_file TEXT NOT NULL,
   execution_status TEXT,
   error_message TEXT,
   role_list TEXT[],
-  pgsql_node_release TEXT
+  target_pgsql_node_release TEXT,
+  backup_pg_release TEXT
 );
 
 ALTER TABLE restore_catalog ADD PRIMARY KEY (restore_id);
@@ -3207,6 +3210,89 @@ CREATE OR REPLACE FUNCTION delete_snapshot_definition(INTEGER) RETURNS VOID
 $$;
 
 ALTER FUNCTION  delete_snapshot_definition(INTEGER) OWNER TO pgbackman_role_rw;
+
+
+-- ------------------------------------------------------------
+-- Function: register_restore_catalog()
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION register_restore_catalog(BIGINT,INTEGER,INTEGER,INTEGER,TEXT,TEXT,TEXT,TIMESTAMP WITH TIME ZONE,TIMESTAMP WITH TIME ZONE,INTERVAL,TEXT,TEXT,TEXT,TEXT,TEXT[],TEXT,TEXT) RETURNS VOID
+ LANGUAGE plpgsql 
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ DECLARE
+
+  restore_def_ ALIAS FOR $1;
+  procpid_ ALIAS FOR $2;
+  backup_server_id_ ALIAS FOR $3;
+  pgsql_node_id_ ALIAS FOR $4;
+  source_dbname_ ALIAS FOR $5;
+  target_dbname_ ALIAS FOR $6;
+  renamed_dbname ALIAS FOR $7;
+  started_ ALIAS FOR $8;
+  finished_ ALIAS FOR $9;
+  duration_ ALIAS FOR $10;
+  restore_log_file_ ALIAS FOR $11;
+  global_log_file_ ALIAS FOR $12;
+  execution_status_ ALIAS FOR $13;
+  error_message_ ALIAS FOR $14;
+  role_list_ ALIAS FOR $15;
+  target_pgsql_node_release_ ALIAS FOR $16;
+  backup_pg_release_ ALIAS FOR $17;
+
+  v_msg     TEXT;
+  v_detail  TEXT;
+  v_context TEXT; 
+
+ BEGIN
+    EXECUTE 'INSERT INTO restore_catalog (restore_def,
+					  procpid,
+					  backup_server_id,
+					  target_pgsql_node_id,
+					  source_dbname,
+					  target_dbname,
+					  renamed_dbname,
+					  started,
+					  finished,
+					  duration,
+					  restore_log_file,
+                                 	  global_log_file,
+					  execution_status,
+					  error_message,
+					  role_list,
+					  target_pgsql_node_release,
+					  backup_pg_release) 
+	     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)'
+    USING  restore_def_,
+    	   procpid_,
+	   backup_server_id_,
+	   target_pgsql_node_id_,
+	   source_dbname_,
+	   target_dbname_,
+	   renamed_dbname_,
+	   started_,
+	   finished_,
+	   duration_,
+	   restore_log_file_,
+           global_log_file_,
+	   execution_status_,
+	   error_message_,
+	   role_list_,
+	   target_pgsql_node_release_,
+	   backup_pg_release_;
+
+ EXCEPTION WHEN others THEN
+   	GET STACKED DIAGNOSTICS	
+            v_msg     = MESSAGE_TEXT,
+            v_detail  = PG_EXCEPTION_DETAIL,
+            v_context = PG_EXCEPTION_CONTEXT;
+        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \n----------------------------------------------\n', v_msg, v_detail;
+  
+ END;
+$$;
+
+ALTER FUNCTION register_restore_catalog(BIGINT,INTEGER,INTEGER,INTEGER,TEXT,TEXT,TEXT,TIMESTAMP WITH TIME ZONE,TIMESTAMP WITH TIME ZONE,INTERVAL,TEXT,TEXT,TEXT,TEXT,TEXT[],TEXT,TEXT) OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------------
