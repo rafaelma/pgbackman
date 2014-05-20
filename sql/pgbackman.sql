@@ -2872,7 +2872,7 @@ BEGIN
 		   ' --node-id ' || pgsql_node_id_ ||
 		   ' --node-port ' || pgsql_node_port ||
 		   ' --node-user ' || admin_user || 
-		   ' --restore-id ' || restore_row.restore_def::TEXT ||
+		   ' --restore-def ' || restore_row.restore_def::TEXT ||
 		   ' --pgdump-file ' || restore_row.pg_dump_file ||
 		   ' --pgdump-roles-file ' || restore_row.pg_dump_roles_file ||
 		   ' --pgdump-dbconfig-file ' || restore_row.pg_dump_dbconfig_file ||

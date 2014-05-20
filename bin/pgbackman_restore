@@ -478,7 +478,7 @@ def main():
     if not check_pgnode_db:
         logs.logger.critical('The PgSQL node "%s" is not available. Shutting down the restore job with RestoreID: %s',
                              global_parameters['pgsql_node_fqdn'],
-                             str(global_parameters['restore_id']))
+                             str(global_parameters['restore_def']))
         
         global_parameters['execution_status'] = 'ERROR'
         global_parameters['error_message'] = 'Target PgSQL node not available'
@@ -553,7 +553,7 @@ if __name__ == '__main__':
     parser.add_argument('--node-id', metavar='PGSQL-ID', required=True, help='PgSQL node ID', dest='pgsql_node_id')
     parser.add_argument('--node-port', metavar='PGSQL-NODE-PORT', required=True, help='PgSQL node port', dest='pgsql_node_port')
     parser.add_argument('--node-user', metavar='PGSQL-NODE_ADMIN-USER', required=True, help='PgSQL node admin user', dest='pgsql_node_admin_user')
-    parser.add_argument('--restore-id', metavar='RESTORE-ID', required=True, help='Restore ID', dest='restore_id')
+    parser.add_argument('--restore-def', metavar='RESTORE-DEF', required=True, help='Restore ID', dest='restore_def')
     parser.add_argument('--pgdump-file', metavar='PGDUMP-FILE', required=True, help='Pg_dump file', dest='pgdump_file')
     parser.add_argument('--pgdump-roles-file', metavar='PGDUMP-ROLES-FILE', required=True, help='Pg_dump role file', dest='pgdump_roles_file')
     parser.add_argument('--pgdump-dbconfig-file', metavar='PGDUMP-DBCONFIG-FILE', required=True, help='Pg_dump dbconfig file', dest='pgdump_dbconfig_file')
@@ -592,8 +592,8 @@ if __name__ == '__main__':
         logs.logger.error('PgSQL node admin user parameter not defined')
         sys.exit(1)
     
-    if args.restore_id:
-        global_parameters['restore_id'] = args.restore_id
+    if args.restore_def:
+        global_parameters['restore_def'] = args.restore_def
     else:
         logs.logger.error('RestoreID parameter not defined')
         sys.exit(1)
