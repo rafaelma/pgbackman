@@ -2363,16 +2363,16 @@ class pgbackman_cli(cmd.Cmd):
         
 
     # ############################################
-    # Method do_show_empty_backup_job_catalogs
+    # Method do_show_empty_backup_catalogs
     # ############################################
 
-    def do_show_empty_backup_job_catalogs(self,args):
+    def do_show_empty_backup_catalogs(self,args):
         """
         DESCRIPTION:
         Command to get a list with all backup definitions with empty catalogs
 
         COMMAND:
-        show_empty_backup_job_catalogs
+        show_empty_backup_catalogs
 
         """     
 
@@ -2385,7 +2385,7 @@ class pgbackman_cli(cmd.Cmd):
         
         if len(arg_list) == 0:
             try:
-                self.db.show_empty_backup_job_catalogs()
+                self.db.show_empty_backup_catalogs()
                 
             except Exception as e:
                 print "\n[ERROR]: ",e

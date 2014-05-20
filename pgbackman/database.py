@@ -1061,7 +1061,7 @@ class pgbackman_db():
     # Method 
     # ############################################
            
-    def register_backup_job_catalog(self,def_id,procpid,backup_server_id,pgsql_node_id,dbname,started,finished,duration,pg_dump_file,
+    def register_backup_catalog(self,def_id,procpid,backup_server_id,pgsql_node_id,dbname,started,finished,duration,pg_dump_file,
                                     pg_dump_file_size,pg_dump_log_file,pg_dump_roles_file,pg_dump_roles_file_size,pg_dump_roles_log_file,
                                     pg_dump_dbconfig_file,pg_dump_dbconfig_file_size,pg_dump_dbconfig_log_file,global_log_file,execution_status,
                                     execution_method,error_message,snapshot_id,role_list,pgsql_node_release):
@@ -1075,7 +1075,7 @@ class pgbackman_db():
             if self.cur:
                 try:
 
-                    self.cur.execute('SELECT register_backup_job_catalog(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',(def_id,
+                    self.cur.execute('SELECT register_backup_catalog(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',(def_id,
                                                                                                                                                     procpid,
                                                                                                                                                     backup_server_id,
                                                                                                                                                     pgsql_node_id,
@@ -1240,7 +1240,7 @@ class pgbackman_db():
     # Method 
     # ############################################
                       
-    def delete_backup_job_catalog(self,bck_id):
+    def delete_backup_catalog(self,bck_id):
         """A function to delete entries from backup job catalog"""
 
         try:
@@ -1248,7 +1248,7 @@ class pgbackman_db():
 
             if self.cur:
                 try:
-                    self.cur.execute('SELECT delete_backup_job_catalog(%s)',(bck_id,))
+                    self.cur.execute('SELECT delete_backup_catalog(%s)',(bck_id,))
                     self.conn.commit()                        
               
                 except psycopg2.Error as e:
@@ -1453,43 +1453,43 @@ class pgbackman_db():
                     self.cur.execute("SELECT count(*) FROM pgsql_node WHERE status = 'STOPPED'")
                     pgsql_node_stopped_cnt = self.cur.fetchone()[0]
                     
-                    self.cur.execute("SELECT count(*) FROM (SELECT DISTINCT ON (pgsql_node_id,dbname) def_id FROM backup_job_definition) AS cnt")
+                    self.cur.execute("SELECT count(*) FROM (SELECT DISTINCT ON (pgsql_node_id,dbname) def_id FROM backup_definition) AS cnt")
                     dbname_cnt = self.cur.fetchone()[0]
 
-                    self.cur.execute("SELECT count(*) FROM backup_job_definition WHERE job_status = 'ACTIVE'")
+                    self.cur.execute("SELECT count(*) FROM backup_definition WHERE job_status = 'ACTIVE'")
                     backup_jobs_active_cnt = self.cur.fetchone()[0]
                     
-                    self.cur.execute("SELECT count(*) FROM backup_job_definition WHERE job_status = 'STOPPED'")
+                    self.cur.execute("SELECT count(*) FROM backup_definition WHERE job_status = 'STOPPED'")
                     backup_jobs_stopped_cnt = self.cur.fetchone()[0]
                     
-                    self.cur.execute("SELECT count(*) FROM backup_job_definition WHERE backup_code = 'CLUSTER'")
+                    self.cur.execute("SELECT count(*) FROM backup_definition WHERE backup_code = 'CLUSTER'")
                     backup_jobs_cluster_cnt = self.cur.fetchone()[0]
 
-                    self.cur.execute("SELECT count(*) FROM backup_job_definition WHERE backup_code = 'DATA'")
+                    self.cur.execute("SELECT count(*) FROM backup_definition WHERE backup_code = 'DATA'")
                     backup_jobs_data_cnt = self.cur.fetchone()[0]
 
-                    self.cur.execute("SELECT count(*) FROM backup_job_definition WHERE backup_code = 'FULL'")
+                    self.cur.execute("SELECT count(*) FROM backup_definition WHERE backup_code = 'FULL'")
                     backup_jobs_full_cnt = self.cur.fetchone()[0]
 
-                    self.cur.execute("SELECT count(*) FROM backup_job_definition WHERE backup_code = 'SCHEMA'")
+                    self.cur.execute("SELECT count(*) FROM backup_definition WHERE backup_code = 'SCHEMA'")
                     backup_jobs_schema_cnt = self.cur.fetchone()[0]
                    
-                    self.cur.execute("SELECT count(*) FROM backup_job_catalog WHERE execution_status = 'SUCCEEDED'")
+                    self.cur.execute("SELECT count(*) FROM backup_catalog WHERE execution_status = 'SUCCEEDED'")
                     backup_catalog_succeeded_cnt = self.cur.fetchone()[0]
                     
-                    self.cur.execute("SELECT count(*) FROM backup_job_catalog WHERE execution_status = 'ERROR'")
+                    self.cur.execute("SELECT count(*) FROM backup_catalog WHERE execution_status = 'ERROR'")
                     backup_catalog_error_cnt = self.cur.fetchone()[0]
          
-                    self.cur.execute("SELECT pg_size_pretty(sum(pg_dump_file_size+pg_dump_roles_file_size+pg_dump_dbconfig_file_size)) FROM backup_job_catalog")
+                    self.cur.execute("SELECT pg_size_pretty(sum(pg_dump_file_size+pg_dump_roles_file_size+pg_dump_dbconfig_file_size)) FROM backup_catalog")
                     backup_space = self.cur.fetchone()[0]
  
-                    self.cur.execute("SELECT sum(duration) FROM backup_job_catalog")
+                    self.cur.execute("SELECT sum(duration) FROM backup_catalog")
                     backup_duration = self.cur.fetchone()[0]
                     
-                    self.cur.execute("select date_trunc('seconds',min(finished)) from backup_job_catalog;")
+                    self.cur.execute("select date_trunc('seconds',min(finished)) from backup_catalog;")
                     oldest_backup_job = self.cur.fetchone()[0]
                     
-                    self.cur.execute("select date_trunc('seconds',max(finished)) from backup_job_catalog;")
+                    self.cur.execute("select date_trunc('seconds',max(finished)) from backup_catalog;")
                     newest_backup_job = self.cur.fetchone()[0]
                     
                     self.cur.execute("SELECT count(*) FROM job_queue")
@@ -1554,46 +1554,46 @@ class pgbackman_db():
 
                     backup_server_fqdn = self.get_backup_server_fqdn(backup_server_id)
 
-                    self.cur.execute("SELECT count(*) FROM (SELECT DISTINCT ON (pgsql_node_id) pgsql_node_id FROM backup_job_definition WHERE backup_server_id = %s) AS cnt",(backup_server_id,))
+                    self.cur.execute("SELECT count(*) FROM (SELECT DISTINCT ON (pgsql_node_id) pgsql_node_id FROM backup_definition WHERE backup_server_id = %s) AS cnt",(backup_server_id,))
                     pgsql_node_cnt = self.cur.fetchone()[0]
                     
-                    self.cur.execute("SELECT count(*) FROM (SELECT DISTINCT ON (pgsql_node_id,dbname) def_id FROM backup_job_definition WHERE backup_server_id = %s) AS cnt",(backup_server_id,))
+                    self.cur.execute("SELECT count(*) FROM (SELECT DISTINCT ON (pgsql_node_id,dbname) def_id FROM backup_definition WHERE backup_server_id = %s) AS cnt",(backup_server_id,))
                     dbname_cnt = self.cur.fetchone()[0]
 
-                    self.cur.execute("SELECT count(*) FROM backup_job_definition WHERE job_status = 'ACTIVE' AND backup_server_id = %s",(backup_server_id,))
+                    self.cur.execute("SELECT count(*) FROM backup_definition WHERE job_status = 'ACTIVE' AND backup_server_id = %s",(backup_server_id,))
                     backup_jobs_active_cnt = self.cur.fetchone()[0]
                     
-                    self.cur.execute("SELECT count(*) FROM backup_job_definition WHERE job_status = 'STOPPED' AND backup_server_id = %s",(backup_server_id,))
+                    self.cur.execute("SELECT count(*) FROM backup_definition WHERE job_status = 'STOPPED' AND backup_server_id = %s",(backup_server_id,))
                     backup_jobs_stopped_cnt = self.cur.fetchone()[0]
                     
-                    self.cur.execute("SELECT count(*) FROM backup_job_definition WHERE backup_code = 'CLUSTER' AND backup_server_id = %s",(backup_server_id,))
+                    self.cur.execute("SELECT count(*) FROM backup_definition WHERE backup_code = 'CLUSTER' AND backup_server_id = %s",(backup_server_id,))
                     backup_jobs_cluster_cnt = self.cur.fetchone()[0]
 
-                    self.cur.execute("SELECT count(*) FROM backup_job_definition WHERE backup_code = 'DATA' AND backup_server_id = %s",(backup_server_id,))
+                    self.cur.execute("SELECT count(*) FROM backup_definition WHERE backup_code = 'DATA' AND backup_server_id = %s",(backup_server_id,))
                     backup_jobs_data_cnt = self.cur.fetchone()[0]
 
-                    self.cur.execute("SELECT count(*) FROM backup_job_definition WHERE backup_code = 'FULL' AND backup_server_id = %s",(backup_server_id,))
+                    self.cur.execute("SELECT count(*) FROM backup_definition WHERE backup_code = 'FULL' AND backup_server_id = %s",(backup_server_id,))
                     backup_jobs_full_cnt = self.cur.fetchone()[0]
 
-                    self.cur.execute("SELECT count(*) FROM backup_job_definition WHERE backup_code = 'SCHEMA' AND backup_server_id = %s",(backup_server_id,))
+                    self.cur.execute("SELECT count(*) FROM backup_definition WHERE backup_code = 'SCHEMA' AND backup_server_id = %s",(backup_server_id,))
                     backup_jobs_schema_cnt = self.cur.fetchone()[0]
                    
-                    self.cur.execute("SELECT count(*) FROM backup_job_catalog WHERE execution_status = 'SUCCEEDED' AND backup_server_id = %s",(backup_server_id,))
+                    self.cur.execute("SELECT count(*) FROM backup_catalog WHERE execution_status = 'SUCCEEDED' AND backup_server_id = %s",(backup_server_id,))
                     backup_catalog_succeeded_cnt = self.cur.fetchone()[0]
                     
-                    self.cur.execute("SELECT count(*) FROM backup_job_catalog WHERE execution_status = 'ERROR' AND backup_server_id = %s",(backup_server_id,))
+                    self.cur.execute("SELECT count(*) FROM backup_catalog WHERE execution_status = 'ERROR' AND backup_server_id = %s",(backup_server_id,))
                     backup_catalog_error_cnt = self.cur.fetchone()[0]
          
-                    self.cur.execute("SELECT pg_size_pretty(sum(pg_dump_file_size+pg_dump_roles_file_size+pg_dump_dbconfig_file_size)) FROM backup_job_catalog WHERE backup_server_id = %s",(backup_server_id,))
+                    self.cur.execute("SELECT pg_size_pretty(sum(pg_dump_file_size+pg_dump_roles_file_size+pg_dump_dbconfig_file_size)) FROM backup_catalog WHERE backup_server_id = %s",(backup_server_id,))
                     backup_space = self.cur.fetchone()[0]
  
-                    self.cur.execute("SELECT sum(duration) FROM backup_job_catalog WHERE backup_server_id = %s",(backup_server_id,))
+                    self.cur.execute("SELECT sum(duration) FROM backup_catalog WHERE backup_server_id = %s",(backup_server_id,))
                     backup_duration = self.cur.fetchone()[0]
                     
-                    self.cur.execute("select date_trunc('seconds',min(finished)) from backup_job_catalog WHERE backup_server_id = %s",(backup_server_id,))
+                    self.cur.execute("select date_trunc('seconds',min(finished)) from backup_catalog WHERE backup_server_id = %s",(backup_server_id,))
                     oldest_backup_job = self.cur.fetchone()[0]
                     
-                    self.cur.execute("select date_trunc('seconds',max(finished)) from backup_job_catalog WHERE backup_server_id = %s",(backup_server_id,))
+                    self.cur.execute("select date_trunc('seconds',max(finished)) from backup_catalog WHERE backup_server_id = %s",(backup_server_id,))
                     newest_backup_job = self.cur.fetchone()[0]
                     
                     self.cur.execute("SELECT count(*) FROM job_queue WHERE backup_server_id = %s",(backup_server_id,))
@@ -1656,46 +1656,46 @@ class pgbackman_db():
 
                     pgsql_node_fqdn = self.get_pgsql_node_fqdn(pgsql_node_id)
 
-                    self.cur.execute("SELECT count(*) FROM (SELECT DISTINCT ON (backup_server_id) backup_server_id FROM backup_job_definition WHERE pgsql_node_id = %s) AS cnt",(pgsql_node_id,))
+                    self.cur.execute("SELECT count(*) FROM (SELECT DISTINCT ON (backup_server_id) backup_server_id FROM backup_definition WHERE pgsql_node_id = %s) AS cnt",(pgsql_node_id,))
                     backup_server_cnt = self.cur.fetchone()[0]
                     
-                    self.cur.execute("SELECT count(*) FROM (SELECT DISTINCT ON (pgsql_node_id,dbname) def_id FROM backup_job_definition WHERE pgsql_node_id = %s) AS cnt",(pgsql_node_id,))
+                    self.cur.execute("SELECT count(*) FROM (SELECT DISTINCT ON (pgsql_node_id,dbname) def_id FROM backup_definition WHERE pgsql_node_id = %s) AS cnt",(pgsql_node_id,))
                     dbname_cnt = self.cur.fetchone()[0]
 
-                    self.cur.execute("SELECT count(*) FROM backup_job_definition WHERE job_status = 'ACTIVE' AND pgsql_node_id = %s",(pgsql_node_id,))
+                    self.cur.execute("SELECT count(*) FROM backup_definition WHERE job_status = 'ACTIVE' AND pgsql_node_id = %s",(pgsql_node_id,))
                     backup_jobs_active_cnt = self.cur.fetchone()[0]
                     
-                    self.cur.execute("SELECT count(*) FROM backup_job_definition WHERE job_status = 'STOPPED' AND pgsql_node_id = %s",(pgsql_node_id,))
+                    self.cur.execute("SELECT count(*) FROM backup_definition WHERE job_status = 'STOPPED' AND pgsql_node_id = %s",(pgsql_node_id,))
                     backup_jobs_stopped_cnt = self.cur.fetchone()[0]
                     
-                    self.cur.execute("SELECT count(*) FROM backup_job_definition WHERE backup_code = 'CLUSTER' AND pgsql_node_id = %s",(pgsql_node_id,))
+                    self.cur.execute("SELECT count(*) FROM backup_definition WHERE backup_code = 'CLUSTER' AND pgsql_node_id = %s",(pgsql_node_id,))
                     backup_jobs_cluster_cnt = self.cur.fetchone()[0]
 
-                    self.cur.execute("SELECT count(*) FROM backup_job_definition WHERE backup_code = 'DATA' AND pgsql_node_id = %s",(pgsql_node_id,))
+                    self.cur.execute("SELECT count(*) FROM backup_definition WHERE backup_code = 'DATA' AND pgsql_node_id = %s",(pgsql_node_id,))
                     backup_jobs_data_cnt = self.cur.fetchone()[0]
 
-                    self.cur.execute("SELECT count(*) FROM backup_job_definition WHERE backup_code = 'FULL' AND pgsql_node_id = %s",(pgsql_node_id,))
+                    self.cur.execute("SELECT count(*) FROM backup_definition WHERE backup_code = 'FULL' AND pgsql_node_id = %s",(pgsql_node_id,))
                     backup_jobs_full_cnt = self.cur.fetchone()[0]
 
-                    self.cur.execute("SELECT count(*) FROM backup_job_definition WHERE backup_code = 'SCHEMA' AND pgsql_node_id = %s",(pgsql_node_id,))
+                    self.cur.execute("SELECT count(*) FROM backup_definition WHERE backup_code = 'SCHEMA' AND pgsql_node_id = %s",(pgsql_node_id,))
                     backup_jobs_schema_cnt = self.cur.fetchone()[0]
                    
-                    self.cur.execute("SELECT count(*) FROM backup_job_catalog WHERE execution_status = 'SUCCEEDED' AND pgsql_node_id = %s",(pgsql_node_id,))
+                    self.cur.execute("SELECT count(*) FROM backup_catalog WHERE execution_status = 'SUCCEEDED' AND pgsql_node_id = %s",(pgsql_node_id,))
                     backup_catalog_succeeded_cnt = self.cur.fetchone()[0]
                     
-                    self.cur.execute("SELECT count(*) FROM backup_job_catalog WHERE execution_status = 'ERROR' AND pgsql_node_id = %s",(pgsql_node_id,))
+                    self.cur.execute("SELECT count(*) FROM backup_catalog WHERE execution_status = 'ERROR' AND pgsql_node_id = %s",(pgsql_node_id,))
                     backup_catalog_error_cnt = self.cur.fetchone()[0]
          
-                    self.cur.execute("SELECT pg_size_pretty(sum(pg_dump_file_size+pg_dump_roles_file_size+pg_dump_dbconfig_file_size)) FROM backup_job_catalog WHERE pgsql_node_id = %s",(pgsql_node_id,))
+                    self.cur.execute("SELECT pg_size_pretty(sum(pg_dump_file_size+pg_dump_roles_file_size+pg_dump_dbconfig_file_size)) FROM backup_catalog WHERE pgsql_node_id = %s",(pgsql_node_id,))
                     backup_space = self.cur.fetchone()[0]
  
-                    self.cur.execute("SELECT sum(duration) FROM backup_job_catalog WHERE pgsql_node_id = %s",(pgsql_node_id,))
+                    self.cur.execute("SELECT sum(duration) FROM backup_catalog WHERE pgsql_node_id = %s",(pgsql_node_id,))
                     backup_duration = self.cur.fetchone()[0]
                     
-                    self.cur.execute("select date_trunc('seconds',min(finished)) from backup_job_catalog WHERE pgsql_node_id = %s",(pgsql_node_id,))
+                    self.cur.execute("select date_trunc('seconds',min(finished)) from backup_catalog WHERE pgsql_node_id = %s",(pgsql_node_id,))
                     oldest_backup_job = self.cur.fetchone()[0]
                     
-                    self.cur.execute("select date_trunc('seconds',max(finished)) from backup_job_catalog WHERE pgsql_node_id = %s",(pgsql_node_id,))
+                    self.cur.execute("select date_trunc('seconds',max(finished)) from backup_catalog WHERE pgsql_node_id = %s",(pgsql_node_id,))
                     newest_backup_job = self.cur.fetchone()[0]
                     
                     self.cur.execute("SELECT count(*) FROM job_queue WHERE pgsql_node_id = %s",(pgsql_node_id,))
@@ -1818,7 +1818,7 @@ class pgbackman_db():
     # Method 
     # ############################################
 
-    def show_empty_backup_job_catalogs(self):
+    def show_empty_backup_catalogs(self):
         """A function to get a list with all backup definitions with empty catalogs"""
 
         try:
@@ -1826,7 +1826,7 @@ class pgbackman_db():
 
             if self.cur:
                 try:
-                    self.cur.execute('SELECT \"DefID\",\"Registered\",backup_server_id AS \"ID.\",\"Backup server\",pgsql_node_id AS \"ID\",\"PgSQL node\",\"DBname\",\"Schedule\",\"Code\",\"Retention\",\"Status\",\"Parameters\" FROM show_empty_backup_job_catalogs')
+                    self.cur.execute('SELECT \"DefID\",\"Registered\",backup_server_id AS \"ID.\",\"Backup server\",pgsql_node_id AS \"ID\",\"PgSQL node\",\"DBname\",\"Schedule\",\"Code\",\"Retention\",\"Status\",\"Parameters\" FROM show_empty_backup_catalogs')
                     self.conn.commit()
 
                     colnames = [desc[0] for desc in self.cur.description]

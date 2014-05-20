@@ -258,32 +258,9 @@ ALTER TABLE job_execution_method ADD PRIMARY KEY (code);
 ALTER TABLE job_execution_method OWNER TO pgbackman_role_rw;
 
 -- ------------------------------------------------------
--- Table: snapshot_definition_status
+-- Table: at_definition_status
 --
--- @Description: Status codes for snapshot definitions
---
--- Attributes:
---
--- @code:
--- @description:
--- ------------------------------------------------------
-
-\echo '# [Creating table: snapshot_definition_status]\n'
-
-CREATE TABLE snapshot_definition_status(
-
-  code CHARACTER VARYING(20) NOT NULL,
-  description TEXT
-);
-
-ALTER TABLE snapshot_definition_status ADD PRIMARY KEY (code);
-ALTER TABLE snapshot_definition_status OWNER TO pgbackman_role_rw;
-
-
--- ------------------------------------------------------
--- Table: restore_definition_status
---
--- @Description: Status codes for restore definitions
+-- @Description: Status codes for AT definitions
 --
 -- Attributes:
 --
@@ -291,17 +268,16 @@ ALTER TABLE snapshot_definition_status OWNER TO pgbackman_role_rw;
 -- @description:
 -- ------------------------------------------------------
 
-\echo '# [Creating table: restore_definition_status]\n'
+\echo '# [Creating table: at_definition_status]\n'
 
-CREATE TABLE restore_definition_status(
+CREATE TABLE at_definition_status(
 
   code CHARACTER VARYING(20) NOT NULL,
   description TEXT
 );
 
-ALTER TABLE restore_definition_status ADD PRIMARY KEY (code);
-ALTER TABLE restore_definition_status OWNER TO pgbackman_role_rw;
-
+ALTER TABLE at_definition_status ADD PRIMARY KEY (code);
+ALTER TABLE at_definition_status OWNER TO pgbackman_role_rw;
 
 -- ------------------------------------------------------
 -- Table: backup_server_default_config
@@ -382,7 +358,7 @@ ALTER TABLE job_queue OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------
--- Table: backup_job_definition
+-- Table: backup_definition
 --
 -- @Description: Backup jobs defined in Pgbackman 
 --
@@ -406,9 +382,9 @@ ALTER TABLE job_queue OWNER TO pgbackman_role_rw;
 -- @remarks
 -- ------------------------------------------------------
 
-\echo '# [Creating table: backup_job_definition]\n'
+\echo '# [Creating table: backup_definition]\n'
 
-CREATE TABLE backup_job_definition(
+CREATE TABLE backup_definition(
 
   def_id BIGSERIAL UNIQUE,
   registered TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
@@ -429,13 +405,13 @@ CREATE TABLE backup_job_definition(
   remarks TEXT
 );
 
-ALTER TABLE backup_job_definition ADD PRIMARY KEY (backup_server_id,pgsql_node_id,dbname,backup_code,extra_parameters);
+ALTER TABLE backup_definition ADD PRIMARY KEY (backup_server_id,pgsql_node_id,dbname,backup_code,extra_parameters);
 
-CREATE INDEX ON backup_job_definition(backup_server_id);
-CREATE INDEX ON backup_job_definition(pgsql_node_id);
-CREATE INDEX ON backup_job_definition(dbname);
+CREATE INDEX ON backup_definition(backup_server_id);
+CREATE INDEX ON backup_definition(pgsql_node_id);
+CREATE INDEX ON backup_definition(dbname);
 
-ALTER TABLE backup_job_definition OWNER TO pgbackman_role_rw;
+ALTER TABLE backup_definition OWNER TO pgbackman_role_rw;
 
 -- ------------------------------------------------------
 -- Table: snapshot_definition
@@ -507,7 +483,7 @@ ALTER TABLE snapshot_definition OWNER TO pgbackman_role_rw;
 
 CREATE TABLE restore_definition(
 
-  restore_id BIGSERIAL UNIQUE,
+  restore_def BIGSERIAL UNIQUE,
   registered TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   bck_id BIGINT NOT NULL,
   roles_to_restore TEXT [],
@@ -521,7 +497,7 @@ CREATE TABLE restore_definition(
   remarks TEXT
 );
 
-ALTER TABLE restore_definition ADD PRIMARY KEY (restore_id);
+ALTER TABLE restore_definition ADD PRIMARY KEY (restore_def);
 
 CREATE INDEX ON restore_definition(backup_server_id);
 CREATE INDEX ON restore_definition(target_pgsql_node_id);
@@ -529,16 +505,16 @@ CREATE INDEX ON restore_definition(target_pgsql_node_id);
 ALTER TABLE restore_definition OWNER TO pgbackman_role_rw;
 
 -- ------------------------------------------------------
--- Table: backup_job_catalog
+-- Table: backup_catalog
 --
 -- @Description: Catalog information about executed
 --               backup jobs.
 --
 -- ------------------------------------------------------
 
-\echo '# [Creating table: backup_job_catalog]\n'
+\echo '# [Creating table: backup_catalog]\n'
 
-CREATE TABLE backup_job_catalog(
+CREATE TABLE backup_catalog(
 
   bck_id BIGSERIAL,
   registered TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
@@ -568,15 +544,56 @@ CREATE TABLE backup_job_catalog(
   pgsql_node_release TEXT
 );
 
-ALTER TABLE backup_job_catalog ADD PRIMARY KEY (bck_id);
+ALTER TABLE backup_catalog ADD PRIMARY KEY (bck_id);
 
-CREATE INDEX ON backup_job_catalog(def_id);
-CREATE INDEX ON backup_job_catalog(snapshot_id);
-CREATE INDEX ON backup_job_catalog(backup_server_id);
-CREATE INDEX ON backup_job_catalog(pgsql_node_id);
-CREATE INDEX ON backup_job_catalog(dbname);
+CREATE INDEX ON backup_catalog(def_id);
+CREATE INDEX ON backup_catalog(snapshot_id);
+CREATE INDEX ON backup_catalog(backup_server_id);
+CREATE INDEX ON backup_catalog(pgsql_node_id);
+CREATE INDEX ON backup_catalog(dbname);
 
-ALTER TABLE backup_job_catalog OWNER TO pgbackman_role_rw;
+ALTER TABLE backup_catalog OWNER TO pgbackman_role_rw;
+
+
+-- ------------------------------------------------------
+-- Table: restore_catalog
+--
+-- @Description: Catalog information about executed
+--               restore jobs.
+--
+-- ------------------------------------------------------
+
+\echo '# [Creating table: restore_catalog]\n'
+
+CREATE TABLE restore_catalog(
+
+  restore_id BIGSERIAL,
+  registered TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  restore_def BIGINT DEFAULT NULL,
+  procpid INTEGER,
+  backup_server_id INTEGER NOT NULL,
+  target_pgsql_node_id INTEGER NOT NULL,
+  source_dbname TEXT NOT NULL,
+  target_dbname TEXT NOT NULL,
+  started TIMESTAMP WITH TIME ZONE,
+  finished TIMESTAMP WITH TIME ZONE,
+  duration INTERVAL,
+  restore_log_file TEXT,
+  execution_status TEXT,
+  error_message TEXT,
+  role_list TEXT[],
+  pgsql_node_release TEXT
+);
+
+ALTER TABLE restore_catalog ADD PRIMARY KEY (restore_id);
+
+CREATE INDEX ON restore_catalog(restore_def);
+CREATE INDEX ON restore_catalog(backup_server_id);
+CREATE INDEX ON restore_catalog(target_pgsql_node_id);
+CREATE INDEX ON restore_catalog(source_dbname);
+CREATE INDEX ON restore_catalog(target_dbname);
+
+ALTER TABLE restore_catalog OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------
@@ -675,34 +692,34 @@ ALTER TABLE ONLY job_queue
 ALTER TABLE ONLY job_queue
     ADD FOREIGN KEY (pgsql_node_id) REFERENCES pgsql_node (node_id) MATCH FULL ON DELETE RESTRICT;
 
-ALTER TABLE ONLY backup_job_definition
+ALTER TABLE ONLY backup_definition
     ADD FOREIGN KEY (backup_server_id) REFERENCES backup_server (server_id) MATCH FULL ON DELETE RESTRICT;
 
-ALTER TABLE ONLY backup_job_definition
+ALTER TABLE ONLY backup_definition
     ADD FOREIGN KEY (pgsql_node_id) REFERENCES pgsql_node (node_id) MATCH FULL ON DELETE RESTRICT;
 
-ALTER TABLE ONLY backup_job_definition
+ALTER TABLE ONLY backup_definition
     ADD FOREIGN KEY (backup_code) REFERENCES backup_code (code) MATCH FULL ON DELETE RESTRICT;
 
-ALTER TABLE ONLY backup_job_definition
+ALTER TABLE ONLY backup_definition
     ADD FOREIGN KEY (job_status) REFERENCES  job_definition_status(code) MATCH FULL ON DELETE RESTRICT;
 
-ALTER TABLE ONLY backup_job_catalog
+ALTER TABLE ONLY backup_catalog
     ADD FOREIGN KEY (backup_server_id) REFERENCES  backup_server (server_id) MATCH FULL ON DELETE RESTRICT;
 
-ALTER TABLE ONLY backup_job_catalog
+ALTER TABLE ONLY backup_catalog
     ADD FOREIGN KEY (pgsql_node_id) REFERENCES pgsql_node (node_id) MATCH FULL ON DELETE RESTRICT;
 
-ALTER TABLE ONLY backup_job_catalog
+ALTER TABLE ONLY backup_catalog
     ADD FOREIGN KEY (execution_status) REFERENCES job_execution_status (code) MATCH FULL ON DELETE RESTRICT;
 
-ALTER TABLE ONLY backup_job_catalog
+ALTER TABLE ONLY backup_catalog
     ADD FOREIGN KEY (execution_method) REFERENCES job_execution_method (code) MATCH FULL ON DELETE RESTRICT;
 
-ALTER TABLE ONLY backup_job_catalog
-    ADD FOREIGN KEY (def_id) REFERENCES backup_job_definition (def_id) MATCH FULL ON DELETE RESTRICT;
+ALTER TABLE ONLY backup_catalog
+    ADD FOREIGN KEY (def_id) REFERENCES backup_definition (def_id) MATCH FULL ON DELETE RESTRICT;
 
-ALTER TABLE ONLY backup_job_catalog
+ALTER TABLE ONLY backup_catalog
     ADD FOREIGN KEY (snapshot_id) REFERENCES snapshot_definition (snapshot_id) MATCH FULL ON DELETE RESTRICT;
 
 ALTER TABLE ONLY snapshot_definition
@@ -715,7 +732,7 @@ ALTER TABLE ONLY snapshot_definition
     ADD FOREIGN KEY (backup_code) REFERENCES backup_code (code) MATCH FULL ON DELETE RESTRICT;
 
 ALTER TABLE ONLY snapshot_definition
-    ADD FOREIGN KEY (status) REFERENCES snapshot_definition_status (code) MATCH FULL ON DELETE RESTRICT;
+    ADD FOREIGN KEY (status) REFERENCES at_definition_status (code) MATCH FULL ON DELETE RESTRICT;
     
 ALTER TABLE ONLY restore_definition
     ADD FOREIGN KEY (backup_server_id) REFERENCES backup_server (server_id) MATCH FULL ON DELETE CASCADE;
@@ -724,11 +741,23 @@ ALTER TABLE ONLY restore_definition
     ADD FOREIGN KEY (target_pgsql_node_id) REFERENCES pgsql_node (node_id) MATCH FULL ON DELETE CASCADE;
 
 ALTER TABLE ONLY restore_definition
-    ADD FOREIGN KEY (bck_id) REFERENCES backup_job_catalog (bck_id) MATCH FULL ON DELETE CASCADE;
+    ADD FOREIGN KEY (bck_id) REFERENCES backup_catalog (bck_id) MATCH FULL ON DELETE CASCADE;
 
 ALTER TABLE ONLY restore_definition
-    ADD FOREIGN KEY (status) REFERENCES restore_definition_status (code) MATCH FULL ON DELETE RESTRICT;
+    ADD FOREIGN KEY (status) REFERENCES at_definition_status (code) MATCH FULL ON DELETE RESTRICT;
     
+ALTER TABLE ONLY restore_catalog
+    ADD FOREIGN KEY (backup_server_id) REFERENCES  backup_server (server_id) MATCH FULL ON DELETE RESTRICT;
+
+ALTER TABLE ONLY restore_catalog
+    ADD FOREIGN KEY (target_pgsql_node_id) REFERENCES pgsql_node (node_id) MATCH FULL ON DELETE RESTRICT;
+
+ALTER TABLE ONLY restore_catalog
+    ADD FOREIGN KEY (execution_status) REFERENCES job_execution_status (code) MATCH FULL ON DELETE RESTRICT;
+
+ALTER TABLE ONLY restore_catalog
+    ADD FOREIGN KEY (restore_def) REFERENCES restore_definition (restore_def) MATCH FULL ON DELETE RESTRICT;
+
 
 -- ------------------------------------------------------
 -- Init
@@ -752,18 +781,11 @@ INSERT INTO backup_code (code,description) VALUES ('CONFIG','Backup of the confi
 INSERT INTO job_definition_status (code,description) VALUES ('ACTIVE','Backup job activated and in production');
 INSERT INTO job_definition_status (code,description) VALUES ('STOPPED','Backup job stopped');
 
-\echo '# [Init: snapshot_definition_status]\n'
+\echo '# [Init: at_definition_status]\n'
 
-INSERT INTO snapshot_definition_status (code,description) VALUES ('WAITING','Snapshot waiting to be defined in AT');
-INSERT INTO snapshot_definition_status (code,description) VALUES ('DEFINED','Snapshot defined in AT');
-INSERT INTO snapshot_definition_status (code,description) VALUES ('ERROR','Snapshot could not be defined in AT');
-
-\echo '# [Init: restore_definition_status]\n'
-
-INSERT INTO restore_definition_status (code,description) VALUES ('WAITING','Restore waiting to be defined in AT');
-INSERT INTO restore_definition_status (code,description) VALUES ('DEFINED','Restore defined in AT');
-INSERT INTO restore_definition_status (code,description) VALUES ('RESTORED','Backup restored');
-INSERT INTO restore_definition_status (code,description) VALUES ('ERROR','Problems defining or running a restore');
+INSERT INTO at_definition_status (code,description) VALUES ('WAITING','Waiting to be defined in AT');
+INSERT INTO at_definition_status (code,description) VALUES ('DEFINED','Defined in AT');
+INSERT INTO at_definition_status (code,description) VALUES ('ERROR','Could not be defined in AT');
 
 \echo '# [Init: job_execution_status]\n'
 
@@ -1152,7 +1174,7 @@ $$;
 ALTER FUNCTION update_job_queue() OWNER TO pgbackman_role_rw;
 
 CREATE TRIGGER update_job_queue AFTER INSERT OR UPDATE OR DELETE
-    ON backup_job_definition FOR EACH ROW 
+    ON backup_definition FOR EACH ROW 
     EXECUTE PROCEDURE update_job_queue();
 
 
@@ -1775,7 +1797,7 @@ CREATE OR REPLACE FUNCTION register_backup_definition(INTEGER,INTEGER,TEXT,CHARA
     job_status_ := get_default_pgsql_node_parameter('backup_job_status');
    END IF;
 
-    EXECUTE 'INSERT INTO backup_job_definition (backup_server_id,
+    EXECUTE 'INSERT INTO backup_definition (backup_server_id,
 						pgsql_node_id,
 						dbname,
 						minutes_cron,
@@ -1838,11 +1860,11 @@ CREATE OR REPLACE FUNCTION delete_backup_definition_id(INTEGER) RETURNS VOID
   v_context TEXT;
  BEGIN
 
-   SELECT count(*) FROM backup_job_definition WHERE def_id = def_id_ INTO def_cnt;
+   SELECT count(*) FROM backup_definition WHERE def_id = def_id_ INTO def_cnt;
 
     IF def_cnt != 0 THEN
 
-     EXECUTE 'DELETE FROM backup_job_definition WHERE def_id = $1'
+     EXECUTE 'DELETE FROM backup_definition WHERE def_id = $1'
      USING def_id_;
    
     ELSE
@@ -1879,12 +1901,12 @@ CREATE OR REPLACE FUNCTION delete_force_backup_definition_id(INTEGER) RETURNS VO
   v_context TEXT;
  BEGIN
 
-   SELECT count(*) FROM backup_job_definition WHERE def_id = def_id_ INTO def_cnt;
+   SELECT count(*) FROM backup_definition WHERE def_id = def_id_ INTO def_cnt;
 
     IF def_cnt != 0 THEN
 
     EXECUTE 'WITH del_catid AS (
-               DELETE FROM backup_job_catalog 
+               DELETE FROM backup_catalog 
                WHERE def_id = $1
                RETURNING def_id,
 			   bck_id,
@@ -1908,7 +1930,7 @@ CREATE OR REPLACE FUNCTION delete_force_backup_definition_id(INTEGER) RETURNS VO
 			   pg_dump_dbconfig_log_file)
 		SELECT * FROM del_catid	
              )
-             DELETE FROM backup_job_definition
+             DELETE FROM backup_definition
 	     WHERE def_id = $1;'
     USING def_id_;
 
@@ -1929,7 +1951,7 @@ ALTER FUNCTION delete_force_backup_definition_id(INTEGER) OWNER TO pgbackman_rol
 
 
 -- ------------------------------------------------------------
--- Function: delete_backup_job_definition_database()
+-- Function: delete_backup_definition_database()
 -- ------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION delete_backup_definition_dbname(INTEGER,TEXT) RETURNS VOID
@@ -1947,16 +1969,16 @@ CREATE OR REPLACE FUNCTION delete_backup_definition_dbname(INTEGER,TEXT) RETURNS
   v_context TEXT;
  BEGIN
 
-   SELECT count(*) FROM backup_job_definition WHERE pgsql_node_id = pgsql_node_id_ AND dbname = dbname_ INTO def_cnt;
+   SELECT count(*) FROM backup_definition WHERE pgsql_node_id = pgsql_node_id_ AND dbname = dbname_ INTO def_cnt;
 
     IF def_cnt != 0 THEN
 
-     EXECUTE 'DELETE FROM backup_job_definition WHERE pgsql_node_id = $1 AND dbname = $2'
+     EXECUTE 'DELETE FROM backup_definition WHERE pgsql_node_id = $1 AND dbname = $2'
      USING pgsql_node_id_,
      	   dbname_;
    
      EXECUTE 'WITH del_catid AS (
-               DELETE FROM backup_job_catalog 
+               DELETE FROM backup_catalog 
                WHERE pgsql_node_id = $1 AND dbname = $2
                RETURNING def_id,
 			   bck_id,
@@ -1980,7 +2002,7 @@ CREATE OR REPLACE FUNCTION delete_backup_definition_dbname(INTEGER,TEXT) RETURNS
 			   pg_dump_dbconfig_log_file)
 		SELECT * FROM del_catid	
              )
-             DELETE FROM backup_job_definition
+             DELETE FROM backup_definition
 	     WHERE pgsql_node_id = $1 AND dbname = $2'
       USING pgsql_node_id_,
      	    dbname_; 
@@ -2002,7 +2024,7 @@ ALTER FUNCTION delete_backup_definition_dbname(INTEGER,TEXT) OWNER TO pgbackman_
 
 
 -- ------------------------------------------------------------
--- Function: delete_force_backup_job_definition_database()
+-- Function: delete_force_backup_definition_database()
 -- ------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION delete_force_backup_definition_dbname(INTEGER,TEXT) RETURNS VOID
@@ -2020,12 +2042,12 @@ CREATE OR REPLACE FUNCTION delete_force_backup_definition_dbname(INTEGER,TEXT) R
   v_context TEXT;
  BEGIN
 
-   SELECT count(*) FROM backup_job_definition WHERE pgsql_node_id = pgsql_node_id_ AND dbname = dbname_ INTO def_cnt;
+   SELECT count(*) FROM backup_definition WHERE pgsql_node_id = pgsql_node_id_ AND dbname = dbname_ INTO def_cnt;
 
     IF def_cnt != 0 THEN
 
     EXECUTE 'WITH del_catid AS (
-               DELETE FROM backup_job_catalog 
+               DELETE FROM backup_catalog 
                WHERE pgsql_node_id = $1
 	       AND dbname = $2
                RETURNING def_id,
@@ -2050,7 +2072,7 @@ CREATE OR REPLACE FUNCTION delete_force_backup_definition_dbname(INTEGER,TEXT) R
 			   pg_dump_dbconfig_log_file)
 		SELECT * FROM del_catid	
              )
-             DELETE FROM backup_job_definition
+             DELETE FROM backup_definition
 	     WHERE pgsql_node_id = $1
 	     AND dbname = $2;'
     USING pgsql_node_id_,
@@ -2680,7 +2702,7 @@ BEGIN
 
  FOR job_row IN (
  SELECT a.*
- FROM backup_job_definition a
+ FROM backup_definition a
  join pgsql_node b on a.pgsql_node_id = b.node_id
  WHERE a.backup_server_id = backup_server_id_
  AND a.pgsql_node_id = pgsql_node_id_
@@ -2840,7 +2862,7 @@ BEGIN
 	 b.pg_dump_dbconfig_file,
 	 b.pgsql_node_release 
   FROM restore_definition a 
-  JOIN backup_job_catalog b ON a.bck_id = b.bck_id 
+  JOIN backup_catalog b ON a.bck_id = b.bck_id 
   WHERE restore_id = restore_id_
  ) LOOP
   output := output || 'su -l pgbackman -c "';
@@ -2958,10 +2980,10 @@ ALTER FUNCTION get_pgsql_node_admin_user(INTEGER) OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------------
--- Function: register_backup_job_catalog()
+-- Function: register_backup_catalog()
 -- ------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION register_backup_job_catalog(INTEGER,INTEGER,INTEGER,INTEGER,TEXT,TIMESTAMP WITH TIME ZONE,TIMESTAMP WITH TIME ZONE,INTERVAL,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,TEXT,TEXT,TEXT,INTEGER,TEXT[],TEXT) RETURNS VOID
+CREATE OR REPLACE FUNCTION register_backup_catalog(INTEGER,INTEGER,INTEGER,INTEGER,TEXT,TIMESTAMP WITH TIME ZONE,TIMESTAMP WITH TIME ZONE,INTERVAL,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,TEXT,TEXT,TEXT,INTEGER,TEXT[],TEXT) RETURNS VOID
  LANGUAGE plpgsql 
  SECURITY INVOKER 
  SET search_path = public, pg_temp
@@ -2998,7 +3020,7 @@ CREATE OR REPLACE FUNCTION register_backup_job_catalog(INTEGER,INTEGER,INTEGER,I
   v_context TEXT; 
 
  BEGIN
-    EXECUTE 'INSERT INTO backup_job_catalog (def_id,
+    EXECUTE 'INSERT INTO backup_catalog (def_id,
 					     procpid,
 					     backup_server_id,
 					     pgsql_node_id,
@@ -3058,7 +3080,7 @@ CREATE OR REPLACE FUNCTION register_backup_job_catalog(INTEGER,INTEGER,INTEGER,I
  END;
 $$;
 
-ALTER FUNCTION register_backup_job_catalog(INTEGER,INTEGER,INTEGER,INTEGER,TEXT,TIMESTAMP WITH TIME ZONE,TIMESTAMP WITH TIME ZONE,INTERVAL,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,TEXT,TEXT,TEXT,INTEGER,TEXT[],TEXT) OWNER TO pgbackman_role_rw;
+ALTER FUNCTION register_backup_catalog(INTEGER,INTEGER,INTEGER,INTEGER,TEXT,TIMESTAMP WITH TIME ZONE,TIMESTAMP WITH TIME ZONE,INTERVAL,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,TEXT,TEXT,TEXT,INTEGER,TEXT[],TEXT) OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------------
@@ -3103,10 +3125,10 @@ ALTER FUNCTION delete_catalog_entries_to_delete(INTEGER) OWNER TO pgbackman_role
 
 
 -- ------------------------------------------------------------
--- Function:  delete_backup_job_catalog()
+-- Function:  delete_backup_catalog()
 -- ------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION  delete_backup_job_catalog(INTEGER) RETURNS VOID
+CREATE OR REPLACE FUNCTION  delete_backup_catalog(INTEGER) RETURNS VOID
  LANGUAGE plpgsql 
  SECURITY INVOKER 
  SET search_path = public, pg_temp
@@ -3120,11 +3142,11 @@ CREATE OR REPLACE FUNCTION  delete_backup_job_catalog(INTEGER) RETURNS VOID
   v_context TEXT;
  BEGIN
 
-   SELECT count(*) FROM backup_job_catalog WHERE bck_id = bck_id_ INTO bck_cnt;
+   SELECT count(*) FROM backup_catalog WHERE bck_id = bck_id_ INTO bck_cnt;
 
    IF bck_cnt != 0 THEN
 
-     EXECUTE 'DELETE FROM backup_job_catalog WHERE bck_id = $1'
+     EXECUTE 'DELETE FROM backup_catalog WHERE bck_id = $1'
      USING bck_id_;
    
     ELSE
@@ -3140,7 +3162,7 @@ CREATE OR REPLACE FUNCTION  delete_backup_job_catalog(INTEGER) RETURNS VOID
   END;
 $$;
 
-ALTER FUNCTION  delete_backup_job_catalog(INTEGER) OWNER TO pgbackman_role_rw;
+ALTER FUNCTION  delete_backup_catalog(INTEGER) OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------------
@@ -3165,7 +3187,7 @@ CREATE OR REPLACE FUNCTION delete_snapshot_definition(INTEGER) RETURNS VOID
 
    IF snapshot_cnt != 0 THEN
 
-     EXECUTE 'DELETE FROM backup_job_catalog WHERE snapshot_id = $1'
+     EXECUTE 'DELETE FROM backup_catalog WHERE snapshot_id = $1'
      USING snapshot_id_;
 
      EXECUTE 'DELETE FROM snapshot_definition WHERE snapshot_id = $1'
@@ -3205,7 +3227,7 @@ CREATE OR REPLACE FUNCTION get_dbname_from_bckid(INTEGER) RETURNS TEXT
   -- This function returns the dbname from a bck_id
   --
 
-  SELECT dbname from backup_job_catalog WHERE bck_id = bck_id_ INTO dbname_;
+  SELECT dbname from backup_catalog WHERE bck_id = bck_id_ INTO dbname_;
 
   IF dbname_ IS NULL OR dbname_ = '' THEN
     RAISE EXCEPTION 'BckID: % does not exist or does not have a valid database',bck_id_;
@@ -3235,7 +3257,7 @@ CREATE OR REPLACE FUNCTION get_backup_server_id_from_bckid(INTEGER) RETURNS TEXT
   -- This function returns the backup server id from a bck_id
   --
 
-  SELECT backup_server_id from backup_job_catalog WHERE bck_id = bck_id_ INTO backup_server_id_;
+  SELECT backup_server_id from backup_catalog WHERE bck_id = bck_id_ INTO backup_server_id_;
 
   IF backup_server_id_ IS NULL OR backup_server_id_ = '' THEN
     RAISE EXCEPTION 'BckID: % does not exist or does not have a valid backup server ID',bck_id_;
@@ -3265,7 +3287,7 @@ CREATE OR REPLACE FUNCTION get_role_list_from_bckid(INTEGER) RETURNS TEXT[]
   -- This function returns the role list from a bck_id
   --
 
-  SELECT role_list from backup_job_catalog WHERE bck_id = bck_id_ INTO role_list_;
+  SELECT role_list from backup_catalog WHERE bck_id = bck_id_ INTO role_list_;
 
   IF role_list_ IS NULL OR role_list_ = '{}' THEN
     RAISE EXCEPTION 'BckID: % does not exist or does not have a valid role list',bck_id_;
@@ -3308,7 +3330,7 @@ CREATE OR REPLACE FUNCTION register_restore_definition(TIMESTAMP,INTEGER,INTEGER
 
    SELECT count(*) FROM backup_server WHERE server_id = backup_server_id_ INTO server_cnt;
    SELECT count(*) FROM pgsql_node WHERE node_id = target_pgsql_node_id_ INTO node_cnt;
-   SELECT count(*) FROM backup_job_catalog WHERE bck_id = bck_id_ INTO bck_cnt;
+   SELECT count(*) FROM backup_catalog WHERE bck_id = bck_id_ INTO bck_cnt;
 
    IF server_cnt = 0 THEN
      RAISE EXCEPTION 'Backup server with SrvID: % does not exist',backup_server_id_ ;
@@ -3401,7 +3423,7 @@ SELECT lpad(def_id::text,11,'0') AS "DefID",
        retention_period::TEXT || ' (' || retention_redundancy::TEXT || ')' AS "Retention",
        job_status AS "Status",
        extra_parameters AS "Parameters"
-FROM backup_job_definition
+FROM backup_definition
 ORDER BY backup_server_id,pgsql_node_id,"DBname","Code","Status";
 
 ALTER VIEW show_backup_definitions OWNER TO pgbackman_role_rw;
@@ -3423,8 +3445,8 @@ CREATE OR REPLACE VIEW show_backup_catalog AS
        b.backup_code AS "Code",
        a.execution_method AS "Execution",
        a.execution_status AS "Status" 
-   FROM backup_job_catalog a 
-   JOIN backup_job_definition b ON a.def_id = b.def_id) 
+   FROM backup_catalog a 
+   JOIN backup_definition b ON a.def_id = b.def_id) 
    UNION
    (SELECT lpad(a.bck_id::text,12,'0') AS "BckID",
        '' AS "DefID",
@@ -3442,7 +3464,7 @@ CREATE OR REPLACE VIEW show_backup_catalog AS
        b.backup_code AS "Code",
        a.execution_method AS "Execution",
        a.execution_status AS "Status" 
-       FROM backup_job_catalog a 
+       FROM backup_catalog a 
        JOIN snapshot_definition b ON a.snapshot_id = b.snapshot_id) 
    ORDER BY "Finished" DESC,backup_server_id,pgsql_node_id,"DBname","Code","Status";
 
@@ -3485,8 +3507,8 @@ CREATE OR REPLACE VIEW show_backup_details AS
        left(a.error_message,60) AS "Error message",
        array_to_string(a.role_list,',') AS "Role list",
        pgsql_node_release AS "PgSQL release" 
-   FROM backup_job_catalog a 
-   JOIN backup_job_definition b ON a.def_id = b.def_id) 
+   FROM backup_catalog a 
+   JOIN backup_definition b ON a.def_id = b.def_id) 
    UNION
    (SELECT lpad(a.bck_id::text,12,'0') AS "BckID",
        a.bck_id AS bck_id,
@@ -3524,7 +3546,7 @@ CREATE OR REPLACE VIEW show_backup_details AS
        left(a.error_message,60) AS "Error message",
        array_to_string(a.role_list,',') AS "Role list",
        pgsql_node_release AS "PgSQL release" 
-   FROM backup_job_catalog a 
+   FROM backup_catalog a 
    JOIN snapshot_definition b ON a.snapshot_id = b.snapshot_id)
  ORDER BY "Finished" DESC,backup_server_id,pgsql_node_id,"DBname","Code","Status";
 
@@ -3566,8 +3588,8 @@ WITH
       a.pg_dump_roles_log_file,
       a.pg_dump_dbconfig_file,
       a.pg_dump_dbconfig_log_file 
-   FROM backup_job_catalog a 
-   INNER JOIN backup_job_definition b ON a.def_id=b.def_id
+   FROM backup_catalog a 
+   INNER JOIN backup_definition b ON a.def_id=b.def_id
    ORDER BY a.def_id,a.finished ASC
    )
    SELECT * 
@@ -3596,7 +3618,7 @@ WITH
       a.pg_dump_roles_log_file,
       a.pg_dump_dbconfig_file,
       a.pg_dump_dbconfig_log_file 
-   FROM backup_job_catalog a 
+   FROM backup_catalog a 
    INNER JOIN snapshot_definition b ON a.snapshot_id=b.snapshot_id
    ORDER BY a.snapshot_id,a.finished ASC
    )
@@ -3627,7 +3649,7 @@ ORDER BY parameter;
 
 ALTER VIEW show_pgsql_node_config OWNER TO pgbackman_role_rw;
 
-CREATE OR REPLACE VIEW show_empty_backup_job_catalogs AS
+CREATE OR REPLACE VIEW show_empty_backup_catalogs AS
 WITH def_id_list AS (
 SELECT DISTINCT ON (a.def_id)
        lpad(b.def_id::text,11,'0') AS "DefID",
@@ -3643,14 +3665,14 @@ SELECT DISTINCT ON (a.def_id)
        b.retention_period::TEXT || ' (' || b.retention_redundancy::TEXT || ')' AS "Retention",
        b.job_status AS "Status",
        b.extra_parameters AS "Parameters"
-FROM backup_job_catalog a
-RIGHT JOIN backup_job_definition b ON a.def_id = b.def_id
+FROM backup_catalog a
+RIGHT JOIN backup_definition b ON a.def_id = b.def_id
 WHERE a.def_id IS NULL
 )
 SELECT * FROM def_id_list
 ORDER BY "Registered",backup_server_id,pgsql_node_id,"DBname","Code","Status";
 
-ALTER VIEW show_empty_backup_job_catalogs OWNER TO pgbackman_role_rw;
+ALTER VIEW show_empty_backup_catalogs OWNER TO pgbackman_role_rw;
 
 
 CREATE OR REPLACE VIEW show_snapshot_definitions AS
@@ -3673,7 +3695,7 @@ ALTER VIEW show_snapshot_definitions OWNER TO pgbackman_role_rw;
 
 
 CREATE OR REPLACE VIEW show_restore_definitions AS
-SELECT lpad(restore_id::text,8,'0') AS "RestoreID",
+SELECT lpad(restore_def::text,8,'0') AS "RestoreDef",
        date_trunc('seconds',registered) AS "Registered",
        bck_id AS "BckID",
        backup_server_id,
