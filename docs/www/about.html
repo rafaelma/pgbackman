@@ -105,8 +105,55 @@
     <div id="site_content">
       <div id="content">
         <div class="content_item">
-	  <h1>About PgBackMan</h1>
+	  <h1>About PgBackMan?</h1>
 	  <div style="float:left; border: 2px solid #CCC; margin-right: 10px; padding: 5px;"><img src="images/Basic-Search-icon.png"/></div> 
+
+	  <h4>What is PgBackMan?</h4>
+	  
+	  <p>PgBackMan is a tool for managing PostgreSQL logical
+	    backups created with <tt>pg_dump</tt>
+	    and <tt>pg_dumpall</tt>.</p>
+	  
+	  <p>It is designed to manage backups from thousands of
+	    databases running in multiple PostgreSQL nodes, and it
+	    supports a multiple backup servers topology.</p>
+
+	  <h4>Features</h4>
+
+	  <ul>
+	    <li>Central database with metadata information.</li>
+	    <li>PgBackMan shell for interaction with the system.</li>
+	    <li>Management of multiple backup servers</li>
+	    <li>Management of multiple PostgreSQL servers</li>
+	    <li>Management of thousands of backups dumps through a catalogue</li>
+	    <li>Manual and scheduled backups </li>
+	    <li>Management of retention policies for backups dumps.</li>
+	    <li>Fully detailed backup reports.</li>
+	    <li>Multiple predefined database backup types, CLUSTER, FULL, SCHEMA, DATA.</li>
+	    <li>Full backup of role information for a database.</li>
+	    <li>Full backup of database configuration for a database.</li>
+	    <li>Automatic definitions of backups for all databases running in a PgSQL node.</li>
+	    <li>Automatic restore procedures</li>
+	    <li>Autonomous pgbackman_dump program that functions even if the central database with metadata is not available.</li>
+	    <li>Handling of error situations.</li>
+	    <li>Totally written in Python and PL/PgSQL </li>
+	    <li>Distributed under the GNU General Public License 3</li>
+	  </ul>
+
+	  <h4>Getting Help</h4>
+
+	  <p>There is <a href="documentation.html">documentation</a>
+	  here on this site. If that isn't sufficient, you can send an e-mail
+	  to pgbackman@postgresql.org.es.</p>
+
+	  <p>If you find a bug or have a feature request, file them
+	  on <a href="https://github.com/rafaelma/pgbackman/issues">https://github.com/rafaelma/pgbackman/issues</a></p>
+	  
+	  <h4>License</h4>
+
+	  <p>PgBackMan is the property of Rafael Martinez Guerrero and
+	  PostgreSQL-es and its code is distributed under GNU General Public
+	  License 3.</p>
 
 	</div>
       </div>
