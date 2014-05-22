@@ -204,10 +204,10 @@ def enforce_snapshot_retentions(db,backup_server_id):
         
 
 # ############################################
-# Function process_pending_catalog_log_file()
+# Function process_pending_backup_catalog_log_file()
 # ############################################
 
-def process_pending_catalog_log_file(db,backup_server_id):
+def process_pending_backup_catalog_log_file(db,backup_server_id):
     '''Process all pending catalog log files in the server '''
 
     role_list = []
@@ -372,7 +372,7 @@ def main():
             delete_files_from_force_deletes(db,backup_server_id)
             enforce_backup_retentions(db,backup_server_id)
             enforce_snapshot_retentions(db,backup_server_id)
-            process_pending_catalog_log_file(db,backup_server_id)
+            process_pending_backup_catalog_log_file(db,backup_server_id)
             
         except psycopg2.OperationalError as e:
 
