@@ -28,17 +28,17 @@ img
 
 
 h1, h2, h3, h4, h5, h6 
-{ font: normal 175% arial, sans-serif;
-  color: #43423F;
+{ font: bold 175% arial, sans-serif;
+  color: #346590;
   letter-spacing: -1px;
   margin: 0 0 15px 0;
   padding: 15px 0 5px 0;}
 
 h1
-{color: #06C4E6}
+{color: #346590;}
 
 h2
-{ font: normal 165% arial, sans-serif;}
+{ font: bold 165% arial, sans-serif;}
 
 h3
 { font: normal 125% arial, sans-serif;
@@ -48,8 +48,9 @@ h3
 h4, h5, h6
 { margin: 0;
   padding: 0 0 5px 0;
-  font: normal 150% arial, sans-serif;
-  color: #06C4E6;
+  font: bold  150% arial, sans-serif;
+#  color: #06C4E6;
+  color: #346590;
   line-height: 1.5em;}
 
 h5, h6
@@ -64,11 +65,11 @@ a, a:hover
 { background: transparent;
   outline: none;
   text-decoration: underline;
-  color: #06C4E6;}
+  color: #346590;}
 
 a:hover
 { text-decoration: none;
-  color: #06C4E6;}
+  color: #346590;}
 
 ul
 { margin: 2px 0 22px 30px;
@@ -95,7 +96,7 @@ ol
 #main
 { margin-top: 20px;
   padding-bottom: 20px;
-  background: #FFF url(../images/background2.jpg) repeat-x;}
+  background: #FFF url(../images/background3.jpg) repeat-x;}
 
 #header
 { background: transparent;
@@ -130,7 +131,7 @@ ol
 { width: 880px;
   height: 35px;
   margin: 0 auto;
-  background: #03AFF7;} 
+  background: #346590;} 
 
 ul#menu
 { float: left;
@@ -141,7 +142,7 @@ ul#menu li
   padding: 0 0 0 0px;
   list-style: none;
   margin: 2px 0 0 1px;
-  background: #03AFF7;}
+  background: #346590;}
 
 ul#menu li a
 { font: normal 110% arial, sans-serif;
@@ -153,14 +154,14 @@ ul#menu li a
   text-align: center;
   color: #FFF;
   text-decoration: none;
-  background: #03AFF7;} 
+  background: #346590;} 
 
 ul#menu li.selected
 { margin: 2px 0 0 1px;
-  background: #03AFF7;}
+  background: #346590;}
 
 ul#menu li.selected a, ul#menu li.selected a:hover
-{ background: #03AFF7;
+{ background: #346590;
   color: #FFF;}
 
 ul#menu li a:hover
