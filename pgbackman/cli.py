@@ -1829,7 +1829,7 @@ class pgbackman_cli(cmd.Cmd):
         [Target DBname]:
         ----------------
         Database name where we want to restore the backup if 
-        different from DBname defined in BckID 
+        it is different from the DBname defined in BckID 
         
         '''
 
@@ -1937,7 +1937,7 @@ class pgbackman_cli(cmd.Cmd):
                                 renamed_dbname = renamed_dbname_default
 
                             while db_node.database_exists(renamed_dbname):
-                                print "\n[WARNING]: Renamed database already exist on target PgSQL node.\n"
+                                print "\n[WARNING]: Renamed database already exist on target PgSQL node."
                                 renamed_dbname = raw_input("# Rename existing database to [" + renamed_dbname_default + "]: ")
                             
                                 if renamed_dbname == "":
@@ -1960,10 +1960,10 @@ class pgbackman_cli(cmd.Cmd):
                     ack_reuse = ""
 
                     if not db_node.role_exists(role):
-                        print "[OK]: Role '" + role + "' does not exist on target PgSQL node."
+                        print "\n[OK]: Role '" + role + "' does not exist on target PgSQL node."
                         roles_to_restore.append(role)
                     else:
-                        print "[WARNING]: Role '" + role + "' already exists on target PgSQL node.\n"
+                        print "\n[WARNING]: Role '" + role + "' already exists on target PgSQL node."
 
                         while ack_reuse.lower() != "yes" and ack_reuse.lower() != "no":
                             ack_reuse = raw_input("# Use the existing role? (yes/no): ")
