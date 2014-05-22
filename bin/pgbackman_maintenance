@@ -43,7 +43,8 @@ These are the task implemented:
   this definition has been deleted with the force parameter.
 * Enforce retentions for backup definitions.
 * Enforce retentions of snapshot backups
-* Process all pending catalog log files in the server
+* Process all pending backup catalog log files in the server
+* Process all pending restore catalog log files in the server
 
 '''
 
@@ -203,16 +204,16 @@ def enforce_snapshot_retentions(db,backup_server_id):
         logs.logger.error('Could not get information to enforce snapshot file retentions - %s',e)
         
 
-# ############################################
+# ##################################################
 # Function process_pending_backup_catalog_log_file()
-# ############################################
+# ##################################################
 
 def process_pending_backup_catalog_log_file(db,backup_server_id):
-    '''Process all pending catalog log files in the server '''
+    '''Process all pending backup catalog log files in the server '''
 
     role_list = []
 
-    logs.logger.debug('## Processing pending catalog log files ##')
+    logs.logger.debug('## Processing pending backup catalog log files ##')
     
     try:
         db.pg_connect()
@@ -282,15 +283,82 @@ def process_pending_backup_catalog_log_file(db,backup_server_id):
                             #
                         
                             os.unlink(pending_catalog + '/' + pending_log_file)
-                            logs.logger.info('Pending file: %s deleted',pending_log_file)
+                            logs.logger.info('Pending backup file: %s deleted',pending_log_file)
                                                         
                         else:
-                            logs.logger.error('Wrong format in pending file: %s',pending_log_file)
+                            logs.logger.error('Wrong format in pending backup file: %s',pending_log_file)
 
     except psycopg2.OperationalError as e:
         raise e
     except Exception as e:
-        logs.logger.error('Problems processing pending files - %s',e)
+        logs.logger.error('Problems processing pending backup files - %s',e)
+
+
+# ##################################################
+# Function process_pending_restore_catalog_log_file()
+# ##################################################
+
+def process_pending_restore_catalog_log_file(db,backup_server_id):
+    '''Process all pending restore catalog log files in the server '''
+
+    role_list = []
+
+    logs.logger.debug('## Processing pending restore catalog log files ##')
+    
+    try:
+        db.pg_connect()
+        
+        root_backup_partition = db.get_backup_server_parameter(backup_server_id,'root_backup_partition')
+        pending_catalog = root_backup_partition + '/pending_updates'
+        
+        for pending_log_file in os.listdir(pending_catalog):
+            if pending_log_file.find('restore_jobs_pending_log_updates_nodeid') != -1:
+                with open(pending_catalog + '/' + pending_log_file,'r') as pending_file:
+                    for line in pending_file:
+                        parameters = line.split('::')
+                    
+                        if len(parameters) == 17:
+                        
+                            #
+                            # Updating the database with the information in the pending file
+                            #
+
+                            db.register_backup_catalog(parameters[0],
+                                                       parameters[1],
+                                                       parameters[2],
+                                                       parameters[3],
+                                                       parameters[4],
+                                                       parameters[5],
+                                                       parameters[6],
+                                                       parameters[7],
+                                                       parameters[8],
+                                                       parameters[9],
+                                                       parameters[10],
+                                                       parameters[11],
+                                                       parameters[12],
+                                                       parameters[13],
+                                                       parameters[14],
+                                                       parameters[15].split(' '),
+                                                       parameters[16],
+                                                       parameters[17].replace('\n',''))
+
+                            logs.logger.info('Restore job catalog for restoreDef: %s in pending file %s updated in the database',parameters,pending_log_file)
+                            
+                            #
+                            # Deleting the pending file if we can update the database with
+                            # the information in the file
+                            #
+                        
+                            os.unlink(pending_catalog + '/' + pending_log_file)
+                            logs.logger.info('Pending restore file: %s deleted',pending_log_file)
+                                                        
+                        else:
+                            logs.logger.error('Wrong format in pending restore file: %s',pending_log_file)
+
+    except psycopg2.OperationalError as e:
+        raise e
+    except Exception as e:
+        logs.logger.error('Problems processing pending restore files - %s',e)
 
 
 # ############################################
@@ -373,7 +441,8 @@ def main():
             enforce_backup_retentions(db,backup_server_id)
             enforce_snapshot_retentions(db,backup_server_id)
             process_pending_backup_catalog_log_file(db,backup_server_id)
-            
+            process_pending_restore_catalog_log_file(db,backup_server_id)
+
         except psycopg2.OperationalError as e:
 
             #
@@ -424,6 +493,7 @@ if __name__ == '__main__':
     else:
         cron = False
         logs.logger.info('Running in loop mode')
+
     main()
 
     logs.logger.info('**** pgbackman_maintenance finished. ****')

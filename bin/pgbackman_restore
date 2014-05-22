@@ -470,7 +470,7 @@ def register_restore_catalog(db):
                                       global_parameters['global_log_file'] + '::' +
                                       global_parameters['execution_status'] + '::' +
                                       global_parameters['error_message'] + '::' +
-                                      ",".join(global_parameters['role_list']) + '::' +
+                                      " ".join(global_parameters['role_list']) + '::' +
                                       global_parameters['target_pgsql_node_release'].replace('_','.') + '::' +
                                       global_parameters['pg_release'].replace('_','.') + '::' +
                                       '\n')
@@ -781,3 +781,5 @@ if __name__ == '__main__':
 
 
     main()
+
+    
