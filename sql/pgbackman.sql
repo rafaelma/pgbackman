@@ -3818,6 +3818,39 @@ CREATE OR REPLACE VIEW show_restore_catalog AS
 ALTER VIEW show_restore_catalog OWNER TO pgbackman_role_rw;
 
 
+CREATE OR REPLACE VIEW show_restore_details AS
+(SELECT a.restore_id, 
+       lpad(a.restore_id::text,10,'0') AS "RestoreID",
+       a.registered AS "Registered",   
+       a.restore_def,
+       lpad(a.restore_def::text,10,'0') AS "RestoreDef",
+       a.procpid AS "ProcPID",
+       date_trunc('seconds',a.started) AS "Started",
+       date_trunc('seconds',a.finished) AS "Finished",
+       date_trunc('seconds',a.duration) AS "Duration",
+       a.execution_status AS "Status",
+       b.bck_id AS "BckID",
+       a.target_dbname AS "Source DBname",
+       a.target_dbname AS "Target DBname",
+       a.renamed_dbname AS "Renamed DBname",
+       a.backup_server_id,
+       get_backup_server_fqdn(a.backup_server_id) AS "Backup server",
+       a.target_pgsql_node_id,
+       get_pgsql_node_fqdn(a.target_pgsql_node_id) AS "Target PgSQL node",
+       a.backup_pg_release AS "Backup release",
+       a.target_pgsql_node_release AS "Target PGnode release",
+       b.at_time AS "AT time",
+       a.restore_log_file AS "Log file",
+       a.global_log_file AS "Global log file",			  
+       array_to_string(a.role_list,',') AS "Roles restored",
+       a.error_message AS "Error message"
+   FROM restore_catalog a 
+   JOIN restore_definition b ON a.restore_def = b.restore_def) 
+   ORDER BY "Finished" DESC, backup_server_id,target_pgsql_node_id,"Target DBname","Status";
+
+ALTER VIEW show_restore_details OWNER TO pgbackman_role_rw;
+
+
 
 
 COMMIT;

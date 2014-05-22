@@ -824,6 +824,65 @@ class pgbackman_db():
         except psycopg2.Error as e:
             raise e    
       
+    # ############################################
+    # Method 
+    # ############################################
+
+    def show_restore_details(self,restore_id):
+        """A function to get all details of a restore job"""
+
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+                    self.cur.execute("SELECT * FROM show_restore_details WHERE restore_id= %s",(restore_id,))
+   
+                    x = PrettyTable([".",".."],header = False)
+                    x.align["."] = "r"
+                    x.align[".."] = "l"
+                    x.padding_width = 1
+
+                    for record in self.cur:
+                        
+                        x.add_row(["RestoreID:",str(record[1])])
+                        x.add_row(["ProcPID:",str(record[5])])
+                        x.add_row(["Registered:",str(record[2])])
+                        x.add_row(["",""])
+                        x.add_row(["Started:",str(record[6])])
+                        x.add_row(["Finished:",str(record[7])])
+                        x.add_row(["Duration:",str(record[8])])
+                        x.add_row(["Execution status:",str(record[9])])
+                        x.add_row(["",""])
+                        x.add_row(["BckID:",str(record[10])])
+                        x.add_row(["Source DBname:",str(record[11])])
+                        x.add_row(["Target DBname:",str(record[12])])
+                        x.add_row(["Renamed DBname:",str(record[13])])
+                        x.add_row(["Roles restored:",str(record[23])])
+                        x.add_row(["",""])
+                        x.add_row(["Backup server (ID/FQDN):","[" + str(record[14]) + "] / " + str(record[15])])
+                        x.add_row(["Target PgSQL node (ID/FQDN):","[" + str(record[16]) + "] / " + str(record[17])])
+                        x.add_row(["Pg_dump/all backup release:",str(record[18])])
+                        x.add_row(["Target PgSQL node release:",str(record[19])])
+                        x.add_row(["",""])
+                        x.add_row(["AT time:",str(record[20])])
+                        x.add_row(["Extra parameters:",''])
+                        x.add_row(["",""])
+                        x.add_row(["Restore log file:",str(record[21])])
+                        x.add_row(["Global log file:",str(record[22])])
+                        x.add_row(["",""])
+                        x.add_row(["Error message:",str(record[24])])
+                        
+                        print x
+
+                except psycopg2.Error as e:
+                    raise e
+                
+            self.pg_close()
+      
+        except psycopg2.Error as e:
+            raise e    
+      
 
     # ############################################
     # Method 
@@ -2461,4 +2520,33 @@ class pgbackman_db():
 
         except psycopg2.Error as e:
             raise e
+
+
+    # ############################################
+    # Method 
+    # ############################################
+           
+    def rename_existing_database(self,from_name,to_name):
+        """A function to rename an existing database before restoring a backup"""
+     
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+                    sql = 'ALTER DATABASE ' + from_name + ' RENAME TO ' + to_name
+                    
+                    self.cur.execute(sql)
+                    self.conn.commit()
+                                    
+                except psycopg2.Error as e:
+                    raise e
+
+            self.pg_close()
+
+        except psycopg2.Error as e:
+            raise e
+
+
+
 

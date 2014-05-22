@@ -2162,11 +2162,70 @@ class pgbackman_cli(cmd.Cmd):
             bck_id = arg_list[0]
             
             print "--------------------------------------------------------"
-            print "# BckID: " + bck_id
+            print "# BckID: " + str(bck_id)
             print "--------------------------------------------------------"
             
             try:
                 self.db.show_backup_details(bck_id)
+            
+            except Exception as e:
+                print "\n[ERROR]: ",e     
+                
+        else:
+            print "\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n"
+        
+    # ############################################
+    # Method do_show_restore_details
+    # ############################################
+
+    def do_show_restore_details(self,args):
+        """
+        DESCRIPTION:
+        This command shows all the details for one particular restore job.
+
+        COMMAND:
+        show_restore_details [RestoreID]
+        
+        """
+
+        try: 
+            arg_list = shlex.split(args)
+            
+        except ValueError as e:
+            print "\n[ERROR]: ",e,"\n"
+            return False
+
+        #
+        # Command without parameters
+        #             
+
+        if len(arg_list) == 0:
+                   
+            print "--------------------------------------------------------"            
+            restore_id = raw_input("# RestoreID: ")
+            print "--------------------------------------------------------"
+            
+            try:
+                
+                self.db.show_restore_details(restore_id)
+                
+            except Exception as e:
+                print "\n[ERROR]: ",e     
+                
+        #
+        # Command with parameters
+        #             
+
+        elif len(arg_list) == 1:
+
+            restore_id = arg_list[0]
+            
+            print "--------------------------------------------------------"
+            print "# RestoreID: " + str(restore_id)
+            print "--------------------------------------------------------"
+            
+            try:
+                self.db.show_restore_details(restore_id)
             
             except Exception as e:
                 print "\n[ERROR]: ",e     
