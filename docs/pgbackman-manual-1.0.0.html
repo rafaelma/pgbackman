@@ -1,0 +1,1757 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.8.1: http://docutils.sourceforge.net/" />
+<title>PgBackMan - PostgreSQL Backup Manager</title>
+<style type="text/css">
+
+@import url(html4css1.css);
+
+/**
+* :Author: Chad Skeeters
+* :Contact: cskeeters@nciinc.com
+* Stylesheet for use with Docutils/rst2html.
+* Example: rst2html --stylesheet=rst2html.css README.rst doc/html/README.html
+*/
+
+html {
+font-size: 100%;
+-webkit-text-size-adjust: 100%;
+-ms-text-size-adjust: 100%;
+}
+ 
+a:focus {
+outline: thin dotted #333;
+outline: 5px auto -webkit-focus-ring-color;
+outline-offset: -2px;
+}
+ 
+a:hover,
+a:active {
+outline: 0;
+}
+ 
+sub,
+sup {
+position: relative;
+font-size: 75%;
+line-height: 0;
+vertical-align: baseline;
+}
+ 
+sup {
+top: -0.5em;
+}
+ 
+sub {
+bottom: -0.25em;
+}
+ 
+img {
+width: auto\9;
+height: auto;
+max-width: 100%;
+vertical-align: middle;
+border: 0;
+-ms-interpolation-mode: bicubic;
+}
+ 
+@media print {
+* {
+color: #000 !important;
+text-shadow: none !important;
+background: transparent !important;
+box-shadow: none !important;
+}
+ 
+a,
+a:visited {
+text-decoration: underline;
+}
+ 
+a[href]:after {
+content: " (" attr(href) ")";
+}
+ 
+abbr[title]:after {
+content: " (" attr(title) ")";
+}
+ 
+.ir a:after,
+a[href^="javascript:"]:after,
+a[href^="#"]:after {
+content: "";
+}
+ 
+pre,
+blockquote {
+border: 1px solid #999;
+page-break-inside: avoid;
+}
+ 
+thead {
+display: table-header-group;
+}
+ 
+tr,
+img {
+page-break-inside: avoid;
+}
+ 
+img {
+max-width: 100% !important;
+}
+@	page {
+margin: 0.5cm;
+}
+ 
+h1 {
+page-break-before: always;
+}
+ 
+h1.title {
+page-break-before: avoid;
+}
+ 
+p,
+h2,
+h3 {
+orphans: 3;
+widows: 3;
+}
+ 
+h2,
+h3 {
+page-break-after: avoid;
+}
+}
+ 
+body {
+margin: 40px;
+margin-right: auto;
+margin-left: auto;
+width: 800px;
+font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 20px;
+color: #333333;
+background-color: #ffffff;
+}
+ 
+a {
+color: #0088cc;
+text-decoration: none;
+}
+ 
+a:hover,
+a:focus {
+color: #005580;
+text-decoration: underline;
+}
+ 
+.img-rounded {
+-webkit-border-radius: 6px;
+-moz-border-radius: 6px;
+border-radius: 6px;
+}
+ 
+.img-polaroid {
+padding: 4px;
+background-color: #fff;
+border: 1px solid #ccc;
+border: 1px solid rgba(0, 0, 0, 0.2);
+-webkit-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+-moz-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+ 
+p {
+margin: 0 0 10px;
+}
+ 
+small {
+font-size: 85%;
+}
+ 
+strong {
+font-weight: bold;
+}
+ 
+em {
+font-style: italic;
+}
+ 
+cite {
+font-style: normal;
+}
+ 
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+font-family: inherit;
+font-weight: bold;
+line-height: 20px;
+color: inherit;
+text-rendering: optimizelegibility;
+}
+ 
+h1 {
+font-size: 2em;
+padding-bottom: .2em;
+border-bottom: 1px solid grey;
+}
+ 
+h1.title {
+padding-bottom: 1em;
+border-bottom: 0px;
+}
+ 
+h2 {
+font-size: 1.5em;
+}
+ 
+h3 {
+font-size: 1.3em;
+font-family: Georgia, serif;
+font-style: italic;
+/*font-weight:normal;*/;
+}
+ 
+h4 {
+font-size: 1.3em;
+}
+ 
+h5 {
+font-size: 1.2em;
+}
+ 
+h6 {
+font-size: 1.1em;
+}
+ 
+ul,
+ol {
+padding: 0;
+margin: 0 0 10px 25px;
+}
+ 
+ul ul,
+ul ol,
+ol ol,
+ol ul {
+margin-bottom: 0;
+}
+ 
+li {
+line-height: 20px;
+}
+ 
+dl {
+margin-bottom: 20px;
+}
+ 
+dt,
+dd {
+line-height: 20px;
+}
+ 
+dt {
+font-weight: bold;
+}
+ 
+dd {
+margin-left: 10px;
+}
+ 
+hr {
+margin: 20px 0;
+border: 0;
+border-top: 1px solid #eeeeee;
+border-bottom: 1px solid #ffffff;
+}
+ 
+abbr[title],
+abbr[data-original-title] {
+cursor: help;
+border-bottom: 1px dotted #999999;
+}
+ 
+abbr.initialism {
+font-size: 90%;
+text-transform: uppercase;
+}
+ 
+blockquote {
+padding: 0 0 0 15px;
+margin: 0 0 20px;
+border-left: 5px solid #eeeeee;
+}
+ 
+blockquote p {
+margin-bottom: 0;
+font-size: 17.5px;
+font-weight: 300;
+line-height: 1.25;
+}
+ 
+q:before,
+q:after,
+blockquote:before,
+blockquote:after {
+content: "";
+}
+ 
+address {
+display: block;
+margin-bottom: 20px;
+font-style: normal;
+line-height: 20px;
+}
+ 
+code,
+pre {
+padding: 0 3px 2px;
+font-family: Monaco, Menlo, Consolas, "Courier New", monospace;
+font-size: 12px;
+color: #333333;
+-webkit-border-radius: 3px;
+-moz-border-radius: 3px;
+border-radius: 3px;
+}
+ 
+code {
+padding: 2px 4px;
+color: #d14;
+white-space: nowrap;
+background-color: #f7f7f9;
+border: 1px solid #e1e1e8;
+}
+ 
+pre {
+display: block;
+padding: 9.5px;
+margin: 0 0 10px;
+font-size: 13px;
+line-height: 20px;
+word-break: break-all;
+word-wrap: break-word;
+white-space: pre;
+white-space: pre-wrap;
+background-color: #f5f5f5;
+border: 1px solid #ccc;
+border: 1px solid rgba(0, 0, 0, 0.15);
+-webkit-border-radius: 4px;
+-moz-border-radius: 4px;
+border-radius: 4px;
+}
+ 
+pre.prettyprint {
+margin-bottom: 20px;
+}
+ 
+pre code {
+padding: 0;
+color: inherit;
+white-space: pre;
+white-space: pre-wrap;
+background-color: transparent;
+border: 0;
+}
+ 
+.pre-scrollable {
+max-height: 340px;
+overflow-y: scroll;
+}
+ 
+table {
+max-width: 100%;
+background-color: transparent;
+border-collapse: collapse;
+border-spacing: 0;
+}
+ 
+.table {
+width: 100%;
+margin-bottom: 20px;
+}
+ 
+.table th,
+.table td {
+padding: 8px;
+line-height: 20px;
+text-align: left;
+vertical-align: top;
+border-top: 1px solid #dddddd;
+}
+ 
+.table th {
+font-weight: bold;
+}
+ 
+.table thead th {
+vertical-align: bottom;
+}
+ 
+.table caption + thead tr:first-child th,
+.table caption + thead tr:first-child td,
+.table colgroup + thead tr:first-child th,
+.table colgroup + thead tr:first-child td,
+.table thead:first-child tr:first-child th,
+.table thead:first-child tr:first-child td {
+border-top: 0;
+}
+ 
+.table tbody + tbody {
+border-top: 2px solid #dddddd;
+}
+ 
+.table .table {
+background-color: #ffffff;
+}
+ 
+.table-condensed th,
+.table-condensed td {
+padding: 4px 5px;
+}
+ 
+.table-bordered {
+border: 1px solid #dddddd;
+border-collapse: separate;
+*border-collapse: collapse;
+border-left: 0;
+-webkit-border-radius: 4px;
+-moz-border-radius: 4px;
+border-radius: 4px;
+}
+ 
+.table-bordered th,
+.table-bordered td {
+border-left: 1px solid #dddddd;
+}
+ 
+.table-bordered caption + thead tr:first-child th,
+.table-bordered caption + tbody tr:first-child th,
+.table-bordered caption + tbody tr:first-child td,
+.table-bordered colgroup + thead tr:first-child th,
+.table-bordered colgroup + tbody tr:first-child th,
+.table-bordered colgroup + tbody tr:first-child td,
+.table-bordered thead:first-child tr:first-child th,
+.table-bordered tbody:first-child tr:first-child th,
+.table-bordered tbody:first-child tr:first-child td {
+border-top: 0;
+}
+ 
+.table-bordered thead:first-child tr:first-child > th:first-child,
+.table-bordered tbody:first-child tr:first-child > td:first-child,
+.table-bordered tbody:first-child tr:first-child > th:first-child {
+-webkit-border-top-left-radius: 4px;
+border-top-left-radius: 4px;
+-moz-border-radius-topleft: 4px;
+}
+ 
+.table-bordered thead:first-child tr:first-child > th:last-child,
+.table-bordered tbody:first-child tr:first-child > td:last-child,
+.table-bordered tbody:first-child tr:first-child > th:last-child {
+-webkit-border-top-right-radius: 4px;
+border-top-right-radius: 4px;
+-moz-border-radius-topright: 4px;
+}
+ 
+.table-bordered thead:last-child tr:last-child > th:first-child,
+.table-bordered tbody:last-child tr:last-child > td:first-child,
+.table-bordered tbody:last-child tr:last-child > th:first-child,
+.table-bordered tfoot:last-child tr:last-child > td:first-child,
+.table-bordered tfoot:last-child tr:last-child > th:first-child {
+-webkit-border-bottom-left-radius: 4px;
+border-bottom-left-radius: 4px;
+-moz-border-radius-bottomleft: 4px;
+}
+ 
+.table-bordered thead:last-child tr:last-child > th:last-child,
+.table-bordered tbody:last-child tr:last-child > td:last-child,
+.table-bordered tbody:last-child tr:last-child > th:last-child,
+.table-bordered tfoot:last-child tr:last-child > td:last-child,
+.table-bordered tfoot:last-child tr:last-child > th:last-child {
+-webkit-border-bottom-right-radius: 4px;
+border-bottom-right-radius: 4px;
+-moz-border-radius-bottomright: 4px;
+}
+ 
+.table-bordered tfoot + tbody:last-child tr:last-child td:first-child {
+-webkit-border-bottom-left-radius: 0;
+border-bottom-left-radius: 0;
+-moz-border-radius-bottomleft: 0;
+}
+ 
+.table-bordered tfoot + tbody:last-child tr:last-child td:last-child {
+-webkit-border-bottom-right-radius: 0;
+border-bottom-right-radius: 0;
+-moz-border-radius-bottomright: 0;
+}
+ 
+.table-bordered caption + thead tr:first-child th:first-child,
+.table-bordered caption + tbody tr:first-child td:first-child,
+.table-bordered colgroup + thead tr:first-child th:first-child,
+.table-bordered colgroup + tbody tr:first-child td:first-child {
+-webkit-border-top-left-radius: 4px;
+border-top-left-radius: 4px;
+-moz-border-radius-topleft: 4px;
+}
+ 
+.table-bordered caption + thead tr:first-child th:last-child,
+.table-bordered caption + tbody tr:first-child td:last-child,
+.table-bordered colgroup + thead tr:first-child th:last-child,
+.table-bordered colgroup + tbody tr:first-child td:last-child {
+-webkit-border-top-right-radius: 4px;
+border-top-right-radius: 4px;
+-moz-border-radius-topright: 4px;
+}
+ 
+.table-striped tbody > tr:nth-child(odd) > td,
+.table-striped tbody > tr:nth-child(odd) > th {
+background-color: #f9f9f9;
+}
+ 
+.table-hover tbody tr:hover > td,
+.table-hover tbody tr:hover > th {
+background-color: #f5f5f5;
+}
+ 
+table td[class*="span"],
+table th[class*="span"],
+.row-fluid table td[class*="span"],
+.row-fluid table th[class*="span"] {
+display: table-cell;
+float: none;
+margin-left: 0;
+}
+ 
+.hero-unit {
+padding: 60px;
+margin-bottom: 30px;
+font-size: 18px;
+font-weight: 200;
+line-height: 30px;
+color: inherit;
+background-color: #eeeeee;
+-webkit-border-radius: 6px;
+-moz-border-radius: 6px;
+border-radius: 6px;
+}
+ 
+.hero-unit h1 {
+margin-bottom: 0;
+font-size: 60px;
+line-height: 1;
+letter-spacing: -1px;
+color: inherit;
+}
+ 
+.hero-unit li {
+line-height: 30px;
+}
+ 
+ 
+/* rst2html default used to remove borders from tables and images */
+.borderless, table.borderless td, table.borderless th {
+border: 0;
+}
+ 
+table.borderless td, table.borderless th {
+/* Override padding for "table.docutils td" with "! important".
+The right padding separates the table cells. */
+padding: 0 0.5em 0 0 ! important;
+}
+ 
+.first {
+/* Override more specific margin styles with "! important". */
+margin-top: 0 ! important;
+}
+ 
+.last, .with-subtitle {
+margin-bottom: 0 ! important;
+}
+ 
+.hidden {
+display: none;
+}
+ 
+a.toc-backref {
+text-decoration: none;
+color: black;
+}
+ 
+blockquote.epigraph {
+margin: 2em 5em;
+}
+ 
+dl.docutils dd {
+margin-bottom: 0.5em;
+}
+ 
+object[type="image/svg+xml"], object[type="application/x-shockwave-flash"] {
+overflow: hidden;
+}
+ 
+/* Uncomment (and remove this text!) to get bold-faced definition list terms
+dl.docutils dt {
+font-weight: bold }
+*/
+ 
+div.abstract {
+margin: 2em 5em;
+}
+ 
+div.abstract p.topic-title {
+font-weight: bold;
+text-align: center;
+}
+ 
+div.admonition, div.attention, div.caution, div.danger, div.error,
+div.hint, div.important, div.note, div.tip, div.warning {
+margin: 2em;
+border: medium outset;
+padding: 1em;
+}
+ 
+div.note, div.warning {
+margin: 1.5em 0px;
+border: none;
+}
+ 
+div.note p.admonition-title,
+div.warning p.admonition-title {
+display: none;
+}
+ 
+/* Clearfix
+* http://css-tricks.com/snippets/css/clear-fix/
+*/
+ 
+div.note:after,
+div.warning:after {
+content: "";
+display: table;
+clear: both;
+}
+ 
+div.note p:before,
+div.warning p:before {
+display: block;
+float: left;
+font-size: 4em;
+line-height: 1em;
+margin-right: 20px;
+margin-left: 0em;
+margin-top: -10px;
+content: '\0270D';
+/*handwriting*/;
+}
+ 
+div.warning p:before {
+content: '\026A0';
+/*warning*/;
+}
+ 
+div.admonition p.admonition-title, div.hint p.admonition-title,
+div.important p.admonition-title, div.note p.admonition-title,
+div.tip p.admonition-title {
+font-weight: bold;
+font-family: sans-serif;
+}
+ 
+div.attention p.admonition-title, div.caution p.admonition-title,
+div.danger p.admonition-title, div.error p.admonition-title,
+div.warning p.admonition-title, .code .error {
+color: red;
+font-weight: bold;
+font-family: sans-serif;
+}
+ 
+/* Uncomment (and remove this text!) to get reduced vertical space in
+compound paragraphs.
+div.compound .compound-first, div.compound .compound-middle {
+margin-bottom: 0.5em }
+ 
+div.compound .compound-last, div.compound .compound-middle {
+margin-top: 0.5em }
+*/
+ 
+div.dedication {
+margin: 2em 5em;
+text-align: center;
+font-style: italic;
+}
+ 
+div.dedication p.topic-title {
+font-weight: bold;
+font-style: normal;
+}
+ 
+div.figure {
+margin-left: 2em;
+margin-right: 2em;
+}
+ 
+div.footer, div.header {
+clear: both;
+font-size: smaller;
+}
+ 
+div.line-block {
+display: block;
+margin-top: 1em;
+margin-bottom: 1em;
+}
+ 
+div.line-block div.line-block {
+margin-top: 0;
+margin-bottom: 0;
+margin-left: 1.5em;
+}
+ 
+div.sidebar {
+margin: 0 0 0.5em 1em;
+border: medium outset;
+padding: 1em;
+background-color: #ffffee;
+width: 40%;
+float: right;
+clear: right;
+}
+ 
+div.sidebar p.rubric {
+font-family: sans-serif;
+font-size: medium;
+}
+ 
+div.system-messages {
+margin: 5em;
+}
+ 
+div.system-messages h1 {
+color: red;
+}
+ 
+div.system-message {
+border: medium outset;
+padding: 1em;
+}
+ 
+div.system-message p.system-message-title {
+color: red;
+font-weight: bold;
+}
+ 
+div.topic {
+margin: 2em;
+}
+ 
+h1.section-subtitle, h2.section-subtitle, h3.section-subtitle,
+h4.section-subtitle, h5.section-subtitle, h6.section-subtitle {
+margin-top: 0.4em;
+}
+ 
+h1.title {
+text-align: center;
+}
+ 
+h2.subtitle {
+text-align: center;
+}
+ 
+hr.docutils {
+width: 75%;
+}
+ 
+img.align-left, .figure.align-left, object.align-left {
+clear: left;
+float: left;
+margin-right: 1em;
+}
+ 
+img.align-right, .figure.align-right, object.align-right {
+clear: right;
+float: right;
+margin-left: 1em;
+}
+ 
+img.align-center, .figure.align-center, object.align-center {
+display: block;
+margin-left: auto;
+margin-right: auto;
+}
+ 
+.align-left {
+text-align: left;
+}
+ 
+.align-center {
+clear: both;
+text-align: center;
+}
+ 
+.align-right {
+text-align: right;
+}
+ 
+/* reset inner alignment in figures */
+div.align-right {
+text-align: inherit;
+}
+ 
+/* div.align-center * { */
+/* text-align: left } */
+ 
+ol.simple, ul.simple {
+margin-bottom: 1em;
+}
+ 
+ol.arabic {
+list-style: decimal;
+}
+ 
+ol.loweralpha {
+list-style: lower-alpha;
+}
+ 
+ol.upperalpha {
+list-style: upper-alpha;
+}
+ 
+ol.lowerroman {
+list-style: lower-roman;
+}
+ 
+ol.upperroman {
+list-style: upper-roman;
+}
+ 
+p.attribution {
+text-align: right;
+margin-left: 50%;
+}
+ 
+p.caption {
+font-style: italic;
+}
+ 
+p.credits {
+font-style: italic;
+font-size: smaller;
+}
+ 
+p.label {
+white-space: nowrap;
+}
+ 
+p.rubric {
+font-weight: bold;
+font-size: larger;
+color: maroon;
+text-align: center;
+}
+ 
+p.sidebar-title {
+font-family: sans-serif;
+font-weight: bold;
+font-size: larger;
+}
+ 
+p.sidebar-subtitle {
+font-family: sans-serif;
+font-weight: bold;
+}
+ 
+p.topic-title {
+font-weight: bold;
+}
+ 
+pre.address {
+margin-bottom: 0;
+margin-top: 0;
+font: inherit;
+}
+ 
+pre.literal-block, pre.doctest-block, pre.math, pre.code {
+margin-left: 2em;
+margin-right: 2em;
+}
+ 
+pre.code .ln {
+color: grey;
+} /* line numbers */
+pre.code, code {
+background-color: #eeeeee;
+}
+ 
+pre.code .comment, code .comment {
+color: #5C6576;
+}
+ 
+pre.code .keyword, code .keyword {
+color: #3B0D06;
+font-weight: bold;
+}
+ 
+pre.code .literal.string, code .literal.string {
+color: #0C5404;
+}
+ 
+pre.code .name.builtin, code .name.builtin {
+color: #352B84;
+}
+ 
+pre.code .deleted, code .deleted {
+background-color: #DEB0A1;
+}
+ 
+pre.code .inserted, code .inserted {
+background-color: #A3D289;
+}
+ 
+span.classifier {
+font-family: sans-serif;
+font-style: oblique;
+}
+ 
+span.classifier-delimiter {
+font-family: sans-serif;
+font-weight: bold;
+}
+ 
+span.interpreted {
+font-family: sans-serif;
+}
+ 
+span.option {
+white-space: nowrap;
+}
+ 
+span.pre {
+white-space: pre;
+}
+ 
+span.problematic {
+color: red;
+}
+ 
+span.section-subtitle {
+/* font-size relative to parent (h1..h6 element) */
+font-size: 80%;
+}
+ 
+table.citation {
+border-left: solid 1px gray;
+margin-left: 1px;
+}
+ 
+table.docinfo {
+margin: 2em 4em;
+}
+ 
+table.docutils {
+margin-top: 0.5em;
+margin-bottom: 0.5em;
+}
+ 
+table.footnote {
+border-left: solid 1px black;
+margin-left: 1px;
+}
+ 
+table.docutils td, table.docutils th,
+table.docinfo td, table.docinfo th {
+padding-left: 0.5em;
+padding-right: 0.5em;
+vertical-align: top;
+}
+ 
+table.docutils th.field-name, table.docinfo th.docinfo-name {
+font-weight: bold;
+text-align: left;
+white-space: nowrap;
+padding-left: 0;
+}
+ 
+h1 tt.docutils, h2 tt.docutils, h3 tt.docutils,
+h4 tt.docutils, h5 tt.docutils, h6 tt.docutils {
+font-size: 100%;
+}
+ 
+ul.auto-toc {
+list-style-type: none;
+}
+ 
+.code .pygments-hll {
+background-color: #ffffcc;
+}
+ 
+.code .pygments-c {
+color: #60a0b0;
+font-style: italic;
+} /* Comment */
+.code .pygments-err {
+border: 1px solid #FF0000;
+} /* Error */
+.code .pygments-k {
+color: #007020;
+font-weight: bold;
+} /* Keyword */
+.code .pygments-o {
+color: #666666;
+} /* Operator */
+.code .pygments-cm {
+color: #60a0b0;
+font-style: italic;
+} /* Comment.Multiline */
+.code .pygments-cp {
+color: #007020;
+} /* Comment.Preproc */
+.code .pygments-c1 {
+color: #60a0b0;
+font-style: italic;
+} /* Comment.Single */
+.code .pygments-cs {
+color: #60a0b0;
+background-color: #fff0f0;
+} /* Comment.Special */
+.code .pygments-gd {
+color: #A00000;
+} /* Generic.Deleted */
+.code .pygments-ge {
+font-style: italic;
+} /* Generic.Emph */
+.code .pygments-gr {
+color: #FF0000;
+} /* Generic.Error */
+.code .pygments-gh {
+color: #000080;
+font-weight: bold;
+} /* Generic.Heading */
+.code .pygments-gi {
+color: #00A000;
+} /* Generic.Inserted */
+.code .pygments-go {
+color: #888888;
+} /* Generic.Output */
+.code .pygments-gp {
+color: #c65d09;
+font-weight: bold;
+} /* Generic.Prompt */
+.code .pygments-gs {
+font-weight: bold;
+} /* Generic.Strong */
+.code .pygments-gu {
+color: #800080;
+font-weight: bold;
+} /* Generic.Subheading */
+.code .pygments-gt {
+color: #0044DD;
+} /* Generic.Traceback */
+.code .pygments-kc {
+color: #007020;
+font-weight: bold;
+} /* Keyword.Constant */
+.code .pygments-kd {
+color: #007020;
+font-weight: bold;
+} /* Keyword.Declaration */
+.code .pygments-kn {
+color: #007020;
+font-weight: bold;
+} /* Keyword.Namespace */
+.code .pygments-kp {
+color: #007020;
+} /* Keyword.Pseudo */
+.code .pygments-kr {
+color: #007020;
+font-weight: bold;
+} /* Keyword.Reserved */
+.code .pygments-kt {
+color: #902000;
+} /* Keyword.Type */
+.code .pygments-m {
+color: #40a070;
+} /* Literal.Number */
+.code .pygments-s {
+color: #4070a0;
+} /* Literal.String */
+.code .pygments-na {
+color: #4070a0;
+} /* Name.Attribute */
+.code .pygments-nb {
+color: #007020;
+} /* Name.Builtin */
+.code .pygments-nc {
+color: #0e84b5;
+font-weight: bold;
+} /* Name.Class */
+.code .pygments-no {
+color: #60add5;
+} /* Name.Constant */
+.code .pygments-nd {
+color: #555555;
+font-weight: bold;
+} /* Name.Decorator */
+.code .pygments-ni {
+color: #d55537;
+font-weight: bold;
+} /* Name.Entity */
+.code .pygments-ne {
+color: #007020;
+} /* Name.Exception */
+.code .pygments-nf {
+color: #06287e;
+} /* Name.Function */
+.code .pygments-nl {
+color: #002070;
+font-weight: bold;
+} /* Name.Label */
+.code .pygments-nn {
+color: #0e84b5;
+font-weight: bold;
+} /* Name.Namespace */
+.code .pygments-nt {
+color: #062873;
+font-weight: bold;
+} /* Name.Tag */
+.code .pygments-nv {
+color: #bb60d5;
+} /* Name.Variable */
+.code .pygments-ow {
+color: #007020;
+font-weight: bold;
+} /* Operator.Word */
+.code .pygments-w {
+color: #bbbbbb;
+} /* Text.Whitespace */
+.code .pygments-mf {
+color: #40a070;
+} /* Literal.Number.Float */
+.code .pygments-mh {
+color: #40a070;
+} /* Literal.Number.Hex */
+.code .pygments-mi {
+color: #40a070;
+} /* Literal.Number.Integer */
+.code .pygments-mo {
+color: #40a070;
+} /* Literal.Number.Oct */
+.code .pygments-sb {
+color: #4070a0;
+} /* Literal.String.Backtick */
+.code .pygments-sc {
+color: #4070a0;
+} /* Literal.String.Char */
+.code .pygments-sd {
+color: #4070a0;
+font-style: italic;
+} /* Literal.String.Doc */
+.code .pygments-s2 {
+color: #4070a0;
+} /* Literal.String.Double */
+.code .pygments-se {
+color: #4070a0;
+font-weight: bold;
+} /* Literal.String.Escape */
+.code .pygments-sh {
+color: #4070a0;
+} /* Literal.String.Heredoc */
+.code .pygments-si {
+color: #70a0d0;
+font-style: italic;
+} /* Literal.String.Interpol */
+.code .pygments-sx {
+color: #c65d09;
+} /* Literal.String.Other */
+.code .pygments-sr {
+color: #235388;
+} /* Literal.String.Regex */
+.code .pygments-s1 {
+color: #4070a0;
+} /* Literal.String.Single */
+.code .pygments-ss {
+color: #517918;
+} /* Literal.String.Symbol */
+.code .pygments-bp {
+color: #007020;
+} /* Name.Builtin.Pseudo */
+.code .pygments-vc {
+color: #bb60d5;
+} /* Name.Variable.Class */
+.code .pygments-vg {
+color: #bb60d5;
+} /* Name.Variable.Global */
+.code .pygments-vi {
+color: #bb60d5;
+} /* Name.Variable.Instance */
+.code .pygments-il {
+color: #40a070;
+} /* Literal.Number.Integer.Long */
+
+</style>
+</head>
+<body>
+<div class="document" id="pgbackman-postgresql-backup-manager">
+<h1 class="title">PgBackMan - PostgreSQL Backup Manager</h1>
+
+<div class="line-block">
+<div class="line"><br /></div>
+<div class="line">Version-1.0.0</div>
+<div class="line"><br /></div>
+<div class="line">Author: Rafael Martinez Guerrero (University of Oslo)</div>
+<div class="line">E-mail: <a class="reference external" href="mailto:rafael&#64;postgresql.org.es">rafael&#64;postgresql.org.es</a></div>
+<div class="line">Source: <a class="reference external" href="https://github.com/rafaelma/pgbackman">https://github.com/rafaelma/pgbackman</a></div>
+<div class="line">Web: <a class="reference external" href="http://www.pgbackman.org/">http://www.pgbackman.org/</a></div>
+<div class="line"><br /></div>
+</div>
+<div class="contents topic" id="contents">
+<p class="topic-title first">Contents</p>
+<ul class="simple">
+<li><a class="reference internal" href="#introduction" id="id1">Introduction</a></li>
+<li><a class="reference internal" href="#about-backups-in-postgresql" id="id2">About backups in PostgreSQL</a></li>
+<li><a class="reference internal" href="#main-features" id="id3">Main features</a></li>
+<li><a class="reference internal" href="#architecture-and-components" id="id4">Architecture and components</a></li>
+<li><a class="reference internal" href="#installation" id="id5">Installation</a><ul>
+<li><a class="reference internal" href="#system-requirements" id="id6">System requirements</a></li>
+<li><a class="reference internal" href="#from-source" id="id7">From source</a></li>
+<li><a class="reference internal" href="#via-rpm-packages" id="id8">Via RPM packages</a></li>
+<li><a class="reference internal" href="#via-deb-packages" id="id9">Via Deb packages</a></li>
+<li><a class="reference internal" href="#pgbackman-database" id="id10">pgbackman Database</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#configuration" id="id11">Configuration</a><ul>
+<li><a class="reference internal" href="#backup-servers" id="id12">Backup servers</a></li>
+<li><a class="reference internal" href="#pgsql-nodes" id="id13">PgSQL nodes</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#system-administration-and-maintenance" id="id14">System administration and maintenance</a></li>
+<li><a class="reference internal" href="#pgbackman-shell" id="id15">PgBackMan shell</a><ul>
+<li><a class="reference internal" href="#register-backup-server" id="id16">register_backup_server</a></li>
+<li><a class="reference internal" href="#update-backup-server" id="id17">update_backup_server</a></li>
+<li><a class="reference internal" href="#update-backup-server-config" id="id18">update_backup_server_config</a></li>
+<li><a class="reference internal" href="#delete-backup-server" id="id19">delete_backup_server</a></li>
+<li><a class="reference internal" href="#show-backup-servers" id="id20">show_backup_servers</a></li>
+<li><a class="reference internal" href="#show-backup-server-config" id="id21">show_backup_server_config</a></li>
+<li><a class="reference internal" href="#show-backup-server-stats" id="id22">show_backup_server_stats</a></li>
+<li><a class="reference internal" href="#register-pgsql-node" id="id23">register_pgsql_node</a></li>
+<li><a class="reference internal" href="#update-pgsql-node" id="id24">update_pgsql_node</a></li>
+<li><a class="reference internal" href="#update-pgsql-node-config" id="id25">update_pgsql_node_config</a></li>
+<li><a class="reference internal" href="#delete-pgsql-node" id="id26">delete_pgsql_node</a></li>
+<li><a class="reference internal" href="#show-pgsql-nodes" id="id27">show_pgsql_nodes</a></li>
+<li><a class="reference internal" href="#show-pgsql-node-config" id="id28">show_pgsql_node_config</a></li>
+<li><a class="reference internal" href="#show-pgsql-node-stats" id="id29">show_pgsql_node_stats</a></li>
+<li><a class="reference internal" href="#register-backup-definition" id="id30">register_backup_definition</a></li>
+<li><a class="reference internal" href="#delete-backup-definition-id" id="id31">delete_backup_definition_id</a></li>
+<li><a class="reference internal" href="#delete-backup-definition-dbname" id="id32">delete_backup_definition_dbname</a></li>
+<li><a class="reference internal" href="#show-backup-definition" id="id33">show_backup_definition</a></li>
+<li><a class="reference internal" href="#show-backup-catalog" id="id34">show_backup_catalog</a></li>
+<li><a class="reference internal" href="#show-backup-details" id="id35">show_backup_details</a></li>
+<li><a class="reference internal" href="#register-snapshot-definition" id="id36">register_snapshot_definition</a></li>
+<li><a class="reference internal" href="#show-snapshot-definitions" id="id37">show_snapshot_definitions</a></li>
+<li><a class="reference internal" href="#show-empty-backup-catalogs" id="id38">show_empty_backup_catalogs</a></li>
+<li><a class="reference internal" href="#show-pgbackman-config" id="id39">show_pgbackman_config</a></li>
+<li><a class="reference internal" href="#show-pgbackman-stats" id="id40">show_pgbackman_stats</a></li>
+<li><a class="reference internal" href="#register-restore-definition" id="id41">register_restore_definition</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#submitting-a-bug" id="id42">Submitting a bug</a></li>
+<li><a class="reference internal" href="#authors" id="id43">Authors</a></li>
+<li><a class="reference internal" href="#license-and-contributions" id="id44">License and Contributions</a></li>
+</ul>
+</div>
+<div class="section" id="introduction">
+<h1><a class="toc-backref" href="#id1">Introduction</a></h1>
+<p>PgBackMan is an open source tool to manage PostgreSQL backup dumps
+created with <tt class="docutils literal">pg_dump</tt> and <tt class="docutils literal">pg_dumpall</tt>.</p>
+<p>It is designed to manage backups from thousands of databases running
+in multiple PostgreSQL nodes, and it supports a multiple backup
+servers topology.</p>
+<p>It will also manage role and database configuration information when
+creating a backup of a database.</p>
+<p>Even though a backup created with <tt class="docutils literal">pg_dump</tt> / <tt class="docutils literal">pg_dumpall</tt> can never
+guarantee a full disaster recovery of all data changed between the
+moment when the backup was taken and the moment of a future crash,
+they are still necessary if you need to archive versions of a database, move
+databases between PgSQL nodes and clone databases between production /
+pre-production and/or development servers.</p>
+<p>They are also an easy way of taken backups of databases not requiring
+PITR backups.</p>
+<p>PgBackMan is not a tool for managing PITR (Point in time recovery)
+backups. There are several other solutions out there that can be use
+for PITR backups, such as PITRTools, OmniPITR, and Barman.</p>
+</div>
+<div class="section" id="about-backups-in-postgresql">
+<h1><a class="toc-backref" href="#id2">About backups in PostgreSQL</a></h1>
+<p>PostgreSQL has two utilities <tt class="docutils literal">pg_dump</tt> and <tt class="docutils literal">pg_dumpall</tt> for
+backing up databases. These utilities make consistent backups of a
+database or the hole cluster even if the databases are being used
+concurrently. At the same time <tt class="docutils literal">pg_dump</tt> and <tt class="docutils literal">pg_dumpall</tt> do not
+block other users accessing the database when backups are been taking.</p>
+<p>When taking a backup of a database we need this information to be sure
+we can make a restore that includes 100% of the data and definitions
+from the target database:</p>
+<ol class="arabic simple">
+<li>Database schema.</li>
+<li>Database data.</li>
+<li>Roles owning objects in the database.</li>
+<li>Roles with privileges on objects in the database.</li>
+<li>Roles with privileges on the database or schemas.</li>
+<li>Creation of all the roles owning something or with privileges.</li>
+<li>Configuration parameters defined explicitly for a role.</li>
+<li>Configuration parameters defined explicitly for the database.</li>
+</ol>
+<p>Unfortunately all this information cannot be obtained in a single
+execution for only one database. 1, 2, 3 and 4 can be obtained with
+<tt class="docutils literal">pg_dump</tt>. 5, 7 and 8 can be obtained with a full <tt class="docutils literal">pg_dumpall</tt> and
+6 with a <tt class="docutils literal">pg_dumpall <span class="pre">-r</span></tt>.</p>
+<p>At the same time, <tt class="docutils literal">pg_dumpall</tt> will return all this information for
+all databases in a cluster, not only the one we want to take a backup
+of.</p>
+<p>This is something that PostgreSQL will have to improve in the future
+so it gets easier to take a backup/snapshot of a database.</p>
+<p>In the meantime, PgBackMan takes care of all this and it delivers all
+the information needed to run a 100% restore of a database when we
+define a backup in the system.</p>
+</div>
+<div class="section" id="main-features">
+<h1><a class="toc-backref" href="#id3">Main features</a></h1>
+<p>The main features of PgBackMan are:</p>
+<ul class="simple">
+<li>Central database with metadata information.</li>
+<li>PgBackMan shell for interaction with the system.</li>
+<li>Management of multiple backup servers</li>
+<li>Management of multiple PostgreSQL servers</li>
+<li>Management of thousands of backups dumps through a catalogue</li>
+<li>Manual and scheduled backups</li>
+<li>Management of retention policies for backups dumps..</li>
+<li>Fully detailed backup reports.</li>
+<li>Multiple database backup types, CLUSTER, FULL, SCHEMA, DATA.</li>
+<li>Full backup of role information for a database.</li>
+<li>Full backup of database configuration for a database.</li>
+<li>Automatic definitions of backups for all databases running in a PgSQL node.</li>
+<li>Semi-automatic restore procedures</li>
+<li>Autonomous pgbackman_dump program that function even if the central database is not available.</li>
+<li>Handling of error situations.</li>
+<li>Totally written in Python and PL/PgSQL</li>
+</ul>
+<p>Future features will include:</p>
+<ul class="simple">
+<li>Automatic cloning / move of databases between PgSQL nodes.</li>
+<li>Disk space management / planning</li>
+</ul>
+</div>
+<div class="section" id="architecture-and-components">
+<h1><a class="toc-backref" href="#id4">Architecture and components</a></h1>
+<p>The components forming part of PgBackMan could be listed as follows:</p>
+<ul class="simple">
+<li><strong>Backup servers:</strong> One or several backup servers running
+PgBackMan. All SQL dumps and logfiles are saved in these
+servers. They need access via <tt class="docutils literal">libpq</tt> to the postgreSQL nodes that
+will be allow to have backups in a backup server.</li>
+<li><strong>PGnodes</strong>: PostgreSQL servers running postgreSQL databases.</li>
+<li><strong>PgBackMan DB</strong>: Central postgreSQL metadata database used by PgBackMan. All
+backup servers need access to this database.</li>
+<li><strong>PgBackMan shell:</strong> This is a program that can be run in a text
+terminal. It can be run in any of the backup servers registered in
+the system. It is the console used to manage PgBackMan.</li>
+<li><strong>pgbackman_control:</strong> This program runs in every backup server and
+takes care of updating crontab files and creating AT jobs when
+backup, snapshots or restore definitions are created.</li>
+<li><strong>pgbackman_maintenence:</strong> This programs runs in every backup server
+and runs some maintenance jobs needed by PgBackMan.</li>
+<li><strong>pgbackman_dump:</strong> This program runs in the backup servers when a backup
+or snapshot has to be taken.</li>
+<li><strong>pgbackman_restore:</strong> This program runs in the backup servers when
+a restore has to be run.</li>
+</ul>
+<div class="figure">
+<img alt="images/architecture.jpg" src="images/architecture.jpg" style="width: 654.0px; height: 564.0px;" />
+</div>
+</div>
+<div class="section" id="installation">
+<h1><a class="toc-backref" href="#id5">Installation</a></h1>
+<p>You will have to install the requirements and the PgBackMan software
+in all the servers that are going to be used as backup servers by
+PgBackMan.</p>
+<div class="section" id="system-requirements">
+<h2><a class="toc-backref" href="#id6">System requirements</a></h2>
+<ul class="simple">
+<li>Linux/Unix</li>
+<li>Python 2.6 or 2.7</li>
+<li>Python modules:
+- psycopg2
+- argparse</li>
+<li>PostgreSQL &gt;= 9.0</li>
+<li>AT and CRON installed and running.</li>
+</ul>
+<p>Before you install PgBackMan you have to install the software needed
+by this tool</p>
+<p>In systems using YUM:</p>
+<pre class="literal-block">
+yum install python-psycopg2 python-argparse at
+</pre>
+<p>In system using apt-get:</p>
+<pre class="literal-block">
+apt-get install python-psycopg2 python-argparse at
+</pre>
+<p>If you are going to install from source, you need to install also
+these packages:</p>
+<p>In systems using YUM:</p>
+<pre class="literal-block">
+yum install python-devel python-setuptools
+</pre>
+<p>In system using apt-get:</p>
+<pre class="literal-block">
+apt-get install python-devel python-setuptools
+</pre>
+</div>
+<div class="section" id="from-source">
+<h2><a class="toc-backref" href="#id7">From source</a></h2>
+<p>The easiest way to install PgBackMan from source is to get the last
+version from the master branch at the GitHub repository.</p>
+<pre class="literal-block">
+[root&#64;server]# cd
+[root&#64;server]# git clone https://github.com/rafaelma/pgbackman.git
+
+[root&#64;server]# cd pgbackman
+[root&#64;server]# ./setup.py install
+.....
+</pre>
+<p>This will install all users, groups, programs, configuration files, logfiles and the
+pgbackman module in your system.</p>
+</div>
+<div class="section" id="via-rpm-packages">
+<h2><a class="toc-backref" href="#id8">Via RPM packages</a></h2>
+<p>RPM packages are available ...</p>
+</div>
+<div class="section" id="via-deb-packages">
+<h2><a class="toc-backref" href="#id9">Via Deb packages</a></h2>
+<p>Deb packages are available ...</p>
+</div>
+<div class="section" id="pgbackman-database">
+<h2><a class="toc-backref" href="#id10">pgbackman Database</a></h2>
+<p>After the requirements and the PgBackMan software are installed, you
+have to install the pgbackman database in a server running PostgreSQL</p>
+<p>You can get</p>
+</div>
+</div>
+<div class="section" id="configuration">
+<h1><a class="toc-backref" href="#id11">Configuration</a></h1>
+<div class="section" id="backup-servers">
+<h2><a class="toc-backref" href="#id12">Backup servers</a></h2>
+<p>A backup server needs to have access to the <tt class="docutils literal">pgbackman</tt> database and
+to all PgSQL nodes is taken backups for. This can be done like this:</p>
+<ol class="arabic">
+<li><p class="first">Update <tt class="docutils literal">/etc/pgbackman/pgbackman.conf</tt> with the database
+parameters needed by PgBackMan to access the central metadata
+database. You need to define <tt class="docutils literal">host</tt> or <tt class="docutils literal">hostaddr</tt>, <tt class="docutils literal">port</tt>,
+<tt class="docutils literal">dbname</tt>, <tt class="docutils literal">database</tt> under the section
+<tt class="docutils literal">[pgbackman_database]</tt>.</p>
+<p>You can also define <tt class="docutils literal">password</tt> in this section but we discourage
+to do this and recommend to define a <tt class="docutils literal">.pgpass</tt> file in the home
+directory of the users <tt class="docutils literal">root</tt> and <tt class="docutils literal">pgbackman</tt> with this
+information, e.g.:</p>
+<pre class="literal-block">
+dbhost.domain:5432:pgbackman:pgbackman_role_rw:PASSWORD
+</pre>
+<p>and set the privileges of this file with <tt class="docutils literal">chmod 400 <span class="pre">~/.pgpass</span></tt>.</p>
+<p>Even a better solution will be to use the <tt class="docutils literal">cert</tt> autentication for
+the pgbackman database user so we do not need to save passwords
+around.</p>
+</li>
+<li><p class="first">Update and reload the <tt class="docutils literal">pg_hba.conf</tt> file in the postgreSQL server
+running the pgbackman database, with a line that gives access to
+the pgbackman database from the new backup server. We recommend to
+use a SSL connection to encrypt all the trafikk between the database
+server and the backup server, e.g.:</p>
+<pre class="literal-block">
+hostssl   pgbackman   pgbackman_role_rw    10.20.20.20.200/32     md5
+</pre>
+</li>
+<li><p class="first">Define the backup server in PgBackMan via the PgBackMan shell:</p>
+<pre class="literal-block">
+[pgbackman&#64;pg-backup01 ~]# pgbackman
+
+########################################################
+Welcome to the PostgreSQL Backup Manager shell (v.1.0.0)
+########################################################
+Type help or \? to list commands.
+
+[pgbackman]$ register_backup_server
+--------------------------------------------------------
+# Hostname []: pg-backup01
+# Domain [uio.no]:
+# Remarks []: Main backup server
+
+# Are all values correct (yes/no): yes
+--------------------------------------------------------
+
+[Done]
+
+[pgbackman]$ show_backup_servers
++-------+------------------+----------------------+
+| SrvID | FQDN               | Remarks            |
++-------+--------------------+--------------------+
+| 00001 | pg-backup01.uio.no | Main backup server |
++-------+------------------+----------------------+
+</pre>
+</li>
+<li><p class="first">Create the root directory / partition in the backup derver that
+will be used to save all backups, logfiles, and syem data needed by
+PgBackMan in</p>
+</li>
+</ol>
+</div>
+<div class="section" id="pgsql-nodes">
+<h2><a class="toc-backref" href="#id13">PgSQL nodes</a></h2>
+<p>Every PgSQL node defined in PgBackMan will need to update and reload
+his <tt class="docutils literal">pg_hba.conf</tt> file also to give access to the admin user
+(<tt class="docutils literal">postgres</tt> per default) from the backup serveres defined in
+PgBackMan, e.g.:</p>
+<pre class="literal-block">
+hostssl   *   postgres    10.20.20.20.200/32     md5
+</pre>
+<p>Remember that the <tt class="docutils literal">.pgpass</tt> file of the <tt class="docutils literal">pgbackman</tt> user in the
+backup server has to be updated with the information needed to access
+every PgSQL node we are goint to take backups for.</p>
+</div>
+</div>
+<div class="section" id="system-administration-and-maintenance">
+<h1><a class="toc-backref" href="#id14">System administration and maintenance</a></h1>
+</div>
+<div class="section" id="pgbackman-shell">
+<h1><a class="toc-backref" href="#id15">PgBackMan shell</a></h1>
+<p>The PgBackMan interactive shell can be started by running the program
+<tt class="docutils literal">/usr/bin/pgbackman</tt></p>
+<pre class="literal-block">
+[pgbackman&#64;pg-backup01]# pgbackman
+
+########################################################
+Welcome to the PostgreSQL Backup Manager shell (v.1.0.0)
+########################################################
+Type help or \? to list commands.
+
+[pgbackman]$ help
+
+Documented commands (type help &lt;topic&gt;):
+========================================
+EOF                              show_backup_server_stats
+clear                            show_backup_servers
+delete_backup_definition_dbname  show_empty_backup_job_catalogs
+delete_backup_definition_id      show_history
+delete_backup_server             show_jobs_queue
+delete_pgsql_node                show_pgbackman_config
+quit                             show_pgbackman_stats
+register_backup_definition       show_pgsql_node_config
+register_backup_server           show_pgsql_node_stats
+register_pgsql_node              show_pgsql_nodes
+register_snapshot_definition     show_snapshot_definitions
+shell                            update_backup_server
+show_backup_catalog              update_backup_server_config
+show_backup_definitions          update_pgsql_node
+show_backup_details              update_pgsql_node_config
+show_backup_server_config
+
+Miscellaneous help topics:
+==========================
+shortcuts
+
+Undocumented commands:
+======================
+help
+
+[pgbackman]$
+</pre>
+<div class="section" id="register-backup-server">
+<h2><a class="toc-backref" href="#id16">register_backup_server</a></h2>
+<p>This command registers a backup server in PgBackMan:</p>
+<pre class="literal-block">
+Command: register_backup_server [hostname] [domain] [remarks]
+</pre>
+<p>It can be run with or without parameters. e.g:</p>
+<pre class="literal-block">
+[pgbackman]$ register_backup_server backup01 example.org &quot;Test server&quot;
+
+[pgbackman]$ register_backup_server
+--------------------------------------------------------
+# Hostname []: backup02
+# Domain [example.org]:
+# Remarks []: Test server 2
+
+# Are all values correct (yes/no): yes
+--------------------------------------------------------
+</pre>
+</div>
+<div class="section" id="update-backup-server">
+<h2><a class="toc-backref" href="#id17">update_backup_server</a></h2>
+<p>This command updates some parameters of a backup server defined in
+PgbackMan:</p>
+<pre class="literal-block">
+Command: update_backup_server [SrvID | FQDN] [remarks]
+</pre>
+<p>It can be run with or without parameters. e.g.:</p>
+<pre class="literal-block">
+update_backup_server 1 &quot;Main backup server&quot;
+
+[pgbackman]$ update_backup_server
+--------------------------------------------------------
+# SrvID / FQDN []: 1
+# Remarks []: Main backup server
+
+# Are all values to update correct (yes/no): yes
+--------------------------------------------------------
+</pre>
+<p>You can use the backup server ID in PgBackMan or the FQDN to choose
+the server to be updated.</p>
+</div>
+<div class="section" id="update-backup-server-config">
+<h2><a class="toc-backref" href="#id18">update_backup_server_config</a></h2>
+<p>Not implemented.</p>
+</div>
+<div class="section" id="delete-backup-server">
+<h2><a class="toc-backref" href="#id19">delete_backup_server</a></h2>
+<p>This command deletes a backup server defined in PgBackMan:</p>
+<pre class="literal-block">
+Command: delete_backup_server [SrvID | FQDN]
+</pre>
+<p>It can be run with or without parameters. e.g.:</p>
+<pre class="literal-block">
+[pgbackman]$ delete_backup_server 2
+
+[pgbackman]$ delete_backup_server
+--------------------------------------------------------
+# SrvID / FQDN: 2
+
+# Are you sure you want to delete this server? (yes/no): yes
+--------------------------------------------------------
+</pre>
+<p>You can use the backup server ID in PgBackMan or the FQDN to choose
+the server to be deleted.</p>
+<p>You will get an error if you try to delete a backup server that has
+active backups in the catalog.</p>
+</div>
+<div class="section" id="show-backup-servers">
+<h2><a class="toc-backref" href="#id20">show_backup_servers</a></h2>
+<p>This command shows all the backup servers defined in PgbackMan</p>
+</div>
+<div class="section" id="show-backup-server-config">
+<h2><a class="toc-backref" href="#id21">show_backup_server_config</a></h2>
+<p>This command shows the configuration parameters for a backup server.</p>
+<p>It can be run with or without parameters. e.g.</p>
+</div>
+<div class="section" id="show-backup-server-stats">
+<h2><a class="toc-backref" href="#id22">show_backup_server_stats</a></h2>
+<p>This command shows some statistics for a backup server defined in
+PgBackMan.</p>
+</div>
+<div class="section" id="register-pgsql-node">
+<h2><a class="toc-backref" href="#id23">register_pgsql_node</a></h2>
+</div>
+<div class="section" id="update-pgsql-node">
+<h2><a class="toc-backref" href="#id24">update_pgsql_node</a></h2>
+</div>
+<div class="section" id="update-pgsql-node-config">
+<h2><a class="toc-backref" href="#id25">update_pgsql_node_config</a></h2>
+</div>
+<div class="section" id="delete-pgsql-node">
+<h2><a class="toc-backref" href="#id26">delete_pgsql_node</a></h2>
+</div>
+<div class="section" id="show-pgsql-nodes">
+<h2><a class="toc-backref" href="#id27">show_pgsql_nodes</a></h2>
+</div>
+<div class="section" id="show-pgsql-node-config">
+<h2><a class="toc-backref" href="#id28">show_pgsql_node_config</a></h2>
+</div>
+<div class="section" id="show-pgsql-node-stats">
+<h2><a class="toc-backref" href="#id29">show_pgsql_node_stats</a></h2>
+</div>
+<div class="section" id="register-backup-definition">
+<h2><a class="toc-backref" href="#id30">register_backup_definition</a></h2>
+</div>
+<div class="section" id="delete-backup-definition-id">
+<h2><a class="toc-backref" href="#id31">delete_backup_definition_id</a></h2>
+</div>
+<div class="section" id="delete-backup-definition-dbname">
+<h2><a class="toc-backref" href="#id32">delete_backup_definition_dbname</a></h2>
+</div>
+<div class="section" id="show-backup-definition">
+<h2><a class="toc-backref" href="#id33">show_backup_definition</a></h2>
+</div>
+<div class="section" id="show-backup-catalog">
+<h2><a class="toc-backref" href="#id34">show_backup_catalog</a></h2>
+</div>
+<div class="section" id="show-backup-details">
+<h2><a class="toc-backref" href="#id35">show_backup_details</a></h2>
+</div>
+<div class="section" id="register-snapshot-definition">
+<h2><a class="toc-backref" href="#id36">register_snapshot_definition</a></h2>
+</div>
+<div class="section" id="show-snapshot-definitions">
+<h2><a class="toc-backref" href="#id37">show_snapshot_definitions</a></h2>
+</div>
+<div class="section" id="show-empty-backup-catalogs">
+<h2><a class="toc-backref" href="#id38">show_empty_backup_catalogs</a></h2>
+</div>
+<div class="section" id="show-pgbackman-config">
+<h2><a class="toc-backref" href="#id39">show_pgbackman_config</a></h2>
+</div>
+<div class="section" id="show-pgbackman-stats">
+<h2><a class="toc-backref" href="#id40">show_pgbackman_stats</a></h2>
+</div>
+<div class="section" id="register-restore-definition">
+<h2><a class="toc-backref" href="#id41">register_restore_definition</a></h2>
+<p>This command defines a restore job of a backup from the catalog.</p>
+<p>It will work with parameters only if there are not conflicts in the
+definition.</p>
+<p>There are some issues we have to take care when running a restore of a
+backup. What happens if we want to restore a backup of a database or a
+role that already exists in the target server?</p>
+<p>This flowchar figure explains the logic used when restoring a backup
+if our restore definition create some conflicts:</p>
+<div class="figure">
+<img alt="images/register_restore.jpg" src="images/register_restore.jpg" style="width: 670.0px; height: 1200.0px;" />
+</div>
+</div>
+</div>
+<div class="section" id="submitting-a-bug">
+<h1><a class="toc-backref" href="#id42">Submitting a bug</a></h1>
+<p>PgBakMan has been extensively tested, and is currently being used in
+production at the University of Oslo. However, as any software,
+PgBackMan is not bug free.</p>
+<p>If you discover a bug, please file a bug through the GitHub Issue page
+for the project at: <a class="reference external" href="https://github.com/rafaelma/pgbackman/issues">https://github.com/rafaelma/pgbackman/issues</a></p>
+</div>
+<div class="section" id="authors">
+<h1><a class="toc-backref" href="#id43">Authors</a></h1>
+<p>In alphabetical order:</p>
+<div class="line-block">
+<div class="line"><br /></div>
+<div class="line">Rafael Martinez Guerrero</div>
+<div class="line">E-mail: <a class="reference external" href="mailto:rafael&#64;postgresql.org.es">rafael&#64;postgresql.org.es</a> / <a class="reference external" href="mailto:rafael&#64;usit.uio.no">rafael&#64;usit.uio.no</a></div>
+<div class="line">PostgreSQL-es / University Center for Information Technology (USIT), University of Oslo, Norway</div>
+<div class="line"><br /></div>
+</div>
+</div>
+<div class="section" id="license-and-contributions">
+<h1><a class="toc-backref" href="#id44">License and Contributions</a></h1>
+<p>PgBackMan is the property of Rafael Martinez Guerrero and
+PostgreSQL-es and its code is distributed under GNU General Public
+License 3.</p>
+<p>Copyright © 2013-2014 Rafael Martinez Guerrero - PostgreSQL-es.</p>
+</div>
+</div>
+<div class="footer">
+<hr class="footer" />
+Generated on: 2014-05-22 21:27 UTC.
+Generated by <a class="reference external" href="http://docutils.sourceforge.net/">Docutils</a> from <a class="reference external" href="http://docutils.sourceforge.net/rst.html">reStructuredText</a> source.
+
+</div>
+</body>
+</html>

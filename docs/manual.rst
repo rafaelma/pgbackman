@@ -5,9 +5,10 @@ PgBackMan - PostgreSQL Backup Manager
 |
 | Version-1.0.0
 |
-| Author: Rafael Martinez Guerrero
+| Author: Rafael Martinez Guerrero (University of Oslo)
 | E-mail: rafael@postgresql.org.es
 | Source: https://github.com/rafaelma/pgbackman
+| Web: http://www.pgbackman.org/
 |
 
 .. contents::
@@ -142,8 +143,8 @@ The components forming part of PgBackMan could be listed as follows:
 * **pgbackman_restore:** This program runs in the backup servers when
   a restore has to be run.
 
-.. figure:: img/architecture.jpg
-   :scale: 100 %
+.. figure:: images/architecture.jpg
+   :scale: 50%
 
 Installation
 ============
@@ -526,8 +527,8 @@ role that already exists in the target server?
 This flowchar figure explains the logic used when restoring a backup
 if our restore definition create some conflicts:
 
-.. figure:: img/register_restore.jpg
-   :scale: 100 %
+.. figure:: images/register_restore.jpg
+   :scale: 50%
 
 
 
