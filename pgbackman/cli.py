@@ -1816,7 +1816,7 @@ class pgbackman_cli(cmd.Cmd):
 
         [AT time]:
         -------
-        Timestamp to run the snapshot, e.g. 2014-04-23 16:01
+        Timestamp to run the restore job, e.g. 2014-04-23 16:01
 
         [BckID]:
         --------

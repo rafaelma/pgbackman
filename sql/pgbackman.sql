@@ -3830,7 +3830,7 @@ CREATE OR REPLACE VIEW show_restore_details AS
        date_trunc('seconds',a.duration) AS "Duration",
        a.execution_status AS "Status",
        b.bck_id AS "BckID",
-       a.target_dbname AS "Source DBname",
+       c.dbname AS "Source DBname",
        a.target_dbname AS "Target DBname",
        a.renamed_dbname AS "Renamed DBname",
        a.backup_server_id,
@@ -3845,7 +3845,8 @@ CREATE OR REPLACE VIEW show_restore_details AS
        array_to_string(a.role_list,',') AS "Roles restored",
        a.error_message AS "Error message"
    FROM restore_catalog a 
-   JOIN restore_definition b ON a.restore_def = b.restore_def) 
+   JOIN restore_definition b ON a.restore_def = b.restore_def
+   JOIN backup_catalog c ON b.bck_id = c.bck_id) 
    ORDER BY "Finished" DESC, backup_server_id,target_pgsql_node_id,"Target DBname","Status";
 
 ALTER VIEW show_restore_details OWNER TO pgbackman_role_rw;
