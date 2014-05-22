@@ -57,22 +57,21 @@ def restore_roles(db):
         with open(global_parameters['pgdump_roles_file'], 'r') as sqldump_in:
             with open(pg_restore_roles_temp_file.name, 'w') as sqldump_out:
                 sqldump_out.write('BEGIN;\n')
-                 
+                                
                 for line in sqldump_in:
+                                        
                     for role in global_parameters['role_list']:
                          
                         #
                         # CREATE ROLE statements
                         #
                         if 'CREATE ROLE ' + role in line:
-                            print line
                             sqldump_out.write(line)
 
                         #
                         # ALTER ROLE statements
                         #
                         if 'ALTER ROLE ' + role in line:
-                            print line
                             sqldump_out.write(line)
 
                 sqldump_out.write('COMMIT;\n')
@@ -87,11 +86,9 @@ def restore_roles(db):
                     ' -f ' + pg_restore_roles_temp_file.name
 
                 DEVNULL = open(os.devnull, 'wb')
-                print role_restore_command
+                
                 proc = subprocess.Popen([role_restore_command],stdout=DEVNULL,stderr=subprocess.STDOUT,shell=True)
                 proc.wait()
-
-                print proc.returncode
 
                 if proc.returncode != 0:
                     logs.logger.critical('The command used to restore the roles needed by the target database %s has a return value != 0',global_parameters['target_dbname'])
@@ -181,11 +178,9 @@ def restore_dbconfig(db):
                     ' -f ' + pg_restore_dbconfig_temp_file.name
 
                 DEVNULL = open(os.devnull, 'wb')
-                print dbconfig_restore_command
+                
                 proc = subprocess.Popen([dbconfig_restore_command],stdout=DEVNULL,stderr=subprocess.STDOUT,shell=True)
                 proc.wait()
-
-                print proc.returncode
 
                 if proc.returncode != 0:
                     logs.logger.critical('The command used to restore the global database statements needed by the target database %s has a return value != 0',global_parameters['target_dbname'])
@@ -227,12 +222,10 @@ def restore_database(db):
             ' ' + global_parameters['pgdump_file']
 
         DEVNULL = open(os.devnull, 'wb')
-        print database_restore_command
+        
         proc = subprocess.Popen([database_restore_command],stdout=DEVNULL,stderr=subprocess.STDOUT,shell=True)
         proc.wait()
-            
-        print proc.returncode
-            
+                    
         if proc.returncode != 0:
             logs.logger.critical('The command used to restore the database %s has a return value != 0',global_parameters['target_dbname'])
             
@@ -386,7 +379,24 @@ def get_pgsql_node_parameters_from_cache(db):
 
         sys.exit(1)
 
+# ###############################################
+# Function rename_existing_database()
+# ###############################################
+def rename_existing_database(db,db_pgnode):
+    '''Rename an existing database before restoring a backup'''
 
+    try:
+        db_pgnode.rename_existing_database(global_parameters['target_dbname'],global_parameters['renamed_dbname'])
+
+    except Exception as e:
+        logs.logger.critical('Could not rename the database %s to %s - %s',global_parameters['target_dbname'],global_parameters['renamed_dbname'],e)
+        global_parameters['execution_status'] = 'ERROR'
+        global_parameters['error_message'] = 'Problems renaming an existing database'
+        register_restore_catalog(db)
+        
+        sys.exit(1)
+        
+        
 # ############################################
 # Function register_restore_catalog()
 # ############################################
@@ -532,7 +542,6 @@ def main():
     global_parameters['restore_start'] = datetime.datetime.now()
 
     global_parameters['error_message'] = ''
-    global_parameters['role_list'] = [] 
 
     global_parameters['target_pgsql_node_release'] = ''
 
@@ -621,8 +630,12 @@ def main():
         register_restore_catalog(db)
         sys.exit(1) 
 
+    if global_parameters['renamed_dbname'] != '':
+        rename_existing_database(db,db_pgnode)
+        logs.logger.info('Renaming an existing database to %s before restoring the backup in the target database %s',global_parameters['renamed_dbname'],global_parameters['target_dbname'])
+        
     #
-    # Check if the target database already exists in the target PgSQl
+    # Check if the target database already exists in the target PgSQL
     # node. Stop the backup with an error it it exists.
     #
         
@@ -748,8 +761,7 @@ if __name__ == '__main__':
         global_parameters['renamed_dbname'] = args.renamed_dbname
     else:
         global_parameters['renamed_dbname'] = ''
-        
-        
+
     if args.role_list:
         global_parameters['role_list'] = args.role_list.replace(' ','').split(',')
     else:
