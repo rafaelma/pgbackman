@@ -54,9 +54,9 @@ class pgbackman_cli(cmd.Cmd):
         
         self.version = self.get_version()
 
-        self.intro =  '\n########################################################\n' + \
+        self.intro =  '\n#############################################################\n' + \
             'Welcome to the PostgreSQL Backup Manager shell (v.' + self.version + ')\n' + \
-            '########################################################\n' + \
+            '#############################################################\n' + \
             'Type help or \? to list commands.\n'
         
         self.prompt = '[pgbackman]$ '
@@ -138,17 +138,23 @@ class pgbackman_cli(cmd.Cmd):
             except Exception as e:
                 print "\n[ERROR]: Problems getting default values for parameters\n",e 
                 return False
-            
-            print "--------------------------------------------------------"
-            hostname = raw_input("# Hostname []: ")
-            domain = raw_input("# Domain [" + domain_default + "]: ")
-            remarks = raw_input("# Remarks []: ")
-            print
 
-            while ack != "yes" and ack != "no":
-                ack = raw_input("# Are all values correct (yes/no): ")
 
-            print "--------------------------------------------------------"
+            try:
+                print "--------------------------------------------------------"
+                hostname = raw_input("# Hostname []: ")
+                domain = raw_input("# Domain [" + domain_default + "]: ")
+                remarks = raw_input("# Remarks []: ")
+                print
+
+                while ack != "yes" and ack != "no":
+                    ack = raw_input("# Are all values correct (yes/no): ")
+
+                print "--------------------------------------------------------"
+
+            except Exception as e:
+                print "\n[Aborted]\n"
+                return False   
 
             if domain == "":
                 domain = domain_default
@@ -226,15 +232,21 @@ class pgbackman_cli(cmd.Cmd):
         if len(arg_list) == 0:
             
             ack = ""
-            
-            print "--------------------------------------------------------"
-            server_id = raw_input("# SrvID / FQDN: ")
-            print
 
-            while ack != "yes" and ack != "no":
-                ack = raw_input("# Are you sure you want to delete this server? (yes/no): ")
+            try:
+
+                print "--------------------------------------------------------"
+                server_id = raw_input("# SrvID / FQDN: ")
+                print
+
+                while ack != "yes" and ack != "no":
+                    ack = raw_input("# Are you sure you want to delete this server? (yes/no): ")
             
-            print "--------------------------------------------------------"
+                print "--------------------------------------------------------"
+
+            except Exception as e:
+                print "\n[Aborted]\n"
+                return False
 
             if ack.lower() == "yes":
 
@@ -357,19 +369,25 @@ class pgbackman_cli(cmd.Cmd):
                 print "\n[ERROR]: Problems getting default values for parameters\n",e 
                 return False
 
-            print "--------------------------------------------------------"
-            hostname = raw_input("# Hostname []: ")
-            domain = raw_input("# Domain [" + domain_default + "]: ")
-            port = raw_input("# Port [" + port_default + "]: ")
-            admin_user = raw_input("# Admin user [" + admin_user_default + "]: ")
-            status = raw_input("# Status[" + status_default + "]: ")
-            remarks = raw_input("# Remarks []: ")
-            print
-            
-            while ack != "yes" and ack != "no":
-                ack = raw_input("# Are all values correct (yes/no): ")
+            try:
 
-            print "--------------------------------------------------------"
+                print "--------------------------------------------------------"
+                hostname = raw_input("# Hostname []: ")
+                domain = raw_input("# Domain [" + domain_default + "]: ")
+                port = raw_input("# Port [" + port_default + "]: ")
+                admin_user = raw_input("# Admin user [" + admin_user_default + "]: ")
+                status = raw_input("# Status[" + status_default + "]: ")
+                remarks = raw_input("# Remarks []: ")
+                print
+            
+                while ack != "yes" and ack != "no":
+                    ack = raw_input("# Are all values correct (yes/no): ")
+
+                print "--------------------------------------------------------"
+
+            except Exception as e:
+                print "\n[Aborted]\n"
+                return False
 
             if domain == "":
                 domain = domain_default
@@ -461,15 +479,21 @@ class pgbackman_cli(cmd.Cmd):
             
             ack = ""
             
-            print "--------------------------------------------------------"
-            node_id = raw_input("# NodeID / FQDN: ")
-            print
+            try:
 
-            while ack != "yes" and ack != "no":
-                ack = raw_input("# Are you sure you want to delete this server? (yes/no): ")
+                print "--------------------------------------------------------"
+                node_id = raw_input("# NodeID / FQDN: ")
+                print
+
+                while ack != "yes" and ack != "no":
+                    ack = raw_input("# Are you sure you want to delete this server? (yes/no): ")
     
-            print "--------------------------------------------------------"
+                print "--------------------------------------------------------"
             
+            except Exception as e:
+                print "\n[Aborted]\n"
+                return False
+
             if ack.lower() == "yes":
 
                 try:
@@ -542,12 +566,18 @@ class pgbackman_cli(cmd.Cmd):
         #             
 
         if len(arg_list) == 0:
+
+            try:
             
-            print "--------------------------------------------------------"
-            server_id = raw_input("# SrvID / FQDN [all]: ")
-            node_id = raw_input("# NodeID / FQDN [all]: ")
-            dbname = raw_input("# DBname [all]: ")
-            print "--------------------------------------------------------"
+                print "--------------------------------------------------------"
+                server_id = raw_input("# SrvID / FQDN [all]: ")
+                node_id = raw_input("# NodeID / FQDN [all]: ")
+                dbname = raw_input("# DBname [all]: ")
+                print "--------------------------------------------------------"
+
+            except Exception as e:
+                print "\n[Aborted]\n"
+                return False
 
             if server_id == '' or server_id == 'all':
                 server_list = None
@@ -729,32 +759,38 @@ class pgbackman_cli(cmd.Cmd):
             # Getting the backup definition parameters
             #
             
-            print "--------------------------------------------------------"
-            backup_server = raw_input("# Backup server SrvID / FQDN []: ")
-            pgsql_node = raw_input("# PgSQL node NodeID / FQDN []: ")
-            dbname = raw_input("# DBname []: ")
+            try:
 
-            if dbname != '#all_databases#':
+                print "--------------------------------------------------------"
+                backup_server = raw_input("# Backup server SrvID / FQDN []: ")
+                pgsql_node = raw_input("# PgSQL node NodeID / FQDN []: ")
+                dbname = raw_input("# DBname []: ")
 
-                minutes_cron = raw_input("# Minutes cron [" + str(minutes_cron_default) + "]: ")
-                hours_cron = raw_input("# Hours cron [" + str(hours_cron_default) + "]: ")
+                if dbname != '#all_databases#':
+
+                    minutes_cron = raw_input("# Minutes cron [" + str(minutes_cron_default) + "]: ")
+                    hours_cron = raw_input("# Hours cron [" + str(hours_cron_default) + "]: ")
             
-            weekday_cron = raw_input("# Weekday cron [" + weekday_cron_default + "]: ")
-            month_cron = raw_input("# Month cron [" + month_cron_default + "]: ")
-            day_month_cron = raw_input("# Day-month cron [" + day_month_cron_default + "]: ")
-            backup_code = raw_input("# Backup code [" + backup_code_default + "]: ")
-            encryption = raw_input("# Encryption [" + encryption_default + "]: ")
-            retention_period = raw_input("# Retention period [" + retention_period_default + "]: ")
-            retention_redundancy = raw_input("# Retention redundancy [" + retention_redundancy_default + "]: ")
-            extra_parameters = raw_input("# Extra parameters [" + extra_parameters_default + "]: ")
-            backup_job_status = raw_input("# Job status [" + backup_job_status_default + "]: ")
-            remarks = raw_input("# Remarks []: ")
-            print
+                weekday_cron = raw_input("# Weekday cron [" + weekday_cron_default + "]: ")
+                month_cron = raw_input("# Month cron [" + month_cron_default + "]: ")
+                day_month_cron = raw_input("# Day-month cron [" + day_month_cron_default + "]: ")
+                backup_code = raw_input("# Backup code [" + backup_code_default + "]: ")
+                encryption = raw_input("# Encryption [" + encryption_default + "]: ")
+                retention_period = raw_input("# Retention period [" + retention_period_default + "]: ")
+                retention_redundancy = raw_input("# Retention redundancy [" + retention_redundancy_default + "]: ")
+                extra_parameters = raw_input("# Extra parameters [" + extra_parameters_default + "]: ")
+                backup_job_status = raw_input("# Job status [" + backup_job_status_default + "]: ")
+                remarks = raw_input("# Remarks []: ")
+                print
 
-            while ack != "yes" and ack != "no":
-                ack = raw_input("# Are all values correct (yes/no): ")
+                while ack != "yes" and ack != "no":
+                    ack = raw_input("# Are all values correct (yes/no): ")
 
-            print "--------------------------------------------------------"
+                print "--------------------------------------------------------"
+                
+            except Exception as e:
+                print "\n[Aborted]\n"
+                return False
 
             if ack.lower() == "yes":
 
@@ -1083,19 +1119,25 @@ class pgbackman_cli(cmd.Cmd):
             ack = ""
             force_deletion = ""
 
-            print "--------------------------------------------------------"
-            def_id = raw_input("# DefID: ")
+            try:
 
-            while force_deletion != "y" and force_deletion != "n":
-                force_deletion = raw_input("# Force deletion (y/n): ")
+                print "--------------------------------------------------------"
+                def_id = raw_input("# DefID: ")
+
+                while force_deletion != "y" and force_deletion != "n":
+                    force_deletion = raw_input("# Force deletion (y/n): ")
                 
-            print
+                print
             
-            while ack != "yes" and ack != "no":
-                ack = raw_input("# Are you sure you want to delete this backup definition? (yes/no): ")
+                while ack != "yes" and ack != "no":
+                    ack = raw_input("# Are you sure you want to delete this backup definition? (yes/no): ")
     
-            print "--------------------------------------------------------"
+                print "--------------------------------------------------------"
             
+            except Exception as e:
+                print "\n[Aborted]\n"
+                return False
+
             if ack.lower() == "yes":
                 if def_id.isdigit():
                     try:
@@ -1200,20 +1242,26 @@ class pgbackman_cli(cmd.Cmd):
             ack = ""
             force_deletion = ""
 
-            print "--------------------------------------------------------"
-            pgsql_node_id = raw_input("# NodeID / FQDN: ")
-            dbname = raw_input("# DBname: ")
-            
-            while force_deletion != "y" and force_deletion != "n":
-                force_deletion = raw_input("# Force deletion (y/n): ")
-            
-            print
+            try:
 
-            while ack != "yes" and ack != "no":
-                ack = raw_input("# Are you sure you want to delete this backup definition? (yes/no): ")
-    
-            print "--------------------------------------------------------"
+                print "--------------------------------------------------------"
+                pgsql_node_id = raw_input("# NodeID / FQDN: ")
+                dbname = raw_input("# DBname: ")
             
+                while force_deletion != "y" and force_deletion != "n":
+                    force_deletion = raw_input("# Force deletion (y/n): ")
+            
+                print
+
+                while ack != "yes" and ack != "no":
+                    ack = raw_input("# Are you sure you want to delete this backup definition? (yes/no): ")
+    
+                print "--------------------------------------------------------"
+            
+            except Exception as e:
+                print "\n[Aborted]\n"
+                return False
+
             if ack.lower() == "yes":
 
                 try:
@@ -1316,12 +1364,18 @@ class pgbackman_cli(cmd.Cmd):
         
         if len(arg_list) == 0:
             
-            print "--------------------------------------------------------"
-            server_id = raw_input("# SrvID / FQDN [all]: ")
-            node_id = raw_input("# NodeID / FQDN [all]: ")
-            dbname = raw_input("# DBname [all]: ")
-            def_id = raw_input("# DefID [all]: ")
-            print "--------------------------------------------------------"
+            try:
+
+                print "--------------------------------------------------------"
+                server_id = raw_input("# SrvID / FQDN [all]: ")
+                node_id = raw_input("# NodeID / FQDN [all]: ")
+                dbname = raw_input("# DBname [all]: ")
+                def_id = raw_input("# DefID [all]: ")
+                print "--------------------------------------------------------"
+
+            except Exception as e:
+                print "\n[Aborted]\n"
+                return False
 
             if server_id == '' or server_id == 'all':
                 server_list = None
@@ -1425,11 +1479,17 @@ class pgbackman_cli(cmd.Cmd):
         
         if len(arg_list) == 0:
             
-            print "--------------------------------------------------------"
-            server_id = raw_input("# SrvID / FQDN [all]: ")
-            node_id = raw_input("# Target NodeID / FQDN [all]: ")
-            dbname = raw_input("# Target DBname [all]: ")
-            print "--------------------------------------------------------"
+            try:
+
+                print "--------------------------------------------------------"
+                server_id = raw_input("# SrvID / FQDN [all]: ")
+                node_id = raw_input("# Target NodeID / FQDN [all]: ")
+                dbname = raw_input("# Target DBname [all]: ")
+                print "--------------------------------------------------------"
+
+            except Exception as e:
+                print "\n[Aborted]\n"
+                return False
 
             if server_id == '' or server_id == 'all':
                 server_list = None
@@ -1560,22 +1620,28 @@ class pgbackman_cli(cmd.Cmd):
             except Exception as e:
                 print "\n[ERROR]: Problems getting default values for parameters\n",e 
                 return False
+
+            try:
             
-            print "--------------------------------------------------------"
-            backup_server = raw_input("# Backup server SrvID / FQDN []: ")
-            pgsql_node = raw_input("# PgSQL node NodeID / FQDN []: ")
-            dbname = raw_input("# DBname []: ")
-            at_time = raw_input("# AT timestamp [" + str(at_time_default) + "]: ")
-            backup_code = raw_input("# Backup code [" + backup_code_default + "]: ")
-            retention_period = raw_input("# Retention period [" + retention_period_default + "]: ")
-            extra_parameters = raw_input("# Extra parameters [" + extra_parameters_default + "]: ")
-            remarks = raw_input("# Remarks []: ")
-            print
+                print "--------------------------------------------------------"
+                backup_server = raw_input("# Backup server SrvID / FQDN []: ")
+                pgsql_node = raw_input("# PgSQL node NodeID / FQDN []: ")
+                dbname = raw_input("# DBname []: ")
+                at_time = raw_input("# AT timestamp [" + str(at_time_default) + "]: ")
+                backup_code = raw_input("# Backup code [" + backup_code_default + "]: ")
+                retention_period = raw_input("# Retention period [" + retention_period_default + "]: ")
+                extra_parameters = raw_input("# Extra parameters [" + extra_parameters_default + "]: ")
+                remarks = raw_input("# Remarks []: ")
+                print
 
-            while ack != "yes" and ack != "no":
-                ack = raw_input("# Are all values correct (yes/no): ")
+                while ack != "yes" and ack != "no":
+                    ack = raw_input("# Are all values correct (yes/no): ")
 
-            print "--------------------------------------------------------"
+                print "--------------------------------------------------------"
+
+            except Exception as e:
+                print "\n[Aborted]\n"
+                return False
 
             try:
                 if backup_server.isdigit():
@@ -1730,11 +1796,17 @@ class pgbackman_cli(cmd.Cmd):
         
         if len(arg_list) == 0:
             
-            print "--------------------------------------------------------"
-            server_id = raw_input("# SrvID / FQDN [all]: ")
-            node_id = raw_input("# NodeID / FQDN [all]: ")
-            dbname = raw_input("# DBname [all]: ")
-            print "--------------------------------------------------------"
+            try:
+
+                print "--------------------------------------------------------"
+                server_id = raw_input("# SrvID / FQDN [all]: ")
+                node_id = raw_input("# NodeID / FQDN [all]: ")
+                dbname = raw_input("# DBname [all]: ")
+                print "--------------------------------------------------------"
+
+            except Exception as e:
+                print "\n[Aborted]\n"
+                return False
 
             if server_id == '' or server_id == 'all':
                 server_list = None
@@ -1801,6 +1873,7 @@ class pgbackman_cli(cmd.Cmd):
         else:
             print "\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n"
         
+
     # ############################################
     # Method do_register_restore_definition
     # ############################################
@@ -1856,10 +1929,16 @@ class pgbackman_cli(cmd.Cmd):
             except Exception as e:
                 print "\n[ERROR]: Problems getting default values for parameters\n",e 
                 return False
+
+            try:
             
-            print "--------------------------------------------------------"
-            at_time = raw_input("# AT timestamp [" + str(at_time_default) + "]: ")
-            bck_id = raw_input("# BckID []: ")
+                print "--------------------------------------------------------"
+                at_time = raw_input("# AT timestamp [" + str(at_time_default) + "]: ")
+                bck_id = raw_input("# BckID []: ")
+
+            except Exception as e:
+                print "\n[Aborted]\n"
+                return False
 
             try:
                 if bck_id == '':
@@ -1874,13 +1953,19 @@ class pgbackman_cli(cmd.Cmd):
                 print "\n[ERROR]:",e 
                 return False
 
-            target_pgsql_node = raw_input("# Target NodeID / FQDN []: ")
-            target_dbname = raw_input("# Target DBname [" + target_dbname_default + "]: ")
-            print
+            try:
 
-            while ack_input.lower() != "yes" and ack_input.lower() != "no":
-                ack_input = raw_input("# Are all values correct (yes/no): ")
+                target_pgsql_node = raw_input("# Target NodeID / FQDN []: ")
+                target_dbname = raw_input("# Target DBname [" + target_dbname_default + "]: ")
+                print
 
+                while ack_input.lower() != "yes" and ack_input.lower() != "no":
+                    ack_input = raw_input("# Are all values correct (yes/no): ")
+                    
+            except Exception as e:
+                print "\n[Aborted]\n"
+                return False
+            
             if ack_input.lower() == 'yes':
 
                 print "--------------------------------------------------------"
@@ -1921,28 +2006,45 @@ class pgbackman_cli(cmd.Cmd):
                     
                     else:
                         print "[WARNING]: Target DBname already exists on target PgSQL node.\n"
-                        
-                        while ack_rename.lower() != "yes" and ack_rename.lower() != "no":
-                            ack_rename = raw_input("# Rename it? (yes/no): ")
-                            
+            
+                        try:
+            
+                            while ack_rename.lower() != "yes" and ack_rename.lower() != "no":
+                                ack_rename = raw_input("# Rename it? (yes/no): ")
+                                
+                        except Exception as e:
+                            print "\n[Aborted]\n"
+                            return False
+
                         if ack_rename.lower() == 'no':
                             print "\n[ABORTED]: Cannot continue with this restore definition without \nrenaming the existing database or using another Target DBname value\n"
                             return False
                 
                         elif ack_rename.lower() == 'yes':
                             renamed_dbname_default = target_dbname + '_' + datetime.datetime.now().strftime('%Y_%m_%dT%H%M%S')
-                            renamed_dbname = raw_input("# Rename existing database to [" + renamed_dbname_default + "]: ")
-                    
+
+                            try:
+                                renamed_dbname = raw_input("# Rename existing database to [" + renamed_dbname_default + "]: ")
+                            except Exception as e:
+                                print "\n[Aborted]\n"
+                                return False
+                            
                             if renamed_dbname == "":
                                 renamed_dbname = renamed_dbname_default
 
-                            while db_node.database_exists(renamed_dbname):
-                                print "\n[WARNING]: Renamed database already exist on target PgSQL node."
-                                renamed_dbname = raw_input("# Rename existing database to [" + renamed_dbname_default + "]: ")
+                            try:
+
+                                while db_node.database_exists(renamed_dbname):
+                                    print "\n[WARNING]: Renamed database already exist on target PgSQL node."
+                                    renamed_dbname = raw_input("# Rename existing database to [" + renamed_dbname_default + "]: ")
                             
-                                if renamed_dbname == "":
-                                    renamed_dbname = renamed_dbname_default
+                                    if renamed_dbname == "":
+                                        renamed_dbname = renamed_dbname_default
                                             
+                            except Exception as e:
+                                print "\n[Aborted]\n"
+                                return False
+
                             print "\n[OK]: Renamed DBname " + renamed_dbname + " does not exist on target PgSQL node."
 
                 except Exception as e:
@@ -1965,9 +2067,15 @@ class pgbackman_cli(cmd.Cmd):
                     else:
                         print "\n[WARNING]: Role '" + role + "' already exists on target PgSQL node."
 
-                        while ack_reuse.lower() != "yes" and ack_reuse.lower() != "no":
-                            ack_reuse = raw_input("# Use the existing role? (yes/no): ")
+                        try:
+
+                            while ack_reuse.lower() != "yes" and ack_reuse.lower() != "no":
+                                ack_reuse = raw_input("# Use the existing role? (yes/no): ")
                             
+                        except Exception as e:
+                                print "\n[Aborted]\n"
+                                return False
+
                         if ack_reuse.lower() == 'no':
                             print "\n[ABORTED]: Cannot continue with this restore definition when some roles we need\n to restore already exist and we can not reuse them.\n"
                             return False
@@ -1983,11 +2091,17 @@ class pgbackman_cli(cmd.Cmd):
                 print "Target DBname: " + str(target_dbname)
                 print "Existing database will be renamed to : " + str(renamed_dbname)
                 print "--------------------------------------------------------"
-                
-                while ack_confirm.lower() != "yes" and ack_confirm.lower() != "no":
-                    ack_confirm = raw_input("# Are all values correct (yes/no): ")
 
-                print "--------------------------------------------------------"
+                try:
+                
+                    while ack_confirm.lower() != "yes" and ack_confirm.lower() != "no":
+                        ack_confirm = raw_input("# Are all values correct (yes/no): ")
+
+                    print "--------------------------------------------------------"
+                    
+                except Exception as e:
+                    print "\n[Aborted]\n"
+                    return False
 
                 if ack_confirm.lower() == "yes":
 
@@ -2042,13 +2156,19 @@ class pgbackman_cli(cmd.Cmd):
         #
         
         if len(arg_list) == 0:
-            
-            print "--------------------------------------------------------"
-            server_id = raw_input("# SrvID / FQDN [all]: ")
-            node_id = raw_input("# Target NodeID / FQDN [all]: ")
-            dbname = raw_input("# Target DBname [all]: ")
-            print "--------------------------------------------------------"
 
+            try:
+            
+                print "--------------------------------------------------------"
+                server_id = raw_input("# SrvID / FQDN [all]: ")
+                node_id = raw_input("# Target NodeID / FQDN [all]: ")
+                dbname = raw_input("# Target DBname [all]: ")
+                print "--------------------------------------------------------"
+
+            except Exception as e:
+                print "\n[Aborted]\n"
+                return False
+            
             if server_id == '' or server_id == 'all':
                 server_list = None
             else:
@@ -2142,12 +2262,16 @@ class pgbackman_cli(cmd.Cmd):
 
         if len(arg_list) == 0:
                    
-            print "--------------------------------------------------------"            
-            bck_id = raw_input("# BckID: ")
-            print "--------------------------------------------------------"
-            
             try:
-                
+                print "--------------------------------------------------------"            
+                bck_id = raw_input("# BckID: ")
+                print "--------------------------------------------------------"
+            
+            except Exception as e:
+                print "\n[Aborted]\n"
+                return False 
+
+            try:
                 self.db.show_backup_details(bck_id)
                 
             except Exception as e:
@@ -2200,13 +2324,17 @@ class pgbackman_cli(cmd.Cmd):
         #             
 
         if len(arg_list) == 0:
-                   
-            print "--------------------------------------------------------"            
-            restore_id = raw_input("# RestoreID: ")
-            print "--------------------------------------------------------"
-            
-            try:
                 
+            try:
+                print "--------------------------------------------------------"            
+                restore_id = raw_input("# RestoreID: ")
+                print "--------------------------------------------------------"
+            
+            except Exception as e:
+                print "\n[Aborted]\n"
+                return False
+
+            try:
                 self.db.show_restore_details(restore_id)
                 
             except Exception as e:
@@ -2355,9 +2483,14 @@ class pgbackman_cli(cmd.Cmd):
 
         if len(arg_list) == 0:
 
-            print "--------------------------------------------------------"
-            server_id = raw_input("# SrvID / FQDN: ")
-            print "--------------------------------------------------------"
+            try:
+                print "--------------------------------------------------------"
+                server_id = raw_input("# SrvID / FQDN: ")
+                print "--------------------------------------------------------"
+
+            except Exception as e:
+                print "\n[Aborted]\n"
+                return False
 
             try:
                 if server_id.isdigit():
@@ -2420,9 +2553,14 @@ class pgbackman_cli(cmd.Cmd):
         
         if len(arg_list) == 0:
 
-            print "--------------------------------------------------------"
-            node_id = raw_input("# NodeID / FQDN: ")
-            print "--------------------------------------------------------"
+            try:
+                print "--------------------------------------------------------"
+                node_id = raw_input("# NodeID / FQDN: ")
+                print "--------------------------------------------------------"
+
+            except Exception as e:
+                print "\n[Aborted]\n"
+                return False
 
             try:
                 if node_id.isdigit():
@@ -2519,9 +2657,14 @@ class pgbackman_cli(cmd.Cmd):
         
         if len(arg_list) == 0:
             
-            print "--------------------------------------------------------"
-            server_id = raw_input("# SrvID / FQDN: ")
-            print "--------------------------------------------------------"
+            try:
+                print "--------------------------------------------------------"
+                server_id = raw_input("# SrvID / FQDN: ")
+                print "--------------------------------------------------------"
+
+            except Exception as e:
+                print "\n[Aborted]\n"
+                return False
 
             try:
                 if server_id.isdigit():
@@ -2585,12 +2728,16 @@ class pgbackman_cli(cmd.Cmd):
                 
         if len(arg_list) == 0:
             
-            print "--------------------------------------------------------"
-            pgsql_node_id = raw_input("# NodeID / FQDN: ")
-            print "--------------------------------------------------------"
+            try:
+                print "--------------------------------------------------------"
+                pgsql_node_id = raw_input("# NodeID / FQDN: ")
+                print "--------------------------------------------------------"
+                
+            except Exception as e:
+                print "\n[Aborted]\n"
+                return False
 
             try:
-
                 if pgsql_node_id.isdigit():
                     self.db.show_pgsql_node_config(pgsql_node_id)
                 else:
@@ -2685,15 +2832,20 @@ class pgbackman_cli(cmd.Cmd):
             
             ack = ""
             
-            print "--------------------------------------------------------"
-            backup_server = raw_input("# SrvID / FQDN []: ")
-            remarks = raw_input("# Remarks []: ")
-            print
+            try:
+                print "--------------------------------------------------------"
+                backup_server = raw_input("# SrvID / FQDN []: ")
+                remarks = raw_input("# Remarks []: ")
+                print
 
-            while ack != "yes" and ack != "no":
-                ack = raw_input("# Are all values to update correct (yes/no): ")
+                while ack != "yes" and ack != "no":
+                    ack = raw_input("# Are all values to update correct (yes/no): ")
 
-            print "--------------------------------------------------------"
+                print "--------------------------------------------------------"
+
+            except Exception as e:
+                print "\n[Aborted]\n"
+                return False
 
             try:
                 if backup_server.isdigit():
@@ -2806,18 +2958,23 @@ class pgbackman_cli(cmd.Cmd):
             
             ack = ""
 
-            print "--------------------------------------------------------"
-            pgsql_node = raw_input("# NodeID / FQDN []: ")
-            port = raw_input("# Port [" + port_default + "]: ")
-            admin_user = raw_input("# Admin user [" + admin_user_default + "]: ")
-            status = raw_input("# Status[" + status_default + "]: ")
-            remarks = raw_input("# Remarks []: ")
-            print
+            try:
+                print "--------------------------------------------------------"
+                pgsql_node = raw_input("# NodeID / FQDN []: ")
+                port = raw_input("# Port [" + port_default + "]: ")
+                admin_user = raw_input("# Admin user [" + admin_user_default + "]: ")
+                status = raw_input("# Status[" + status_default + "]: ")
+                remarks = raw_input("# Remarks []: ")
+                print
 
-            while ack != "yes" and ack != "no":
-                ack = raw_input("# Are all values to update correct (yes/no): ")
+                while ack != "yes" and ack != "no":
+                    ack = raw_input("# Are all values to update correct (yes/no): ")
 
-            print "--------------------------------------------------------"
+                print "--------------------------------------------------------"
+
+            except Exception as e:
+                print "\n[Aborted]\n"
+                return False
 
             if port == "":
                 port = port_default
@@ -2915,7 +3072,6 @@ class pgbackman_cli(cmd.Cmd):
             print "\n[ERROR]: ",e,"\n"
             return False
             
-        
         #
         # Command without parameters
         #
@@ -2924,9 +3080,14 @@ class pgbackman_cli(cmd.Cmd):
             
             ack = ""
 
-            print "--------------------------------------------------------"
-            pgsql_node = raw_input("# NodeID / FQDN []: ")
-            print
+            try:
+                print "--------------------------------------------------------"
+                pgsql_node = raw_input("# NodeID / FQDN []: ")
+                print
+
+            except Exception as e:
+                print "\n[Aborted]\n"
+                return False
 
             try:
                 if pgsql_node.isdigit():
@@ -2965,32 +3126,37 @@ class pgbackman_cli(cmd.Cmd):
                 print "\n[ERROR]: Problems getting default values for parameters\n",e 
                 return False
 
-            backup_minutes_interval = raw_input("# Minutes cron interval [" + backup_minutes_interval_default + "]: ")
-            backup_hours_interval = raw_input("# Hours cron interval [" + backup_hours_interval_default + "]: ")
-            backup_weekday_cron = raw_input("# Weekday cron [" + backup_weekday_cron_default + "]: ")
-            backup_month_cron = raw_input("# Month cron [" + backup_month_cron_default + "]: ")
-            backup_day_month_cron = raw_input("# Day-month cron [" + backup_day_month_cron_default + "]: ")
-            print
-            backup_code = raw_input("# Backup code [" + backup_code_default + "]: ")
-            retention_period = raw_input("# Retention period [" + retention_period_default + "]: ")
-            retention_redundancy = raw_input("# Retention redundancy [" + retention_redundancy_default + "]: ")
-            extra_parameters = raw_input("# Extra parameters [" + extra_parameters_default + "]: ")
-            backup_job_status = raw_input("# Job status [" + backup_job_status_default + "]: ")
-            print
-            domain = raw_input("# Domain [" + domain_default + "]: ")
-            logs_email = raw_input("# Logs e-mail [" + logs_email_default + "]: ")
-            admin_user = raw_input("# PostgreSQL admin user [" + admin_user_default + "]: ")
-            pgport = raw_input("# Port [" + pgport_default + "]: ")
-            print
-            pgnode_backup_partition = raw_input("# Backup directory [" + pgnode_backup_partition_default + "]: ")
-            pgnode_crontab_file = raw_input("# Crontab file [" + pgnode_crontab_file_default + "]: ")
-            pgsql_node_status = raw_input("# PgSQL node status [" + pgsql_node_status_default + "]: ")
-            print
+            try:
+                backup_minutes_interval = raw_input("# Minutes cron interval [" + backup_minutes_interval_default + "]: ")
+                backup_hours_interval = raw_input("# Hours cron interval [" + backup_hours_interval_default + "]: ")
+                backup_weekday_cron = raw_input("# Weekday cron [" + backup_weekday_cron_default + "]: ")
+                backup_month_cron = raw_input("# Month cron [" + backup_month_cron_default + "]: ")
+                backup_day_month_cron = raw_input("# Day-month cron [" + backup_day_month_cron_default + "]: ")
+                print
+                backup_code = raw_input("# Backup code [" + backup_code_default + "]: ")
+                retention_period = raw_input("# Retention period [" + retention_period_default + "]: ")
+                retention_redundancy = raw_input("# Retention redundancy [" + retention_redundancy_default + "]: ")
+                extra_parameters = raw_input("# Extra parameters [" + extra_parameters_default + "]: ")
+                backup_job_status = raw_input("# Job status [" + backup_job_status_default + "]: ")
+                print
+                domain = raw_input("# Domain [" + domain_default + "]: ")
+                logs_email = raw_input("# Logs e-mail [" + logs_email_default + "]: ")
+                admin_user = raw_input("# PostgreSQL admin user [" + admin_user_default + "]: ")
+                pgport = raw_input("# Port [" + pgport_default + "]: ")
+                print
+                pgnode_backup_partition = raw_input("# Backup directory [" + pgnode_backup_partition_default + "]: ")
+                pgnode_crontab_file = raw_input("# Crontab file [" + pgnode_crontab_file_default + "]: ")
+                pgsql_node_status = raw_input("# PgSQL node status [" + pgsql_node_status_default + "]: ")
+                print
 
-            while ack != "yes" and ack != "no":
-                ack = raw_input("# Are all values to update correct (yes/no): ")
+                while ack != "yes" and ack != "no":
+                    ack = raw_input("# Are all values to update correct (yes/no): ")
 
-            print "--------------------------------------------------------"
+                print "--------------------------------------------------------"
+
+            except Exception as e:
+                print "\n[Aborted]\n"
+                return False   
 
             if backup_minutes_interval != '':
                 if not self.check_minutes_interval(backup_minutes_interval):
@@ -3273,27 +3439,6 @@ class pgbackman_cli(cmd.Cmd):
     '''
 
     # ############################################
-    # Method do_restore_backup
-    # ############################################
-    '''
-    def do_restore_backup(self,args):
-        """
-        Not implemented
-        
-        DESCRIPTION:
-        This command can be used to restore a backup.
-        
-        COMMAND:
-        restore_backup [BckID] [NodeID target | FQDN target] 
-
-        """    
-
-        print "Not implemented"
-        print "See: help restore_backup"
-        print
-    '''
-
-    # ############################################
     # Method do_clear
     # ############################################
 
@@ -3444,7 +3589,7 @@ class pgbackman_cli(cmd.Cmd):
     # Method handler
     # ############################################
 
-    def signal_handler(self,signum, frame):
+    def signal_handler_sigint(self,signum, frame):
         cmd.Cmd.onecmd(self,'quit')
         sys.exit(0)
 
@@ -3544,7 +3689,7 @@ class pgbackman_cli(cmd.Cmd):
 
 if __name__ == '__main__':
 
-    signal.signal(signal.SIGINT, pgbackman_cli().signal_handler)
-    signal.signal(signal.SIGTERM,pgbackman_cli().signal_handler)
+    signal.signal(signal.SIGINT, pgbackman_cli().signal_handler_sigint)
+    signal.signal(signal.SIGTERM,pgbackman_cli().signal_handler_sigint)
     pgbackman_cli().cmdloop()
 
