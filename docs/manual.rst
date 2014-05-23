@@ -17,22 +17,24 @@ PgBackMan - PostgreSQL Backup Manager
 Introduction
 ============
 
-PgBackMan is an open source tool to manage PostgreSQL backup dumps
-created with ``pg_dump`` and ``pg_dumpall``.
+PgBackMan is a tool for managing PostgreSQL logical backups created
+with ``pg_dump`` and ``pg_dumpall``.
 
 It is designed to manage backups from thousands of databases running
 in multiple PostgreSQL nodes, and it supports a multiple backup
 servers topology.
 
-It will also manage role and database configuration information when
-creating a backup of a database.
+It also manages role and database configuration information when
+creating a backup of a database. This information is necessary to
+ensure a 100% restore of a logical backup of a database and the
+elements associated to it.
 
-Even though a backup created with ``pg_dump`` / ``pg_dumpall`` can never
-guarantee a full disaster recovery of all data changed between the
-moment when the backup was taken and the moment of a future crash,
-they are still necessary if you need to archive versions of a database, move
-databases between PgSQL nodes and clone databases between production /
-pre-production and/or development servers.
+Even though a backup created with ``pg_dump`` or ``pg_dumpall`` can
+never guarantee a full disaster recovery of all data changed between
+the moment when the backup was taken and the moment of a future crash,
+they are still necessary if you need to archive versions of a
+database, move databases between PgSQL nodes and clone databases
+between production, pre-production and/or development servers.
 
 They are also an easy way of taken backups of databases not requiring
 PITR backups.
@@ -41,51 +43,18 @@ PgBackMan is not a tool for managing PITR (Point in time recovery)
 backups. There are several other solutions out there that can be use
 for PITR backups, such as PITRTools, OmniPITR, and Barman. 
 
-An overview of how a system using PgBackMan looks like can be seen in
-the next figure:
+The PgBackMan code is distributed under the GNU General Public License
+3 and it is totally written in Python and PL/PgSQL. It has been
+developed and tested by members of the Database Operations Group at
+the Center for Information Technology at the University of Oslo.
+
+An example of how a system using PgBackMan may look like can be seen
+in the next figure:
 
 .. figure:: images/architecture.jpg
    :scale: 50%
 
 
-About backups in PostgreSQL
-===========================
-
-PostgreSQL has two utilities ``pg_dump`` and ``pg_dumpall`` for
-backing up databases. These utilities make consistent backups of a
-database or the hole cluster even if the databases are being used
-concurrently. At the same time ``pg_dump`` and ``pg_dumpall`` do not
-block other users accessing the database when backups are been taking.
-
-When taking a backup of a database we need this information to be sure
-we can make a restore that includes 100% of the data and definitions
-from the target database:
-
-#. Database schema.
-#. Database data.
-#. Roles owning objects in the database.
-#. Roles with privileges on objects in the database.
-#. Roles with privileges on the database or schemas.
-#. Creation of all the roles owning something or with privileges.
-#. Configuration parameters defined explicitly for a role.
-#. Configuration parameters defined explicitly for the database. 
-
-
-Unfortunately all this information cannot be obtained in a single
-execution for only one database. 1, 2, 3 and 4 can be obtained with
-``pg_dump``. 5, 7 and 8 can be obtained with a full ``pg_dumpall`` and
-6 with a ``pg_dumpall -r``.
-
-At the same time, ``pg_dumpall`` will return all this information for
-all databases in a cluster, not only the one we want to take a backup
-of.
-
-This is something that PostgreSQL will have to improve in the future
-so it gets easier to take a backup/snapshot of a database.
-
-In the meantime, PgBackMan takes care of all this and it delivers all
-the information needed to run a 100% restore of a database when we
-define a backup in the system.
 
 
 Main features
@@ -95,26 +64,26 @@ The main features of PgBackMan are:
 
 * Central database with metadata information.
 * PgBackMan shell for interaction with the system.
-
 * Management of multiple backup servers
 * Management of multiple PostgreSQL servers
 * Management of thousands of backups dumps through a catalogue
 * Manual and scheduled backups 
-* Management of retention policies for backups dumps..
+* Management of retention policies for backups dumps.
 * Fully detailed backup reports.
-* Multiple database backup types, CLUSTER, FULL, SCHEMA, DATA.
+* Multiple predefined database backup types, CLUSTER, FULL, SCHEMA, DATA.
 * Full backup of role information for a database.
 * Full backup of database configuration for a database.
 * Automatic definitions of backups for all databases running in a PgSQL node.
-* Semi-automatic restore procedures
-* Autonomous pgbackman_dump program that function even if the central database is not available.
+* Automatic restore procedures
+* Autonomous pgbackman_dump program that functions even if the central database with metadata is not available.
 * Handling of error situations.
-* Totally written in Python and PL/PgSQL
+* Totally written in Python and PL/PgSQL 
+* Distributed under the GNU General Public License 3
 
 Future features will include:
 
-* Automatic cloning / move of databases between PgSQL nodes.
-* Disk space management / planning 
+* Automatic cloning of databases between PgSQL nodes.
+* Disk space reports 
 
 
 Architecture and components
@@ -124,24 +93,32 @@ The components forming part of PgBackMan could be listed as follows:
 
 * **Backup servers:** One or several backup servers running
   PgBackMan. All SQL dumps and logfiles are saved in these
-  servers. They need access via ``libpq`` to the postgreSQL nodes that
-  will be allow to have backups in a backup server.
+  servers. They need access via ``libpq`` to the postgreSQL nodes
+  where the backup server will be allow to run backups and restores.
 
 * **PGnodes**: PostgreSQL servers running postgreSQL databases.
 
 * **PgBackMan DB**: Central postgreSQL metadata database used by PgBackMan. All
   backup servers need access to this database.
 
-* **PgBackMan shell:** This is a program that can be run in a text
+* **PgBackMan shell:** This is a program that must be run in a text
   terminal. It can be run in any of the backup servers registered in
   the system. It is the console used to manage PgBackMan.
 
 * **pgbackman_control:** This program runs in every backup server and
   takes care of updating crontab files and creating AT jobs when
-  backup, snapshots or restore definitions are created.
+  backup, snapshots or restore definitions are created, when PgSQL
+  nodes are stopped or deleted, or when backup definitions are stopped
+  or deleted.
 
 * **pgbackman_maintenence:** This programs runs in every backup server
-  and runs some maintenance jobs needed by PgBackMan.
+  and runs some maintenance jobs needed by PgBackMan. It enforces
+  retentions for backup and snapshot definitions. It deletes backup
+  and log files from catalog entries associated to a backup definition
+  after this definition has been deleted with the force parameter. And
+  it process all pending backup/restore catalog log files in the
+  server created if the pgbackman database has been down when
+  ``pgbackman_dump`` and ``pgbackman_restore`` have been running.
 
 * **pgbackman_dump:** This program runs in the backup servers when a backup
   or snapshot has to be taken.
@@ -159,9 +136,8 @@ how they interact with each other:
 Installation
 ============
 
-You will have to install the requirements and the PgBackMan software
-in all the servers that are going to be used as backup servers by
-PgBackMan.
+You will have to install the PgBackMan software in all the servers
+that are going to be used as backup servers by PgBackMan.
 
 System requirements
 -------------------
@@ -172,33 +148,36 @@ System requirements
   - psycopg2
   - argparse
     
-* PostgreSQL >= 9.0
+* PostgreSQL >= 9.0 for the ``pgbackman`` database
+* PostgreSQL >= 9.0 in all PgSQL nodes that are going to use PgBackMan
+  to manage logical backups.
 * AT and CRON installed and running.
 
 Before you install PgBackMan you have to install the software needed
 by this tool
 
-In systems using YUM::
+In systems using ``yum``::
 
   yum install python-psycopg2 python-argparse at
 
-In system using apt-get::
+In system using ``apt-get``::
 
   apt-get install python-psycopg2 python-argparse at
 
 If you are going to install from source, you need to install also
-these packages:
+these packages: ``python-devel, python-setuptools, git, make, rst2pdf``
 
-In systems using YUM::
+In systems using ``yum``::
 
-  yum install python-devel python-setuptools
+  yum install python-devel python-setuptools git make rst2pdf
 
-In system using apt-get::
+In system using ``apt-get``::
 
-  apt-get install python-devel python-setuptools
+  apt-get install python-devel python-setuptools git make rst2pdf
 
-From source
------------
+
+Installing from source
+----------------------
 
 The easiest way to install PgBackMan from source is to get the last
 version from the master branch at the GitHub repository.
@@ -215,25 +194,35 @@ version from the master branch at the GitHub repository.
 This will install all users, groups, programs, configuration files, logfiles and the
 pgbackman module in your system.
 
+If you want to generate the PgBackMan manual with the documentation,
+you can do this::
 
-Via RPM packages
-----------------
+ [root@server]# cd pgbackman/docs
+ [root@server]# make clean
+ [root@server]# make
+
+Installing via RPM packages
+---------------------------
 
 RPM packages are available ...
 
-Via Deb packages
-----------------
+Installing Via Deb packages
+----------------------------
 
 Deb packages are available ...
 
 
-pgbackman Database
-------------------
+Installing the pgbackman Database
+---------------------------------
 
 After the requirements and the PgBackMan software are installed, you
-have to install the pgbackman database in a server running PostgreSQL
+have to install the ``pgbackman`` database in a server running
+PostgreSQL. This database is the core of the PgBackMan tool and it is
+used to save all the metadata needed to manage the system.
 
-You can get 
+You can get this database from the directory ``sql/`` in the source
+code or under the directory ``/usr/share/pgbackman`` if you have
+installed PgBackMan via ``rpm`` or ``deb`` packages.
 
 
 Configuration
@@ -243,7 +232,8 @@ Backup servers
 --------------
 
 A backup server needs to have access to the ``pgbackman`` database and
-to all PgSQL nodes is taken backups for. This can be done like this:
+to all PgSQL nodes where is taken backups or restoring data. This can
+be done like this:
 
 #. Update ``/etc/pgbackman/pgbackman.conf`` with the database
    parameters needed by PgBackMan to access the central metadata
@@ -541,6 +531,85 @@ if our restore definition create some conflicts:
    :scale: 50%
 
 
+About backups in PostgreSQL
+===========================
+
+Taking backups is a very important administrative task that can have
+some disastrous consequences if it is not done right. The use of RAID
+configurations in your storage system, replication between nodes,
+clustering and trusting 100% that your SAN will be up ARE NOT backup
+strategies. They do not replace the necessity of taking backups of our
+databases..
+
+There are two different types of backup that can be use with
+PostgreSQL to implement a good backup and restore strategy. They are:
+
+* Physical backups 
+* Logical backups
+
+Regardless of the type of backup used to backup your databases, one
+needs a god *backup and restore plan* that takes into account
+interval, retention and performance issues during a backup and the
+time needed to get a full restore of a database.
+
+Physical backups
+----------------
+	  
+This type of backup .... 
+
+	  
+Logical backups
+---------------
+
+PostgreSQL has two utilities, ``pg_dump`` and ``pg_dumpall``, for
+taking logical backups of databases. They take a snapshot of a
+database at a given moment.
+
+These utilities take consistent backups of a database or the hole
+cluster even if the databases are being used concurrently. At the same
+time ``pg_dump`` and ``pg_dumpall`` do not block other users accessing
+the database when backups are been taking.
+
+Even though a backup or snapshot created with ``pg_dump`` or
+``pg_dumpall`` can never guarantee a full disaster recovery of all
+data changed between the moment when the backup was taken and the
+moment of a future crash, they are still necessary if you need to
+archive versions of a database, move databases between PgSQL nodes and
+clone databases between production / pre-production and/or development
+servers.
+
+Anyway, they give us a great flexibility and are also an easy way of
+taken backups of databases not requiring PITR backups.
+
+When taking a backup of a database we need the following information
+to be sure we can make a restore that includes 100% of the data and
+definitions from the target database:
+
+* Database schema
+* Database data
+* Roles owning objects in the database
+* Roles with privileges on objects in the database
+* Roles with privileges on the database or schemas
+* Creation of all the roles owning something or with privileges
+* Configuration parameters defined explicitly for a role
+* Configuration parameters defined explicitly for the database 
+
+Unfortunately all this information cannot be obtained in a single
+execution for only one database. 1, 2, 3 and 4 can be obtained with
+``pg_dump``. 5, 7 and 8 can be obtained with a full ``pg_dumpall`` and
+6 either with a ``pg_dumpall -r`` or a full ``pg_dumpall``.
+
+At the same time, ``pg_dumpall`` will return all this information for
+all databases in a cluster, not only the database one wants to take a
+backup of.
+
+This is something that PostgreSQL will have to improve in the future
+so it gets easier to take a backup/snapshot of a database in a single
+execution.
+
+In the meantime, PgBackMan takes care of all this and it delivers all
+the information needed to run a 100% restore of a database when we
+define a backup in the system.
 
 Submitting a bug
 ================
