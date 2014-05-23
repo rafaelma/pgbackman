@@ -1,8 +1,7 @@
 PgBackMan
 =========
 
-| PostgreSQL backup manager
-| http://www.pgbackman.org/
+PostgreSQL backup manager / http://www.pgbackman.org/
 
 PgBackMan is a tool for managing PostgreSQL logical backups created
 with ``pg_dump`` and ``pg_dumpall``.
