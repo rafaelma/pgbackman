@@ -234,7 +234,6 @@ class pgbackman_cli(cmd.Cmd):
             ack = ""
 
             try:
-
                 print "--------------------------------------------------------"
                 server_id = raw_input("# SrvID / FQDN: ")
                 print
@@ -370,7 +369,6 @@ class pgbackman_cli(cmd.Cmd):
                 return False
 
             try:
-
                 print "--------------------------------------------------------"
                 hostname = raw_input("# Hostname []: ")
                 domain = raw_input("# Domain [" + domain_default + "]: ")
@@ -480,7 +478,6 @@ class pgbackman_cli(cmd.Cmd):
             ack = ""
             
             try:
-
                 print "--------------------------------------------------------"
                 node_id = raw_input("# NodeID / FQDN: ")
                 print
@@ -568,7 +565,6 @@ class pgbackman_cli(cmd.Cmd):
         if len(arg_list) == 0:
 
             try:
-            
                 print "--------------------------------------------------------"
                 server_id = raw_input("# SrvID / FQDN [all]: ")
                 node_id = raw_input("# NodeID / FQDN [all]: ")
@@ -912,7 +908,6 @@ class pgbackman_cli(cmd.Cmd):
                         backup_job_status = backup_job_status_default
             
                     try:
-
                         if error == False:
                             
                             self.db.register_backup_definition(backup_server_id,pgsql_node_id,database.strip(),minutes_cron,hours_cron, \
@@ -1055,7 +1050,6 @@ class pgbackman_cli(cmd.Cmd):
                     backup_job_status = backup_job_status_default
             
                 try:
-
                     if error == False:
 
                         self.db.register_backup_definition(backup_server_id,pgsql_node_id,database.strip(),minutes_cron,hours_cron, \
@@ -1120,7 +1114,6 @@ class pgbackman_cli(cmd.Cmd):
             force_deletion = ""
 
             try:
-
                 print "--------------------------------------------------------"
                 def_id = raw_input("# DefID: ")
 
@@ -1243,7 +1236,6 @@ class pgbackman_cli(cmd.Cmd):
             force_deletion = ""
 
             try:
-
                 print "--------------------------------------------------------"
                 pgsql_node_id = raw_input("# NodeID / FQDN: ")
                 dbname = raw_input("# DBname: ")
@@ -1365,7 +1357,6 @@ class pgbackman_cli(cmd.Cmd):
         if len(arg_list) == 0:
             
             try:
-
                 print "--------------------------------------------------------"
                 server_id = raw_input("# SrvID / FQDN [all]: ")
                 node_id = raw_input("# NodeID / FQDN [all]: ")
@@ -1480,7 +1471,6 @@ class pgbackman_cli(cmd.Cmd):
         if len(arg_list) == 0:
             
             try:
-
                 print "--------------------------------------------------------"
                 server_id = raw_input("# SrvID / FQDN [all]: ")
                 node_id = raw_input("# Target NodeID / FQDN [all]: ")
@@ -1622,7 +1612,6 @@ class pgbackman_cli(cmd.Cmd):
                 return False
 
             try:
-            
                 print "--------------------------------------------------------"
                 backup_server = raw_input("# Backup server SrvID / FQDN []: ")
                 pgsql_node = raw_input("# PgSQL node NodeID / FQDN []: ")
@@ -1797,7 +1786,6 @@ class pgbackman_cli(cmd.Cmd):
         if len(arg_list) == 0:
             
             try:
-
                 print "--------------------------------------------------------"
                 server_id = raw_input("# SrvID / FQDN [all]: ")
                 node_id = raw_input("# NodeID / FQDN [all]: ")
@@ -1931,7 +1919,6 @@ class pgbackman_cli(cmd.Cmd):
                 return False
 
             try:
-            
                 print "--------------------------------------------------------"
                 at_time = raw_input("# AT timestamp [" + str(at_time_default) + "]: ")
                 bck_id = raw_input("# BckID []: ")
@@ -1954,7 +1941,6 @@ class pgbackman_cli(cmd.Cmd):
                 return False
 
             try:
-
                 target_pgsql_node = raw_input("# Target NodeID / FQDN []: ")
                 target_dbname = raw_input("# Target DBname [" + target_dbname_default + "]: ")
                 print
@@ -2008,7 +1994,6 @@ class pgbackman_cli(cmd.Cmd):
                         print "[WARNING]: Target DBname already exists on target PgSQL node.\n"
             
                         try:
-            
                             while ack_rename.lower() != "yes" and ack_rename.lower() != "no":
                                 ack_rename = raw_input("# Rename it? (yes/no): ")
                                 
@@ -2033,7 +2018,6 @@ class pgbackman_cli(cmd.Cmd):
                                 renamed_dbname = renamed_dbname_default
 
                             try:
-
                                 while db_node.database_exists(renamed_dbname):
                                     print "\n[WARNING]: Renamed database already exist on target PgSQL node."
                                     renamed_dbname = raw_input("# Rename existing database to [" + renamed_dbname_default + "]: ")
@@ -2068,7 +2052,6 @@ class pgbackman_cli(cmd.Cmd):
                         print "\n[WARNING]: Role '" + role + "' already exists on target PgSQL node."
 
                         try:
-
                             while ack_reuse.lower() != "yes" and ack_reuse.lower() != "no":
                                 ack_reuse = raw_input("# Use the existing role? (yes/no): ")
                             
@@ -2092,8 +2075,7 @@ class pgbackman_cli(cmd.Cmd):
                 print "Existing database will be renamed to : " + str(renamed_dbname)
                 print "--------------------------------------------------------"
 
-                try:
-                
+                try:                
                     while ack_confirm.lower() != "yes" and ack_confirm.lower() != "no":
                         ack_confirm = raw_input("# Are all values correct (yes/no): ")
 
@@ -2158,7 +2140,6 @@ class pgbackman_cli(cmd.Cmd):
         if len(arg_list) == 0:
 
             try:
-            
                 print "--------------------------------------------------------"
                 server_id = raw_input("# SrvID / FQDN [all]: ")
                 node_id = raw_input("# Target NodeID / FQDN [all]: ")
