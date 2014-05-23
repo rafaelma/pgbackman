@@ -51,7 +51,7 @@ def restore_roles(db):
     global global_parameters
 
     try:
-        pg_restore_roles_temp_file = tempfile.NamedTemporaryFile(delete=False,dir=global_parameters['tmp_dir'])
+        pg_restore_roles_temp_file = tempfile.NamedTemporaryFile(delete=True,dir=global_parameters['tmp_dir'])
         logs.logger.debug('Restore roles temp file created %s',pg_restore_roles_temp_file.name)
         
         with open(global_parameters['pgdump_roles_file'], 'r') as sqldump_in:
@@ -79,27 +79,35 @@ def restore_roles(db):
                 sqldump_out.flush()
 
                 role_restore_command = global_parameters['backup_server_pgsql_bin_dir'] + '/psql' + \
+                    ' -e ' + \
                     ' -h ' + global_parameters['pgsql_node_fqdn'] + \
                     ' -p ' + global_parameters['pgsql_node_port'] + \
                     ' -U ' + global_parameters['pgsql_node_admin_user'] + \
                     ' -d template1' + \
                     ' -f ' + pg_restore_roles_temp_file.name
 
-                DEVNULL = open(os.devnull, 'wb')
-                
-                proc = subprocess.Popen([role_restore_command],stdout=DEVNULL,stderr=subprocess.STDOUT,shell=True)
-                proc.wait()
-
-                if proc.returncode != 0:
-                    logs.logger.critical('The command used to restore the roles needed by the target database %s has a return value != 0',global_parameters['target_dbname'])
+                with open(global_parameters['restore_log_file'],'a') as restore_log_file:
+            
+                    restore_log_file.write('------------------------------------\n')
+                    restore_log_file.write('Timestamp:' + str(datetime.datetime.now()) + '\n')
+                    restore_log_file.write('Command: ' + role_restore_command + '\n')
+                    restore_log_file.write('------------------------------------\n\n')
                     
-                    global_parameters['execution_status'] = 'ERROR'
-                    global_parameters['error_message'] = 'Roles restore returncode: ' + str(proc.returncode)
-                    register_restore_catalog(db)
-                    sys.exit(1)
+                    restore_log_file.flush()
+
+                    proc = subprocess.Popen([role_restore_command],stdout=restore_log_file,stderr=subprocess.STDOUT,shell=True)
+                    proc.wait()
+
+                    if proc.returncode != 0:
+                        logs.logger.critical('The command used to restore the roles needed by the target database %s has a return value != 0',global_parameters['target_dbname'])
+                    
+                        global_parameters['execution_status'] = 'ERROR'
+                        global_parameters['error_message'] = 'Roles returncode: ' + str(proc.returncode)
+                        register_restore_catalog(db)
+                        sys.exit(1)
         
-                else:
-                    logs.logger.info('Roles restored.')
+                    else:
+                        logs.logger.info('Roles for database %s restored.',global_parameters['target_dbname'])
 
     except Exception as e:
         logs.logger.critical('Could not restore the roles needed by the database %s - %s',global_parameters['target_dbname'],e)
@@ -121,7 +129,7 @@ def restore_dbconfig(db):
     global global_parameters
 
     try:
-        pg_restore_dbconfig_temp_file = tempfile.NamedTemporaryFile(delete=False,dir=global_parameters['tmp_dir'])
+        pg_restore_dbconfig_temp_file = tempfile.NamedTemporaryFile(delete=True,dir=global_parameters['tmp_dir'])
         logs.logger.debug('Temp dbconfig restore file created %s',pg_restore_dbconfig_temp_file.name)
         
         with open(global_parameters['pgdump_dbconfig_file'], 'r') as sqldump_in:
@@ -171,27 +179,35 @@ def restore_dbconfig(db):
                 sqldump_out.flush()
 
                 dbconfig_restore_command = global_parameters['backup_server_pgsql_bin_dir'] + '/psql' + \
+                    ' -e ' + \
                     ' -h ' + global_parameters['pgsql_node_fqdn'] + \
                     ' -p ' + global_parameters['pgsql_node_port'] + \
                     ' -U ' + global_parameters['pgsql_node_admin_user'] + \
                     ' -d template1' + \
                     ' -f ' + pg_restore_dbconfig_temp_file.name
 
-                DEVNULL = open(os.devnull, 'wb')
-                
-                proc = subprocess.Popen([dbconfig_restore_command],stdout=DEVNULL,stderr=subprocess.STDOUT,shell=True)
-                proc.wait()
+                with open(global_parameters['restore_log_file'],'a') as restore_log_file:
+            
+                    restore_log_file.write('------------------------------------\n')
+                    restore_log_file.write('Timestamp:' + str(datetime.datetime.now()) + '\n')
+                    restore_log_file.write('Command: ' + dbconfig_restore_command + '\n')
+                    restore_log_file.write('------------------------------------\n\n')
 
-                if proc.returncode != 0:
-                    logs.logger.critical('The command used to restore the global database statements needed by the target database %s has a return value != 0',global_parameters['target_dbname'])
+                    restore_log_file.flush()
+                
+                    proc = subprocess.Popen([dbconfig_restore_command],stdout=restore_log_file,stderr=subprocess.STDOUT,shell=True)
+                    proc.wait()
+
+                    if proc.returncode != 0:
+                        logs.logger.critical('The command used to restore the global database statements needed by the target database %s has a return value != 0',global_parameters['target_dbname'])
                     
-                    global_parameters['execution_status'] = 'ERROR'
-                    global_parameters['error_message'] = 'DBconfig restore returncode: ' + str(proc.returncode)
-                    register_restore_catalog(db)
-                    sys.exit(1)
+                        global_parameters['execution_status'] = 'ERROR'
+                        global_parameters['error_message'] = 'DBconfig for database returncode: ' + str(proc.returncode)
+                        register_restore_catalog(db)
+                        sys.exit(1)
         
-                else:
-                    logs.logger.info('DBconfig restored.')
+                    else:
+                        logs.logger.info('DBconfig for database %s restored.',global_parameters['target_dbname'])
 
     except Exception as e:
         logs.logger.critical('Could not restore the global database statements needed by the database %s - %s',global_parameters['target_dbname'],e)
@@ -215,27 +231,35 @@ def restore_database(db):
         
         database_restore_command = global_parameters['backup_server_pgsql_bin_dir'] + '/pg_restore' + \
             ' -1 ' + \
+            ' -v ' + \
             ' -h ' + global_parameters['pgsql_node_fqdn'] + \
             ' -p ' + global_parameters['pgsql_node_port'] + \
             ' -U ' + global_parameters['pgsql_node_admin_user'] + \
             ' -d ' + global_parameters['target_dbname'] + \
             ' ' + global_parameters['pgdump_file']
-
-        DEVNULL = open(os.devnull, 'wb')
         
-        proc = subprocess.Popen([database_restore_command],stdout=DEVNULL,stderr=subprocess.STDOUT,shell=True)
-        proc.wait()
-                    
-        if proc.returncode != 0:
-            logs.logger.critical('The command used to restore the database %s has a return value != 0',global_parameters['target_dbname'])
+        with open(global_parameters['restore_log_file'],'a') as restore_log_file:
             
-            global_parameters['execution_status'] = 'ERROR'
-            global_parameters['error_message'] = 'Database restore returncode: ' + str(proc.returncode)
-            register_restore_catalog(db)
-            sys.exit(1)
+            restore_log_file.write('------------------------------------\n')
+            restore_log_file.write('Timestamp:' + str(datetime.datetime.now()) + '\n')
+            restore_log_file.write('Command: ' + database_restore_command + '\n')
+            restore_log_file.write('------------------------------------\n\n')
+            
+            restore_log_file.flush()
+
+            proc = subprocess.Popen([database_restore_command],stdout=restore_log_file,stderr=subprocess.STDOUT,shell=True)
+            proc.wait()
+                    
+            if proc.returncode != 0:
+                logs.logger.critical('The command used to restore the database %s has a return value != 0',global_parameters['target_dbname'])
+                
+                global_parameters['execution_status'] = 'ERROR'
+                global_parameters['error_message'] = 'Database restore returncode: ' + str(proc.returncode)
+                register_restore_catalog(db)
+                sys.exit(1)
         
-        else:
-            logs.logger.info('Database restored.')
+            else:
+                logs.logger.info('Database %s restored.',global_parameters['target_dbname'])
 
     except Exception as e:
         logs.logger.critical('Could not restore the database %s - %s',global_parameters['target_dbname'],e)
