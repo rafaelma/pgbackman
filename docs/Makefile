@@ -23,6 +23,7 @@ web:
 	cp pgbackman-manual-$(VERSION).man www/pgbackman-manual-$(VERSION).man
 	cp images/architecture.jpg www/images/architecture.jpg
 	cp images/register_restore.jpg www/images/register_restore.jpg
+	cp images/components.jpg www/images/components.jpg
 
 clean:
 	rm -f pgbackman-manual-$(VERSION).html

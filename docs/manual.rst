@@ -41,6 +41,12 @@ PgBackMan is not a tool for managing PITR (Point in time recovery)
 backups. There are several other solutions out there that can be use
 for PITR backups, such as PITRTools, OmniPITR, and Barman. 
 
+An overview of how a system using PgBackMan looks like can be seen in
+the next figure:
+
+.. figure:: images/architecture.jpg
+   :scale: 50%
+
 
 About backups in PostgreSQL
 ===========================
@@ -143,8 +149,12 @@ The components forming part of PgBackMan could be listed as follows:
 * **pgbackman_restore:** This program runs in the backup servers when
   a restore has to be run.
 
-.. figure:: images/architecture.jpg
+The next figure shows all the components forming part of PgBackMan and
+how they interact with each other:
+
+.. figure:: images/components.jpg
    :scale: 50%
+
 
 Installation
 ============
