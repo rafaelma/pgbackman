@@ -233,7 +233,8 @@ files<y:LabelModel>
               <y:SmartNodeLabelModelParameter labelRatioX="0.0" labelRatioY="0.0" nodeRatioX="0.0" nodeRatioY="0.0" offsetX="0.0" offsetY="0.0" upX="0.0" upY="-1.0"/>
             </y:ModelParameter>
           </y:NodeLabel>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="DejaVu Sans" fontSize="12" fontStyle="bold" hasBackgroundColor="false" hasLineColor="false" height="31.9375" modelName="custom" textColor="#000000" visible="true" width="53.470703125" x="6.2646484375" y="23.03125">Backup
+          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="DejaVu Sans" fontSize="12" fontStyle="bold" hasBackgroundColor="false" hasLineColor="false" height="45.90625" modelName="custom" textColor="#000000" visible="true" width="53.470703125" x="6.2646484375" y="16.046875">Backup
+&amp; log
 files<y:LabelModel>
               <y:SmartNodeLabelModel distance="4.0"/>
             </y:LabelModel>
@@ -276,7 +277,7 @@ files<y:LabelModel>
     <node id="n10">
       <data key="d6">
         <y:ShapeNode>
-          <y:Geometry height="78.0" width="66.0" x="-265.875" y="673.9375"/>
+          <y:Geometry height="78.0" width="66.0" x="-245.25" y="673.9375"/>
           <y:Fill color="#C0C0C0" transparent="false"/>
           <y:BorderStyle color="#000000" type="line" width="1.0"/>
           <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" hasText="false" height="4.0" modelName="custom" textColor="#000000" visible="true" width="4.0" x="31.0" y="37.0">
@@ -302,7 +303,7 @@ files<y:LabelModel>
     <node id="n11">
       <data key="d6">
         <y:ShapeNode>
-          <y:Geometry height="78.0" width="66.0" x="274.23649978637695" y="673.9375"/>
+          <y:Geometry height="78.0" width="66.0" x="215.25854907301766" y="673.9375"/>
           <y:Fill color="#C0C0C0" transparent="false"/>
           <y:BorderStyle color="#000000" type="line" width="1.0"/>
           <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" hasText="false" height="4.0" modelName="custom" textColor="#000000" visible="true" width="4.0" x="31.0" y="37.0">
@@ -328,32 +329,6 @@ files<y:LabelModel>
     <node id="n12">
       <data key="d6">
         <y:ShapeNode>
-          <y:Geometry height="78.0" width="66.0" x="205.625" y="673.9375"/>
-          <y:Fill color="#C0C0C0" transparent="false"/>
-          <y:BorderStyle color="#000000" type="line" width="1.0"/>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="Dialog" fontSize="12" fontStyle="plain" hasBackgroundColor="false" hasLineColor="false" hasText="false" height="4.0" modelName="custom" textColor="#000000" visible="true" width="4.0" x="31.0" y="37.0">
-            <y:LabelModel>
-              <y:SmartNodeLabelModel distance="4.0"/>
-            </y:LabelModel>
-            <y:ModelParameter>
-              <y:SmartNodeLabelModelParameter labelRatioX="0.0" labelRatioY="0.0" nodeRatioX="0.0" nodeRatioY="0.0" offsetX="0.0" offsetY="0.0" upX="0.0" upY="-1.0"/>
-            </y:ModelParameter>
-          </y:NodeLabel>
-          <y:NodeLabel alignment="center" autoSizePolicy="content" fontFamily="DejaVu Sans" fontSize="12" fontStyle="bold" hasBackgroundColor="false" hasLineColor="false" height="31.9375" modelName="custom" textColor="#000000" visible="true" width="32.728515625" x="16.6357421875" y="23.03125">Log
-files<y:LabelModel>
-              <y:SmartNodeLabelModel distance="4.0"/>
-            </y:LabelModel>
-            <y:ModelParameter>
-              <y:SmartNodeLabelModelParameter labelRatioX="0.0" labelRatioY="0.0" nodeRatioX="0.0" nodeRatioY="0.0" offsetX="0.0" offsetY="0.0" upX="0.0" upY="-1.0"/>
-            </y:ModelParameter>
-          </y:NodeLabel>
-          <y:Shape type="parallelogram"/>
-        </y:ShapeNode>
-      </data>
-    </node>
-    <node id="n13">
-      <data key="d6">
-        <y:ShapeNode>
           <y:Geometry height="20.567499999999995" width="107.25" x="-286.5" y="101.160248336792"/>
           <y:Fill color="#3366FF" transparent="false"/>
           <y:BorderStyle color="#000000" type="line" width="1.0"/>
@@ -376,7 +351,7 @@ files<y:LabelModel>
         </y:ShapeNode>
       </data>
     </node>
-    <node id="n14">
+    <node id="n13">
       <data key="d6">
         <y:ShapeNode>
           <y:Geometry height="20.567499999999995" width="107.25" x="-286.5" y="126.72274833679177"/>
@@ -401,7 +376,7 @@ files<y:LabelModel>
         </y:ShapeNode>
       </data>
     </node>
-    <node id="n15">
+    <node id="n14">
       <data key="d6">
         <y:ShapeNode>
           <y:Geometry height="20.567499999999995" width="107.25" x="-286.5" y="151.28524833679154"/>
@@ -426,7 +401,7 @@ files<y:LabelModel>
         </y:ShapeNode>
       </data>
     </node>
-    <node id="n16">
+    <node id="n15">
       <data key="d6">
         <y:ShapeNode>
           <y:Geometry height="20.567499999999995" width="107.25" x="-286.5" y="176.8477483367913"/>
@@ -451,7 +426,7 @@ files<y:LabelModel>
         </y:ShapeNode>
       </data>
     </node>
-    <node id="n17">
+    <node id="n16">
       <data key="d6">
         <y:ShapeNode>
           <y:Geometry height="20.567499999999995" width="107.25" x="-286.5" y="201.41024833679108"/>
@@ -655,9 +630,9 @@ files<y:LabelModel>
     <edge id="e15" source="n10" target="n3">
       <data key="d10">
         <y:PolyLineEdge>
-          <y:Path sx="0.0" sy="0.0" tx="73.75" ty="0.0">
-            <y:Point x="-232.875" y="844.28125"/>
-            <y:Point x="577.5770833333335" y="844.28125"/>
+          <y:Path sx="0.0" sy="0.0" tx="53.75" ty="0.0">
+            <y:Point x="-212.25" y="844.28125"/>
+            <y:Point x="557.5770833333335" y="844.28125"/>
           </y:Path>
           <y:LineStyle color="#FF9900" type="line" width="2.0"/>
           <y:Arrows source="none" target="delta"/>
@@ -668,8 +643,8 @@ files<y:LabelModel>
     <edge id="e16" source="n11" target="n3">
       <data key="d10">
         <y:PolyLineEdge>
-          <y:Path sx="0.0" sy="0.0" tx="73.75" ty="13.651089986165346">
-            <y:Point x="577.5770833333335" y="712.9375"/>
+          <y:Path sx="0.0" sy="0.0" tx="53.75" ty="13.651089986165346">
+            <y:Point x="557.5770833333335" y="712.9375"/>
           </y:Path>
           <y:LineStyle color="#FF9900" type="line" width="2.0"/>
           <y:Arrows source="none" target="delta"/>
@@ -681,7 +656,7 @@ files<y:LabelModel>
       <data key="d10">
         <y:PolyLineEdge>
           <y:Path sx="0.0" sy="0.0" tx="0.0" ty="0.0">
-            <y:Point x="-232.875" y="533.21999168396"/>
+            <y:Point x="-212.25" y="533.21999168396"/>
           </y:Path>
           <y:LineStyle color="#339966" type="dashed" width="2.0"/>
           <y:Arrows source="none" target="delta"/>
@@ -689,17 +664,7 @@ files<y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e18" source="n5" target="n12">
-      <data key="d10">
-        <y:PolyLineEdge>
-          <y:Path sx="6.498177096208963" sy="33.98960548859145" tx="0.0" ty="-38.9990234375"/>
-          <y:LineStyle color="#339966" type="line" width="2.0"/>
-          <y:Arrows source="none" target="delta"/>
-          <y:BendStyle smoothed="false"/>
-        </y:PolyLineEdge>
-      </data>
-    </edge>
-    <edge id="e19" source="n8" target="n3">
+    <edge id="e18" source="n8" target="n3">
       <data key="d10">
         <y:PolyLineEdge>
           <y:Path sx="11.8125" sy="0.0" tx="-46.1875" ty="23.37920665283218">
@@ -712,25 +677,12 @@ files<y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e20" source="n12" target="n3">
+    <edge id="e19" source="n10" target="n3">
       <data key="d10">
         <y:PolyLineEdge>
-          <y:Path sx="0.0" sy="0.0" tx="-46.1875" ty="32.12920665283218">
-            <y:Point x="238.625" y="797.6041666666667"/>
-            <y:Point x="457.63958333333346" y="797.6041666666667"/>
-          </y:Path>
-          <y:LineStyle color="#FF0000" type="line" width="2.0"/>
-          <y:Arrows source="none" target="delta"/>
-          <y:BendStyle smoothed="false"/>
-        </y:PolyLineEdge>
-      </data>
-    </edge>
-    <edge id="e21" source="n10" target="n3">
-      <data key="d10">
-        <y:PolyLineEdge>
-          <y:Path sx="0.0" sy="0.0" tx="73.75" ty="24.53402328491208">
-            <y:Point x="-232.875" y="844.28125"/>
-            <y:Point x="577.5770833333335" y="844.28125"/>
+          <y:Path sx="0.0" sy="0.0" tx="53.75" ty="24.53402328491208">
+            <y:Point x="-212.25" y="844.28125"/>
+            <y:Point x="557.5770833333335" y="844.28125"/>
           </y:Path>
           <y:LineStyle color="#FF0000" type="dashed_dotted" width="2.0"/>
           <y:Arrows source="none" target="delta"/>
@@ -738,11 +690,11 @@ files<y:LabelModel>
         </y:PolyLineEdge>
       </data>
     </edge>
-    <edge id="e22" source="n11" target="n3">
+    <edge id="e20" source="n11" target="n3">
       <data key="d10">
         <y:PolyLineEdge>
-          <y:Path sx="0.0" sy="0.0" tx="73.75" ty="23.53402328491208">
-            <y:Point x="577.5770833333335" y="712.9375"/>
+          <y:Path sx="0.0" sy="0.0" tx="53.75" ty="23.53402328491208">
+            <y:Point x="557.5770833333335" y="712.9375"/>
           </y:Path>
           <y:LineStyle color="#FF0000" type="dashed_dotted" width="2.0"/>
           <y:Arrows source="none" target="delta"/>
