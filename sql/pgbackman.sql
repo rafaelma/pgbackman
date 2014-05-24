@@ -400,12 +400,12 @@ CREATE TABLE backup_definition(
   encryption boolean DEFAULT false NOT NULL,
   retention_period interval DEFAULT '7 days'::interval NOT NULL,
   retention_redundancy integer DEFAULT 1 NOT NULL,
-  extra_parameters TEXT DEFAULT '',
+  extra_backup_parameters TEXT DEFAULT '',
   job_status CHARACTER VARYING(20) NOT NULL,
   remarks TEXT
 );
 
-ALTER TABLE backup_definition ADD PRIMARY KEY (backup_server_id,pgsql_node_id,dbname,backup_code,extra_parameters);
+ALTER TABLE backup_definition ADD PRIMARY KEY (backup_server_id,pgsql_node_id,dbname,backup_code,extra_backup_parameters);
 
 CREATE INDEX ON backup_definition(backup_server_id);
 CREATE INDEX ON backup_definition(pgsql_node_id);
@@ -445,12 +445,12 @@ CREATE TABLE snapshot_definition(
   backup_code CHARACTER VARYING(10) NOT NULL,
   encryption boolean DEFAULT false NOT NULL,
   retention_period interval DEFAULT '7 days'::interval NOT NULL,
-  extra_parameters TEXT DEFAULT '',
+  extra_backup_parameters TEXT DEFAULT '',
   status TEXT DEFAULT 'WAITING',
   remarks TEXT
 );
 
-ALTER TABLE snapshot_definition ADD PRIMARY KEY (backup_server_id,pgsql_node_id,dbname,at_time,backup_code,extra_parameters);
+ALTER TABLE snapshot_definition ADD PRIMARY KEY (backup_server_id,pgsql_node_id,dbname,at_time,backup_code,extra_backup_parameters);
 
 CREATE INDEX ON snapshot_definition(backup_server_id);
 CREATE INDEX ON snapshot_definition(pgsql_node_id);
@@ -491,6 +491,7 @@ CREATE TABLE restore_definition(
   target_pgsql_node_id INTEGER NOT NULL,
   target_dbname TEXT NOT NULL,
   renamed_dbname TEXT,
+  extra_parameters TEXT,
   at_time TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   status TEXT DEFAULT 'WAITING',
   error_message TEXT,
@@ -836,7 +837,7 @@ INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('bac
 INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('backup_weekday_cron','*','Backup weekday cron default');
 INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('backup_month_cron','*','Backup month cron default');
 INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('backup_day_month_cron','*','Backup day_month cron default');
-INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('extra_parameters','','Extra backup parameters');
+INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('extra_backup_parameters','','Extra backup parameters');
 INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('logs_email','example@example.org','E-mail to send logs');
 
 
@@ -1602,7 +1603,7 @@ CREATE OR REPLACE FUNCTION update_pgsql_node_config(INTEGER,TEXT,TEXT,TEXT,TEXT,
   backup_code_ ALIAS FOR $7;
   retention_period_ ALIAS FOR $8;
   retention_redundancy_ ALIAS FOR $9;
-  extra_parameters_ ALIAS FOR $10;
+  extra_backup_parameters_ ALIAS FOR $10;
   backup_job_status_ ALIAS FOR $11;
   domain_ ALIAS FOR $12;
   logs_email_ ALIAS FOR $13;
@@ -1654,9 +1655,9 @@ CREATE OR REPLACE FUNCTION update_pgsql_node_config(INTEGER,TEXT,TEXT,TEXT,TEXT,
      USING pgsql_node_id_,
      	   retention_redundancy_;
 
-    EXECUTE 'UPDATE pgsql_node_config SET value = $2 WHERE node_id = $1 AND parameter = ''extra_parameters'''
+    EXECUTE 'UPDATE pgsql_node_config SET value = $2 WHERE node_id = $1 AND parameter = ''extra_backup_parameters'''
      USING pgsql_node_id_,
-     	   extra_parameters_;
+     	   extra_backup_parameters_;
 
     EXECUTE 'UPDATE pgsql_node_config SET value = $2 WHERE node_id = $1 AND parameter = ''backup_job_status'''
      USING pgsql_node_id_,
@@ -1728,7 +1729,7 @@ CREATE OR REPLACE FUNCTION register_backup_definition(INTEGER,INTEGER,TEXT,CHARA
   encryption_ ALIAS FOR $10;
   retention_period_ ALIAS FOR $11;
   retention_redundancy_ ALIAS FOR $12;
-  extra_parameters_ ALIAS FOR $13;
+  extra_backup_parameters_ ALIAS FOR $13;
   job_status_ ALIAS FOR $14;
   remarks_ ALIAS FOR $15;
 
@@ -1792,8 +1793,8 @@ CREATE OR REPLACE FUNCTION register_backup_definition(INTEGER,INTEGER,TEXT,CHARA
     retention_redundancy_ := get_default_pgsql_node_parameter('retention_redundancy')::INTEGER;
    END IF;
 
-   IF extra_parameters_ = '' OR extra_parameters_ IS NULL THEN
-    extra_parameters_ := get_default_pgsql_node_parameter('extra_parameters');
+   IF extra_backup_parameters_ = '' OR extra_backup_parameters_ IS NULL THEN
+    extra_backup_parameters_ := get_default_pgsql_node_parameter('extra_backup_parameters');
    END IF;
    
    IF job_status_ = '' OR job_status_ IS NULL THEN
@@ -1812,7 +1813,7 @@ CREATE OR REPLACE FUNCTION register_backup_definition(INTEGER,INTEGER,TEXT,CHARA
 						encryption,
 						retention_period,
 						retention_redundancy,
-						extra_parameters,
+						extra_backup_parameters,
 						job_status,
 						remarks)
 	     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)'
@@ -1828,7 +1829,7 @@ CREATE OR REPLACE FUNCTION register_backup_definition(INTEGER,INTEGER,TEXT,CHARA
 	  encryption_,
 	  retention_period_,
 	  retention_redundancy_,
-	  extra_parameters_,
+	  extra_backup_parameters_,
 	  job_status_,
 	  remarks_;         
 
@@ -2114,7 +2115,7 @@ CREATE OR REPLACE FUNCTION register_snapshot_definition(INTEGER,INTEGER,TEXT,TIM
   at_time_ ALIAS FOR $4;
   backup_code_ ALIAS FOR $5;
   retention_period_ ALIAS FOR $6;
-  extra_parameters_ ALIAS FOR $7;
+  extra_backup_parameters_ ALIAS FOR $7;
   remarks_ ALIAS FOR $7;
 
   server_cnt INTEGER;
@@ -2144,8 +2145,8 @@ CREATE OR REPLACE FUNCTION register_snapshot_definition(INTEGER,INTEGER,TEXT,TIM
     retention_period_ := get_default_pgsql_node_parameter('retention_period')::INTERVAL;
    END IF;
  
-   IF extra_parameters_ = '' OR extra_parameters_ IS NULL THEN
-    extra_parameters_ := get_default_pgsql_node_parameter('extra_parameters');
+   IF extra_backup_parameters_ = '' OR extra_backup_parameters_ IS NULL THEN
+    extra_backup_parameters_ := get_default_pgsql_node_parameter('extra_backup_parameters');
    END IF;
  
     EXECUTE 'INSERT INTO snapshot_definition (backup_server_id,
@@ -2154,7 +2155,7 @@ CREATE OR REPLACE FUNCTION register_snapshot_definition(INTEGER,INTEGER,TEXT,TIM
 						at_time,
 						backup_code,
 						retention_period,
-						extra_parameters,
+						extra_backup_parameters,
 						remarks)
 	     VALUES ($1,$2,$3,$4,$5,$6,$7,$8)'
     USING backup_server_id_,
@@ -2163,7 +2164,7 @@ CREATE OR REPLACE FUNCTION register_snapshot_definition(INTEGER,INTEGER,TEXT,TIM
 	  at_time_,
 	  backup_code_,
 	  retention_period_,
-	  extra_parameters_,
+	  extra_backup_parameters_,
 	  remarks_;         
 
  EXCEPTION WHEN others THEN
@@ -2732,8 +2733,8 @@ BEGIN
 		      ' --backup-code ' || job_row.backup_code ||
 		      ' --root-backup-dir ' || root_backup_dir;
 
-  IF job_row.extra_parameters != '' AND job_row.extra_parameters IS NOT NULL THEN
-    output := output || ' --extra-params "' || job_row.extra_parameters || '"';
+  IF job_row.extra_backup_parameters != '' AND job_row.extra_backup_parameters IS NOT NULL THEN
+    output := output || ' --extra-params "' || job_row.extra_backup_parameters || '"';
   END IF;
  
   output := output || E'\n';
@@ -2804,8 +2805,8 @@ BEGIN
 		      ' --backup-code ' || snapshot_row.backup_code ||
 		      ' --root-backup-dir ' || root_backup_dir;
 
-  IF snapshot_row.extra_parameters != '' AND snapshot_row.extra_parameters IS NOT NULL THEN
-    output := output || ' --extra-params \\\"' || snapshot_row.extra_parameters || '\\\"';
+  IF snapshot_row.extra_backup_parameters != '' AND snapshot_row.extra_backup_parameters IS NOT NULL THEN
+    output := output || ' --extra-params \\\"' || snapshot_row.extra_backup_parameters || '\\\"';
   END IF;
  
   output := output || E'" \n';
@@ -3508,7 +3509,7 @@ SELECT lpad(def_id::text,11,'0') AS "DefID",
        encryption::TEXT AS "Encryption",
        retention_period::TEXT || ' (' || retention_redundancy::TEXT || ')' AS "Retention",
        job_status AS "Status",
-       extra_parameters AS "Parameters"
+       extra_backup_parameters AS "Parameters"
 FROM backup_definition
 ORDER BY backup_server_id,pgsql_node_id,"DBname","Code","Status";
 
@@ -3571,7 +3572,7 @@ CREATE OR REPLACE VIEW show_backup_details AS
        b.minutes_cron || ' ' || b.hours_cron || ' ' || b.weekday_cron || ' ' || b.month_cron || ' ' || b.day_month_cron AS "Schedule",
        '' AS "AT time",
        b.encryption::TEXT AS "Encryption",
-       b.extra_parameters As "Extra parameters",
+       b.extra_backup_parameters As "Extra parameters",
        a.backup_server_id,
        get_backup_server_fqdn(a.backup_server_id) AS "Backup server",
        a.pgsql_node_id,
@@ -3610,7 +3611,7 @@ CREATE OR REPLACE VIEW show_backup_details AS
        '' AS "Schedule",
        to_char(b.at_time, 'YYYYMMDDHH24MI'::text) AS "AT time",
        b.encryption::TEXT AS "Encryption",
-       b.extra_parameters As "Extra parameters",
+       b.extra_backup_parameters As "Extra parameters",
        a.backup_server_id,
        get_backup_server_fqdn(a.backup_server_id) AS "Backup server",
        a.pgsql_node_id,
@@ -3750,7 +3751,7 @@ SELECT DISTINCT ON (a.def_id)
        b.encryption::TEXT AS "Encryption",
        b.retention_period::TEXT || ' (' || b.retention_redundancy::TEXT || ')' AS "Retention",
        b.job_status AS "Status",
-       b.extra_parameters AS "Parameters"
+       b.extra_backup_parameters AS "Parameters"
 FROM backup_catalog a
 RIGHT JOIN backup_definition b ON a.def_id = b.def_id
 WHERE a.def_id IS NULL
@@ -3772,7 +3773,7 @@ SELECT lpad(snapshot_id::text,11,'0') AS "SnapshotID",
        to_char(at_time, 'YYYYMMDDHH24MI'::text) AS "AT time",
        backup_code AS "Code",
        retention_period::text AS "Retention",
-       extra_parameters AS "Parameters",
+       extra_backup_parameters AS "Parameters",
        status AS "Status"
 FROM snapshot_definition
 ORDER BY backup_server_id,pgsql_node_id,"DBname","Code","AT time";

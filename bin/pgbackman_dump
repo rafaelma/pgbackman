@@ -55,7 +55,7 @@ def pg_dumpall(db):
         ' -p ' + global_parameters['pgsql_node_port'] + \
         ' -U ' + global_parameters['pgsql_node_admin_user'] + \
         ' --file=' + global_parameters['cluster_dump_file'] + \
-        ' ' + global_parameters['extra_parameters']
+        ' ' + global_parameters['extra_backup_parameters']
 
     try:
         with open(global_parameters['cluster_log_file'],'w') as cluster_log_file:
@@ -112,7 +112,7 @@ def pg_dump(db):
             ' --format=c' + \
             ' --blobs' + \
             ' --verbose' + \
-            ' ' + global_parameters['extra_parameters'] + \
+            ' ' + global_parameters['extra_backup_parameters'] + \
             ' ' + global_parameters['dbname']         
            
     elif global_parameters['backup_code'] == 'SCHEMA':
@@ -125,7 +125,7 @@ def pg_dump(db):
             ' --file=' + global_parameters['database_dump_file'] + \
             ' --format=c' + \
             ' --verbose' + \
-            ' ' + global_parameters['extra_parameters'] + \
+            ' ' + global_parameters['extra_backup_parameters'] + \
             ' ' + global_parameters['dbname']
                         
     elif global_parameters['backup_code'] == 'DATA':
@@ -139,7 +139,7 @@ def pg_dump(db):
             ' --format=c' + \
             ' --blobs' + \
             ' --verbose' + \
-            ' ' + global_parameters['extra_parameters'] + \
+            ' ' + global_parameters['extra_backup_parameters'] + \
             ' ' + global_parameters['dbname']
         
     try:
@@ -981,7 +981,7 @@ if __name__ == '__main__':
     parser.add_argument('--backup-code', metavar='[FULL|SCHEMA|DATA|CLUSTER]', choices=['FULL', 'SCHEMA', 'DATA', 'CLUSTER'], required=True, help='Backup code', dest='backup_code')
     parser.add_argument('--encryption', metavar='[false|true]', default=True, choices=['true', 'false'],required=True, help='Activate encryption', dest='encryption')
     parser.add_argument('--root-backup-dir', metavar='ROOT-BACKUP-DIR', default=True, required=True, help='Root backup dir', dest='root_backup_dir')
-    parser.add_argument('--extra-params', metavar='EXTRA-PARAMETERS', required=False, help='extra pg_dump parameters', dest='extra_parameters')
+    parser.add_argument('--extra-params', metavar='EXTRA-PARAMETERS', required=False, help='extra pg_dump parameters', dest='extra_backup_parameters')
 
     args = parser.parse_args()    
 
@@ -1044,9 +1044,9 @@ if __name__ == '__main__':
         logs.logger.error('Root backup directory parameter not defined')
         sys.exit(1)
 
-    if args.extra_parameters:
-        global_parameters['extra_parameters'] = args.extra_parameters
+    if args.extra_backup_parameters:
+        global_parameters['extra_backup_parameters'] = args.extra_backup_parameters
     else:
-        global_parameters['extra_parameters'] = ''
+        global_parameters['extra_backup_parameters'] = ''
 
     main()

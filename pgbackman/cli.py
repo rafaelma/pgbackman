@@ -728,7 +728,7 @@ class pgbackman_cli(cmd.Cmd):
          
             minutes_cron_default = hours_cron_default = weekday_cron_default = month_cron_default = day_month_cron_default = \
                 backup_code_default = encryption_default = retention_period_default = retention_redundancy_default = \
-                extra_parameters_default = backup_job_status_default = ""
+                extra_backup_parameters_default = backup_job_status_default = ""
 
             #
             # Getting some default values
@@ -744,7 +744,7 @@ class pgbackman_cli(cmd.Cmd):
                 encryption_default = self.db.get_default_pgsql_node_parameter("encryption")
                 retention_period_default = self.db.get_default_pgsql_node_parameter("retention_period")
                 retention_redundancy_default = self.db.get_default_pgsql_node_parameter("retention_redundancy")
-                extra_parameters_default = self.db.get_default_pgsql_node_parameter("extra_parameters")
+                extra_backup_parameters_default = self.db.get_default_pgsql_node_parameter("extra_backup_parameters")
                 backup_job_status_default = self.db.get_default_pgsql_node_parameter("backup_job_status")
 
             except Exception as e:
@@ -774,7 +774,7 @@ class pgbackman_cli(cmd.Cmd):
                 encryption = raw_input("# Encryption [" + encryption_default + "]: ")
                 retention_period = raw_input("# Retention period [" + retention_period_default + "]: ")
                 retention_redundancy = raw_input("# Retention redundancy [" + retention_redundancy_default + "]: ")
-                extra_parameters = raw_input("# Extra parameters [" + extra_parameters_default + "]: ")
+                extra_backup_parameters = raw_input("# Extra parameters [" + extra_backup_parameters_default + "]: ")
                 backup_job_status = raw_input("# Job status [" + backup_job_status_default + "]: ")
                 remarks = raw_input("# Remarks []: ")
                 print
@@ -901,8 +901,8 @@ class pgbackman_cli(cmd.Cmd):
                     if retention_redundancy == "":
                         retention_redundancy = retention_redundancy_default
 
-                    if extra_parameters == "":
-                        extra_parameters = extra_parameters_default
+                    if extra_backup_parameters == "":
+                        extra_backup_parameters = extra_backup_parameters_default
 
                     if backup_job_status == "":
                         backup_job_status = backup_job_status_default
@@ -912,7 +912,7 @@ class pgbackman_cli(cmd.Cmd):
                             
                             self.db.register_backup_definition(backup_server_id,pgsql_node_id,database.strip(),minutes_cron,hours_cron, \
                                                                    weekday_cron.strip(),month_cron.strip(),day_month_cron.strip(),backup_code.upper().strip(),encryption.lower().strip(), \
-                                                                   retention_period.lower().strip(),retention_redundancy.strip(),extra_parameters.lower().strip(), \
+                                                                   retention_period.lower().strip(),retention_redundancy.strip(),extra_backup_parameters.lower().strip(), \
                                                                    backup_job_status.upper().strip(),remarks.strip())
                             
                             print "\n[Done] Backup definition for dbname: " + database.strip() + " created.\n"
@@ -943,7 +943,7 @@ class pgbackman_cli(cmd.Cmd):
             encryption = arg_list[9]
             retention_period = arg_list[10]
             retention_redundancy = arg_list[11]
-            extra_parameters = arg_list[12]
+            extra_backup_parameters = arg_list[12]
             backup_job_status = arg_list[13]
             remarks = arg_list[14]
               
@@ -1043,8 +1043,8 @@ class pgbackman_cli(cmd.Cmd):
                 if retention_redundancy == "":
                     retention_redundancy = retention_redundancy_default
 
-                if extra_parameters == "":
-                    extra_parameters = extra_parameters_default
+                if extra_backup_parameters == "":
+                    extra_backup_parameters = extra_backup_parameters_default
 
                 if backup_job_status == "":
                     backup_job_status = backup_job_status_default
@@ -1054,7 +1054,7 @@ class pgbackman_cli(cmd.Cmd):
 
                         self.db.register_backup_definition(backup_server_id,pgsql_node_id,database.strip(),minutes_cron,hours_cron, \
                                                                weekday_cron.strip(),month_cron.strip(),day_month_cron.strip(),backup_code.upper().strip(),encryption.lower().strip(), \
-                                                               retention_period.lower().strip(),retention_redundancy.strip(),extra_parameters.lower().strip(), \
+                                                               retention_period.lower().strip(),retention_redundancy.strip(),extra_backup_parameters.lower().strip(), \
                                                                backup_job_status.upper().strip(),remarks.strip())
                         
                         print "\n[Done] Backup definition for dbname: " + database.strip() + " created.\n"
@@ -1599,13 +1599,13 @@ class pgbackman_cli(cmd.Cmd):
      
             ack = ""
          
-            time_default = backup_code_default = retention_period_default = extra_parameters_default = ""
+            time_default = backup_code_default = retention_period_default = extra_backup_parameters_default = ""
 
             try:
                 at_time_default = datetime.datetime.now()+ datetime.timedelta(minutes=1)
                 backup_code_default = self.db.get_default_pgsql_node_parameter("backup_code")
                 retention_period_default = self.db.get_default_pgsql_node_parameter("retention_period")
-                extra_parameters_default = self.db.get_default_pgsql_node_parameter("extra_parameters")
+                extra_backup_parameters_default = self.db.get_default_pgsql_node_parameter("extra_backup_parameters")
 
             except Exception as e:
                 print "\n[ERROR]: Problems getting default values for parameters\n",e 
@@ -1619,7 +1619,7 @@ class pgbackman_cli(cmd.Cmd):
                 at_time = raw_input("# AT timestamp [" + str(at_time_default) + "]: ")
                 backup_code = raw_input("# Backup code [" + backup_code_default + "]: ")
                 retention_period = raw_input("# Retention period [" + retention_period_default + "]: ")
-                extra_parameters = raw_input("# Extra parameters [" + extra_parameters_default + "]: ")
+                extra_backup_parameters = raw_input("# Extra parameters [" + extra_backup_parameters_default + "]: ")
                 remarks = raw_input("# Remarks []: ")
                 print
 
@@ -1672,13 +1672,13 @@ class pgbackman_cli(cmd.Cmd):
             if retention_period == "":
                 retention_period = retention_period_default
 
-            if extra_parameters == "":
-                extra_parameters = extra_parameters_default
+            if extra_backup_parameters == "":
+                extra_backup_parameters = extra_backup_parameters_default
             
             if ack.lower() == "yes":
                 try:
                     self.db.register_snapshot_definition(backup_server_id,pgsql_node_id,dbname.strip(),at_time,backup_code.upper().strip(), \
-                                                             retention_period.lower().strip(),extra_parameters.lower().strip(),remarks.strip())
+                                                             retention_period.lower().strip(),extra_backup_parameters.lower().strip(),remarks.strip())
                     print "\n[Done]\n"
 
                 except Exception as e:
@@ -1699,7 +1699,7 @@ class pgbackman_cli(cmd.Cmd):
             at_time = str(arg_list[3])
             backup_code = arg_list[4]
             retention_period = arg_list[5]
-            extra_parameters = arg_list[6]
+            extra_backup_parameters = arg_list[6]
             remarks = arg_list[7]
               
             try:
@@ -1735,7 +1735,7 @@ class pgbackman_cli(cmd.Cmd):
                 
             try:
                 self.db.register_snapshot_definition(backup_server_id,pgsql_node_id,dbname.strip(),at_time,backup_code.upper().strip(), \
-                                                  retention_period.lower().strip(),extra_parameters.lower().strip(),remarks.strip())
+                                                  retention_period.lower().strip(),extra_backup_parameters.lower().strip(),remarks.strip())
                 
                 print "\n[Done]\n"
 
@@ -3091,7 +3091,7 @@ class pgbackman_cli(cmd.Cmd):
                 backup_code_default = self.db.get_pgsql_node_parameter(pgsql_node_id,"backup_code")
                 retention_period_default = self.db.get_pgsql_node_parameter(pgsql_node_id,"retention_period")
                 retention_redundancy_default = self.db.get_pgsql_node_parameter(pgsql_node_id,"retention_redundancy")
-                extra_parameters_default = self.db.get_pgsql_node_parameter(pgsql_node_id,"extra_parameters")
+                extra_backup_parameters_default = self.db.get_pgsql_node_parameter(pgsql_node_id,"extra_backup_parameters")
                 backup_job_status_default = self.db.get_pgsql_node_parameter(pgsql_node_id,"backup_job_status")
 
                 domain_default = self.db.get_pgsql_node_parameter(pgsql_node_id,"domain")
@@ -3117,7 +3117,7 @@ class pgbackman_cli(cmd.Cmd):
                 backup_code = raw_input("# Backup code [" + backup_code_default + "]: ")
                 retention_period = raw_input("# Retention period [" + retention_period_default + "]: ")
                 retention_redundancy = raw_input("# Retention redundancy [" + retention_redundancy_default + "]: ")
-                extra_parameters = raw_input("# Extra parameters [" + extra_parameters_default + "]: ")
+                extra_backup_parameters = raw_input("# Extra parameters [" + extra_backup_parameters_default + "]: ")
                 backup_job_status = raw_input("# Job status [" + backup_job_status_default + "]: ")
                 print
                 domain = raw_input("# Domain [" + domain_default + "]: ")
@@ -3175,8 +3175,8 @@ class pgbackman_cli(cmd.Cmd):
             if retention_redundancy == '':
                 retention_redundancy = retention_redundancy_default
 
-            if extra_parameters == '':
-                extra_parameters = extra_parameters_default
+            if extra_backup_parameters == '':
+                extra_backup_parameters = extra_backup_parameters_default
 
             if backup_job_status != '':
                 if backup_job_status.upper() not in ['ACTIVE','STOPPED']:
@@ -3214,7 +3214,7 @@ class pgbackman_cli(cmd.Cmd):
                 try:
                     self.db.update_pgsql_node_config(pgsql_node_id,backup_minutes_interval.strip(),backup_hours_interval.strip(),backup_weekday_cron.strip(),
                                                      backup_month_cron.strip(),backup_day_month_cron.strip(),backup_code.strip().upper(),retention_period.strip(),
-                                                     retention_redundancy.strip(),extra_parameters.strip(),backup_job_status.strip().upper(),domain.strip(),
+                                                     retention_redundancy.strip(),extra_backup_parameters.strip(),backup_job_status.strip().upper(),domain.strip(),
                                                      logs_email.strip(),admin_user.strip(),pgport,pgnode_backup_partition.strip(),pgnode_crontab_file.strip(),pgsql_node_status.strip().upper())
                     print "\n[Done]\n"
 
@@ -3253,7 +3253,7 @@ class pgbackman_cli(cmd.Cmd):
                 backup_code_default = self.db.get_pgsql_node_parameter(pgsql_node_id,"backup_code")
                 retention_period_default = self.db.get_pgsql_node_parameter(pgsql_node_id,"retention_period")
                 retention_redundancy_default = self.db.get_pgsql_node_parameter(pgsql_node_id,"retention_redundancy")
-                extra_parameters_default = self.db.get_pgsql_node_parameter(pgsql_node_id,"extra_parameters")
+                extra_backup_parameters_default = self.db.get_pgsql_node_parameter(pgsql_node_id,"extra_backup_parameters")
                 backup_job_status_default = self.db.get_pgsql_node_parameter(pgsql_node_id,"backup_job_status")
 
                 domain_default = self.db.get_pgsql_node_parameter(pgsql_node_id,"domain")
@@ -3277,7 +3277,7 @@ class pgbackman_cli(cmd.Cmd):
             backup_code = arg_list[6]
             retention_period = arg_list[7]
             retention_redundancy = arg_list[8]
-            extra_parameters = arg_list[9]
+            extra_backup_parameters = arg_list[9]
             backup_job_status = arg_list[10]
             domain = arg_list[11]
             logs_email = arg_list[12]
@@ -3323,8 +3323,8 @@ class pgbackman_cli(cmd.Cmd):
             if retention_redundancy == '':
                 retention_redundancy = retention_redundancy_default
 
-            if extra_parameters == '':
-                extra_parameters = extra_parameters_default
+            if extra_backup_parameters == '':
+                extra_backup_parameters = extra_backup_parameters_default
 
             if backup_job_status == '':
                 if backup_job_status.upper() not in ['ACTIVE','STOPPED']:
@@ -3361,7 +3361,7 @@ class pgbackman_cli(cmd.Cmd):
             try:
                 self.db.update_pgsql_node_config(pgsql_node_id,backup_minutes_interval.strip(),backup_hours_interval.strip(),backup_weekday_cron.strip(),
                                                  backup_month_cron.strip(),backup_day_month_cron.strip(),backup_code.strip().upper(),retention_period.strip(),
-                                                 retention_redundancy.strip(),extra_parameters.strip(),backup_job_status.strip().upper(),domain.strip(),
+                                                 retention_redundancy.strip(),extra_backup_parameters.strip(),backup_job_status.strip().upper(),domain.strip(),
                                                  logs_email.strip(),admin_user.strip(),pgport,pgnode_backup_partition.strip(),pgnode_crontab_file.strip(),pgsql_node_status.strip().upper())
                 print "\n[Done]\n"
 

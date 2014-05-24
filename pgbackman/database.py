@@ -270,7 +270,7 @@ class pgbackman_db():
 
     def register_backup_definition(self,backup_server,pgsql_node,dbname,minutes_cron,hours_cron, \
                                        weekday_cron,month_cron,day_month_cron,backup_code,encryption, \
-                                       retention_period,retention_redundancy,extra_parameters,job_status,remarks):
+                                       retention_period,retention_redundancy,extra_backup_parameters,job_status,remarks):
         """A function to register a backup definition"""
 
         try:
@@ -280,7 +280,7 @@ class pgbackman_db():
                 try:
                     self.cur.execute('SELECT register_backup_definition(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',(backup_server,pgsql_node,dbname,minutes_cron,hours_cron, \
                                                                                                                             weekday_cron,month_cron,day_month_cron,backup_code,encryption, \
-                                                                                                                            retention_period,retention_redundancy,extra_parameters,job_status,remarks))
+                                                                                                                            retention_period,retention_redundancy,extra_backup_parameters,job_status,remarks))
                     self.conn.commit()                        
                                     
                 except psycopg2.Error as e:
@@ -459,7 +459,7 @@ class pgbackman_db():
     # Method 
     # ############################################
 
-    def register_snapshot_definition(self,backup_server,pgsql_node,dbname,at_time,backup_code,retention_period,extra_parameters,remarks):
+    def register_snapshot_definition(self,backup_server,pgsql_node,dbname,at_time,backup_code,retention_period,extra_backup_parameters,remarks):
         """A function to register a snapshot"""
 
         try:
@@ -468,7 +468,7 @@ class pgbackman_db():
             if self.cur:
                 try:
                     self.cur.execute('SELECT register_snapshot_definition(%s,%s,%s,%s,%s,%s,%s,%s)',(backup_server,pgsql_node,dbname,at_time,backup_code, \
-                                                                                                         retention_period,extra_parameters,remarks))
+                                                                                                         retention_period,extra_backup_parameters,remarks))
                     self.conn.commit()                        
                                     
                 except psycopg2.Error as e:
@@ -2219,7 +2219,7 @@ class pgbackman_db():
                       
     def update_pgsql_node_config(self,pgsql_node_id,backup_minutes_interval,backup_hours_interval,backup_weekday_cron,
                                  backup_month_cron,backup_day_month_cron,backup_code,retention_period,retention_redundancy,
-                                 extra_parameters,backup_job_status,domain,logs_email,admin_user,pgport,pgnode_backup_partition,
+                                 extra_backup_parameters,backup_job_status,domain,logs_email,admin_user,pgport,pgnode_backup_partition,
                                  pgnode_crontab_file,pgsql_node_status):
         """A function to update the configuration of a pgsql node"""
 
@@ -2230,9 +2230,10 @@ class pgbackman_db():
                 try:
                     self.cur.execute('SELECT update_pgsql_node_config(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',(pgsql_node_id,backup_minutes_interval,backup_hours_interval,
                                                                                                                                backup_weekday_cron,backup_month_cron,backup_day_month_cron,
-                                                                                                                               backup_code,retention_period,retention_redundancy,extra_parameters,
-                                                                                                                               backup_job_status,domain,logs_email,admin_user,pgport,
-                                                                                                                               pgnode_backup_partition,pgnode_crontab_file,pgsql_node_status))
+                                                                                                                               backup_code,retention_period,retention_redundancy,
+                                                                                                                               extra_backup_parameters,backup_job_status,domain,
+                                                                                                                               logs_email,admin_user,pgport,pgnode_backup_partition,
+                                                                                                                               pgnode_crontab_file,pgsql_node_status))
                     self.conn.commit()                        
               
                 except psycopg2.Error as e:
