@@ -403,7 +403,7 @@ def pg_dump_database_config(db):
                         #
                         # CREATE DATABASE
                         #
-                        if 'CREATE DATABASE ' + global_parameters['dbname'] in line:
+                        if 'CREATE DATABASE ' + global_parameters['dbname'] + ' ' in line:
                             dbconfig_dump_file.write(line)
                                                          
                         #
@@ -416,7 +416,7 @@ def pg_dump_database_config(db):
                         # GRANT/REVOKE ... ON DATABASE statements
                         #
 
-                        if ' ON DATABASE ' + global_parameters['dbname'] in line:
+                        if ' ON DATABASE ' + global_parameters['dbname'] + ' ' in line:
                             dbconfig_dump_file.write(line)
                                                       
                 logs.logger.debug('The list of dbconfig statements we need from pg_dumpall has been generated')
@@ -981,7 +981,7 @@ if __name__ == '__main__':
     parser.add_argument('--backup-code', metavar='[FULL|SCHEMA|DATA|CLUSTER]', choices=['FULL', 'SCHEMA', 'DATA', 'CLUSTER'], required=True, help='Backup code', dest='backup_code')
     parser.add_argument('--encryption', metavar='[false|true]', default=True, choices=['true', 'false'],required=True, help='Activate encryption', dest='encryption')
     parser.add_argument('--root-backup-dir', metavar='ROOT-BACKUP-DIR', default=True, required=True, help='Root backup dir', dest='root_backup_dir')
-    parser.add_argument('--extra-params', metavar='EXTRA-PARAMETERS', required=False, help='extra pg_dump parameters', dest='extra_backup_parameters')
+    parser.add_argument('--extra-backup-parameters', metavar='EXTRA-PARAMETERS', required=False, help='extra pg_dump parameters', dest='extra_backup_parameters')
 
     args = parser.parse_args()    
 
