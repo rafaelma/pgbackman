@@ -1892,6 +1892,10 @@ class pgbackman_cli(cmd.Cmd):
         Database name where we want to restore the backup if 
         it is different from the DBname defined in BckID 
         
+        [Extra parameters]:
+        -------------------
+        Extra parameters that can be used with pg_restore
+        
         '''
 
         try: 
@@ -1942,8 +1946,34 @@ class pgbackman_cli(cmd.Cmd):
 
             try:
                 target_pgsql_node = raw_input("# Target NodeID / FQDN []: ")
+                
+            except Exception as e:
+                print "\n[Aborted]\n"
+                return False
+
+            try:
+                if target_pgsql_node.isdigit():
+                    pgsql_node_id = target_pgsql_node
+                    pgsql_node_fqdn = self.db.get_pgsql_node_fqdn(target_pgsql_node)
+                else:
+                    pgsql_node_id = self.db.get_pgsql_node_id(target_pgsql_node)
+                    pgsql_node_fqdn = target_pgsql_node
+                    
+            except Exception as e:
+                print "\n[ERROR]: ",e 
+                return False      
+            
+            try:
+                extra_restore_parameters_default = self.db.get_pgsql_node_parameter(pgsql_node_id,"extra_restore_parameters")
+
+            except Exception as e:
+                print "\n[ERROR]: ",e 
+                return False 
+            
+            try:
                 target_dbname = raw_input("# Target DBname [" + target_dbname_default + "]: ")
-                print
+                extra_restore_parameters = raw_input("# Extra parameters [" + extra_restore_parameters_default + "]: ")
+                print 
 
                 while ack_input.lower() != "yes" and ack_input.lower() != "no":
                     ack_input = raw_input("# Are all values correct (yes/no): ")
@@ -1959,15 +1989,11 @@ class pgbackman_cli(cmd.Cmd):
                 print "--------------------------------------------------------"
 
                 try:
-                    if target_pgsql_node.isdigit():
-                        pgsql_node_id = target_pgsql_node
-                        pgsql_node_fqdn = self.db.get_pgsql_node_fqdn(target_pgsql_node)
-                    else:
-                        pgsql_node_id = self.db.get_pgsql_node_id(target_pgsql_node)
-                        pgsql_node_fqdn = target_pgsql_node
-
                     if at_time == "":
                         at_time = at_time_default
+                        
+                    if extra_restore_parameters == '':
+                        extra_restore_parameters = extra_restore_parameters_default
 
                     #
                     # Check if PGnode is online.
@@ -2072,6 +2098,7 @@ class pgbackman_cli(cmd.Cmd):
                 print "Backup server: [" + str(backup_server_id) + "] " + str(backup_server_fqdn)
                 print "Target PgSQL node: [" + str(pgsql_node_id) + "] " + str(pgsql_node_fqdn)
                 print "Target DBname: " + str(target_dbname)
+                print "Extra restore parameters: " + str(extra_restore_parameters) 
                 print "Existing database will be renamed to : " + str(renamed_dbname)
                 print "--------------------------------------------------------"
 
@@ -2088,7 +2115,7 @@ class pgbackman_cli(cmd.Cmd):
                 if ack_confirm.lower() == "yes":
 
                     try:
-                        self.db.register_restore_definition(at_time,backup_server_id,pgsql_node_id,bck_id,target_dbname,renamed_dbname,roles_to_restore)
+                        self.db.register_restore_definition(at_time,backup_server_id,pgsql_node_id,bck_id,target_dbname,renamed_dbname,extra_restore_parameters,roles_to_restore)
                         print "\n[Done]\n"
                         
                     except Exception as e:

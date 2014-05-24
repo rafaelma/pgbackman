@@ -491,7 +491,7 @@ CREATE TABLE restore_definition(
   target_pgsql_node_id INTEGER NOT NULL,
   target_dbname TEXT NOT NULL,
   renamed_dbname TEXT,
-  extra_parameters TEXT,
+  extra_restore_parameters TEXT,
   at_time TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   status TEXT DEFAULT 'WAITING',
   error_message TEXT,
@@ -838,6 +838,7 @@ INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('bac
 INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('backup_month_cron','*','Backup month cron default');
 INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('backup_day_month_cron','*','Backup day_month cron default');
 INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('extra_backup_parameters','','Extra backup parameters');
+INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('extra_restore_parameters','','Extra restore parameters');
 INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('logs_email','example@example.org','E-mail to send logs');
 
 
@@ -2734,7 +2735,7 @@ BEGIN
 		      ' --root-backup-dir ' || root_backup_dir;
 
   IF job_row.extra_backup_parameters != '' AND job_row.extra_backup_parameters IS NOT NULL THEN
-    output := output || ' --extra-params "' || job_row.extra_backup_parameters || '"';
+    output := output || ' --extra-backup-parameters "' || job_row.extra_backup_parameters || '"';
   END IF;
  
   output := output || E'\n';
@@ -2861,6 +2862,7 @@ BEGIN
 	 a.target_dbname,
 	 b.dbname AS source_dbname,
 	 a.renamed_dbname,
+	 a.extra_restore_parameters,
 	 b.pg_dump_file,
 	 b.pg_dump_roles_file,
 	 b.pg_dump_dbconfig_file,
@@ -2885,6 +2887,10 @@ BEGIN
 
    IF restore_row.renamed_dbname != '' AND restore_row.renamed_dbname IS NOT NULL THEN
 	 output := output || ' --renamed-dbname ' || restore_row.renamed_dbname;
+   END IF;
+
+   IF restore_row.extra_restore_parameters != '' AND restore_row.extra_restore_parameters IS NOT NULL THEN
+	 output := output || ' --extra-restore-parameters \"' || restore_row.extra_restore_parameters || '\"';
    END IF;
 
    IF restore_row.role_list != '' AND restore_row.role_list IS NOT NULL THEN
@@ -3391,7 +3397,7 @@ ALTER FUNCTION get_role_list_from_bckid(INTEGER) OWNER TO pgbackman_role_rw;
 -- Function: register_restore_definition()
 -- ------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION register_restore_definition(TIMESTAMP,INTEGER,INTEGER,INTEGER,TEXT,TEXT,TEXT[]) RETURNS VOID
+CREATE OR REPLACE FUNCTION register_restore_definition(TIMESTAMP,INTEGER,INTEGER,INTEGER,TEXT,TEXT,TEXT,TEXT[]) RETURNS VOID
  LANGUAGE plpgsql 
  SECURITY INVOKER 
  SET search_path = public, pg_temp
@@ -3404,7 +3410,8 @@ CREATE OR REPLACE FUNCTION register_restore_definition(TIMESTAMP,INTEGER,INTEGER
   bck_id_ ALIAS FOR $4;
   target_dbname_ ALIAS FOR $5;
   renamed_dbname_ ALIAS FOR $6;
-  roles_to_restore_ ALIAS FOR $7;
+  extra_restore_parameters_ ALIAS FOR $7;
+  roles_to_restore_ ALIAS FOR $8;
 
   server_cnt INTEGER;
   node_cnt INTEGER;  
@@ -3433,14 +3440,16 @@ CREATE OR REPLACE FUNCTION register_restore_definition(TIMESTAMP,INTEGER,INTEGER
 					    target_pgsql_node_id,
 					    target_dbname,
                                             renamed_dbname,
+					    extra_restore_parameters,
 					    at_time)
-	     VALUES ($1,$2,$3,$4,$5,$6,$7)'
+	     VALUES ($1,$2,$3,$4,$5,$6,$7,$8)'
     USING bck_id_,
     	  roles_to_restore_,
     	  backup_server_id_,
 	  target_pgsql_node_id_,
 	  target_dbname_,
 	  renamed_dbname_,
+	  extra_restore_parameters_,
 	  at_time_;
 
  EXCEPTION WHEN others THEN
@@ -3453,7 +3462,7 @@ CREATE OR REPLACE FUNCTION register_restore_definition(TIMESTAMP,INTEGER,INTEGER
 END;
 $$;
 
-ALTER FUNCTION register_restore_definition(TIMESTAMP,INTEGER,INTEGER,INTEGER,TEXT,TEXT,TEXT[]) OWNER TO pgbackman_role_rw;
+ALTER FUNCTION register_restore_definition(TIMESTAMP,INTEGER,INTEGER,INTEGER,TEXT,TEXT,TEXT,TEXT[]) OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------------
@@ -3792,6 +3801,7 @@ SELECT lpad(restore_def::text,8,'0') AS "RestoreDef",
        target_dbname AS "Target DBname",
        renamed_dbname AS "Renamed database",
        to_char(at_time, 'YYYYMMDDHH24MI'::text) AS "AT time",
+       extra_restore_parameters AS "Extra parameters",
        status AS "Status"
 FROM restore_definition
 ORDER BY backup_server_id,target_pgsql_node_id,"Target DBname","AT time";

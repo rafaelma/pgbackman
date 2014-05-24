@@ -228,16 +228,15 @@ def restore_database(db):
     global global_parameters
 
     try:
-        
         database_restore_command = global_parameters['backup_server_pgsql_bin_dir'] + '/pg_restore' + \
-            ' -1 ' + \
             ' -v ' + \
             ' -h ' + global_parameters['pgsql_node_fqdn'] + \
             ' -p ' + global_parameters['pgsql_node_port'] + \
             ' -U ' + global_parameters['pgsql_node_admin_user'] + \
             ' -d ' + global_parameters['target_dbname'] + \
+            ' ' + global_parameters['extra_restore_parameters'] + \
             ' ' + global_parameters['pgdump_file']
-        
+
         with open(global_parameters['restore_log_file'],'a') as restore_log_file:
             
             restore_log_file.write('------------------------------------\n')
@@ -672,7 +671,7 @@ def main():
         global_parameters['error_message'] = 'The target database already exists in the target PgSQL node'
         register_restore_catalog(db)
         sys.exit(1) 
-        
+
     restore_roles(db)
     restore_dbconfig(db)
     restore_database(db)
@@ -713,6 +712,7 @@ if __name__ == '__main__':
     parser.add_argument('--source-dbname', metavar='SOURCE-NAME', required=True, help='Source database name', dest='source_dbname')
     parser.add_argument('--target-dbname', metavar='TARGET-NAME', required=True, help='Target database name', dest='target_dbname')
     parser.add_argument('--renamed-dbname', metavar='RENAMED-DBNAME', required=False, help='Renamed database', dest='renamed_dbname')
+    parser.add_argument('--extra-restore-parameters', metavar='EXTRA-RESTORE-PARAMETERS', required=False, help='extra pg_restore parameters', dest='extra_restore_parameters')
     parser.add_argument('--role-list', metavar='ROLE-LIST', required=False, help='Roles to restore', dest='role_list')
     parser.add_argument('--pg-release', metavar='PG-RELEASE', required=True, help='PG release from backup', dest='pg_release')
     parser.add_argument('--root-backup-dir', metavar='ROOT-BACKUP-DIR', default=True, required=True, help='Root backup dir', dest='root_backup_dir')
@@ -786,6 +786,11 @@ if __name__ == '__main__':
     else:
         global_parameters['renamed_dbname'] = ''
 
+    if args.extra_restore_parameters:
+        global_parameters['extra_restore_parameters'] = args.extra_restore_parameters
+    else:
+        global_parameters['extra_restore_parameters'] = ''
+
     if args.role_list:
         global_parameters['role_list'] = args.role_list.replace(' ','').split(',')
     else:
@@ -802,7 +807,6 @@ if __name__ == '__main__':
     else:
         logs.logger.error('Root backup directory parameter not defined')
         sys.exit(1)
-
 
     main()
 

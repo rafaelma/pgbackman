@@ -599,7 +599,7 @@ class pgbackman_db():
                     else:
                         dbname_sql = ''
     
-                    self.cur.execute('SELECT \"RestoreDef\",\"Registered\",\"BckID\",backup_server_id AS \"ID.\",\"Backup server\",target_pgsql_node_id AS \"ID\",\"Target PgSQL node\",\"Target DBname\",\"Renamed database\",\"AT time\",\"Status\" FROM show_restore_definitions WHERE TRUE ' + server_sql + node_sql + dbname_sql)
+                    self.cur.execute('SELECT \"RestoreDef\",\"Registered\",\"BckID\",target_pgsql_node_id AS \"ID\",\"Target PgSQL node\",\"Target DBname\",\"Renamed database\",\"AT time\",\"Extra parameters\",\"Status\" FROM show_restore_definitions WHERE TRUE ' + server_sql + node_sql + dbname_sql)
                                      
                     colnames = [desc[0] for desc in self.cur.description]
                     self.print_results_table(self.cur,colnames,["Backup server","Target PgSQL node","Target DBname","AT time"])
@@ -2427,7 +2427,7 @@ class pgbackman_db():
     # Method 
     # ############################################
 
-    def register_restore_definition(self,at_time,backup_server_id,pgsql_node_id,bck_id,target_dbname,renamed_dbname,roles_to_restore):
+    def register_restore_definition(self,at_time,backup_server_id,pgsql_node_id,bck_id,target_dbname,renamed_dbname,extra_restore_parameters,roles_to_restore):
         """A function to register a restore job"""
 
         try:
@@ -2435,7 +2435,14 @@ class pgbackman_db():
 
             if self.cur:
                 try:
-                    self.cur.execute('SELECT register_restore_definition(%s,%s,%s,%s,%s,%s,%s)',(at_time,backup_server_id,pgsql_node_id,bck_id,target_dbname,renamed_dbname,roles_to_restore))
+                    self.cur.execute('SELECT register_restore_definition(%s,%s,%s,%s,%s,%s,%s,%s)',(at_time,
+                                                                                                    backup_server_id,
+                                                                                                    pgsql_node_id,
+                                                                                                    bck_id,
+                                                                                                    target_dbname,
+                                                                                                    renamed_dbname,
+                                                                                                    extra_restore_parameters,
+                                                                                                    roles_to_restore))
                     self.conn.commit()                        
                 
                 except psycopg2.Error as  e:
