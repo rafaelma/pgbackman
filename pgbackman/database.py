@@ -1474,6 +1474,55 @@ class pgbackman_db():
     # ############################################
     # Method 
     # ############################################
+           
+    def get_restore_logs_to_delete(self,backup_server_id):
+        """A function to get restore log files to delete"""
+     
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT * FROM get_restore_logs_to_delete WHERE backup_server_id = %s',(backup_server_id,))
+                    self.conn.commit()
+                    
+                    return self.cur
+                
+                except psycopg2.Error as e:
+                    raise e
+
+            self.pg_close()
+
+        except psycopg2.Error as e:
+            raise e
+
+    # ############################################
+    # Method 
+    # ############################################
+                      
+    def delete_restore_logs_to_delete(self,del_id):
+        """A function to delete restore logs to delete information"""
+
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT delete_restore_logs_to_delete(%s)',(del_id,))
+                    self.conn.commit()                        
+              
+                except psycopg2.Error as e:
+                    raise e
+                    
+            self.pg_close()
+
+        except psycopg2.Error as e:
+            raise e
+    
+
+    # ############################################
+    # Method 
+    # ############################################
                       
     def delete_backup_catalog(self,bck_id):
         """A function to delete entries from backup job catalog"""

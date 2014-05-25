@@ -39,6 +39,7 @@ This program is used by PgBackMan to run some maintenance tasks in this backup s
 
 These are the task implemented:
 
+* Delete restore logs files when restore definitions/catalogs are deleted.
 * Delete backup and log files from catalog entries associated to a backup definition after 
   this definition has been deleted with the force parameter.
 * Enforce retentions for backup definitions.
@@ -48,6 +49,56 @@ These are the task implemented:
 
 '''
 
+# ############################################
+# Function delete_restore_logs()
+# ############################################
+
+def delete_restore_logs(db,backup_server_id):
+    '''Delete restore log files after restore definitions/catalogs are deleted'''
+
+    logs.logger.debug('## Deleting restore logs after restore definitions/catalogs are deleted ##')
+    
+    try:
+        for record in db.get_restore_logs_to_delete(backup_server_id):
+            
+            error_cnt = 0
+
+            #
+            # record[2] is the file to delete
+            #
+
+            try:
+                os.unlink(record[2])
+                logs.logger.debug('File: %s deleted',record[2])
+            
+            except OSError as e:
+                if e.errno != errno.ENOENT:
+                    logs.logger.error('Problems deleting restore log files with DelID: %s - %s',record[0],e)
+                    error_cnt = error_cnt + 1
+                else:
+                    pass
+
+            #
+            # We can delete the delID entry from the database only if we can 
+            # delete all the files in the delID entry without errors
+            #
+
+            if error_cnt == 0:
+                try:
+                    db.delete_restore_logs_to_delete(record[0])
+                    logs.logger.info('Restore Log file for DelID: %s deleted',record[0])
+                    
+                except psycopg2.OperationalError as e:
+                    raise e
+                except Exception as e:
+                    logs.logger.error('Problems deleting restore logs to delete entry DelID: %s - %s',record[0],e)
+                    
+    except psycopg2.OperationalError as e:
+        raise e
+    except Exception as e:
+        logs.logger.error('Could not get the restore log to delete information - %s',e)
+
+            
 # ############################################
 # Function delete_files_from_force_deletes()
 # ############################################
@@ -440,6 +491,7 @@ def main():
             delete_files_from_force_deletes(db,backup_server_id)
             enforce_backup_retentions(db,backup_server_id)
             enforce_snapshot_retentions(db,backup_server_id)
+            delete_restore_logs(db,backup_server_id)
             process_pending_backup_catalog_log_file(db,backup_server_id)
             process_pending_restore_catalog_log_file(db,backup_server_id)
 

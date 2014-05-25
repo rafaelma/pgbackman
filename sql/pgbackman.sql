@@ -642,7 +642,7 @@ ALTER TABLE  catalog_entries_to_delete OWNER TO pgbackman_role_rw;
 CREATE TABLE restore_logs_to_delete(
   del_id BIGSERIAL,
   registered TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-  restore_id BIGINT NOT NULL,
+  backup_server_id INTEGER,
   restore_log_file TEXT
 );
 
@@ -884,10 +884,9 @@ INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('ext
 INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('extra_restore_parameters','','Extra restore parameters');
 INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('logs_email','example@example.org','E-mail to send logs');
 
-
 \echo '# [Update: pgbackman_version]\n'
 
-INSERT INTO pgbackman_version (version,tag) VALUES ('1','1_0_0'),
+INSERT INTO pgbackman_version (version,tag) VALUES ('1','1_0_0');
 
 -- ------------------------------------------------------------
 -- Function: notify_pgsql_nodes_updated()
@@ -1287,8 +1286,8 @@ CREATE OR REPLACE FUNCTION update_restore_logs_to_delete() RETURNS TRIGGER
  AS $$
  BEGIN
 
-  EXECUTE 'INSERT INTO restore_logs_to_delete (restore_id,restore_log_file) VALUES ($1,$2)'
-  USING OLD.restore_id,
+  EXECUTE 'INSERT INTO restore_logs_to_delete (backup_server_id,restore_log_file) VALUES ($1,$2)'
+  USING OLD.backup_server_id,
   	OLD.restore_log_file;
 	
  RETURN NULL;
@@ -3178,6 +3177,47 @@ ALTER FUNCTION delete_catalog_entries_to_delete(INTEGER) OWNER TO pgbackman_role
 
 
 -- ------------------------------------------------------------
+-- Function: delete_restore_logs_to_delete()
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION delete_restore_logs_to_delete(INTEGER) RETURNS VOID
+ LANGUAGE plpgsql 
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ DECLARE
+  del_id_ ALIAS FOR $1;
+  del_cnt INTEGER;
+
+  v_msg     TEXT;
+  v_detail  TEXT;
+  v_context TEXT;
+ BEGIN
+
+   SELECT count(*) FROM restore_logs_to_delete WHERE del_id = del_id_ INTO del_cnt;
+
+   IF del_cnt != 0 THEN
+
+     EXECUTE 'DELETE FROM restore_logs_to_delete WHERE del_id = $1'
+     USING del_id_;
+   
+    ELSE
+      RAISE EXCEPTION 'Restore logs to delete with DelID % does not exist',del_id_; 
+    END IF;
+	   
+   EXCEPTION WHEN others THEN
+   	GET STACKED DIAGNOSTICS	
+            v_msg     = MESSAGE_TEXT,
+            v_detail  = PG_EXCEPTION_DETAIL,
+            v_context = PG_EXCEPTION_CONTEXT;
+        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \n----------------------------------------------\n', v_msg, v_detail;
+  END;
+$$;
+
+ALTER FUNCTION delete_restore_logs_to_delete(INTEGER) OWNER TO pgbackman_role_rw;
+
+
+-- ------------------------------------------------------------
 -- Function:  delete_backup_catalog()
 -- ------------------------------------------------------------
 
@@ -3740,13 +3780,13 @@ WITH
 ALTER VIEW get_cron_catalog_entries_to_delete_by_retention OWNER TO pgbackman_role_rw;
 
 
-CREATE OR REPLACE VIEW get_restore_log_files_to_delete AS
-SELECT a.bck_id,
-       b.restore_log_file 
-FROM restore_definition a 
-JOIN restore_catalog b ON a.restore_def = b.restore_def;
+CREATE OR REPLACE VIEW get_restore_logs_to_delete AS
+SELECT del_id,
+       backup_server_id,
+       restore_log_file 
+FROM restore_logs_to_delete; 
 
-ALTER VIEW get_restore_log_files_to_delete OWNER TO pgbackman_role_rw;
+ALTER VIEW get_restore_logs_to_delete OWNER TO pgbackman_role_rw;
 
 
 CREATE OR REPLACE VIEW get_at_catalog_entries_to_delete_by_retention AS
