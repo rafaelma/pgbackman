@@ -630,6 +630,27 @@ ALTER TABLE  catalog_entries_to_delete OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------
+-- Table: restore_logs_to_delete
+--
+-- @Description: Table with log files to delete after a
+--               restore has been deleted
+--
+-- ------------------------------------------------------
+
+\echo '# [Creating table: restore_logs_to_delete]\n'
+
+CREATE TABLE restore_logs_to_delete(
+  del_id BIGSERIAL,
+  registered TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  restore_id BIGINT NOT NULL,
+  restore_log_file TEXT
+);
+
+ALTER TABLE restore_logs_to_delete ADD PRIMARY KEY (del_id);
+ALTER TABLE  restore_logs_to_delete OWNER TO pgbackman_role_rw;
+
+
+-- ------------------------------------------------------
 -- Table: backup_server_config
 --
 -- @Description: Configuration of backup servers.
@@ -1228,6 +1249,33 @@ ALTER FUNCTION notify_new_restore() OWNER TO pgbackman_role_rw;
 CREATE TRIGGER notify_new_restore AFTER INSERT
     ON restore_definition FOR EACH ROW
     EXECUTE PROCEDURE notify_new_restore();
+
+
+-- ------------------------------------------------------------
+-- Function: update_restore_logs_to_delete()
+--
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION update_restore_logs_to_delete() RETURNS TRIGGER
+ LANGUAGE plpgsql 
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ BEGIN
+
+  EXECUTE 'INSERT INTO restore_logs_to_delete (restore_id,restore_log_file) VALUES ($1,$2)'
+  USING OLD.restore_id,
+  	OLD.restore_log_file;
+	
+ RETURN NULL;
+END;
+$$;
+
+ALTER FUNCTION update_restore_logs_to_delete() OWNER TO pgbackman_role_rw;
+
+CREATE TRIGGER update_restore_logs_to_delete AFTER DELETE
+    ON restore_catalog FOR EACH ROW
+    EXECUTE PROCEDURE update_restore_logs_to_delete();
 
 
 -- ------------------------------------------------------------

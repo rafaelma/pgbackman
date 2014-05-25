@@ -679,6 +679,7 @@ def main():
                     #
                     # A PgSQL node has been registered with status RUNNING
                     #
+                    logs.logger.debug('Notify: PgSQL node registered with status RUNNING')
                     listen_channels = add_to_listen_channels(db,db_notify,backup_server_id)
 
                     #
@@ -705,6 +706,7 @@ def main():
                     #
                     # A PgSQL node has been registered with status STOPPED
                     #
+                    logs.logger.debug('Notify: PgSQL node registered with status STOPPED')
                     unlisten_channels = delete_from_listen_channels(db,db_notify,backup_server_id)
                     
                     #
@@ -727,6 +729,8 @@ def main():
                     #
                     # A PgSQL node has been deleted
                     #
+                    logs.logger.debug('Notify: PgSQL node deleted')
+                    
                     unlisten_channels = delete_from_listen_channels(db,db_notify,backup_server_id)
                     process_pgsql_node_to_delete(db,backup_server_id)
 
@@ -735,7 +739,7 @@ def main():
                     #
                     # A snapshot backup has been defined
                     #
-                    
+                    logs.logger.debug('Notify: Backup snapshot defined')
                     generate_snapshot_at_jobs(db,backup_server_id,tmp_dir)
 
                 elif channel == 'channel_restore_defined':
@@ -743,14 +747,16 @@ def main():
                     #
                     # A restore job has been defined
                     #
-                    
+                    logs.logger.debug('Notify: Restore defined')
                     generate_restore_at_jobs(db,backup_server_id,tmp_dir)
 
                 else:
                     
                     #
-                    # A backup job has been registered or deleted
+                    # A backup job has been registered, updated or deleted
                     #
+                    logs.logger.debug('Notify: backup job registered, updated or deleted')
+                    
                     pgsql_node_id = db.get_next_crontab_id_to_generate(backup_server_id)
                     generate_crontab_backup_jobs(db,backup_server_id,pgsql_node_id)
 
