@@ -700,6 +700,27 @@ CREATE TABLE pgsql_node_config(
 ALTER TABLE pgsql_node_config ADD PRIMARY KEY (node_id,parameter);
 ALTER TABLE pgsql_node_config OWNER TO pgbackman_role_rw;
 
+
+-- ------------------------------------------------------
+-- Table: pgbackman_version
+--
+-- @Description: Version control.
+--
+-- ------------------------------------------------------
+
+\echo '# [Creating table: pgbackman_version]\n'
+
+CREATE TABLE pgbackman_version(
+
+  registered TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),	
+  version INTEGER,
+  tag TEXT
+);
+
+ALTER TABLE pgbackman_version ADD PRIMARY KEY (version);
+ALTER TABLE pgbackman_version OWNER TO pgbackman_role_rw;
+
+
 -- ------------------------------------------------------
 -- Contraints
 -- ------------------------------------------------------
@@ -864,6 +885,9 @@ INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('ext
 INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('logs_email','example@example.org','E-mail to send logs');
 
 
+\echo '# [Update: pgbackman_version]\n'
+
+INSERT INTO pgbackman_version (version,tag) VALUES ('1','1_0_0'),
 
 -- ------------------------------------------------------------
 -- Function: notify_pgsql_nodes_updated()
