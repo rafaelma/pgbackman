@@ -542,7 +542,8 @@ CREATE TABLE backup_catalog(
   execution_method TEXT,
   error_message TEXT,
   role_list TEXT[],
-  pgsql_node_release TEXT
+  pgsql_node_release TEXT,
+  checksum TEXT
 );
 
 ALTER TABLE backup_catalog ADD PRIMARY KEY (bck_id);
@@ -751,16 +752,16 @@ ALTER TABLE ONLY restore_definition
     ADD FOREIGN KEY (status) REFERENCES at_definition_status (code) MATCH FULL ON DELETE RESTRICT;
     
 ALTER TABLE ONLY restore_catalog
-    ADD FOREIGN KEY (backup_server_id) REFERENCES  backup_server (server_id) MATCH FULL ON DELETE RESTRICT;
+    ADD FOREIGN KEY (backup_server_id) REFERENCES  backup_server (server_id) MATCH FULL ON DELETE CASCADE;
 
 ALTER TABLE ONLY restore_catalog
-    ADD FOREIGN KEY (target_pgsql_node_id) REFERENCES pgsql_node (node_id) MATCH FULL ON DELETE RESTRICT;
+    ADD FOREIGN KEY (target_pgsql_node_id) REFERENCES pgsql_node (node_id) MATCH FULL ON DELETE CASCADE;
 
 ALTER TABLE ONLY restore_catalog
     ADD FOREIGN KEY (execution_status) REFERENCES job_execution_status (code) MATCH FULL ON DELETE RESTRICT;
 
 ALTER TABLE ONLY restore_catalog
-    ADD FOREIGN KEY (restore_def) REFERENCES restore_definition (restore_def) MATCH FULL ON DELETE RESTRICT;
+    ADD FOREIGN KEY (restore_def) REFERENCES restore_definition (restore_def) MATCH FULL ON DELETE CASCADE;
 
 
 -- ------------------------------------------------------
@@ -1981,36 +1982,6 @@ CREATE OR REPLACE FUNCTION delete_backup_definition_dbname(INTEGER,TEXT) RETURNS
      EXECUTE 'DELETE FROM backup_definition WHERE pgsql_node_id = $1 AND dbname = $2'
      USING pgsql_node_id_,
      	   dbname_;
-   
-     EXECUTE 'WITH del_catid AS (
-               DELETE FROM backup_catalog 
-               WHERE pgsql_node_id = $1 AND dbname = $2
-               RETURNING def_id,
-			   bck_id,
-			   backup_server_id,
-			   pg_dump_file,
-			   pg_dump_log_file,
-			   pg_dump_roles_file,
-			   pg_dump_roles_log_file,
-			   pg_dump_dbconfig_file,
-			   pg_dump_dbconfig_log_file
-             ),save_catinfo AS (
-	       INSERT INTO catalog_entries_to_delete(
-	       	      	   def_id,
-			   bck_id,
-			   backup_server_id,
-			   pg_dump_file,
-			   pg_dump_log_file,
-			   pg_dump_roles_file,
-			   pg_dump_roles_log_file,
-			   pg_dump_dbconfig_file,
-			   pg_dump_dbconfig_log_file)
-		SELECT * FROM del_catid	
-             )
-             DELETE FROM backup_definition
-	     WHERE pgsql_node_id = $1 AND dbname = $2'
-      USING pgsql_node_id_,
-     	    dbname_; 
 
     ELSE
       RAISE EXCEPTION 'No backup job definition for dbname: %s and PgSQL node: %s',dbname_,pgsql_node_id_; 
@@ -3697,6 +3668,15 @@ WITH
 ALTER VIEW get_cron_catalog_entries_to_delete_by_retention OWNER TO pgbackman_role_rw;
 
 
+CREATE OR REPLACE VIEW get_restore_log_files_to_delete AS
+SELECT a.bck_id,
+       b.restore_log_file 
+FROM restore_definition a 
+JOIN restore_catalog b ON a.restore_def = b.restore_def;
+
+ALTER VIEW get_restore_log_files_to_delete OWNER TO pgbackman_role_rw;
+
+
 CREATE OR REPLACE VIEW get_at_catalog_entries_to_delete_by_retention AS
 WITH 
   all_backup_jobs_catalog AS (
@@ -3725,6 +3705,7 @@ WITH
 
 ALTER VIEW get_at_catalog_entries_to_delete_by_retention OWNER TO pgbackman_role_rw;
 
+
 CREATE OR REPLACE VIEW show_backup_server_config AS
 SELECT server_id,
        parameter AS "Parameter",
@@ -3744,6 +3725,7 @@ FROM pgsql_node_config
 ORDER BY parameter; 
 
 ALTER VIEW show_pgsql_node_config OWNER TO pgbackman_role_rw;
+
 
 CREATE OR REPLACE VIEW show_empty_backup_catalogs AS
 WITH def_id_list AS (
