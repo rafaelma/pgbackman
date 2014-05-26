@@ -3742,7 +3742,7 @@ SELECT lpad(def_id::text,11,'0') AS "DefID",
        job_status AS "Status",
        extra_backup_parameters AS "Parameters"
 FROM backup_definition
-ORDER BY backup_server_id,pgsql_node_id,"DBname","Code","Status";
+ORDER BY "Backup server","PgSQL node","DBname","Code","Status";
 
 ALTER VIEW show_backup_definitions OWNER TO pgbackman_role_rw;
 
