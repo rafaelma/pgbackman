@@ -2604,6 +2604,63 @@ class pgbackman_db():
         except psycopg2.Error as e:
             raise e
 
+    # ############################################
+    # Method 
+    # ############################################
+                      
+    def update_backup_definition(self,def_id,minutes_cron,hours_cron,weekday_cron,month_cron,day_month_cron,retention_period,
+                                 retention_redundancy,extra_backup_parameters,job_status,remarks):
+        """A function to update a backup definition"""
+
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT update_backup_definition(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',(def_id,
+                                                                                                          minutes_cron,
+                                                                                                          hours_cron,
+                                                                                                          weekday_cron,
+                                                                                                          month_cron,
+                                                                                                          day_month_cron,
+                                                                                                          retention_period,
+                                                                                                          retention_redundancy,
+                                                                                                          extra_backup_parameters,
+                                                                                                          job_status,
+                                                                                                          remarks))
+                    self.conn.commit()                        
+              
+                except psycopg2.Error as e:
+                    raise e
+                    
+            self.pg_close()
+   
+        except psycopg2.Error as e:
+            raise e
 
 
+    # ############################################
+    # Method 
+    # ############################################
+           
+    def get_backup_definition_def_values(self,def_id,parameter):
+        """A function to get the value of an attribute from a backup_definition"""
+     
+        try:
+            self.pg_connect()
 
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT get_backup_definition_def_values(%s,%s)',(def_id,parameter))
+                    self.conn.commit()
+
+                    data = self.cur.fetchone()[0]
+                    return data
+                                    
+                except psycopg2.Error as e:
+                    raise e
+
+            self.pg_close()
+
+        except psycopg2.Error as e:
+            raise e

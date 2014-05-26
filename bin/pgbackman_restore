@@ -649,7 +649,7 @@ def main():
                              global_parameters['target_pgsql_node_release'].replace('_','.'))
 
         global_parameters['execution_status'] = 'ERROR'
-        global_parameters['error_message'] = 'Backup release > Target pgsql node release'
+        global_parameters['error_message'] = 'Backup pgsql release > Target pgsql node release'
         register_restore_catalog(db)
         sys.exit(1) 
 

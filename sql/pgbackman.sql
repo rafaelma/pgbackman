@@ -704,7 +704,7 @@ ALTER TABLE pgsql_node_config OWNER TO pgbackman_role_rw;
 -- ------------------------------------------------------
 -- Table: pgbackman_version
 --
--- @Description: Version control.
+-- @Description: PgBackman database schema version.
 --
 -- ------------------------------------------------------
 
@@ -886,7 +886,8 @@ INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('log
 
 \echo '# [Update: pgbackman_version]\n'
 
-INSERT INTO pgbackman_version (version,tag) VALUES ('1','1_0_0');
+INSERT INTO pgbackman_version (version,tag) VALUES ('1','v_1_0_0');
+
 
 -- ------------------------------------------------------------
 -- Function: notify_pgsql_nodes_updated()
@@ -1657,7 +1658,7 @@ $$;
 ALTER FUNCTION update_pgsql_node(INTEGER,INTEGER,TEXT,TEXT,TEXT) OWNER TO pgbackman_role_rw;
 
 -- ------------------------------------------------------------
--- Function: update_pgsql_node()
+-- Function: update_pgsql_node_config()
 --
 -- ------------------------------------------------------------
 
@@ -2142,6 +2143,79 @@ ALTER FUNCTION delete_force_backup_definition_dbname(INTEGER,TEXT) OWNER TO pgba
 
 
 -- ------------------------------------------------------------
+-- Function: update_backup_definition()
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION update_backup_definition(INTEGER,TEXT,TEXT,TEXT,TEXT,TEXT,INTERVAL,INTEGER,TEXT,TEXT,TEXT) RETURNS VOID
+ LANGUAGE plpgsql 
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ DECLARE
+  def_id_ ALIAS FOR $1;
+  minutes_cron_ ALIAS FOR $2;
+  hours_cron_ ALIAS FOR $3;
+  weekday_cron_ ALIAS FOR $4;
+  month_cron_ ALIAS FOR $5;
+  day_month_cron_ ALIAS FOR $6;
+  retention_period_ ALIAS FOR $7;
+  retention_redundancy_ ALIAS FOR $8;
+  extra_backup_parameters_ ALIAS FOR $9;
+  job_status_ ALIAS FOR $10;
+  remarks_ ALIAS FOR $11;
+
+  defid_cnt INTEGER;
+
+  v_msg     TEXT;
+  v_detail  TEXT;
+  v_context TEXT;
+ BEGIN
+
+   SELECT count(*) FROM backup_definition WHERE def_id = def_id_ INTO defid_cnt;
+
+   IF defid_cnt != 0 THEN
+
+     EXECUTE 'UPDATE backup_definition SET  minutes_cron = $2, 
+     	     	     		       	    hours_cron = $3, 
+					    weekday_cron = $4, 
+					    month_cron = $5,
+					    day_month_cron = $6,
+					    retention_period = $7,
+					    retention_redundancy = $8,
+					    extra_backup_parameters = $9,
+					    job_status = $10,
+					    remarks = $11
+	      WHERE def_id = $1'
+
+     USING def_id_,
+     	   minutes_cron_,
+	   hours_cron_,
+	   weekday_cron_,
+     	   month_cron_,
+	   day_month_cron_,
+	   retention_period_,
+	   retention_redundancy_,
+	   extra_backup_parameters_,
+	   job_status_,
+	   remarks_;
+   
+    ELSE
+      RAISE EXCEPTION 'Backup definition with DefID: % does not exist',def_id_; 
+    END IF;
+	   
+   EXCEPTION WHEN others THEN
+   	GET STACKED DIAGNOSTICS	
+            v_msg     = MESSAGE_TEXT,
+            v_detail  = PG_EXCEPTION_DETAIL,
+            v_context = PG_EXCEPTION_CONTEXT;
+        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \n----------------------------------------------\n', v_msg, v_detail;
+  END;
+$$;
+
+ALTER FUNCTION update_backup_definition(INTEGER,TEXT,TEXT,TEXT,TEXT,TEXT,INTERVAL,INTEGER,TEXT,TEXT,TEXT) OWNER TO pgbackman_role_rw;
+
+
+-- ------------------------------------------------------------
 -- Function: register_snapshot_definition()
 -- ------------------------------------------------------------
 
@@ -2402,6 +2476,71 @@ CREATE OR REPLACE FUNCTION get_pgsql_node_parameter(INTEGER,TEXT) RETURNS TEXT
 $$;
 
 ALTER FUNCTION get_pgsql_node_parameter(INTEGER,TEXT) OWNER TO pgbackman_role_rw;
+
+
+-- ------------------------------------------------------------
+-- Function: get_backup_definition_def_value()
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION get_backup_definition_def_values(INTEGER,TEXT) RETURNS TEXT 
+ LANGUAGE plpgsql 
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ DECLARE
+ def_id_ ALIAS FOR $1;
+ parameter_ ALIAS FOR $2; 
+ value_ TEXT := '';
+
+ defid_cnt INTEGER;
+
+ BEGIN
+
+  SELECT count(*) FROM backup_definition WHERE def_id = def_id_ INTO defid_cnt;
+
+  IF defid_cnt = 0 THEN
+    RAISE EXCEPTION 'DefID: % does not exist in the system',def_id_;
+  END IF;
+
+  IF parameter_ = 'minutes_cron' THEN
+   SELECT minutes_cron FROM backup_definition WHERE def_id = def_id_ INTO value_;
+
+  ELSIF parameter_ = 'hours_cron' THEN
+   SELECT hours_cron FROM backup_definition WHERE def_id = def_id_ INTO value_;
+
+  ELSIF parameter_ = 'weekday_cron' THEN
+   SELECT weekday_cron FROM backup_definition WHERE def_id = def_id_ INTO value_;
+  
+  ELSIF parameter_ = 'month_cron' THEN
+   SELECT month_cron FROM backup_definition WHERE def_id = def_id_ INTO value_;
+  
+  ELSIF parameter_ = 'day_month_cron' THEN
+   SELECT day_month_cron FROM backup_definition WHERE def_id = def_id_ INTO value_;
+  
+  ELSIF parameter_ = 'retention_period' THEN
+   SELECT retention_period FROM backup_definition WHERE def_id = def_id_ INTO value_;
+  
+  ELSIF parameter_ = 'retention_redundancy' THEN
+   SELECT retention_redundancy FROM backup_definition WHERE def_id = def_id_ INTO value_;
+  
+  ELSIF parameter_ = 'extra_backup_parameters' THEN
+   SELECT extra_backup_parameters FROM backup_definition WHERE def_id = def_id_ INTO value_;
+ 
+  ELSIF parameter_ = 'job_status' THEN
+   SELECT job_status FROM backup_definition WHERE def_id = def_id_ INTO value_;
+
+  ELSIF parameter_ = 'remarks' THEN
+   SELECT remarks FROM backup_definition WHERE def_id = def_id_ INTO value_;
+
+  ELSE
+     RAISE EXCEPTION 'Problems getting the value of DefID: % - parameter: %',def_id_,parameter_;
+  END IF;
+
+  RETURN value_;
+ END;
+$$;
+
+ALTER FUNCTION get_backup_definition_def_values(INTEGER,TEXT) OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------------

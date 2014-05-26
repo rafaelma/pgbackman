@@ -2818,7 +2818,7 @@ class pgbackman_cli(cmd.Cmd):
     def do_update_backup_server(self,args):
         """
         DESCRIPTION:
-        This command updates the information for a backup server
+        This command updates the information of a backup server
 
         COMMAND:
         update_backup_server [SrvID | FQDN] [remarks]
@@ -2935,7 +2935,7 @@ class pgbackman_cli(cmd.Cmd):
     def do_update_pgsql_node(self,args):
         """
         DESCRIPTION:
-        This command updates the information for a PgSQL node
+        This command updates the information of a PgSQL node
 
         COMMAND:
         update_pgsql_node [NodeID | FQDN] [pgport] [admin_user] [status] [remarks]
@@ -3059,7 +3059,7 @@ class pgbackman_cli(cmd.Cmd):
 
 
     # ############################################
-    # Method do_update_pgsql_node
+    # Method do_update_pgsql_node_config
     # ############################################
 
     def do_update_pgsql_node_config(self,args):
@@ -3397,6 +3397,217 @@ class pgbackman_cli(cmd.Cmd):
                         
         else:
             print "\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n"
+
+
+
+    # ############################################
+    # Method do_update_backup_definition
+    # ############################################
+
+    def do_update_backup_definition(self,args):
+        """
+        DESCRIPTION:
+        This command updates the information of a backup definition
+
+        COMMAND:
+        update_backup_definition [DefID]
+                                 [mincron] [hourcron] [weekdaycron] [monthcron] [daymonthcron]  
+                                 [retention period] 
+                                 [retention redundancy] 
+                                 [extra backup parameters] 
+                                 [job status] 
+                                 [remarks] 
+
+        """    
+        
+        try: 
+            arg_list = shlex.split(args)
+        
+        except ValueError as e:
+            print "\n[ERROR]: ",e,"\n"
+            return False
+            
+        #
+        # Command without parameters
+        #
+        
+        if len(arg_list) == 0:
+            
+            ack = ""
+
+            print "--------------------------------------------------------"
+
+            try:
+                def_id = raw_input("# DefID []: ")
+                
+            except Exception as e:
+                print "\n[Aborted]\n",e 
+                return False
+
+            if def_id.isdigit():
+
+                try:
+                    minutes_cron_default = self.db.get_backup_definition_def_values(def_id,"minutes_cron")
+                    hours_cron_default = self.db.get_backup_definition_def_values(def_id,"hours_cron")
+                    weekday_cron_default = self.db.get_backup_definition_def_values(def_id,"weekday_cron")
+                    month_cron_default = self.db.get_backup_definition_def_values(def_id,"month_cron")
+                    day_month_cron_default = self.db.get_backup_definition_def_values(def_id,"day_month_cron")
+                    
+                    retention_period_default = self.db.get_backup_definition_def_values(def_id,"retention_period")
+                    retention_redundancy_default = self.db.get_backup_definition_def_values(def_id,"retention_redundancy")
+                    extra_backup_parameters_default = self.db.get_backup_definition_def_values(def_id,"extra_backup_parameters")
+                    job_status_default = self.db.get_backup_definition_def_values(def_id,"job_status")
+                    remarks_default = self.db.get_backup_definition_def_values(def_id,"remarks")
+                
+                except Exception as e:
+                    print "\n[ERROR]: Problems getting default values for parameters\n",e 
+                    return False
+            else:
+                print '\n[ERROR]: DefID has to be an integer\n'
+                return False
+
+            try:
+                minutes_cron = raw_input("# Minutes cron [" + str(minutes_cron_default) + "]: ")
+                hours_cron = raw_input("# Hours cron [" + str(hours_cron_default) + "]: ")
+                weekday_cron = raw_input("# Weekday cron [" + str(weekday_cron_default) + "]: ")
+                month_cron = raw_input("# Month cron [" + str(month_cron_default) + "]: ")
+                day_month_cron = raw_input("# Day-month cron [" + str(day_month_cron_default) + "]: ")
+                retention_period = raw_input("# Retention period [" + str(retention_period_default) + "]: ")
+                retention_redundancy = raw_input("# Retention redundancy [" + str(retention_redundancy_default) + "]: ")
+                extra_backup_parameters = raw_input("# Extra backup parameters [" + str(extra_backup_parameters_default) + "]: ")
+                job_status = raw_input("# Job status [" + str(job_status_default) + "]: ")
+                remarks = raw_input("# Remarks [" + str(remarks_default) + "]: ")
+                print
+
+                while ack != "yes" and ack != "no":
+                    ack = raw_input("# Are all values to update correct (yes/no): ")
+
+                print "--------------------------------------------------------"
+
+            except Exception as e:
+                print "\n[Aborted]\n",e
+                return False
+            
+            if minutes_cron == '':
+                minutes_cron = minutes_cron_default
+
+            if hours_cron == '':
+                hours_cron = hours_cron_default
+
+            if weekday_cron == '':
+                weekday_cron = weekday_cron_default
+
+            if month_cron == '':
+                month_cron = month_cron_default
+
+            if day_month_cron == '':
+                day_month_cron = day_month_cron_default
+
+            if retention_period == '':
+                retention_period = retention_period_default
+                
+            if retention_redundancy == '':
+                retention_redundancy = retention_redundancy_default
+
+            if extra_backup_parameters == '':
+                extra_backup_parameters = extra_backup_parameters_default
+
+            if job_status == '':
+                job_status = job_status_default
+                
+            if remarks == '':
+                remarks = remarks_default
+
+            if ack.lower() == "yes":
+                try:
+                    self.db.update_backup_definition(def_id,minutes_cron,hours_cron,weekday_cron,month_cron,day_month_cron,retention_period,
+                                                     retention_redundancy,extra_backup_parameters,job_status.upper(),remarks)
+                    
+                    print "\n[Done]\n"
+                    
+                except Exception as e:
+                    print '\n[ERROR]: Could not update this Backup definition\n',e
+                    
+            elif ack.lower() == "no":
+                print "\n[Aborted]\n"
+
+        #
+        # Command with parameters
+        #
+
+        elif len(arg_list) == 11:
+        
+            try:
+                minutes_cron_default = self.db.get_backup_definition_def_values(def_id,"minutes_cron")
+                hours_cron_default = self.db.get_backup_definition_def_values(def_id,"hours_cron")
+                weekday_cron_default = self.db.get_backup_definition_def_values(def_id,"weekday_cron")
+                month_cron_default = self.db.get_backup_definition_def_values(def_id,"month_cron")
+                day_month_cron_default = self.db.get_backup_definition_def_values(def_id,"day_month_cron")
+            
+                retention_period_default = self.db.get_backup_definition_def_values(def_id,"retention_period")
+                retention_redundancy_default = self.db.get_backup_definition_def_values(def_id,"retention_redundancy")
+                extra_backup_parameters_default = self.db.get_backup_definition_def_values(def_id,"extra_backup_parameters")
+                job_status_default = self.db.get_backup_definition_def_values(def_id,"job_status")
+                remarks_default = self.db.get_backup_definition_def_values(def_id,"remarks")
+                
+            except Exception as e:
+                print "\n[ERROR]: Problems getting default values for parameters\n",e 
+                return False
+
+            def_id = arg_list[0]
+            minutes_cron = arg_list[1]
+            hours_cron = arg_list[2]
+            weekday_cron = arg_list[3]
+            month_cron = arg_list[4]
+            day_month_cron = arg_list[5]
+            retention_period = arg_list[6]
+            retention_redundancy = arg_list[7]
+            extra_backup_parameters = arg_list[8]
+            job_status = arg_list[9]
+            remarks = arg_list[10]
+
+            if minutes_cron == '':
+                minutes_cron = minutes_cron_default
+
+            if hours_cron == '':
+                hours_cron = hours_cron_default
+
+            if weekday_cron == '':
+                weekday_cron = weekday_cron_default
+
+            if month_cron == '':
+                month_cron = month_cron_default
+
+            if day_month_cron == '':
+                day_month_cron = day_month_cron_default
+
+            if retention_period == '':
+                retention_period = retention_period_default
+                
+            if retention_redundancy == '':
+                retention_redundancy = retention_redundancy_default
+
+            if extra_backup_parameters == '':
+                extra_backup_parameters = extra_backup_parameters_default
+
+            if job_status == '':
+                job_status = job_status_default
+                
+            if remarks == '':
+                remarks = remarks_default
+
+            try:
+                self.db.update_backup_definition(def_id,minutes_cron,hours_cron,weekday_cron,month_cron,day_month_cron,retention_period,
+                                                 retention_redundancy,extra_backup_parameters,job_status.upper(),remarks)
+                
+                print "\n[Done]\n"
+                
+            except Exception as e:
+                print '\n[ERROR]: Could not update this Backup definition\n',e
+                
+        else:
+            print "\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n"
+
 
 
     # ############################################
