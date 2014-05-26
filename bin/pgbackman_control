@@ -134,8 +134,8 @@ def generate_crontab_backup_jobs(db,backup_server_id,pgsql_node_id):
             data = db.generate_crontab_backup_jobs(backup_server_id,pgsql_node_id)
             
             file.write(data)
-            file.close()
-            
+            file.flush()
+
             logs.logger.info('Crontab file: %s created/updated',crontab_file)
       
     except Exception as e:
@@ -185,8 +185,6 @@ def generate_snapshot_at_jobs(db,backup_server_id,tmp_dir):
                     db.update_snapshot_status(snapshot_id,'ERROR')
                     logs.logger.error('AT job for snapshotID: %s could not be defined',snapshot_id) 
 
-                at_file.close()
-
     except Exception as e:
         logs.logger.error('Could not generate AT file for a snapshot - %s',e)
 
@@ -224,8 +222,6 @@ def generate_restore_at_jobs(db,backup_server_id,tmp_dir):
                 elif proc.returncode != 0:
                     db.update_restore_status(restore_id,'ERROR')
                     logs.logger.error('AT job for restoreID: %s could not be defined',restore_id) 
-
-                at_file.close()
 
     except Exception as e:
         logs.logger.error('Could not generate AT file for a restore - %s',e)
