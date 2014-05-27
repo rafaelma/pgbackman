@@ -210,7 +210,7 @@ class pgbackman_cli(cmd.Cmd):
         registered in the server we want to delete. This is done on purpose 
         to avoid operator errors with catastrophic consequences.
 
-        You will have to delete or move to another server all backup definitions
+        One will have to delete or move to another server all backup definitions
         running on the server that you want to delete.
 
         COMMAND:
@@ -244,7 +244,7 @@ class pgbackman_cli(cmd.Cmd):
                 print "--------------------------------------------------------"
 
             except Exception as e:
-                print "\n[Aborted]\n"
+                print "\n[Aborted] Command interrupted by the user.\n"
                 return False
 
             if ack.lower() == "yes":
@@ -252,17 +252,17 @@ class pgbackman_cli(cmd.Cmd):
                 try:
                     if server_id.isdigit():
                         self.db.delete_backup_server(server_id)
-                        print "\n[Done]\n"
+                        print '\n[Done] Backup server deleted.\n'
 
                     else:
                         self.db.delete_backup_server(self.db.get_backup_server_id(server_id))
-                        print "\n[Done]\n"
+                        print '\n[Done] Backup server deleted.\n'
                         
                 except Exception as e:
-                    print "\n[ERROR]: Could not delete this backup server\n",e
+                    print '\n[ERROR]: Could not delete this backup server\n',e
 
             elif ack.lower() == "no":
-                print "\n[Aborted]\n"
+                print '\n[Aborted]\n'
               
         #
         # Command with parameters
@@ -275,21 +275,21 @@ class pgbackman_cli(cmd.Cmd):
             try:
                 if server_id.isdigit():
                     self.db.delete_backup_server(server_id)
-                    print "\n[Done]\n"
+                    print '\n[Done] backup server deleted.\n'
                     
                 else:
                     self.db.delete_backup_server(self.db.get_backup_server_id(server_id))
-                    print "\n[Done]\n"
+                    print '\n[Done] Backup server deleted.\n'
                     
             except Exception as e:
-                print "\n[ERROR]: Could not delete this backup server\n",e
+                print '\n[ERROR]: Could not delete this backup server\n',e
                          
         #
         # Command with the wrong number of parameters
         #
 
         else:
-            print "\n[ERROR] - Wrong number of parameters used.\n          Type help or \? to list commands\n"
+            print '\n[ERROR] - Wrong number of parameters used.\n          Type help or \? to list commands\n'
 
         
     # ############################################
@@ -488,7 +488,7 @@ class pgbackman_cli(cmd.Cmd):
                 print "--------------------------------------------------------"
             
             except Exception as e:
-                print "\n[Aborted]\n"
+                print '\n[Aborted] Command interrupted by the user.\n'
                 return False
 
             if ack.lower() == "yes":
@@ -496,17 +496,17 @@ class pgbackman_cli(cmd.Cmd):
                 try:
                     if node_id.isdigit():
                         self.db.delete_pgsql_node(node_id)
-                        print "\n[Done]\n"
+                        print '\n[Done] PgSQL node deleted.\n'
 
                     else:
                         self.db.delete_pgsql_node(self.db.get_pgsql_node_id(node_id))
-                        print "\n[Done]\n"
+                        print '\n[Done] PgSQL node deleted.\n'
 
                 except Exception as e:
                     print '\n[ERROR]: Could not delete this PgSQL node\n',e
 
             elif ack.lower() == "no":
-                print "\n[Aborted]\n"
+                print '\n[Aborted]\n'
 
         #
         # Command with parameters
@@ -519,11 +519,11 @@ class pgbackman_cli(cmd.Cmd):
             try:
                 if node_id.isdigit():
                     self.db.delete_pgsql_node(node_id)
-                    print "\n[Done]\n"
+                    print '\n[Done] PgSQL node deleted.\n'
                     
                 else:
                     self.db.delete_pgsql_node(self.db.get_pgsql_node_id(node_id))
-                    print "\n[Done]\n"
+                    print '\n[Done] PgSQL node deleted.\n'
                     
             except Exception as e:
                 print '\n[ERROR]: Could not delete this PgSQL node\n',e
@@ -533,7 +533,7 @@ class pgbackman_cli(cmd.Cmd):
         #
 
         else:
-            print "\n[ERROR] - Wrong number of parameters used.\n          Type help or \? to list commands\n"
+            print '\n[ERROR] - Wrong number of parameters used.\n          Type help or \? to list commands\n'
             
 
     # ############################################
@@ -1080,7 +1080,7 @@ class pgbackman_cli(cmd.Cmd):
     def do_delete_backup_definition_id(self,args):
         """
         DESCRIPTION:
-        This command deletes a backup definition by ID
+        This command deletes a backup definition for a DefID.
 
         NOTE: You have to use the parameter force-deletion 
         if you want to force the deletion of backup definitions 
@@ -1128,7 +1128,7 @@ class pgbackman_cli(cmd.Cmd):
                 print "--------------------------------------------------------"
             
             except Exception as e:
-                print "\n[Aborted]\n"
+                print '\n[Aborted] Command interrupted by the user.\n'
                 return False
 
             if ack.lower() == "yes":
@@ -1136,19 +1136,19 @@ class pgbackman_cli(cmd.Cmd):
                     try:
                         if force_deletion == "y":
                             self.db.delete_force_backup_definition_id(def_id)
-                            print "\n[Done]\n"
+                            print '\n[Done] Backup definition for DefID: ' + str(def_id) +' deleted with force.\n'
                             
                         elif force_deletion == "n":
                             self.db.delete_backup_definition_id(def_id)
-                            print "\n[Done]\n"
+                            print '\n[Done] Backup definition for DefID: ' + str(def_id) +' deleted.\n'
                             
                     except Exception as e:
                         print '\n[ERROR]: Could not delete this backup job definition\n',e
                 else:
-                    print "\n[ERROR]: %s is not a legal value for a backup job definition\n" % def_id
+                    print '\n[ERROR]: %s is not a legal value for a backup job definition\n' % def_id
 
             elif ack.lower() == "no":
-                print "\n[Aborted]\n"
+                print '\n[Aborted]\n'
 
         #
         # Command with parameters
@@ -1160,12 +1160,12 @@ class pgbackman_cli(cmd.Cmd):
             if def_id.isdigit():
                 try:
                     self.db.delete_backup_definition_id(def_id)
-                    print "\n[Done]\n"
+                    print '\n[Done] Backup definition for DefID: ' + str(def_id) +' deleted.\n'
                     
                 except Exception as e:
                     print '\n[ERROR]: Could not delete this backup job definition\n',e
             else:
-                print "\n[ERROR]: %s is not a legal value for a backup job definition\n" % def_id
+                print '\n[ERROR]: %s is not a legal value for a backup job definition\n' % def_id
                 
         elif len(arg_list) == 2:
             def_id = arg_list[0]
@@ -1175,24 +1175,24 @@ class pgbackman_cli(cmd.Cmd):
                 if def_id.isdigit():
                     try:
                         self.db.delete_force_backup_definition_id(def_id)
-                        print "\n[Done]\n"
+                        print '\n[Done] Backup definition for DefID: ' + str(def_id) +' deleted with force.\n'
                         
                     except Exception as e:
                         print '\n[ERROR]: Could not delete this backup job definition\n',e
                         
                 else:
-                    print "\n[ERROR]: %s is not a legal value for a backup job definition\n" % def_id
+                    print '\n[ERROR]: %s is not a legal value for a backup job definition\n' % def_id
 
             else: 
-                print "\n[ERROR] - %s is not a valid parameter\n" % arg_list[1]
-                print "\n[Aborted]\n"
+                print '\n[ERROR] - %s is not a valid parameter\n' % arg_list[1]
+                print '\n[Aborted]\n'
                     
         #
         # Command with the wrong number of parameters
         #
 
         else:
-            print "\n[ERROR] - Wrong number of parameters used.\n          Type help or \? to list commands\n"
+            print '\n[ERROR] - Wrong number of parameters used.\n          Type help or \? to list commands\n'
 
 
     # ################################################
@@ -1202,7 +1202,7 @@ class pgbackman_cli(cmd.Cmd):
     def do_delete_backup_definition_dbname(self,args):
         """
         DESCRIPTION:
-        This command deletes all backup definition for a database
+        This command deletes all backup definitions for a database
         
         NOTE: You have to use the parameter force-deletion 
         if you want to force the deletion of backup definitions 
@@ -1251,7 +1251,7 @@ class pgbackman_cli(cmd.Cmd):
                 print "--------------------------------------------------------"
             
             except Exception as e:
-                print "\n[Aborted]\n"
+                print '\n[Aborted] Command interrupted by the user\n'
                 return False
 
             if ack.lower() == "yes":
@@ -1260,24 +1260,27 @@ class pgbackman_cli(cmd.Cmd):
                     if pgsql_node_id.isdigit():
                         if force_deletion == "y":
                             self.db.delete_force_backup_definition_dbname(pgsql_node_id,dbname)
-                            print "\n[Done]\n"
+                            print '\n[Done] Backup definition for DBname: ' + str(dbname) +' deleted with force.\n'
                         
                         elif force_deletion == "n":
                             self.db.delete_backup_definition_dbname(pgsql_node_id,dbname)
-                            print "\n[Done]\n"
+                            print '\n[Done] Backup definition for DBname: ' + str(dbname) +' deleted.\n'
                             
                     else:
                         if force_deletion == "y":
                             self.db.delete_force_backup_definition_dbname(self.db.get_pgsql_node_id(pgsql_node_id),dbname)
-                            
+                            print '\n[Done] Backup definition for DBname: ' + str(dbname) + ' deleted with force.\n'
+
+
                         elif force_deletion == "n":
                             self.db.delete_backup_definition_dbname(self.db.get_pgsql_node_id(pgsql_node_id),dbname)
+                            print '\n[Done] Backup definition for DBname: ' + str(dbname) + ' deleted.\n'
 
                 except Exception as e:
                     print '\n[ERROR]: Could not delete this backup job definition\n',e
 
             elif ack.lower() == "no":
-                print "\n[Aborted]\n"
+                print '\n[Aborted]\n'
 
         #
         # Command with parameters
@@ -1290,10 +1293,11 @@ class pgbackman_cli(cmd.Cmd):
             try:
                 if pgsql_node_id.isdigit():
                     self.db.delete_backup_definition_dbname(pgsql_node_id,dbname)
-                    print "\n[Done]\n"
+                    print '\n[Done] Backup definition for DBname: ' + str(dbname) +' deleted.\n'
                     
                 else:
                     self.db.delete_backup_definition_dbname(self.db.get_pgsql_node_id(pgsql_node_id),dbname)
+                    print '\n[Done] Backup definition for DBname: ' + str(dbname) +' deleted.\n'
 
             except Exception as e:
                 print '\n[ERROR]: Could not delete this backup job definition\n',e
@@ -1308,10 +1312,11 @@ class pgbackman_cli(cmd.Cmd):
                 try:
                     if pgsql_node_id.isdigit():
                         self.db.delete_force_backup_definition_dbname(pgsql_node_id,dbname)
-                        print "\n[Done]\n"
+                        print '\n[Done] Backup definition for DBname: ' + str(dbname) +' deleted with force.\n'
                         
                     else:
                         self.db.delete_force_backup_definition_dbname(self.db.get_pgsql_node_id(pgsql_node_id),dbname)
+                        print '\n[Done] Backup definition for DBname: ' + str(dbname) +' deleted with force.\n'
                         
                 except Exception as e:
                     print '\n[ERROR]: Could not delete this backup job definition\n',e
@@ -1325,7 +1330,7 @@ class pgbackman_cli(cmd.Cmd):
         #
 
         else:
-            print "\n[ERROR] - Wrong number of parameters used.\n          Type help or \? to list commands\n"
+            print '\n[ERROR] - Wrong number of parameters used.\n          Type help or \? to list commands\n'
 
 
     # ############################################
@@ -3662,7 +3667,11 @@ class pgbackman_cli(cmd.Cmd):
     # ############################################
 
     def do_clear(self,args):
-        """Command clear"""
+        """
+        DESCRIPTION: Clears the screen and shows the welcome banner.
+
+        COMMAND: clear
+        """
         
         os.system('clear')
         print self.intro
@@ -3735,7 +3744,11 @@ class pgbackman_cli(cmd.Cmd):
     # ############################################
 
     def do_quit(self, args):
-        'Quit the PgBackMan shell.'
+        '''
+        DESCRIPTION: Quits/terminate the PgBackMan shell.
+
+        COMMAND: quit
+        '''
         
         print "\nDone, thank you for using PgBackMan"
         return True
