@@ -55,8 +55,6 @@ in the next figure:
    :scale: 50%
 
 
-
-
 Main features
 =============
 
@@ -82,6 +80,7 @@ The main features of PgBackMan are:
 
 Future features will include:
 
+* Moving of backup definitions between backup servers.
 * Automatic cloning of databases between PgSQL nodes.
 * Disk space reports 
 
@@ -324,41 +323,312 @@ The PgBackMan interactive shell can be started by running the program
 
    [pgbackman@pg-backup01]# pgbackman
 
-   ########################################################
+   #############################################################
    Welcome to the PostgreSQL Backup Manager shell (v.1.0.0)
-   ########################################################
+   #############################################################
    Type help or \? to list commands.
-   
+
    [pgbackman]$ help
-   
+
    Documented commands (type help <topic>):
    ========================================
-   EOF                              show_backup_server_stats      
-   clear                            show_backup_servers           
-   delete_backup_definition_dbname  show_empty_backup_job_catalogs
-   delete_backup_definition_id      show_history                  
-   delete_backup_server             show_jobs_queue               
-   delete_pgsql_node                show_pgbackman_config         
-   quit                             show_pgbackman_stats          
-   register_backup_definition       show_pgsql_node_config        
-   register_backup_server           show_pgsql_node_stats         
-   register_pgsql_node              show_pgsql_nodes              
-   register_snapshot_definition     show_snapshot_definitions     
-   shell                            update_backup_server          
-   show_backup_catalog              update_backup_server_config   
-   show_backup_definitions          update_pgsql_node             
-   show_backup_details              update_pgsql_node_config      
-   show_backup_server_config      
-   
+   EOF                              show_backup_servers        
+   clear                            show_empty_backup_catalogs 
+   delete_backup_definition_dbname  show_history               
+   delete_backup_definition_id      show_jobs_queue            
+   delete_backup_server             show_pgbackman_config      
+   delete_pgsql_node                show_pgbackman_stats       
+   quit                             show_pgsql_node_config     
+   register_backup_definition       show_pgsql_node_stats      
+   register_backup_server           show_pgsql_nodes           
+   register_pgsql_node              show_restore_catalog       
+   register_restore_definition      show_restore_definitions   
+   register_snapshot_definition     show_restore_details       
+   shell                            show_snapshot_definitions  
+   show_backup_catalog              update_backup_definition   
+   show_backup_definitions          update_backup_server       
+   show_backup_details              update_backup_server_config
+   show_backup_server_config        update_pgsql_node          
+   show_backup_server_stats         update_pgsql_node_config   
+
    Miscellaneous help topics:
    ==========================
    shortcuts
-   
+
    Undocumented commands:
    ======================
    help
+
+clear
+-----
+
+This command clears the screen and shows the welcome banner
+
+
+delete_backup_definition_dbname 
+--------------------------------
+
+**NOTE: Use this command with precaution**
+
+This command deletes all backup definitions for a database.::
+
+  delete_backup_definition_dbname [NodeID/FQDN] [DBname] [force-deletion]
+
+Parameters:
+
+* **[NodeID/FQDN]:** NodeID in PgBackMan or FQDN of the PgSQL node
+  running the database.
+* **[DBname]:** Database name to delete
+* **[force-deletion]:** Use force deletion.
+
+You have to use the parameter ``force-deletion`` if you want to force
+the deletion of backup definitions with active backups in the
+catalog. If you use ``force-deletion``, all backups in the catalog for
+the backup definition deleted, will be deleted regardless of the
+retention period or retention redundancy used.
+
+This command can be run with or without parameters. e.g.
+
+::
+
+   [pgbackman]$ delete_backup_definition_dbname 1 testdb force-deletion
+
+   [Done] Backup definition for DBname: testdb deleted with force.
+
+::
+
+   [pgbackman]$ delete_backup_definition_dbname
+   --------------------------------------------------------
+   # NodeID / FQDN: 1
+   # DBname: testdb
+   # Force deletion (y/n): y
    
-   [pgbackman]$ 
+   # Are you sure you want to delete this backup definition? (yes/no): yes
+   --------------------------------------------------------
+   
+   [Done] Backup definition for DBname: testdb deleted with force.
+
+::
+
+   [pgbackman]$ delete_backup_definition_dbname
+   --------------------------------------------------------
+   # NodeID / FQDN: pg-node01.example.net
+   # DBname: testdb
+   # Force deletion (y/n): n
+   
+   # Are you sure you want to delete this backup definition? (yes/no): yes
+   --------------------------------------------------------
+   
+   [ERROR]: Could not delete this backup job definition
+   ----------------------------------------------
+   EXCEPTION:
+   ----------------------------------------------
+   MESSAGE: update or delete on table "backup_definition" violates
+   foreign key constraint "backup_catalog_def_id_fkey" on table
+   "backup_catalog"
+   DETAIL : Key (def_id)=(1) is still referenced from table
+   "backup_catalog".
+   ----------------------------------------------
+
+
+
+delete_backup_definition_id 
+---------------------------
+
+**NOTE: Use this command with precaution**
+
+This command deletes a backup definition for a DefID.::
+
+  delete_backup_definition_id [DefID] [force-deletion]
+
+Parameters:
+
+* **[DefID]:** ID of the backup definition to delete.
+* **[force-deletion]:** Use force deletion.
+
+You have to use the parameter ``force-deletion`` if you want to force
+the deletion of backup definitions with active backups in the
+catalog. If you use ``force-deletion``, all backups in the catalog for the
+backup definition deleted will be deleted regardless of the retention
+period or retention redundancy used.
+
+This command can be run with or without parameters. e.g.
+
+::
+
+   [pgbackman]$ delete_backup_definition_id 1 force-deletion
+
+   [Done] Backup definition for DefID: 1 deleted with force.
+
+::
+
+   [pgbackman]$ delete_backup_definition_id
+   --------------------------------------------------------
+   # DefID: 1
+   # Force deletion (y/n): y
+   
+   # Are you sure you want to delete this backup definition? (yes/no): yes
+   --------------------------------------------------------
+   
+   [Done] Backup definition for DefID: 1 deleted with force.
+
+::
+
+   [pgbackman]$ delete_backup_definition_id
+   --------------------------------------------------------
+   # DefID: 1
+   # Force deletion (y/n): n
+   
+   # Are you sure you want to delete this backup definition? (yes/no): yes
+   --------------------------------------------------------
+   
+   [ERROR]: Could not delete this backup job definition
+   ----------------------------------------------
+   EXCEPTION:
+   ----------------------------------------------
+   MESSAGE: update or delete on table "backup_definition" violates
+   foreign key constraint "backup_catalog_def_id_fkey" on table
+   "backup_catalog"
+   DETAIL : Key (def_id)=(1) is still referenced from table
+   "backup_catalog".
+   ----------------------------------------------
+
+
+
+delete_backup_server
+--------------------
+
+This command deletes a backup server defined in PgBackMan::
+
+  Command: delete_backup_server [SrvID | FQDN]
+
+Parameters:
+
+* **[SrvID | FQDN]:** SrvID in PgBackMan or FQDN of the backup server
+  to delete.
+
+You can use the backup server ID in PgBackMan or the FQDN of the
+server to choose the server to be deleted.
+
+One have to delete all backup definitions associated to a backup
+server or move them to another backup server before one can delete a
+backup server from the system.
+
+You will get an error if you try to delete a backup server that has
+active backup definitions associated. This is a safety measure to avoid
+operational errors with catastrophic consequences. This type of
+deletion cannot be forced.
+
+This command can be run with or without parameters. e.g.::
+
+  [pgbackman]$ delete_backup_server 2
+
+  [Done] Backup server deleted.
+
+::
+
+  [pgbackman]$ delete_backup_server
+  --------------------------------------------------------
+  # SrvID / FQDN: 2
+  
+  # Are you sure you want to delete this server? (yes/no): yes
+  --------------------------------------------------------
+
+  [Done] Backup server deleted.
+
+::
+
+   [pgbackman]$ delete_backup_server
+   --------------------------------------------------------
+   # SrvID / FQDN: 2
+   
+   # Are you sure you want to delete this server? (yes/no): yes
+   --------------------------------------------------------
+
+   [ERROR]: Could not delete this backup server
+   ----------------------------------------------
+   EXCEPTION:
+   ----------------------------------------------
+   MESSAGE: update or delete on table "backup_server" violates foreign
+   key constraint "backup_definition_backup_server_id_fkey" on table
+   "backup_definition" 
+   DETAIL : Key (server_id)=(2) is still referenced from table
+   "backup_definition".
+   ----------------------------------------------
+
+
+delete_pgsql_node
+-----------------
+
+This command deletes a PgSQL node registered in PgBackMan.
+
+::
+
+   delete_pgsql_node [NodeID | FQDN]
+
+Parameters:
+
+* **[NodeID | FQDN]:** NodeID in PgBackMan or FQDN of the PgSQL node
+  to delete.
+
+One have to delete all backup definitions associated to a PgSQL node
+before one can delete a PgSQL node from the system.
+
+You will get an error if you try to delete a PgSQL node that has
+active backup definitions associated. This is a safety measure to
+avoid operational errors with catastrophic consequences. This type of
+deletion cannot be forced.
+
+This command can be run with or without parameters. e.g.:
+
+::
+
+   [pgbackman]$ delete_pgsql_node 4
+   
+   [Done] PgSQL node deleted.
+
+::
+
+   [pgbackman]$ delete_pgsql_node
+   --------------------------------------------------------
+   # NodeID / FQDN: 4
+   
+   # Are you sure you want to delete this server? (yes/no): 
+   --------------------------------------------------------
+
+   [Done] PgSQL node deleted.
+
+::
+
+   [pgbackman]$ delete_pgsql_node
+   --------------------------------------------------------
+   # NodeID / FQDN: 4
+   
+   # Are you sure you want to delete this server? (yes/no): yes
+   --------------------------------------------------------
+
+   [ERROR]: Could not delete this PgSQL node
+   ----------------------------------------------
+   EXCEPTION:
+   ----------------------------------------------
+
+   MESSAGE: update or delete on table "pgsql_node" violates foreign key
+   constraint "backup_definition_pgsql_node_id_fkey" on table
+   "backup_definition"
+   DETAIL : Key (node_id)=(4) is still referenced from table
+   "backup_definition".  
+   --------------------------------------------
+
+
+quit
+----
+
+This command terminates the PgBackMan shell
+
+
+register_backup_definition 
+---------------------------
+
 
 register_backup_server
 ----------------------
@@ -379,6 +649,108 @@ It can be run with or without parameters. e.g::
 
   # Are all values correct (yes/no): yes
   --------------------------------------------------------
+
+
+register_pgsql_node
+-------------------
+
+register_restore_definition
+---------------------------
+
+This command defines a restore job of a backup from the catalog.
+
+It will work with parameters only if there are not conflicts in the
+definition.
+
+There are some issues we have to take care when running a restore of a
+backup. What happens if we want to restore a backup of a database or a
+role that already exists in the target server?
+
+This flowchar figure explains the logic used when restoring a backup
+if our restore definition create some conflicts:
+
+.. figure:: images/register_restore.jpg
+   :scale: 50%
+
+
+register_snapshot_definition
+----------------------------
+
+shell
+-----
+
+show_backup_catalog
+-------------------
+
+show_backup_definitions
+-----------------------
+
+show_backup_details
+-------------------
+
+show_backup_server_config
+-------------------------
+
+show_backup_server_stats
+------------------------
+
+show_backup_servers 
+-------------------
+
+show_empty_backup_catalogs
+--------------------------
+
+show_history
+------------
+
+show_jobs_queue
+---------------
+
+show_pgbackman_config
+---------------------
+
+show_pgbackman_stats 
+--------------------
+
+show_pgsql_node_config
+----------------------
+
+show_pgsql_node_stats
+---------------------
+
+show_pgsql_nodes
+----------------
+
+show_restore_catalog
+--------------------
+
+show_restore_definitions
+------------------------
+
+show_restore_details
+--------------------
+
+show_snapshot_definitions
+-------------------------
+
+update_backup_definition
+------------------------
+
+update_backup_server
+--------------------
+
+update_backup_server_config
+---------------------------
+
+update_pgsql_node
+-----------------
+
+update_pgsql_node_config
+------------------------
+
+
+
+
 
 
 update_backup_server
@@ -405,130 +777,7 @@ You can use the backup server ID in PgBackMan or the FQDN to choose
 the server to be updated.
 
 
-update_backup_server_config
----------------------------
 
-Not implemented.
-
-
-delete_backup_server
---------------------
-
-This command deletes a backup server defined in PgBackMan::
-
-  Command: delete_backup_server [SrvID | FQDN]
-
-It can be run with or without parameters. e.g.::
-
-  [pgbackman]$ delete_backup_server 2
-
-  [pgbackman]$ delete_backup_server
-  --------------------------------------------------------
-  # SrvID / FQDN: 2
-  
-  # Are you sure you want to delete this server? (yes/no): yes
-  --------------------------------------------------------
-
-You can use the backup server ID in PgBackMan or the FQDN to choose
-the server to be deleted.
-
-You will get an error if you try to delete a backup server that has
-active backups in the catalog.
-
-show_backup_servers 
----------------------
-
-This command shows all the backup servers defined in PgbackMan
-
-
-show_backup_server_config
--------------------------
-
-This command shows the configuration parameters for a backup server.
-
-It can be run with or without parameters. e.g.
-
-
-show_backup_server_stats
-------------------------
-
-This command shows some statistics for a backup server defined in
-PgBackMan.
-
-
-register_pgsql_node
--------------------
-
-update_pgsql_node
------------------
-
-update_pgsql_node_config
-------------------------
-
-delete_pgsql_node
------------------
-
-show_pgsql_nodes
-----------------
-
-show_pgsql_node_config
-----------------------
-
-show_pgsql_node_stats
----------------------
-
-register_backup_definition
---------------------------
-
-delete_backup_definition_id
----------------------------
-
-delete_backup_definition_dbname
--------------------------------
-
-show_backup_definition
-----------------------
-
-show_backup_catalog
--------------------
-
-show_backup_details
--------------------
-
-register_snapshot_definition
-----------------------------
-
-show_snapshot_definitions
--------------------------
-
-show_empty_backup_catalogs
---------------------------
-
-show_pgbackman_config
----------------------
-
-show_pgbackman_stats
---------------------
-
-
-
-register_restore_definition
-----------------------------
-
-This command defines a restore job of a backup from the catalog.
-
-It will work with parameters only if there are not conflicts in the
-definition.
-
-There are some issues we have to take care when running a restore of a
-backup. What happens if we want to restore a backup of a database or a
-role that already exists in the target server?
-
-This flowchar figure explains the logic used when restoring a backup
-if our restore definition create some conflicts:
-
-.. figure:: images/register_restore.jpg
-   :scale: 50%
 
 
 About backups in PostgreSQL
