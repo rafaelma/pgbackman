@@ -313,6 +313,84 @@ every PgSQL node we are goint to take backups for.
 System administration and maintenance
 =====================================
 
+PgBackMan has two components which are used to administrate and
+maintain the backups, snapshots, restores and information associated
+to PgSQL nodes registered in the system.
+
+They are started with the script ``/etc/init.d/pgbackman`` and must
+run in every Backup server running PgBackMan.
+
+pgbackman_crontrol
+------------------
+
+This program runs in a loop waiting for NOTIFY messages from the
+``pgbackman`` database before executing an action. It will get
+information when:
+
+* A new PgSQL node has been defined in the system.
+* A PgSQL node is deleted from the system.
+* A PgSQL node changes its status from RUNNING to STOPPED or vice
+  versa.
+* A snapshot backup has been defined.
+* A backup restore has been defined.
+* A new backup definition has been defined.
+* A backup definition has been deleted.
+* A backup definition has been updated.
+
+The actions this program can execute are:
+
+* Create the directory used for cached information from backup servers
+  and PgSQL nodes.
+* Delete the associated cache information when a PgSQL node gets
+  deleted.
+* Create a directory for pending log information.
+* Create directories for backups and logs per PgSQL node defined in
+  the system.
+* Delete directories for backups and logs when a PgSQL node gets deleted.
+* Update crontab files when new backup definitions get defined or
+  deleted.
+* Update crontab files when nodes get updated.
+* Delete crontab files when nodes get deleted.
+* Create an ``at`` file when a snapshot backup gets defined.
+* Create an ``at`` file when a backup restore gets defined.
+
+Every PgSQL node in the system will have its own directories and
+crontab file in every backup server running PgBackMan.
+
+
+pgbackman_maintenance
+---------------------
+
+This program can be executed in a cron modus (one single interaction per
+execution) or in a loop (default).
+
+It runs these maintenance tasks:
+
+* Enforce retention policies for backup definitions. It deletes backup
+  files, log files and catalog information for backups that have
+  expired.
+
+* Enforce retention policies for snapshots. It deletes backup
+  files, log files and catalog information for backups that have
+  expired.
+
+* Delete backup and log files from catalog entries associated to a
+  backup definition after this definition has been deleted with the
+  ``force-deletion`` parameter.
+
+* Delete restore logs files when definitions/catalogs used by the
+  restore are deleted.
+
+* Process pending backup catalog log files in the backup server. These
+  files are created when the ``pgbackman`` database is not available
+  for updating the catalog information metadata after a backup.
+
+* Process pending restore catalog log files in the backup
+  server. These files are created when the ``pgbackman`` database is
+  not available for updating the catalog information metadata after a
+  restore.
+
+
 PgBackMan shell
 ===============
 
