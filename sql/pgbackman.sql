@@ -2916,7 +2916,7 @@ BEGIN
 		      ' --root-backup-dir ' || root_backup_dir;
 
   IF job_row.extra_backup_parameters != '' AND job_row.extra_backup_parameters IS NOT NULL THEN
-    output := output || ' --extra-backup-parameters "' || job_row.extra_backup_parameters || '"';
+    output := output || ' --extra-backup-parameters "''' || job_row.extra_backup_parameters || '''"';
   END IF;
  
   output := output || E'\n';
@@ -2988,10 +2988,10 @@ BEGIN
 		      ' --root-backup-dir ' || root_backup_dir;
 
   IF snapshot_row.extra_backup_parameters != '' AND snapshot_row.extra_backup_parameters IS NOT NULL THEN
-    output := output || ' --extra-params \\\"' || snapshot_row.extra_backup_parameters || '\\\"';
+    output := output || E' --extra-backup-parameters \\"''' || snapshot_row.extra_backup_parameters || E'''\\"';
   END IF;
  
-  output := output || E'" \n';
+  output := output || E'"\n';
 
  END LOOP;
 
@@ -3071,7 +3071,7 @@ BEGIN
    END IF;
 
    IF restore_row.extra_restore_parameters != '' AND restore_row.extra_restore_parameters IS NOT NULL THEN
-	 output := output || ' --extra-restore-parameters \"' || restore_row.extra_restore_parameters || '\"';
+	 output := output || E' --extra-restore-parameters \\"''' || restore_row.extra_restore_parameters || E'''\\"';
    END IF;
 
    IF restore_row.role_list != '' AND restore_row.role_list IS NOT NULL THEN
