@@ -543,7 +543,8 @@ CREATE TABLE backup_catalog(
   error_message TEXT,
   role_list TEXT[],
   pgsql_node_release TEXT,
-  checksum TEXT
+  checksum TEXT,
+  dbname_size BIGINT
 );
 
 ALTER TABLE backup_catalog ADD PRIMARY KEY (bck_id);
@@ -4087,7 +4088,8 @@ CREATE OR REPLACE VIEW show_restore_details AS
        a.restore_log_file AS "Log file",
        a.global_log_file AS "Global log file",			  
        array_to_string(a.role_list,',') AS "Roles restored",
-       a.error_message AS "Error message"
+       a.error_message AS "Error message",
+       b.extra_restore_parameters AS "Extra parameters"
    FROM restore_catalog a 
    JOIN restore_definition b ON a.restore_def = b.restore_def
    JOIN backup_catalog c ON b.bck_id = c.bck_id) 

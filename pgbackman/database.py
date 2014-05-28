@@ -866,7 +866,7 @@ class pgbackman_db():
                         x.add_row(["Target PgSQL node release:",str(record[19])])
                         x.add_row(["",""])
                         x.add_row(["AT time:",str(record[20])])
-                        x.add_row(["Extra parameters:",''])
+                        x.add_row(["Extra parameters:",str(record[25])])
                         x.add_row(["",""])
                         x.add_row(["Restore log file:",str(record[21])])
                         x.add_row(["Global log file:",str(record[22])])
