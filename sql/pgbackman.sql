@@ -371,9 +371,9 @@ ALTER TABLE job_queue OWNER TO pgbackman_role_rw;
 -- @dbname
 -- @minutes_cron
 -- @hours_cron
--- @weekday_cron
--- @month_cron
 -- @day_month_cron
+-- @month_cron
+-- @weekday_cron
 -- @backup_code
 -- @encryption: NOT IMPLEMENTED
 -- @retention_period
@@ -393,9 +393,9 @@ CREATE TABLE backup_definition(
   dbname TEXT NOT NULL,
   minutes_cron CHARACTER VARYING(255) DEFAULT '*',
   hours_cron CHARACTER VARYING(255) DEFAULT '*',
-  weekday_cron CHARACTER VARYING(255) DEFAULT '*',
-  month_cron CHARACTER VARYING(255) DEFAULT '*',
   day_month_cron CHARACTER VARYING(255) DEFAULT '*',
+  month_cron CHARACTER VARYING(255) DEFAULT '*',
+  weekday_cron CHARACTER VARYING(255) DEFAULT '*',
   backup_code CHARACTER VARYING(10) NOT NULL,
   encryption boolean DEFAULT false NOT NULL,
   retention_period interval DEFAULT '7 days'::interval NOT NULL,
@@ -878,9 +878,9 @@ INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('bac
 INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('backup_code','FULL','Backup job code');
 INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('backup_minutes_interval','01-59','Backup minutes interval');
 INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('backup_hours_interval','01-06','Backup hours interval');
-INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('backup_weekday_cron','*','Backup weekday cron default');
-INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('backup_month_cron','*','Backup month cron default');
 INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('backup_day_month_cron','*','Backup day_month cron default');
+INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('backup_month_cron','*','Backup month cron default');
+INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('backup_weekday_cron','*','Backup weekday cron default');
 INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('extra_backup_parameters','','Extra backup parameters');
 INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('extra_restore_parameters','','Extra restore parameters');
 INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('logs_email','example@example.org','E-mail to send logs');
@@ -1797,9 +1797,9 @@ CREATE OR REPLACE FUNCTION register_backup_definition(INTEGER,INTEGER,TEXT,CHARA
   dbname_ ALIAS FOR $3; 
   minutes_cron_ ALIAS FOR $4;
   hours_cron_ ALIAS FOR $5;
-  weekday_cron_ ALIAS FOR $6;  
+  day_month_cron_ ALIAS FOR $6;	
   month_cron_ ALIAS FOR $7;
-  day_month_cron_ ALIAS FOR $8;	  
+  weekday_cron_ ALIAS FOR $8;  
   backup_code_ ALIAS FOR $9;
   encryption_ ALIAS FOR $10;
   retention_period_ ALIAS FOR $11;
@@ -1881,9 +1881,9 @@ CREATE OR REPLACE FUNCTION register_backup_definition(INTEGER,INTEGER,TEXT,CHARA
 						dbname,
 						minutes_cron,
 						hours_cron,
-						weekday_cron,
-						month_cron,
 						day_month_cron,
+						month_cron,
+						weekday_cron,
 						backup_code,
 						encryption,
 						retention_period,
@@ -1897,9 +1897,9 @@ CREATE OR REPLACE FUNCTION register_backup_definition(INTEGER,INTEGER,TEXT,CHARA
 	  dbname_,
 	  minutes_cron_,
 	  hours_cron_,
-	  weekday_cron_,
-	  month_cron_,
 	  day_month_cron_,
+	  month_cron_,
+	  weekday_cron_,
 	  backup_code_,
 	  encryption_,
 	  retention_period_,
@@ -2156,9 +2156,9 @@ CREATE OR REPLACE FUNCTION update_backup_definition(INTEGER,TEXT,TEXT,TEXT,TEXT,
   def_id_ ALIAS FOR $1;
   minutes_cron_ ALIAS FOR $2;
   hours_cron_ ALIAS FOR $3;
-  weekday_cron_ ALIAS FOR $4;
+  day_month_cron_ ALIAS FOR $4;
   month_cron_ ALIAS FOR $5;
-  day_month_cron_ ALIAS FOR $6;
+  weekday_cron_ ALIAS FOR $6;
   retention_period_ ALIAS FOR $7;
   retention_redundancy_ ALIAS FOR $8;
   extra_backup_parameters_ ALIAS FOR $9;
@@ -2178,9 +2178,9 @@ CREATE OR REPLACE FUNCTION update_backup_definition(INTEGER,TEXT,TEXT,TEXT,TEXT,
 
      EXECUTE 'UPDATE backup_definition SET  minutes_cron = $2, 
      	     	     		       	    hours_cron = $3, 
-					    weekday_cron = $4, 
+					    day_month_cron = $4,
 					    month_cron = $5,
-					    day_month_cron = $6,
+					    weekday_cron = $6, 
 					    retention_period = $7,
 					    retention_redundancy = $8,
 					    extra_backup_parameters = $9,
@@ -2191,9 +2191,9 @@ CREATE OR REPLACE FUNCTION update_backup_definition(INTEGER,TEXT,TEXT,TEXT,TEXT,
      USING def_id_,
      	   minutes_cron_,
 	   hours_cron_,
-	   weekday_cron_,
-     	   month_cron_,
 	   day_month_cron_,
+	   month_cron_,
+	   weekday_cron_,
 	   retention_period_,
 	   retention_redundancy_,
 	   extra_backup_parameters_,
@@ -2509,15 +2509,15 @@ CREATE OR REPLACE FUNCTION get_backup_definition_def_values(INTEGER,TEXT) RETURN
   ELSIF parameter_ = 'hours_cron' THEN
    SELECT hours_cron FROM backup_definition WHERE def_id = def_id_ INTO value_;
 
-  ELSIF parameter_ = 'weekday_cron' THEN
-   SELECT weekday_cron FROM backup_definition WHERE def_id = def_id_ INTO value_;
-  
+  ELSIF parameter_ = 'day_month_cron' THEN
+   SELECT day_month_cron FROM backup_definition WHERE def_id = def_id_ INTO value_;
+
   ELSIF parameter_ = 'month_cron' THEN
    SELECT month_cron FROM backup_definition WHERE def_id = def_id_ INTO value_;
   
-  ELSIF parameter_ = 'day_month_cron' THEN
-   SELECT day_month_cron FROM backup_definition WHERE def_id = def_id_ INTO value_;
-  
+  ELSIF parameter_ = 'weekday_cron' THEN
+   SELECT weekday_cron FROM backup_definition WHERE def_id = def_id_ INTO value_;
+   
   ELSIF parameter_ = 'retention_period' THEN
    SELECT retention_period FROM backup_definition WHERE def_id = def_id_ INTO value_;
   
@@ -2895,7 +2895,7 @@ BEGIN
  AND a.pgsql_node_id = pgsql_node_id_
  AND a.job_status = 'ACTIVE'
  AND b.status = 'RUNNING'
- ORDER BY a.dbname,a.month_cron,a.weekday_cron,a.hours_cron,a.minutes_cron,a.backup_code
+ ORDER BY a.dbname,a.minutes_cron,a.hours_cron,a.day_month_cron,a.month_cron,a.weekday_cron,a.backup_code
  ) LOOP
 
   output := output || COALESCE(job_row.minutes_cron, '*') || ' ' || COALESCE(job_row.hours_cron, '*') || ' ' || COALESCE(job_row.day_month_cron, '*') || ' ' || COALESCE(job_row.month_cron, '*') || ' ' || COALESCE(job_row.weekday_cron, '*');
@@ -3736,7 +3736,7 @@ SELECT lpad(def_id::text,11,'0') AS "DefID",
        pgsql_node_id,
        get_pgsql_node_fqdn(pgsql_node_id) AS "PgSQL node",
        dbname AS "DBname",
-       minutes_cron || ' ' || hours_cron || ' ' || weekday_cron || ' ' || month_cron || ' ' || day_month_cron AS "Schedule",
+       minutes_cron || ' ' || hours_cron || ' ' || day_month_cron || ' ' || month_cron || ' ' || weekday_cron AS "Schedule",
        backup_code AS "Code",
        encryption::TEXT AS "Encryption",
        retention_period::TEXT || ' (' || retention_redundancy::TEXT || ')' AS "Retention",
@@ -3801,7 +3801,7 @@ CREATE OR REPLACE VIEW show_backup_details AS
        '' AS "SnapshotID",
        a.procpid AS "ProcPID",
        b.retention_period::TEXT || ' (' || b.retention_redundancy::TEXT || ')' AS "Retention",
-       b.minutes_cron || ' ' || b.hours_cron || ' ' || b.weekday_cron || ' ' || b.month_cron || ' ' || b.day_month_cron AS "Schedule",
+       b.minutes_cron || ' ' || b.hours_cron || ' ' ||  b.day_month_cron || ' ' || b.month_cron || ' ' || b.weekday_cron AS "Schedule",
        '' AS "AT time",
        b.encryption::TEXT AS "Encryption",
        b.extra_backup_parameters As "Extra parameters",
@@ -3989,7 +3989,7 @@ SELECT DISTINCT ON (a.def_id)
        b.pgsql_node_id,
        get_pgsql_node_fqdn(b.pgsql_node_id) AS "PgSQL node",
        b.dbname AS "DBname",
-       b.minutes_cron || ' ' || b.hours_cron || ' ' || b.weekday_cron || ' ' || b.month_cron || ' ' || b.day_month_cron AS "Schedule",
+       b.minutes_cron || ' ' || b.hours_cron || ' ' || b.day_month_cron || ' ' || b.month_cron || ' ' || b.weekday_cron AS "Schedule",
        b.backup_code AS "Code",
        b.encryption::TEXT AS "Encryption",
        b.retention_period::TEXT || ' (' || b.retention_redundancy::TEXT || ')' AS "Retention",

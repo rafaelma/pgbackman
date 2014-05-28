@@ -655,16 +655,29 @@ class pgbackman_cli(cmd.Cmd):
         register_backup_definition [SrvID | FQDN] 
                                    [NodeID | FQDN] 
                                    [DBname] 
-                                   [mincron] [hourcron] [weekdaycron] [monthcron] [daymonthcron] 
+                                   [min_cron] 
+                                   [hour_cron] 
+                                   [day-month_cron]
+                                   [month_cron] 
+                                   [weekday_cron] 
                                    [backup code] 
                                    [encryption] 
                                    [retention period] 
                                    [retention redundancy] 
-                                   [extra params] 
+                                   [extra backup parameters] 
                                    [job status] 
                                    [remarks] 
 
-        
+        [SrvID | FQDN]:
+        ---------------
+        SrvID in PgBackMan or FQDN of the backup server that will run
+        the backup job.
+
+        [NodeID | FQDN]:
+        ----------------
+        NodeID in PgBackMan or FQDN of the PgSQL node running the
+        database to backup.
+                                   
         [Dbname]:
         ---------
         Database name.
@@ -698,7 +711,7 @@ class pgbackman_cli(cmd.Cmd):
         Integer: 1,2,3, .... Minimun number of backups to keep in the catalog
         regardless of the retention period used.
 
-        [extra params]:
+        [extra backup parameters]:
         ---------------
         Extra parameters that can be used with pg_dump / pg_dumpall
 
@@ -767,9 +780,9 @@ class pgbackman_cli(cmd.Cmd):
                     minutes_cron = raw_input("# Minutes cron [" + str(minutes_cron_default) + "]: ")
                     hours_cron = raw_input("# Hours cron [" + str(hours_cron_default) + "]: ")
             
-                weekday_cron = raw_input("# Weekday cron [" + weekday_cron_default + "]: ")
-                month_cron = raw_input("# Month cron [" + month_cron_default + "]: ")
                 day_month_cron = raw_input("# Day-month cron [" + day_month_cron_default + "]: ")
+                month_cron = raw_input("# Month cron [" + month_cron_default + "]: ")
+                weekday_cron = raw_input("# Weekday cron [" + weekday_cron_default + "]: ")
                 backup_code = raw_input("# Backup code [" + backup_code_default + "]: ")
                 encryption = raw_input("# Encryption [" + encryption_default + "]: ")
                 retention_period = raw_input("# Retention period [" + retention_period_default + "]: ")
@@ -910,8 +923,8 @@ class pgbackman_cli(cmd.Cmd):
                     try:
                         if error == False:
                             
-                            self.db.register_backup_definition(backup_server_id,pgsql_node_id,database.strip(),minutes_cron,hours_cron, \
-                                                                   weekday_cron.strip(),month_cron.strip(),day_month_cron.strip(),backup_code.upper().strip(),encryption.lower().strip(), \
+                            self.db.register_backup_definition(backup_server_id,pgsql_node_id,database.strip(),minutes_cron,hours_cron,day_month_cron.strip(), \
+                                                                   month_cron.strip(),weekday_cron.strip(),backup_code.upper().strip(),encryption.lower().strip(), \
                                                                    retention_period.lower().strip(),retention_redundancy.strip(),extra_backup_parameters.lower().strip(), \
                                                                    backup_job_status.upper().strip(),remarks.strip())
                             
@@ -936,9 +949,9 @@ class pgbackman_cli(cmd.Cmd):
             dbname = arg_list[2]
             minutes_cron = arg_list[3]
             hours_cron = arg_list[4]
-            weekday_cron = arg_list[5]
+            day_month_cron = arg_list[5]
             month_cron = arg_list[6]
-            day_month_cron = arg_list[7]
+            weekday_cron = arg_list[7]
             backup_code = arg_list[8]
             encryption = arg_list[9]
             retention_period = arg_list[10]
@@ -1051,11 +1064,10 @@ class pgbackman_cli(cmd.Cmd):
             
                 try:
                     if error == False:
-
-                        self.db.register_backup_definition(backup_server_id,pgsql_node_id,database.strip(),minutes_cron,hours_cron, \
-                                                               weekday_cron.strip(),month_cron.strip(),day_month_cron.strip(),backup_code.upper().strip(),encryption.lower().strip(), \
-                                                               retention_period.lower().strip(),retention_redundancy.strip(),extra_backup_parameters.lower().strip(), \
-                                                               backup_job_status.upper().strip(),remarks.strip())
+                        self.db.register_backup_definition(backup_server_id,pgsql_node_id,database.strip(),minutes_cron,hours_cron,day_month_cron.strip(), \
+                                                                   month_cron.strip(),weekday_cron.strip(),backup_code.upper().strip(),encryption.lower().strip(), \
+                                                                   retention_period.lower().strip(),retention_redundancy.strip(),extra_backup_parameters.lower().strip(), \
+                                                                   backup_job_status.upper().strip(),remarks.strip())
                         
                         print "\n[Done] Backup definition for dbname: " + database.strip() + " created.\n"
 
@@ -3142,9 +3154,9 @@ class pgbackman_cli(cmd.Cmd):
             try:
                 backup_minutes_interval = raw_input("# Minutes cron interval [" + backup_minutes_interval_default + "]: ")
                 backup_hours_interval = raw_input("# Hours cron interval [" + backup_hours_interval_default + "]: ")
-                backup_weekday_cron = raw_input("# Weekday cron [" + backup_weekday_cron_default + "]: ")
-                backup_month_cron = raw_input("# Month cron [" + backup_month_cron_default + "]: ")
                 backup_day_month_cron = raw_input("# Day-month cron [" + backup_day_month_cron_default + "]: ")
+                backup_month_cron = raw_input("# Month cron [" + backup_month_cron_default + "]: ")
+                backup_weekday_cron = raw_input("# Weekday cron [" + backup_weekday_cron_default + "]: ")
                 print
                 backup_code = raw_input("# Backup code [" + backup_code_default + "]: ")
                 retention_period = raw_input("# Retention period [" + retention_period_default + "]: ")
@@ -3303,9 +3315,9 @@ class pgbackman_cli(cmd.Cmd):
 
             backup_minutes_interval = arg_list[1]
             backup_hours_interval = arg_list[2]
-            backup_weekday_cron = arg_list[3]        
+            backup_day_month_cron = arg_list[3]
             backup_month_cron = arg_list[4]
-            backup_day_month_cron = arg_list[5]
+            backup_weekday_cron = arg_list[5]        
             backup_code = arg_list[6]
             retention_period = arg_list[7]
             retention_redundancy = arg_list[8]
@@ -3416,7 +3428,11 @@ class pgbackman_cli(cmd.Cmd):
 
         COMMAND:
         update_backup_definition [DefID]
-                                 [mincron] [hourcron] [weekdaycron] [monthcron] [daymonthcron]  
+                                 [min_cron] 
+                                 [hour_cron] 
+                                 [day-month_cron]
+                                 [month_cron]
+                                 [weekday_cron]
                                  [retention period] 
                                  [retention redundancy] 
                                  [extra backup parameters] 
@@ -3474,9 +3490,9 @@ class pgbackman_cli(cmd.Cmd):
             try:
                 minutes_cron = raw_input("# Minutes cron [" + str(minutes_cron_default) + "]: ")
                 hours_cron = raw_input("# Hours cron [" + str(hours_cron_default) + "]: ")
-                weekday_cron = raw_input("# Weekday cron [" + str(weekday_cron_default) + "]: ")
-                month_cron = raw_input("# Month cron [" + str(month_cron_default) + "]: ")
                 day_month_cron = raw_input("# Day-month cron [" + str(day_month_cron_default) + "]: ")
+                month_cron = raw_input("# Month cron [" + str(month_cron_default) + "]: ")
+                weekday_cron = raw_input("# Weekday cron [" + str(weekday_cron_default) + "]: ")
                 retention_period = raw_input("# Retention period [" + str(retention_period_default) + "]: ")
                 retention_redundancy = raw_input("# Retention redundancy [" + str(retention_redundancy_default) + "]: ")
                 extra_backup_parameters = raw_input("# Extra backup parameters [" + str(extra_backup_parameters_default) + "]: ")
@@ -3562,9 +3578,9 @@ class pgbackman_cli(cmd.Cmd):
             def_id = arg_list[0]
             minutes_cron = arg_list[1]
             hours_cron = arg_list[2]
-            weekday_cron = arg_list[3]
+            day_month_cron = arg_list[3]
             month_cron = arg_list[4]
-            day_month_cron = arg_list[5]
+            weekday_cron = arg_list[5]
             retention_period = arg_list[6]
             retention_redundancy = arg_list[7]
             extra_backup_parameters = arg_list[8]

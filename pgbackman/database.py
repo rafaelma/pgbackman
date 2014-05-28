@@ -268,8 +268,8 @@ class pgbackman_db():
     # Method 
     # ############################################
 
-    def register_backup_definition(self,backup_server,pgsql_node,dbname,minutes_cron,hours_cron, \
-                                       weekday_cron,month_cron,day_month_cron,backup_code,encryption, \
+    def register_backup_definition(self,backup_server,pgsql_node,dbname,minutes_cron,hours_cron,day_month_cron, \
+                                       month_cron,weekday_cron,backup_code,encryption, \
                                        retention_period,retention_redundancy,extra_backup_parameters,job_status,remarks):
         """A function to register a backup definition"""
 
@@ -278,8 +278,8 @@ class pgbackman_db():
 
             if self.cur:
                 try:
-                    self.cur.execute('SELECT register_backup_definition(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',(backup_server,pgsql_node,dbname,minutes_cron,hours_cron, \
-                                                                                                                            weekday_cron,month_cron,day_month_cron,backup_code,encryption, \
+                    self.cur.execute('SELECT register_backup_definition(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',(backup_server,pgsql_node,dbname,minutes_cron,hours_cron,day_month_cron, \
+                                                                                                                            month_cron,weekday_cron,backup_code,encryption, \
                                                                                                                             retention_period,retention_redundancy,extra_backup_parameters,job_status,remarks))
                     self.conn.commit()                        
                                     
@@ -794,7 +794,7 @@ class pgbackman_db():
                         x.add_row(["PgSQL node (ID/FQDN):","[" + str(record[17]) + "] / " + record[18]])
                         x.add_row(["Pg_dump/all release:",record[35]])
                         x.add_row(["",""])
-                        x.add_row(["Schedule:",record[11] + " [min hour weekday month day_month]"])
+                        x.add_row(["Schedule:",record[11] + " [min hour day_month month weekday]"])
                         x.add_row(["AT time:",record[12]])
                         x.add_row(["Retention:",record[10]])
                         x.add_row(["Backup code:",record[30]])
@@ -1910,7 +1910,7 @@ class pgbackman_db():
                     x.add_row(["Oldest backup in catalog:",str(oldest_backup_job)])
                     x.add_row(["Newest backup in catalog:",str(newest_backup_job)])
                     x.add_row(["",""])
-                    x.add_row(["Jobs waiting to be processed by pgbackman2cron:",str(job_queue_cnt)])
+                    x.add_row(["Jobs waiting to be processed by pgbackman_control:",str(job_queue_cnt)])
                     x.add_row(["Forced deletion of backups in catalog waiting to be processed:",str(defid_force_deletion_cnt)])
                     
                     print x
@@ -2009,7 +2009,7 @@ class pgbackman_db():
                     x.add_row(["Oldest backup in catalog:",str(oldest_backup_job)])
                     x.add_row(["Newest backup in catalog:",str(newest_backup_job)])
                     x.add_row(["",""])
-                    x.add_row(["Jobs waiting to be processed by pgbackman2cron:",str(job_queue_cnt)])
+                    x.add_row(["Jobs waiting to be processed by pgbackman_control:",str(job_queue_cnt)])
                     
                     print x
                     print
@@ -2077,7 +2077,7 @@ class pgbackman_db():
     # ############################################
            
     def get_pgsql_node_stopped(self):
-        """A function to get data for PgSQL nodes stopped when pgbackman2cron was down"""
+        """A function to get data for PgSQL nodes stopped when pgbackman_control was down"""
      
         try:
             self.pg_connect()
