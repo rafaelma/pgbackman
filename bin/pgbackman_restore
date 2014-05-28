@@ -787,7 +787,7 @@ if __name__ == '__main__':
         global_parameters['renamed_dbname'] = ''
 
     if args.extra_restore_parameters:
-        global_parameters['extra_restore_parameters'] = args.extra_restore_parameters
+        global_parameters['extra_restore_parameters'] = args.extra_restore_parameters.replace("'","")
     else:
         global_parameters['extra_restore_parameters'] = ''
 
