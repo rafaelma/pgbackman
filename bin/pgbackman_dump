@@ -80,7 +80,7 @@ def pg_dumpall(db):
                 cluster_log_file.write('[ERROR] Cluster dump file could not be created. Return code = ' + str(proc.returncode) + '. Check log file: ' + global_parameters['cluster_log_file'] + '\n')
                 
                 global_parameters['execution_status'] = 'ERROR'
-                global_parameters['error_message'] = 'pgdumpall returncode: ' + proc.returncode
+                global_parameters['error_message'] = 'pgdumpall returncode: ' + str(proc.returncode) + '. Check log file.'
                 register_backup_catalog(db)
                 sys.exit(1)
                 
@@ -159,7 +159,7 @@ def pg_dump(db):
                 logs.logger.critical('Database dump file could not be created. Return code = %s. Check log file: %s',proc.returncode,global_parameters['database_log_file'])
                 
                 global_parameters['execution_status'] = 'ERROR'
-                global_parameters['error_message'] = 'pg_dump returncode: ' + proc.returncode
+                global_parameters['error_message'] = 'pg_dump returncode: ' + str(proc.returncode) + '. Check log file.'
                 register_backup_catalog(db)  
                 sys.exit(1)
                 
@@ -236,7 +236,7 @@ def pg_dump_users(db):
                 logs.logger.critical('The command used to generate the tmp schema dump of the database %s has a return value != 0',global_parameters['dbname'])
 
                 global_parameters['execution_status'] = 'ERROR'
-                global_parameters['error_message'] = 'pg_dump returncode: ' + str(proc.returncode)
+                global_parameters['error_message'] = 'pg_dump returncode: ' + str(proc.returncode) + '. Check log file.' 
                 register_backup_catalog(db)  
                 sys.exit(1)
                 
@@ -301,7 +301,7 @@ def pg_dump_users(db):
                 logs.logger.critical('The command used to generate the role dump for the PgSQL node running the database %s has a return value != 0',global_parameters['dbname'])
             
                 global_parameters['execution_status'] = 'ERROR'
-                global_parameters['error_message'] = 'pg_dumpall returncode: ' + str(proc.returncode)
+                global_parameters['error_message'] = 'pg_dumpall returncode: ' + str(proc.returncode) + '. Check log file.'
                 register_backup_catalog(db)  
                 sys.exit(1)
 
@@ -388,7 +388,7 @@ def pg_dump_database_config(db):
                 logs.logger.critical('The command used to generate the dbconfig dump for the PgSQL node running the database %s has a return value != 0',global_parameters['dbname'])
             
                 global_parameters['execution_status'] = 'ERROR'
-                global_parameters['error_message'] = 'pg_dumpall returncode: ' + str(proc.returncode)
+                global_parameters['error_message'] = 'pg_dumpall returncode: ' + str(proc.returncode) + '. Check log file.'
                 register_backup_catalog(db)  
                 sys.exit(1)
             
@@ -982,9 +982,9 @@ if __name__ == '__main__':
     parser.add_argument('--encryption', metavar='[false|true]', default=True, choices=['true', 'false'],required=True, help='Activate encryption', dest='encryption')
     parser.add_argument('--root-backup-dir', metavar='ROOT-BACKUP-DIR', default=True, required=True, help='Root backup dir', dest='root_backup_dir')
     parser.add_argument('--extra-backup-parameters', metavar='EXTRA-PARAMETERS', required=False, help='extra pg_dump parameters', dest='extra_backup_parameters')
-
+    
     args = parser.parse_args()    
-
+    
     logs.logger.info('**** pgbackman_dump started. ****')
     
     if args.pgsql_node_fqdn:
@@ -992,25 +992,25 @@ if __name__ == '__main__':
     else:
         logs.logger.error('PgSQL node fqdn parameter not defined')
         sys.exit(1)
-
+        
     if args.pgsql_node_id:
         global_parameters['pgsql_node_id'] = args.pgsql_node_id
     else:
         logs.logger.error('PgSQL node id parameter not defined')
         sys.exit(1)
-
+        
     if args.pgsql_node_port:
         global_parameters['pgsql_node_port'] = args.pgsql_node_port
     else:
         logs.logger.error('PgSQL node port parameter not defined')
         sys.exit(1)
-    
+
     if args.pgsql_node_admin_user:
         global_parameters['pgsql_node_admin_user'] = args.pgsql_node_admin_user
     else:
         logs.logger.error('PgSQL node admin user parameter not defined')
         sys.exit(1)
-    
+        
     if args.def_id:
         global_parameters['def_id'] = args.def_id
     else:
@@ -1045,7 +1045,7 @@ if __name__ == '__main__':
         sys.exit(1)
 
     if args.extra_backup_parameters:
-        global_parameters['extra_backup_parameters'] = args.extra_backup_parameters
+        global_parameters['extra_backup_parameters'] = args.extra_backup_parameters.replace("'","")
     else:
         global_parameters['extra_backup_parameters'] = ''
 
