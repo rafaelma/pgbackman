@@ -179,7 +179,7 @@ def generate_snapshot_at_jobs(db,backup_server_id,tmp_dir):
                 
                 if proc.returncode == 0:
                     db.update_snapshot_status(snapshot_id,'DEFINED')
-                    logs.logger.debug('AT job for snapshotID: %s has been defined',snapshot_id) 
+                    logs.logger.info('AT job for snapshotID: %s has been defined',snapshot_id) 
                 
                 elif proc.returncode != 0:
                     db.update_snapshot_status(snapshot_id,'ERROR')
@@ -217,7 +217,7 @@ def generate_restore_at_jobs(db,backup_server_id,tmp_dir):
                 
                 if proc.returncode == 0:
                     db.update_restore_status(restore_id,'DEFINED')
-                    logs.logger.debug('AT job for restoreID: %s has been defined',restore_id) 
+                    logs.logger.info('AT job for restoreID: %s has been defined',restore_id) 
                 
                 elif proc.returncode != 0:
                     db.update_restore_status(restore_id,'ERROR')
@@ -675,7 +675,7 @@ def main():
                     #
                     # A PgSQL node has been registered with status RUNNING
                     #
-                    logs.logger.debug('Notify: PgSQL node registered with status RUNNING')
+                    logs.logger.info('Notify: PgSQL node registered with status RUNNING')
                     listen_channels = add_to_listen_channels(db,db_notify,backup_server_id)
 
                     #
@@ -702,7 +702,7 @@ def main():
                     #
                     # A PgSQL node has been registered with status STOPPED
                     #
-                    logs.logger.debug('Notify: PgSQL node registered with status STOPPED')
+                    logs.logger.info('Notify: PgSQL node registered with status STOPPED')
                     unlisten_channels = delete_from_listen_channels(db,db_notify,backup_server_id)
                     
                     #
@@ -725,7 +725,7 @@ def main():
                     #
                     # A PgSQL node has been deleted
                     #
-                    logs.logger.debug('Notify: PgSQL node deleted')
+                    logs.logger.info('Notify: PgSQL node deleted')
                     
                     unlisten_channels = delete_from_listen_channels(db,db_notify,backup_server_id)
                     process_pgsql_node_to_delete(db,backup_server_id)
@@ -743,7 +743,7 @@ def main():
                     #
                     # A restore job has been defined
                     #
-                    logs.logger.debug('Notify: Restore defined')
+                    logs.logger.info('Notify: Restore defined')
                     generate_restore_at_jobs(db,backup_server_id,tmp_dir)
 
                 else:
@@ -751,7 +751,7 @@ def main():
                     #
                     # A backup job has been registered, updated or deleted
                     #
-                    logs.logger.debug('Notify: backup job registered, updated or deleted')
+                    logs.logger.info('Notify: backup job registered, updated or deleted')
                     
                     pgsql_node_id = db.get_next_crontab_id_to_generate(backup_server_id)
                     generate_crontab_backup_jobs(db,backup_server_id,pgsql_node_id)
