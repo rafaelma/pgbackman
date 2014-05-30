@@ -968,6 +968,36 @@ register_snapshot_definition
 shell
 -----
 
+This command runs a command in the operative system.
+
+::
+
+   shell [command]
+
+It exists a shortcut ``[!]`` for this command that can be used insteed
+of ``shell``. This command can be run only with parameters. e.g.:
+
+::
+
+   [pgbackman]$ ! ls -l
+   total 88
+   -rw-rw-r--. 1 vagrant vagrant   135 May 30 10:04 AUTHORS
+   drwxrwxr-x. 2 vagrant vagrant  4096 May 30 10:03 bin
+   drwxrwxr-x. 4 vagrant vagrant  4096 May 30 10:03 docs
+   drwxrwxr-x. 2 vagrant vagrant  4096 May 30 10:03 etc
+   -rw-rw-r--. 1 vagrant vagrant     0 May 30 10:04 INSTALL
+   -rw-rw-r--. 1 vagrant vagrant 35121 May 30 10:04 LICENSE
+   drwxrwxr-x. 2 vagrant vagrant  4096 May 30 10:03 pgbackman
+   -rw-rw-r--. 1 vagrant vagrant   797 May 30 10:04 README.md
+   -rwxrwxr-x. 1 vagrant vagrant  4087 May 30 10:04 setup.py
+   drwxrwxr-x. 2 vagrant vagrant  4096 May 30 10:03 sql
+   drwxrwxr-x. 4 vagrant vagrant  4096 May 30 10:03 vagrant
+
+Parameters:
+
+* **[command]:** Any command that can be run in the operative system.
+
+
 show_backup_catalog
 -------------------
 
