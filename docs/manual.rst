@@ -777,6 +777,12 @@ used. This command can be run with or without parameters. e.g.:
 
 ::
 
+   [pgbackman]$ register_backup_definition 1 1 test02 41 01 * * * schema false "7 days" 1 "" active "Testing reg"
+
+   [Done] Backup definition for dbname: test02 created.
+
+::
+
    [pgbackman]$ register_backup_definition
    --------------------------------------------------------
    # Backup server SrvID / FQDN []: pg-backup01.example.net
@@ -798,7 +804,7 @@ used. This command can be run with or without parameters. e.g.:
    # Are all values correct (yes/no): yes
    --------------------------------------------------------
    
-   [Done] Backup definition for dbname: pgbackman created.
+   [Done] Backup definition for dbname: test02 created.
 
 
 register_backup_server
@@ -808,7 +814,15 @@ This command registers a backup server in PgBackMan::
 
   Command: register_backup_server [hostname] [domain] [remarks]
 
-It can be run with or without parameters. e.g::
+Parameters:
+
+* **[hostname]:** Hostname of the backup server.
+* **[domain]:** Domain
+* **[remarks]:** Remarks
+
+The default value for a parameter is shown between brackets ``[]``. If
+the user does not define any value, the default value will be
+used. This command can be run with or without parameters. e.g::
 
   [pgbackman]$ register_backup_server backup01 example.org "Test server"
  
