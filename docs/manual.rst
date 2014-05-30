@@ -897,14 +897,63 @@ used. This command can be run with or without parameters. e.g:
 register_restore_definition
 ---------------------------
 
-This command defines a restore job of a backup from the catalog.
+This command defines a restore job of a backup from the catalog. It
+can be run only interactively.
 
-It will work with parameters only if there are not conflicts in the
-definition.
+Parameters:
 
-There are some issues we have to take care when running a restore of a
-backup. What happens if we want to restore a backup of a database or a
-role that already exists in the target server?
+* **[AT time]:** Timestamp to run the restore job.
+* **[BckID]:** ID of the backup to restore.
+* **[Target NodeID | FQDN]:** PgSQL node ID or FQDN where we want to
+  restore the backup.
+* **[Target DBname]:** Database name where we want to restore the
+  backup. The default name is the DBname defined in BckID.
+* **[Extra parameters]:** Extra parameters that can be used with
+  pg_restore
+
+This command can be run only without parameters. e.g:
+
+::
+
+   [pgbackman]$ register_restore_definition
+   --------------------------------------------------------
+   # AT timestamp [2014-05-30 09:44:04.503880]: 
+   # BckID []: 35
+   # Target NodeID / FQDN []: 2
+   # Target DBname [pgbackman]: 
+   # Extra parameters []: 
+   
+   # Are all values correct (yes/no): yes
+   --------------------------------------------------------
+   [Processing restore data]
+   --------------------------------------------------------
+   [OK]: Target DBname pgbackman does not exist on target PgSQL node.
+   
+   [OK]: Role 'pgbackman_role_rw' does not exist on target PgSQL node.
+   
+   [WARNING]: Role 'postgres' already exists on target PgSQL node.
+   # Use the existing role? (yes/no): yes
+   
+   --------------------------------------------------------
+   [Restore definition accepted]
+   --------------------------------------------------------
+   AT time: 2014-05-30 09:44:04.503880
+   BckID to restore: 35
+   Roles to restore: pgbackman_role_rw
+   Backup server: [1] pg-backup01.example.net
+   Target PgSQL node: [2] pg-node01.example.net
+   Target DBname: pgbackman
+   Extra restore parameters: 
+   Existing database will be renamed to : None
+   --------------------------------------------------------
+   # Are all values correct (yes/no): yes
+   --------------------------------------------------------
+
+   [Done] Restore definition registered.
+
+There are some issues we have to take care of when running a restore
+of a backup. What happens if we want to restore a backup of a database
+or a role that already exists in the target server?
 
 This flowchar figure explains the logic used when restoring a backup
 if our restore definition create some conflicts:
