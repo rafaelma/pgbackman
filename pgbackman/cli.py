@@ -733,38 +733,38 @@ class pgbackman_cli(cmd.Cmd):
             print "\n[ERROR]: ",e,"\n"
             return False
                 
+        ack = ""
+        
+        minutes_cron_default = hours_cron_default = weekday_cron_default = month_cron_default = day_month_cron_default = \
+            backup_code_default = encryption_default = retention_period_default = retention_redundancy_default = \
+            extra_backup_parameters_default = backup_job_status_default = ""
+        
+        #
+        # Getting some default values
+        #
+
+        try:
+            minutes_cron_default = self.db.get_minute_from_interval(self.db.get_default_pgsql_node_parameter("backup_minutes_interval"))
+            hours_cron_default = self.db.get_hour_from_interval(self.db.get_default_pgsql_node_parameter("backup_hours_interval"))
+            weekday_cron_default = self.db.get_default_pgsql_node_parameter("backup_weekday_cron")
+            month_cron_default = self.db.get_default_pgsql_node_parameter("backup_month_cron")
+            day_month_cron_default = self.db.get_default_pgsql_node_parameter("backup_day_month_cron")
+            backup_code_default = self.db.get_default_pgsql_node_parameter("backup_code")
+            encryption_default = self.db.get_default_pgsql_node_parameter("encryption")
+            retention_period_default = self.db.get_default_pgsql_node_parameter("retention_period")
+            retention_redundancy_default = self.db.get_default_pgsql_node_parameter("retention_redundancy")
+            extra_backup_parameters_default = self.db.get_default_pgsql_node_parameter("extra_backup_parameters")
+            backup_job_status_default = self.db.get_default_pgsql_node_parameter("backup_job_status")
+
+        except Exception as e:
+            print "\n[ERROR]: Problems getting default values for parameters\n",e 
+            return False
+        
         #
         # Command without parameters
         #
 
         if len(arg_list) == 0:
-     
-            ack = ""
-         
-            minutes_cron_default = hours_cron_default = weekday_cron_default = month_cron_default = day_month_cron_default = \
-                backup_code_default = encryption_default = retention_period_default = retention_redundancy_default = \
-                extra_backup_parameters_default = backup_job_status_default = ""
-
-            #
-            # Getting some default values
-            #
-
-            try:
-                minutes_cron_default = self.db.get_minute_from_interval(self.db.get_default_pgsql_node_parameter("backup_minutes_interval"))
-                hours_cron_default = self.db.get_hour_from_interval(self.db.get_default_pgsql_node_parameter("backup_hours_interval"))
-                weekday_cron_default = self.db.get_default_pgsql_node_parameter("backup_weekday_cron")
-                month_cron_default = self.db.get_default_pgsql_node_parameter("backup_month_cron")
-                day_month_cron_default = self.db.get_default_pgsql_node_parameter("backup_day_month_cron")
-                backup_code_default = self.db.get_default_pgsql_node_parameter("backup_code")
-                encryption_default = self.db.get_default_pgsql_node_parameter("encryption")
-                retention_period_default = self.db.get_default_pgsql_node_parameter("retention_period")
-                retention_redundancy_default = self.db.get_default_pgsql_node_parameter("retention_redundancy")
-                extra_backup_parameters_default = self.db.get_default_pgsql_node_parameter("extra_backup_parameters")
-                backup_job_status_default = self.db.get_default_pgsql_node_parameter("backup_job_status")
-
-            except Exception as e:
-                print "\n[ERROR]: Problems getting default values for parameters\n",e 
-                return False
             
             #
             # Getting the backup definition parameters
@@ -991,8 +991,7 @@ class pgbackman_cli(cmd.Cmd):
                 return False
 
             for index,database in enumerate(database_list):
-                print index,database
-
+ 
                 error = False
 
                 if database != '':
