@@ -799,7 +799,7 @@ used. This command can be run with or without parameters. e.g.:
    # Retention redundancy [1]: 
    # Extra parameters []: 
    # Job status [ACTIVE]: 
-   # Remarks []: 
+   # Remarks []: Testing reg.
    
    # Are all values correct (yes/no): yes
    --------------------------------------------------------
@@ -817,27 +817,82 @@ This command registers a backup server in PgBackMan::
 Parameters:
 
 * **[hostname]:** Hostname of the backup server.
-* **[domain]:** Domain
+* **[domain]:** Domain name of the backup server.
 * **[remarks]:** Remarks
 
 The default value for a parameter is shown between brackets ``[]``. If
 the user does not define any value, the default value will be
-used. This command can be run with or without parameters. e.g::
+used. This command can be run with or without parameters. e.g
 
-  [pgbackman]$ register_backup_server backup01 example.org "Test server"
- 
-  [pgbackman]$ register_backup_server
-  --------------------------------------------------------
-  # Hostname []: backup02
-  # Domain [example.org]: 
-  # Remarks []: Test server 2
+::
 
-  # Are all values correct (yes/no): yes
-  --------------------------------------------------------
+    [pgbackman]$ register_backup_server backup01 "" "Test server"
+   
+    [Done] Backup server backup01.example.org registered.
 
+::
+
+    [pgbackman]$ register_backup_server
+    --------------------------------------------------------
+    # Hostname []: backup01
+    # Domain [example.org]: 
+    # Remarks []: Test server
+   
+    # Are all values correct (yes/no): yes
+    --------------------------------------------------------
+    
+    [Done] Backup server backup01.example.org registered.
+  
 
 register_pgsql_node
 -------------------
+
+This command registers a PgSQL node in PgBackMan.::
+
+  register_pgsql_node [hostname] [domain] [pgport] [admin_user] [status] [remarks]
+
+Parameters:
+
+* **[hostname]:** Hostname of the PgSQL node
+* **[domain]:** Domain name of the PgSQL node
+* **[pgport]:** PostgreSQL port
+* **[admin_user]:** PostgreSQL admin user
+* **[status]:**
+  
+  * RUNNING: PostgreSQL node running and online
+  * DOWN: PostgreSQL node not online.
+
+* **[remarks]:** Remarks
+
+All backup definitions from a PgSQL node will be started/stopped
+automatisk if the PgSQL node gets the status changed to RUNNING/DOWN.
+
+The default value for a parameter is shown between brackets ``[]``. If
+the user does not define any value, the default value will be
+used. This command can be run with or without parameters. e.g:
+
+::
+
+   [pgbackman]$ register_pgsql_node pg-node01 "" "" "" running "Test node"
+
+   [Done] PgSQL node pg-node01.example.net registered.
+
+::
+
+   [pgbackman]$ register_pgsql_node
+   --------------------------------------------------------
+   # Hostname []: pg-node01
+   # Domain [example.org]: 
+   # Port [5432]: 
+   # Admin user [postgres]: 
+   # Status[STOPPED]: running
+   # Remarks []: Test node
+   
+   # Are all values correct (yes/no): yes
+   --------------------------------------------------------
+
+   [Done] PgSQL node pg-node01.example.org registered.
+
 
 register_restore_definition
 ---------------------------

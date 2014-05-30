@@ -114,15 +114,34 @@ class pgbackman_cli(cmd.Cmd):
         COMMAND:
         register_backup_server [hostname] [domain] [remarks]
 
+        [hostname]:
+        -----------
+        Hostname of the backup server.
+
+        [domain]:
+        ---------
+        Domain name of the backup server
+
+        [remarks]:
+        ----------
+        Remarks
+
         """
         
         try: 
             arg_list = shlex.split(args)
         
         except ValueError as e:
-            print "\n[ERROR]: ",e,"\n"
+            print '\n[ERROR]: ',e,'\n'
             return False
 
+        try:
+            domain_default = self.db.get_default_backup_server_parameter("domain")
+            
+        except Exception as e:
+            print '\n[ERROR]: Problems getting default values for parameters\n',e 
+            return False
+        
         #
         # Command without parameters
         #
@@ -130,15 +149,6 @@ class pgbackman_cli(cmd.Cmd):
         if len(arg_list) == 0:
             
             ack = ""
-
-            try:
-                domain_default = self.db.get_default_backup_server_parameter("domain")
-                status_default = self.db.get_default_backup_server_parameter("backup_server_status")
-
-            except Exception as e:
-                print "\n[ERROR]: Problems getting default values for parameters\n",e 
-                return False
-
 
             try:
                 print "--------------------------------------------------------"
@@ -153,7 +163,7 @@ class pgbackman_cli(cmd.Cmd):
                 print "--------------------------------------------------------"
 
             except Exception as e:
-                print "\n[Aborted]\n"
+                print '\n[Aborted] Command interrupted by the user.\n'
                 return False   
 
             if domain == "":
@@ -162,13 +172,13 @@ class pgbackman_cli(cmd.Cmd):
             if ack.lower() == "yes":
                 try:
                     self.db.register_backup_server(hostname.lower().strip(),domain.lower().strip(),status_default.upper().strip(),remarks.strip())
-                    print "\n[Done]\n"
+                    print '\n[Done] Backup server ' + hostname.lower().strip() + '.' + domain.lower().strip() + ' registered.\n'
 
                 except Exception as e:
-                    print "\n[ERROR]: Could not register this backup server\n",e  
+                    print '\n[ERROR]: Could not register this backup server\n',e  
 
             elif ack.lower() == "no":
-                print "\n[Aborted]\n"
+                print '\n[Aborted]\n'
 
         #
         # Command with parameters
@@ -179,22 +189,25 @@ class pgbackman_cli(cmd.Cmd):
             hostname = arg_list[0]
             domain = arg_list[1]
             remarks = arg_list[2]
+            
+            if domain == "":
+                domain = domain_default
 
             try:    
                 status_default = self.db.get_default_backup_server_parameter("backup_server_status")
                 
                 self.db.register_backup_server(hostname.lower().strip(),domain.lower().strip(),status_default.upper().strip(),remarks.strip())
-                print "\n[Done]\n"
+                print '\n[Done] Backup server ' + hostname.lower().strip() + '.' + domain.lower().strip() + ' registered.\n'
 
             except Exception as e:
-                print "\n[ERROR]: Could not register this backup server\n",e
+                print '\n[ERROR]: Could not register this backup server\n',e
     
         #
         # Command with the wrong number of parameters
         #
 
         else:
-            print "\n[ERROR] - Wrong number of parameters used.\n          Type help or \? to list commands\n"
+            print '\n[ERROR] - Wrong number of parameters used.\n          Type help or \? to list commands\n'
 
 
     # ############################################
@@ -336,10 +349,30 @@ class pgbackman_cli(cmd.Cmd):
         COMMAND:
         register_pgsql_node [hostname] [domain] [pgport] [admin_user] [status] [remarks]
 
+        [hostname]:
+        -----------
+        Hostname of the PgSQL node.
+
+        [domain]:
+        ---------
+        Domain name of the PgSQL node.
+
+        [pgport]:
+        ---------
+        PostgreSQL port.
+
+        [admin_user]:
+        -------------
+        PostgreSQL admin user.
+
         [Status]:
         ---------
         RUNNING: PostgreSQL node running and online
         DOWN: PostgreSQL node not online.
+
+        [remarks]:
+        ----------
+        Remarks
 
         """
  
@@ -347,7 +380,17 @@ class pgbackman_cli(cmd.Cmd):
             arg_list = shlex.split(args)
             
         except ValueError as e:
-            print "\n[ERROR]: ",e,"\n"
+            print '\n[ERROR]: ',e,'\n'
+            return False
+
+        try:
+            domain_default = self.db.get_default_pgsql_node_parameter("domain")
+            port_default = self.db.get_default_pgsql_node_parameter("pgport")
+            admin_user_default = self.db.get_default_pgsql_node_parameter("admin_user")
+            status_default = self.db.get_default_pgsql_node_parameter("pgsql_node_status")
+
+        except Exception as e:
+            print '\n[ERROR]: Problems getting default values for parameters\n',e 
             return False
         
         #
@@ -357,16 +400,6 @@ class pgbackman_cli(cmd.Cmd):
         if len(arg_list) == 0:
      
             ack = ""
-
-            try:
-                domain_default = self.db.get_default_pgsql_node_parameter("domain")
-                port_default = self.db.get_default_pgsql_node_parameter("pgport")
-                admin_user_default = self.db.get_default_pgsql_node_parameter("admin_user")
-                status_default = self.db.get_default_pgsql_node_parameter("pgsql_node_status")
-
-            except Exception as e:
-                print "\n[ERROR]: Problems getting default values for parameters\n",e 
-                return False
 
             try:
                 print "--------------------------------------------------------"
@@ -384,7 +417,7 @@ class pgbackman_cli(cmd.Cmd):
                 print "--------------------------------------------------------"
 
             except Exception as e:
-                print "\n[Aborted]\n"
+                print '\n[Aborted] Command interrupted by the user.\n'
                 return False
 
             if domain == "":
@@ -403,13 +436,13 @@ class pgbackman_cli(cmd.Cmd):
                 if self.check_port(port):  
                     try:
                         self.db.register_pgsql_node(hostname.lower().strip(),domain.lower().strip(),port.strip(),admin_user.lower().strip(),status.upper().strip(),remarks.strip())
-                        print "\n[Done]\n"
+                        print '\n[Done] PgSQL node ' + hostname.lower().strip() + '.' + domain.lower().strip() + ' registered.\n'
                         
                     except Exception as e:
-                        print "\n[ERROR]: Could not register this PgSQL node\n",e
+                        print '\n[ERROR]: Could not register this PgSQL node\n',e
 
             elif ack.lower() == "no":
-                print "\n[Aborted]\n"
+                print '\n[Aborted]\n'
 
         #
         # Command with parameters
@@ -424,21 +457,32 @@ class pgbackman_cli(cmd.Cmd):
             status = arg_list[4]
             remarks = arg_list[5]
 
+            if domain == "":
+                domain = domain_default
+
+            if port == "":
+                port = port_default
+
+            if admin_user == "":
+                admin_user = admin_user_default
+                
+            if status == "":
+                status = status_default
+            
             if self.check_port(port):   
                 try: 
                     self.db.register_pgsql_node(hostname.lower().strip(),domain.lower().strip(),port.strip(),admin_user.lower().strip(),status.upper().strip(),remarks.strip())
-                    print "\n[Done]\n"
+                    print '\n[Done] PgSQL node ' + hostname.lower().strip() + '.' + domain.lower().strip() + ' registered.\n'
             
                 except Exception as e:
                     print '\n[ERROR]: Could not register this PgSQL node\n',e
-            
-                    
+                                
         #
         # Command with the wrong number of parameters
         #
 
         else:
-            print "\n[ERROR] - Wrong number of parameters used.\n          Type help or \? to list commands\n"
+            print '\n[ERROR] - Wrong number of parameters used.\n          Type help or \? to list commands\n'
             
 
     # ############################################
@@ -732,8 +776,6 @@ class pgbackman_cli(cmd.Cmd):
         except ValueError as e:
             print "\n[ERROR]: ",e,"\n"
             return False
-                
-        ack = ""
         
         minutes_cron_default = hours_cron_default = weekday_cron_default = month_cron_default = day_month_cron_default = \
             backup_code_default = encryption_default = retention_period_default = retention_redundancy_default = \
@@ -766,6 +808,8 @@ class pgbackman_cli(cmd.Cmd):
 
         if len(arg_list) == 0:
             
+            ack = ""
+
             #
             # Getting the backup definition parameters
             #
@@ -930,7 +974,7 @@ class pgbackman_cli(cmd.Cmd):
                                                                    retention_period.lower().strip(),retention_redundancy.strip(),extra_backup_parameters.lower().strip(), \
                                                                    backup_job_status.upper().strip(),remarks.strip())
                             
-                            print "\n[Done] Backup definition for dbname: " + database.strip() + " created.\n"
+                            print "\n[Done] Backup definition for dbname: " + database.strip() + " registered.\n"
 
                     except Exception as e:
                         print '\n[ERROR]: Could not register this backup definition\n',e
