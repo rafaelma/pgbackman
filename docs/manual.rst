@@ -324,8 +324,8 @@ pgbackman_crontrol
 ------------------
 
 This program runs in a loop waiting for NOTIFY messages from the
-``pgbackman`` database before executing an action. It will get
-information when:
+``pgbackman`` database before executing an action. It will get a
+notification when:
 
 * A new PgSQL node has been defined in the system.
 * A PgSQL node is deleted from the system.
@@ -351,8 +351,8 @@ The actions this program can execute are:
   deleted.
 * Update crontab files when nodes get updated.
 * Delete crontab files when nodes get deleted.
-* Create an ``at`` file when a snapshot backup gets defined.
-* Create an ``at`` file when a backup restore gets defined.
+* Create an ``at`` job when a snapshot backup gets defined.
+* Create an ``at`` job when a backup restore gets defined.
 
 Every PgSQL node in the system will have its own directories and
 crontab file in every backup server running PgBackMan.
@@ -371,7 +371,7 @@ It runs these maintenance tasks:
   expired.
 
 * Enforce retention policies for snapshots. It deletes backup
-  files, log files and catalog information for backups that have
+  files, log files and catalog information for snapshots that have
   expired.
 
 * Delete backup and log files from catalog entries associated to a
@@ -701,11 +701,104 @@ This command can be run with or without parameters. e.g.:
 quit
 ----
 
-This command terminates the PgBackMan shell
+This command quits/terminates the PgBackMan shell::
+
+  Command: quit
 
 
 register_backup_definition 
 ---------------------------
+
+This command registers a backup definition that will be run
+periodically by PgBackMan.::
+
+  register_backup_definition [SrvID | FQDN] 
+                             [NodeID | FQDN] 
+                             [DBname] 
+                             [min_cron] 
+			     [hour_cron] 
+			     [daymonth_cron]
+			     [month_cron] 
+			     [weekday_cron] 
+                             [backup code] 
+                             [encryption] 
+                             [retention period] 
+                             [retention redundancy] 
+                             [extra backup parameters] 
+                             [job status] 
+                             [remarks]
+
+Parameters:
+
+* **[SrvID | FQDN]:** SrvID in PgBackMan or FQDN of the backup server
+  that will run the backup job.
+
+* **[NodeID | FQDN]:** NodeID in PgBackMan or FQDN of the PgSQL node
+  running the database to backup.
+
+* **[DBname]:** Database name. You can use the special value
+  ``#all_databases#`` if you want to register the backup definition
+  for all databases in the cluster except 'template0' and 'template1'.
+
+* **[\*_cron]:** Schedule definition using the cron expression. Check
+  http://en.wikipedia.org/wiki/Cron#CRON_expression for more
+  information.
+
+* **[backup code]:** 
+
+  * CLUSTER: Backup of all databases in a PgSQL node using ``pg_dumpall``
+  * FULL: Full Backup of a database. Schema + data + owner globals + DB globals.
+  * SCHEMA: Schema backup of a database. Schema + owner globals + DB globals.
+  * DATA: Data backup of the database.
+
+* **[encryption]:** This parameter is not used at the moment. But it
+  will be used in the future.
+
+  * TRUE: GnuPG encryption activated.
+  * FALSE: GnuPG encryption not activated.
+
+* **[retention period]:** Time interval a backup will be available in
+  the catalog, e.g. 2 hours, 3 days, 1 week, 1 month, 2 years
+
+* **[retention redundancy]:** Minimun number of backups to keep in the
+  catalog regardless of the retention period used. e.g. 1,2,3
+
+* **[extra backup parameters]:** Extra parameters that can be used
+  with pg_dump / pg_dumpall
+
+* **[job status]**
+        
+  * ACTIVE: Backup job activated and in production.
+  * STOPPED: Backup job stopped.
+
+The default value for a parameter is shown between brackets ``[]``. If
+the user does not define any value, the default value will be
+used. This command can be run with or without parameters. e.g.:
+
+::
+
+   [pgbackman]$ register_backup_definition
+   --------------------------------------------------------
+   # Backup server SrvID / FQDN []: pg-backup01.example.net
+   # PgSQL node NodeID / FQDN []: pg-node01.example.net
+   # DBname []: test02
+   # Minutes cron [41]: 
+   # Hours cron [01]: 
+   # Day-month cron [*]: 
+   # Month cron [*]: 
+   # Weekday cron [*]: 
+   # Backup code [FULL]: 
+   # Encryption [false]: 
+   # Retention period [7 days]: 
+   # Retention redundancy [1]: 
+   # Extra parameters []: 
+   # Job status [ACTIVE]: 
+   # Remarks []: 
+   
+   # Are all values correct (yes/no): yes
+   --------------------------------------------------------
+   
+   [Done] Backup definition for dbname: pgbackman created.
 
 
 register_backup_server

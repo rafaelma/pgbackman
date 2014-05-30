@@ -688,7 +688,9 @@ class pgbackman_cli(cmd.Cmd):
                                            
         [*cron]:
         --------
-        CRON format, e.g. 15 01 * * * 
+        Schedule definition using the cron expression. Check
+        http://en.wikipedia.org/wiki/Cron#CRON_expression for more
+        information.
 
         [backup code]: 
         --------------
@@ -798,7 +800,7 @@ class pgbackman_cli(cmd.Cmd):
                 print "--------------------------------------------------------"
                 
             except Exception as e:
-                print "\n[Aborted]\n"
+                print "\n[Aborted] Command interrupted by the user.\n"
                 return False
 
             if ack.lower() == "yes":
