@@ -3741,12 +3741,23 @@ class pgbackman_cli(cmd.Cmd):
     # ############################################
 
     def do_shell(self, line):
-        'Run a shell command'
+        '''
+        DESCRIPTION:
+        This command runs a command in the operative system
         
+        COMMAND:
+        shell [command]
+
+        [command]:
+        ----------
+        Any command that can be run in the operative system.
+        
+        '''
+
         try:
             proc = subprocess.Popen([line],stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=True)
             output, errors = proc.communicate()
-            print output
+            print output,errors
             print
 
         except Exception as e:
