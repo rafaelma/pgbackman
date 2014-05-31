@@ -442,6 +442,27 @@ clear
 
 This command clears the screen and shows the welcome banner
 
+::
+
+   clear
+
+This command can be run only without parameters. e.g.:
+
+::
+
+   [pgbackman]$ clear
+
+   #############################################################
+   Welcome to the PostgreSQL Backup Manager shell (v.1.0.0)
+   #############################################################
+   Type help or \? to list commands.
+   
+   [pgbackman]$ 
+
+
+
+
+
 
 delete_backup_definition_dbname 
 --------------------------------
@@ -701,9 +722,18 @@ This command can be run with or without parameters. e.g.:
 quit
 ----
 
-This command quits/terminates the PgBackMan shell::
+This command quits/terminates the PgBackMan shell.
 
-  Command: quit
+::
+
+  quit
+
+This command can be run only without parameters. e.g.:
+
+::
+
+   [pgbackman]$ quit
+   Done, thank you for using PgBackMan
 
 
 register_backup_definition 
