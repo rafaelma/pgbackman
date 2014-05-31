@@ -468,7 +468,9 @@ delete_backup_definition_dbname
 
 This command deletes all backup definitions for a database.::
 
-  delete_backup_definition_dbname [NodeID/FQDN] [DBname] [force-deletion]
+  delete_backup_definition_dbname [NodeID/FQDN] 
+                                  [DBname] 
+				  [force-deletion]
 
 Parameters:
 
@@ -534,7 +536,8 @@ delete_backup_definition_id
 
 This command deletes a backup definition for a DefID.::
 
-  delete_backup_definition_id [DefID] [force-deletion]
+  delete_backup_definition_id [DefID] 
+                              [force-deletion]
 
 Parameters:
 
@@ -835,7 +838,9 @@ register_backup_server
 
 This command registers a backup server in PgBackMan::
 
-  Command: register_backup_server [hostname] [domain] [remarks]
+  Command: register_backup_server [hostname] 
+                                  [domain] 
+				  [remarks]
 
 Parameters:
 
@@ -872,7 +877,12 @@ register_pgsql_node
 
 This command registers a PgSQL node in PgBackMan.::
 
-  register_pgsql_node [hostname] [domain] [pgport] [admin_user] [status] [remarks]
+  register_pgsql_node [hostname] 
+                      [domain] 
+		      [pgport] 
+		      [admin_user] 
+		      [status] 
+		      [remarks]
 
 Parameters:
 
@@ -1053,8 +1063,6 @@ command can be run with or without parameters. e.g.:
    [Done] Snapshot for dbname: test02 defined.
 
 
-
-
 shell
 -----
 
@@ -1063,6 +1071,10 @@ This command runs a command in the operative system.
 ::
 
    shell [command]
+
+Parameters:
+
+* **[command]:** Any command that can be run in the operative system.
 
 It exists a shortcut ``[!]`` for this command that can be used insteed
 of ``shell``. This command can be run only with parameters. e.g.:
@@ -1083,13 +1095,73 @@ of ``shell``. This command can be run only with parameters. e.g.:
    drwxrwxr-x. 2 vagrant vagrant  4096 May 30 10:03 sql
    drwxrwxr-x. 4 vagrant vagrant  4096 May 30 10:03 vagrant
 
-Parameters:
-
-* **[command]:** Any command that can be run in the operative system.
-
 
 show_backup_catalog
 -------------------
+
+This command shows all backup catalog entries for a particular
+combination of parameters values. These values are combined with AND.
+
+::
+
+   show_backup_catalog [SrvID|FQDN] 
+                       [NodeID|FQDN] 
+		       [DBname] 
+		       [DefID]
+
+Parameters:
+
+* **[SrvID|FQDN]:** SrvID in PgBackMan or FQDN of the backup server
+* **[NodeID|FQDN]:** NodeID in PgBackMan or FQDN of the PgSQL node
+* **[DBname]:** Database name
+* **[DefID]:** Backup definition ID
+
+The default value for a parameter is shown between brackets ``[]``. If the
+user does not define any value, the default value will be used. 
+
+One can define multiple values for each parameter separated by a
+comma. These values are combined using OR.
+
+This command can be run with or without parameters. e.g.:
+
+::
+
+   [pgbackman]$ show_backup_catalog all all "dump_test,test02" all
+   --------------------------------------------------------
+   # SrvID / FQDN: all
+   # NodeID / FQDN: all
+   # DBname: dump_test,test02
+   # DefID: all
+   --------------------------------------------------------
+   +-----------+-----------+-----------+ .... +-----------+----------+------------+------+-----------+-----------+
+   |   BckID   |   DefID   |SnapshotID | .... |   DBname  | Duration | Size       | Code | Execution |   Status  |
+   +-----------+-----------+-----------+ .... +-----------+----------+------------+------+-----------+-----------+
+   | 000000029 | 000000003 |           | .... | dump_test | 0:00:02  | 2850 bytes | FULL |    CRON   | SUCCEEDED |
+   | 000000028 |           | 00000006  | .... | dump_test | 0:00:03  | 2850 bytes | FULL |     AT    | SUCCEEDED |
+   | 000000027 |           | 00000007  | .... | dump_test | 0:00:03  | 3468 bytes | FULL |     AT    | SUCCEEDED |
+   | 000000026 |           | 00000005  | .... | dump_test | 0:00:02  | 3305 bytes | FULL |     AT    | SUCCEEDED |
+   | 000000025 |           | 00000002  | .... |   test02  | 0:00:02  | 3468 bytes | FULL |     AT    | SUCCEEDED |
+   +-----------+-----------+-----------+ .... +-----------+----------+------------+------+-----------+-----------+
+
+::
+
+   [pgbackman]$ show_backup_catalog
+   --------------------------------------------------------
+   # SrvID / FQDN [all]: 
+   # NodeID / FQDN [all]: 
+   # DBname [all]: dump_test, test02
+   # DefID [all]: 
+   --------------------------------------------------------
+   +-----------+-----------+-----------+ .... +-----------+----------+------------+------+-----------+-----------+
+   |   BckID   |   DefID   |SnapshotID | .... |   DBname  | Duration | Size       | Code | Execution |   Status  |
+   +-----------+-----------+-----------+ .... +-----------+----------+------------+------+-----------+-----------+
+   | 000000029 | 000000003 |           | .... | dump_test | 0:00:02  | 2850 bytes | FULL |    CRON   | SUCCEEDED |
+   | 000000028 |           | 00000006  | .... | dump_test | 0:00:03  | 2850 bytes | FULL |     AT    | SUCCEEDED |
+   | 000000027 |           | 00000007  | .... | dump_test | 0:00:03  | 3468 bytes | FULL |     AT    | SUCCEEDED |
+   | 000000026 |           | 00000005  | .... | dump_test | 0:00:02  | 3305 bytes | FULL |     AT    | SUCCEEDED |
+   | 000000025 |           | 00000002  | .... |   test02  | 0:00:02  | 3468 bytes | FULL |     AT    | SUCCEEDED |
+   +-----------+-----------+-----------+ .... +-----------+----------+------------+------+-----------+-----------+
+
 
 show_backup_definitions
 -----------------------
