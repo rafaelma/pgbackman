@@ -589,10 +589,12 @@ class pgbackman_cli(cmd.Cmd):
         '''
         DESCRIPTION:
         This command shows all backup definitions 
-        for a particular combination of search values.
+        for a particular combination of parameter values.
 
         COMMAND:
-        show_backup_definitions [SrvID|FQDN] [NodeID|FQDN] [DBname]
+        show_backup_definitions [SrvID|FQDN] 
+                                [NodeID|FQDN] 
+                                [DBname]
         
         '''
 
@@ -617,7 +619,7 @@ class pgbackman_cli(cmd.Cmd):
                 print '--------------------------------------------------------'
 
             except Exception as e:
-                print '\n[Aborted]\n'
+                print '\n[Aborted] Command interrupted by the user.\n'
                 return False
 
             if server_id == '' or server_id == 'all':
