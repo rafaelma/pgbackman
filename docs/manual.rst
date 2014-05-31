@@ -437,6 +437,7 @@ The PgBackMan interactive shell can be started by running the program
    ======================
    help
 
+
 clear
 -----
 
@@ -458,10 +459,6 @@ This command can be run only without parameters. e.g.:
    Type help or \? to list commands.
    
    [pgbackman]$ 
-
-
-
-
 
 
 delete_backup_definition_dbname 
@@ -530,7 +527,6 @@ This command can be run with or without parameters. e.g.
    ----------------------------------------------
 
 
-
 delete_backup_definition_id 
 ---------------------------
 
@@ -591,7 +587,6 @@ This command can be run with or without parameters. e.g.
    DETAIL : Key (def_id)=(1) is still referenced from table
    "backup_catalog".
    ----------------------------------------------
-
 
 
 delete_backup_server
@@ -770,9 +765,7 @@ Parameters:
   ``#all_databases#`` if you want to register the backup definition
   for all databases in the cluster except 'template0' and 'template1'.
 
-* **[\*_cron]:** Schedule definition using the cron expression. Check
-  http://en.wikipedia.org/wiki/Cron#CRON_expression for more
-  information.
+* **[\*_cron]:** Schedule definition using the cron expression.
 
 * **[backup code]:** 
 
@@ -809,7 +802,7 @@ used. This command can be run with or without parameters. e.g.:
 
    [pgbackman]$ register_backup_definition 1 1 test02 41 01 * * * schema false "7 days" 1 "" active "Testing reg"
 
-   [Done] Backup definition for dbname: test02 created.
+   [Done] Backup definition for dbname: test02 registered.
 
 ::
 
@@ -834,7 +827,7 @@ used. This command can be run with or without parameters. e.g.:
    # Are all values correct (yes/no): yes
    --------------------------------------------------------
    
-   [Done] Backup definition for dbname: test02 created.
+   [Done] Backup definition for dbname: test02 registered.
 
 
 register_backup_server
@@ -994,6 +987,73 @@ if our restore definition create some conflicts:
 
 register_snapshot_definition
 ----------------------------
+
+This command registers a one time snapshot backup of a database.
+
+::
+
+   register_snapshot [SrvID | FQDN] 
+                     [NodeID | FQDN] 
+                     [DBname] 
+                     [AT time]
+                     [backup code] 
+                     [retention period] 
+                     [extra backup parameters] 
+                     [remarks] 
+
+Parameters:
+
+* **[SrvID | FQDN]:** SrvID in PgBackMan or FQDN of the backup server
+  that will run the snapshot job.
+
+* **[NodeID | FQDN]:** NodeID in PgBackMan or FQDN of the PgSQL node
+  running the database to backup.
+
+* **[DBname]:** Database name
+* **[AT time]:**  Timestamp to run the snapshot
+* **[backup code]:** 
+
+  * CLUSTER: Backup of all databases in a PgSQL node using ``pg_dumpall``
+  * FULL: Full Backup of a database. Schema + data + owner globals + DB globals.
+  * SCHEMA: Schema backup of a database. Schema + owner globals + DB globals.
+  * DATA: Data backup of the database.
+
+* **[retention period]:** Time interval a backup will be available in
+  the catalog, e.g. 2 hours, 3 days, 1 week, 1 month, 2 years
+
+* **[extra backup parameters]:** Extra parameters that can be used
+  with pg_dump / pg_dumpall
+
+The default value for a parameter is shown between brackets []. If the
+user does not define any value, the default value will be used. This
+command can be run with or without parameters. e.g.:
+
+::
+
+   [pgbackman]$ register_snapshot_definition 1 1 test02 2014-05-31 full "7 days" "" "Test snapshot"
+
+   [Done] Snapshot for dbname: test02 defined.
+
+::
+
+   [pgbackman]$ register_snapshot_definition
+   --------------------------------------------------------
+   # Backup server SrvID / FQDN []: pg-backup01.example.net
+   # PgSQL node NodeID / FQDN []: pg-node01.example.net
+   # DBname []: test02
+   # AT timestamp [2014-05-31 17:52:28.756359]: 
+   # Backup code [FULL]: 
+   # Retention period [7 days]: 
+   # Extra parameters []: 
+   # Remarks []: 
+   
+   # Are all values correct (yes/no): yes
+   --------------------------------------------------------
+   
+   [Done] Snapshot for dbname: test02 defined.
+
+
+
 
 shell
 -----
