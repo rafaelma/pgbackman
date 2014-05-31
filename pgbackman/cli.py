@@ -1115,7 +1115,7 @@ class pgbackman_cli(cmd.Cmd):
                                                                    retention_period.lower().strip(),retention_redundancy.strip(),extra_backup_parameters.lower().strip(), \
                                                                    backup_job_status.upper().strip(),remarks.strip())
                         
-                        print '\n[Done] Backup definition for dbname: ' + database.strip() + ' created.\n'
+                        print '\n[Done] Backup definition for dbname: ' + database.strip() + ' Registered.\n'
 
                 except Exception as e:
                     print '\n[ERROR]: Could not register this backup definition\n',e
@@ -1619,13 +1619,26 @@ class pgbackman_cli(cmd.Cmd):
         register_snapshot [SrvID | FQDN] 
                           [NodeID | FQDN] 
                           [DBname] 
-                          [Time]
+                          [AT time]
                           [backup code] 
                           [retention period] 
-                          [extra params] 
+                          [extra backup parameters] 
                           [remarks] 
 
-                          
+        [SrvID | FQDN]:
+        ---------------      
+        SrvID in PgBackMan or FQDN of the backup server that will run the
+        snapshot job.
+
+        [NodeID | FQDN]:
+        ----------------
+        NodeID in PgBackMan or FQDN of the PgSQL node running the
+        database to backup.
+
+        [DBname]:
+        ---------
+        Database name.
+
         [time]:
         -------
         Timestamp to run the snapshot, e.g. 2014-04-23 16:01
@@ -1641,8 +1654,8 @@ class pgbackman_cli(cmd.Cmd):
         -------------------
         Time interval, e.g. 2 hours, 3 days, 1 week, 1 month, 2 years, ... 
 
-        [extra params]:
-        ---------------
+        [extra backup parameters]:
+        --------------------------
         Extra parameters that can be used with pg_dump / pg_dumpall
         
         '''
@@ -1654,6 +1667,18 @@ class pgbackman_cli(cmd.Cmd):
             print '\n[ERROR]: ',e,'\n'
             return False
                 
+        time_default = backup_code_default = retention_period_default = extra_backup_parameters_default = ''
+
+        try:
+            at_time_default = datetime.datetime.now()+ datetime.timedelta(minutes=1)
+            backup_code_default = self.db.get_default_pgsql_node_parameter('backup_code')
+            retention_period_default = self.db.get_default_pgsql_node_parameter('retention_period')
+            extra_backup_parameters_default = self.db.get_default_pgsql_node_parameter('extra_backup_parameters')
+
+        except Exception as e:
+            print '\n[ERROR]: Problems getting default values for parameters\n',e 
+            return False
+
         #
         # Command without parameters
         #
@@ -1661,18 +1686,6 @@ class pgbackman_cli(cmd.Cmd):
         if len(arg_list) == 0:
      
             ack = ''
-         
-            time_default = backup_code_default = retention_period_default = extra_backup_parameters_default = ''
-
-            try:
-                at_time_default = datetime.datetime.now()+ datetime.timedelta(minutes=1)
-                backup_code_default = self.db.get_default_pgsql_node_parameter('backup_code')
-                retention_period_default = self.db.get_default_pgsql_node_parameter('retention_period')
-                extra_backup_parameters_default = self.db.get_default_pgsql_node_parameter('extra_backup_parameters')
-
-            except Exception as e:
-                print '\n[ERROR]: Problems getting default values for parameters\n',e 
-                return False
 
             try:
                 print '--------------------------------------------------------'
@@ -1692,7 +1705,7 @@ class pgbackman_cli(cmd.Cmd):
                 print '--------------------------------------------------------'
 
             except Exception as e:
-                print '\n[Aborted]\n'
+                print '\n[Aborted] Command interrupted by the user.\n'
                 return False
 
             try:
@@ -1742,7 +1755,7 @@ class pgbackman_cli(cmd.Cmd):
                 try:
                     self.db.register_snapshot_definition(backup_server_id,pgsql_node_id,dbname.strip(),at_time,backup_code.upper().strip(), \
                                                              retention_period.lower().strip(),extra_backup_parameters.lower().strip(),remarks.strip())
-                    print '\n[Done]\n'
+                    print '\n[Done] Snapshot for dbname: ' + dbname.strip() + ' defined.\n'
 
                 except Exception as e:
                     print '\n[ERROR]: Could not register this snapshot\n',e
@@ -1795,12 +1808,24 @@ class pgbackman_cli(cmd.Cmd):
             except Exception as e:
                 print '\n[ERROR]: ',e 
                 return False
+            
+            if at_time == '':
+                at_time = at_time_default
+
+            if backup_code == '':
+                backup_code = backup_code_default
+
+            if retention_period == '':
+                retention_period = retention_period_default
+
+            if extra_backup_parameters == '':
+                extra_backup_parameters = extra_backup_parameters_default
                 
             try:
                 self.db.register_snapshot_definition(backup_server_id,pgsql_node_id,dbname.strip(),at_time,backup_code.upper().strip(), \
                                                   retention_period.lower().strip(),extra_backup_parameters.lower().strip(),remarks.strip())
                 
-                print '\n[Done]\n'
+                print '\n[Done] Snapshot for dbname: ' + dbname.strip() + ' defined.\n'
 
             except Exception as e:
                 print '\n[ERROR]: Could not register this snapshot\n',e
