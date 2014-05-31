@@ -1100,7 +1100,7 @@ show_backup_catalog
 -------------------
 
 This command shows all backup catalog entries for a particular
-combination of parameters values. These values are combined with AND.
+combination of parameter values. These values are combined with AND.
 
 ::
 
@@ -1165,6 +1165,64 @@ This command can be run with or without parameters. e.g.:
 
 show_backup_definitions
 -----------------------
+
+This command shows all backup definitions for a particular combination
+of parameter values. These values are combined with AND.
+
+::
+
+   show_backup_definitions [SrvID|FQDN] 
+                           [NodeID|FQDN] 
+			   [DBname]
+
+Parameters:
+
+* **[SrvID|FQDN]:** SrvID in PgBackMan or FQDN of the backup server
+* **[NodeID|FQDN]:** NodeID in PgBackMan or FQDN of the PgSQL node
+* **[DBname]:** Database name
+
+The default value for a parameter is shown between brackets ``[]``. If the
+user does not define any value, the default value will be used. 
+
+One can define multiple values for each parameter separated by a
+comma. These values are combined using OR.
+
+This command can be run with or without parameters. e.g.:
+
+::
+
+   [pgbackman]$ show_backup_definitions all all pgbackman
+   --------------------------------------------------------
+   # SrvID / FQDN: all
+   # NodeID / FQDN: all
+   # DBname: pgbackman
+   --------------------------------------------------------
+   +-------------+ .... +----+-----------------------+-----------+-------------+--------+------------+--------+-----------+
+   |    DefID    | .... | ID | PgSQL node            | DBname    | Schedule    | Code   | Retention  | Status | Parameters|
+   +-------------+ .... +----+-----------------------+-----------+-------------+--------+------------+--------+-----------+
+   | 00000000011 | .... | 1  | pg-node01.example.net | pgbackman | 21 02 1 * * | FULL   | 7 days (1) | ACTIVE | --inserts |
+   | 00000000012 | .... | 1  | pg-node01.example.net | pgbackman | 41 01 * * * | FULL   | 7 days (1) | ACTIVE |           |
+   | 00000000013 | .... | 1  | pg-node01.example.net | pgbackman | 41 01 * * * | SCHEMA | 7 days (1) | ACTIVE |           |
+   +-------------+ .... +----+-----------------------+-----------+-------------+--------+------------+--------+-----------+
+
+::
+   
+   [pgbackman]$ show_backup_definitions
+   --------------------------------------------------------
+   # SrvID / FQDN [all]: 
+   # NodeID / FQDN [all]: 
+   # DBname [all]: pgbackman 
+   --------------------------------------------------------
+   +-------------+ .... +----+-----------------------+-----------+-------------+--------+------------+--------+-----------+
+   |    DefID    | .... | ID | PgSQL node            | DBname    | Schedule    | Code   | Retention  | Status | Parameters|
+   +-------------+ .... +----+-----------------------+-----------+-------------+--------+------------+--------+-----------+
+   | 00000000011 | .... | 1  | pg-node01.example.net | pgbackman | 21 02 1 * * | FULL   | 7 days (1) | ACTIVE | --inserts |
+   | 00000000012 | .... | 1  | pg-node01.example.net | pgbackman | 41 01 * * * | FULL   | 7 days (1) | ACTIVE |           |
+   | 00000000013 | .... | 1  | pg-node01.example.net | pgbackman | 41 01 * * * | SCHEMA | 7 days (1) | ACTIVE |           |
+   +-------------+ .... +----+-----------------------+-----------+-------------+--------+------------+--------+-----------+
+
+
+
 
 show_backup_details
 -------------------
