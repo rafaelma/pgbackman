@@ -3748,8 +3748,8 @@ ORDER BY "Backup server","PgSQL node","DBname","Code","Status";
 ALTER VIEW show_backup_definitions OWNER TO pgbackman_role_rw;
 
 CREATE OR REPLACE VIEW show_backup_catalog AS
-   (SELECT lpad(a.bck_id::text,12,'0') AS "BckID",
-       lpad(a.def_id::text,11,'0') AS "DefID",
+   (SELECT lpad(a.bck_id::text,9,'0') AS "BckID",
+       lpad(a.def_id::text,9,'0') AS "DefID",
        a.def_id,
        '' AS "SnapshotID",
        0 AS snapshot_id,
@@ -3767,10 +3767,10 @@ CREATE OR REPLACE VIEW show_backup_catalog AS
    FROM backup_catalog a 
    JOIN backup_definition b ON a.def_id = b.def_id) 
    UNION
-   (SELECT lpad(a.bck_id::text,12,'0') AS "BckID",
+   (SELECT lpad(a.bck_id::text,9,'0') AS "BckID",
        '' AS "DefID",
        0 AS def_id,
-       lpad(a.snapshot_id::text,11,'0') AS "SnapshotID",
+       lpad(a.snapshot_id::text,9,'0') AS "SnapshotID",
        a.snapshot_id,
        date_trunc('seconds',a.finished) AS "Finished",
        a.backup_server_id,
