@@ -1398,7 +1398,7 @@ class pgbackman_cli(cmd.Cmd):
     def do_show_backup_catalog(self,args):
         '''
         DESCRIPTION:
-        This command shows all catalog entries for a particular 
+        This command shows all backup catalog entries for a particular 
         combination of search values.
 
         COMMAND:
@@ -1428,7 +1428,7 @@ class pgbackman_cli(cmd.Cmd):
                 print '--------------------------------------------------------'
 
             except Exception as e:
-                print '\n[Aborted]\n'
+                print '\n[Aborted] Command interrupted by the user.\n'
                 return False
 
             if server_id == '' or server_id == 'all':
