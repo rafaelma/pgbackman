@@ -3682,9 +3682,12 @@ class pgbackman_cli(cmd.Cmd):
 
     def do_clear(self,args):
         '''
-        DESCRIPTION: Clears the screen and shows the welcome banner.
+        DESCRIPTION: 
+        Clears the screen and shows the welcome banner.
 
-        COMMAND: clear
+        COMMAND: 
+        clear
+        
         '''
         
         os.system('clear')
@@ -3712,27 +3715,31 @@ class pgbackman_cli(cmd.Cmd):
     # ############################################
 
     def precmd(self, line_in):
+
         if line_in != '':
             split_line = line_in.split()
             
-            if split_line[0] not in ['EOF','shell','SHELL','!']:
+            if split_line[0] not in ['EOF','shell','SHELL','\!']:
                 line_out = line_in.lower()
             else:
                 line_out = line_in
+
+            if split_line[0] == '\h':
+                line_out = line_out.replace('\h','help')
+            elif split_line[0] == '\?':
+                line_out = line_out.replace('\?','help')
+            elif split_line[0] == '\!':
+                line_out = line_out.replace('\!','shell')
+            elif line_out == '\s':
+                line_out = 'show_history'    
+            elif line_out == '\q':
+                line_out = 'quit' 
+                
+            self._hist += [ line_out.strip() ]
+          
         else:
             line_out = ''
-
-        if line_out == '\h':
-            line_out = 'help'
-        elif line_out == '\?':
-            line_out = 'help'
-        elif line_out == '\s':
-            line_out = 'hist'    
-        elif line_out == '\q':
-            line_out = 'quit' 
-    
-        self._hist += [ line_out.strip() ]
-          
+       
         return cmd.Cmd.precmd(self, line_out)
 
 
@@ -3770,9 +3777,12 @@ class pgbackman_cli(cmd.Cmd):
 
     def do_quit(self, args):
         '''
-        DESCRIPTION: Quits/terminate the PgBackMan shell.
+        DESCRIPTION: 
+        Quits/terminate the PgBackMan shell.
 
-        COMMAND: quit
+        COMMAND: 
+        quit
+        
         '''
         
         print '\nDone, thank you for using PgBackMan'
@@ -3782,10 +3792,17 @@ class pgbackman_cli(cmd.Cmd):
     # ############################################
     # Method do_EOF
     # ############################################
-    
+
     def do_EOF(self, line):
-        'Quit the PgBackMan shell.'
+        '''
+        DESCRIPTION: 
+        Quits/terminate the PgBackMan shell.
+
+        COMMAND: 
+        EOF
         
+        '''
+
         print
         print '\nDone, thank you for using PgBackMan'
         return True
@@ -3796,10 +3813,19 @@ class pgbackman_cli(cmd.Cmd):
     # ############################################
 
     def do_show_history(self, args):
-        '''Print a list of commands that have been entered'''
+        '''
+        DESCRIPTION: 
+        Print the list of commands that have been entered during the
+        PgBackMan shell session.
+
+        COMMAND: 
+        show_history
+
+        '''
 
         cnt = 0
-        
+        print
+
         for line in self._hist:
             print '[' + str(cnt) + ']: ' + line
             cnt = cnt +1
@@ -3831,13 +3857,48 @@ class pgbackman_cli(cmd.Cmd):
         print '''
         Shortcuts in PgBackMan:
 
-        \h [NAME] - Help on syntax of PgBackMan commands
+        \h [COMMAND] - Help on syntax of PgBackMan commands
         \? [COMMAND] - Help on syntax of PgBackMan commands
         
         \s - display history 
         \q - quit PgBackMan shell
 
         \! [COMMAND] - Execute command in shell
+          
+        '''
+
+    # ############################################
+    # Method help_shortcuts
+    # ############################################
+
+    def help_support(self):
+        '''Help information about PgBackMan support'''
+        
+        print '''
+        The latest information and versions of PgBackMan can be obtained 
+        from: http://www.pgbackman.org/
+
+        Mailing list
+        ------------
+        Questions or comments for the PgBackMan community can be sent
+        to the mailing list by using the email address
+        pgbackman@googlegroups.com. 
+
+        The archive can be found on the web for the mailing list on
+        Google Groups:
+        https://groups.google.com/forum/#!forum/pgbackman
+
+        Bug reports / Feature request
+        -----------------------------
+        If you find a bug or have a feature request, file them on
+        GitHub / pgbackman:
+        https://github.com/rafaelma/pgbackman/issues
+
+        IRC channel
+        -----------
+        If the documentation is not enough and you need in-person
+        help, you can try the #pgbackman channel on the Freenode IRC
+        server (irc.freenode.net).
           
         '''
 
