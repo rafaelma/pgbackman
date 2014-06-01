@@ -2340,7 +2340,8 @@ class pgbackman_cli(cmd.Cmd):
     def do_show_backup_details(self,args):
         '''
         DESCRIPTION:
-        This command shows all the details for one particular backup job.
+        This command shows all the details for one particular backup
+        job.
 
         COMMAND:
         show_backup_details [BckID]
@@ -2366,7 +2367,7 @@ class pgbackman_cli(cmd.Cmd):
                 print '--------------------------------------------------------'
             
             except Exception as e:
-                print '\n[Aborted]\n'
+                print '\n[Aborted] Command interrupted by the user.\n'
                 return False 
 
             try:
@@ -2396,6 +2397,7 @@ class pgbackman_cli(cmd.Cmd):
         else:
             print '\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n'
         
+
     # ############################################
     # Method do_show_restore_details
     # ############################################
