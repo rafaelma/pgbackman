@@ -1126,6 +1126,27 @@ This command can be run with or without parameters. e.g.:
 
 ::
 
+   [pgbackman]$ show_backup_catalog 1 all dump_test,postgres all
+   --------------------------------------------------------
+   # SrvID / FQDN: 1
+   # NodeID / FQDN: all
+   # DBname: dump_test,test02
+   # DefID: all
+   --------------------------------------------------------
+   +-----------+-------+------------+---------------------------+-----+-------------------------+----+-------------------------+-----------+----------+------------+------+-----------+-----------+
+   |   BckID   | DefID | SnapshotID | Finished                  | ID. | Backup server           | ID | PgSQL node              | DBname    | Duration | Size       | Code | Execution |   Status  |
+   +-----------+-------+------------+---------------------------+-----+-------------------------+----+-------------------------+-----------+----------+------------+------+-----------+-----------+
+   | 000000029 |       | 000000006  | 2014-05-28 09:08:20+00:00 |  1  | pg-backup01.example.net | 1  | pgbackmandb.example.net | dump_test | 0:00:02  | 2850 bytes | FULL |     AT    | SUCCEEDED |
+   | 000000027 |       | 000000007  | 2014-05-28 09:01:05+00:00 |  1  | pg-backup01.example.net | 1  | pgbackmandb.example.net | dump_test | 0:00:03  | 3468 bytes | FULL |     AT    | SUCCEEDED |
+   | 000000028 |       | 000000006  | 2014-05-28 09:01:05+00:00 |  1  | pg-backup01.example.net | 1  | pgbackmandb.example.net | dump_test | 0:00:03  | 2850 bytes | FULL |     AT    | SUCCEEDED |
+   | 000000026 |       | 000000005  | 2014-05-28 08:51:43+00:00 |  1  | pg-backup01.example.net | 1  | pgbackmandb.example.net | dump_test | 0:00:02  | 3305 bytes | FULL |     AT    | SUCCEEDED |
+   | 000000025 |       | 000000002  | 2014-05-28 08:47:03+00:00 |  1  | pg-backup01.example.net | 1  | pgbackmandb.example.net | dump_test | 0:00:02  | 3468 bytes | FULL |     AT    | SUCCEEDED |
+   | 000000024 |       | 000000001  | 2014-05-28 08:41:09+00:00 |  1  | pg-backup01.example.net | 1  | pgbackmandb.example.net |   test02  | 0:00:03  | 3524 bytes | FULL |     AT    | SUCCEEDED |
+   | 000000023 |       | 000000001  | 2014-05-28 08:40:06+00:00 |  1  | pg-backup01.example.net | 1  | pgbackmandb.example.net |   test02  | 0:00:00  | 0 bytes    | FULL |     AT    |   ERROR   |
+   +-----------+-------+------------+---------------------------+-----+-------------------------+----+-------------------------+-----------+----------+------------+------+-----------+-----------+
+
+::
+   
    [pgbackman]$ show_backup_catalog all all "dump_test,test02" all
    --------------------------------------------------------
    # SrvID / FQDN: all
@@ -1133,34 +1154,17 @@ This command can be run with or without parameters. e.g.:
    # DBname: dump_test,test02
    # DefID: all
    --------------------------------------------------------
-   +-----------+-----------+-----------+ .... +-----------+----------+------------+------+-----------+-----------+
-   |   BckID   |   DefID   |SnapshotID | .... |   DBname  | Duration | Size       | Code | Execution |   Status  |
-   +-----------+-----------+-----------+ .... +-----------+----------+------------+------+-----------+-----------+
-   | 000000029 | 000000003 |           | .... | dump_test | 0:00:02  | 2850 bytes | FULL |    CRON   | SUCCEEDED |
-   | 000000028 |           | 00000006  | .... | dump_test | 0:00:03  | 2850 bytes | FULL |     AT    | SUCCEEDED |
-   | 000000027 |           | 00000007  | .... | dump_test | 0:00:03  | 3468 bytes | FULL |     AT    | SUCCEEDED |
-   | 000000026 |           | 00000005  | .... | dump_test | 0:00:02  | 3305 bytes | FULL |     AT    | SUCCEEDED |
-   | 000000025 |           | 00000002  | .... |   test02  | 0:00:02  | 3468 bytes | FULL |     AT    | SUCCEEDED |
-   +-----------+-----------+-----------+ .... +-----------+----------+------------+------+-----------+-----------+
-
-::
-
-   [pgbackman]$ show_backup_catalog
-   --------------------------------------------------------
-   # SrvID / FQDN [all]: 
-   # NodeID / FQDN [all]: 
-   # DBname [all]: dump_test, test02
-   # DefID [all]: 
-   --------------------------------------------------------
-   +-----------+-----------+-----------+ .... +-----------+----------+------------+------+-----------+-----------+
-   |   BckID   |   DefID   |SnapshotID | .... |   DBname  | Duration | Size       | Code | Execution |   Status  |
-   +-----------+-----------+-----------+ .... +-----------+----------+------------+------+-----------+-----------+
-   | 000000029 | 000000003 |           | .... | dump_test | 0:00:02  | 2850 bytes | FULL |    CRON   | SUCCEEDED |
-   | 000000028 |           | 00000006  | .... | dump_test | 0:00:03  | 2850 bytes | FULL |     AT    | SUCCEEDED |
-   | 000000027 |           | 00000007  | .... | dump_test | 0:00:03  | 3468 bytes | FULL |     AT    | SUCCEEDED |
-   | 000000026 |           | 00000005  | .... | dump_test | 0:00:02  | 3305 bytes | FULL |     AT    | SUCCEEDED |
-   | 000000025 |           | 00000002  | .... |   test02  | 0:00:02  | 3468 bytes | FULL |     AT    | SUCCEEDED |
-   +-----------+-----------+-----------+ .... +-----------+----------+------------+------+-----------+-----------+
+   +-----------+-------+------------+---------------------------+-----+-------------------------+----+-------------------------+-----------+----------+------------+------+-----------+-----------+
+   |   BckID   | DefID | SnapshotID | Finished                  | ID. | Backup server           | ID | PgSQL node              | DBname    | Duration | Size       | Code | Execution |   Status  |
+   +-----------+-------+------------+---------------------------+-----+-------------------------+----+-------------------------+-----------+----------+------------+------+-----------+-----------+
+   | 000000029 |       | 000000006  | 2014-05-28 09:08:20+00:00 |  1  | pg-backup01.example.net | 1  | pgbackmandb.example.net | dump_test | 0:00:02  | 2850 bytes | FULL |     AT    | SUCCEEDED |
+   | 000000028 |       | 000000006  | 2014-05-28 09:01:05+00:00 |  1  | pg-backup01.example.net | 1  | pgbackmandb.example.net | dump_test | 0:00:03  | 2850 bytes | FULL |     AT    | SUCCEEDED |
+   | 000000027 |       | 000000007  | 2014-05-28 09:01:05+00:00 |  1  | pg-backup01.example.net | 1  | pgbackmandb.example.net | dump_test | 0:00:03  | 3468 bytes | FULL |     AT    | SUCCEEDED |
+   | 000000026 |       | 000000005  | 2014-05-28 08:51:43+00:00 |  1  | pg-backup01.example.net | 1  | pgbackmandb.example.net | dump_test | 0:00:02  | 3305 bytes | FULL |     AT    | SUCCEEDED |
+   | 000000025 |       | 000000002  | 2014-05-28 08:47:03+00:00 |  1  | pg-backup01.example.net | 1  | pgbackmandb.example.net | dump_test | 0:00:02  | 3468 bytes | FULL |     AT    | SUCCEEDED |
+   | 000000024 |       | 000000001  | 2014-05-28 08:41:09+00:00 |  1  | pg-backup01.example.net | 1  | pgbackmandb.example.net |   test02  | 0:00:03  | 3524 bytes | FULL |     AT    | SUCCEEDED |
+   | 000000023 |       | 000000001  | 2014-05-28 08:40:06+00:00 |  1  | pg-backup01.example.net | 1  | pgbackmandb.example.net |   test02  | 0:00:00  | 0 bytes    | FULL |     AT    |   ERROR   |
+   +-----------+-------+------------+---------------------------+-----+-------------------------+----+-------------------------+-----------+----------+------------+------+-----------+-----------+
 
 
 show_backup_definitions
@@ -1197,13 +1201,13 @@ This command can be run with or without parameters. e.g.:
    # NodeID / FQDN: all
    # DBname: pgbackman
    --------------------------------------------------------
-   +-------------+ .... +----+-----------------------+-----------+-------------+--------+------------+--------+-----------+
-   |    DefID    | .... | ID | PgSQL node            | DBname    | Schedule    | Code   | Retention  | Status | Parameters|
-   +-------------+ .... +----+-----------------------+-----------+-------------+--------+------------+--------+-----------+
-   | 00000000011 | .... | 1  | pg-node01.example.net | pgbackman | 21 02 1 * * | FULL   | 7 days (1) | ACTIVE | --inserts |
-   | 00000000012 | .... | 1  | pg-node01.example.net | pgbackman | 41 01 * * * | FULL   | 7 days (1) | ACTIVE |           |
-   | 00000000013 | .... | 1  | pg-node01.example.net | pgbackman | 41 01 * * * | SCHEMA | 7 days (1) | ACTIVE |           |
-   +-------------+ .... +----+-----------------------+-----------+-------------+--------+------------+--------+-----------+
+   +-------------+-----+-------------------------+----+-------------------------+-----------+-------------+--------+------------+--------+------------+
+   |    DefID    | ID. | Backup server           | ID | PgSQL node              | DBname    | Schedule    | Code   | Retention  | Status | Parameters |
+   +-------------+-----+-------------------------+----+-------------------------+-----------+-------------+--------+------------+--------+------------+
+   | 00000000012 |  1  | pg-backup01.example.net | 1  | pgbackmandb.example.net | pgbackman | 41 01 * * * | FULL   | 7 days (1) | ACTIVE |            |
+   | 00000000011 |  1  | pg-backup01.example.net | 1  | pgbackmandb.example.net | pgbackman | * * * * *   | FULL   | 7 days (1) | ACTIVE | --inserts  |
+   | 00000000013 |  1  | pg-backup01.example.net | 1  | pgbackmandb.example.net | pgbackman | 41 01 * * * | SCHEMA | 7 days (1) | ACTIVE |            |
+   +-------------+-----+-------------------------+----+-------------------------+-----------+-------------+--------+------------+--------+------------+
 
 ::
    
@@ -1211,21 +1215,78 @@ This command can be run with or without parameters. e.g.:
    --------------------------------------------------------
    # SrvID / FQDN [all]: 
    # NodeID / FQDN [all]: 
-   # DBname [all]: pgbackman 
+   # DBname [all]: pgbackman
    --------------------------------------------------------
-   +-------------+ .... +----+-----------------------+-----------+-------------+--------+------------+--------+-----------+
-   |    DefID    | .... | ID | PgSQL node            | DBname    | Schedule    | Code   | Retention  | Status | Parameters|
-   +-------------+ .... +----+-----------------------+-----------+-------------+--------+------------+--------+-----------+
-   | 00000000011 | .... | 1  | pg-node01.example.net | pgbackman | 21 02 1 * * | FULL   | 7 days (1) | ACTIVE | --inserts |
-   | 00000000012 | .... | 1  | pg-node01.example.net | pgbackman | 41 01 * * * | FULL   | 7 days (1) | ACTIVE |           |
-   | 00000000013 | .... | 1  | pg-node01.example.net | pgbackman | 41 01 * * * | SCHEMA | 7 days (1) | ACTIVE |           |
-   +-------------+ .... +----+-----------------------+-----------+-------------+--------+------------+--------+-----------+
-
-
+   +-------------+-----+-------------------------+----+-------------------------+-----------+-------------+--------+------------+--------+------------+
+   |    DefID    | ID. | Backup server           | ID | PgSQL node              | DBname    | Schedule    | Code   | Retention  | Status | Parameters |
+   +-------------+-----+-------------------------+----+-------------------------+-----------+-------------+--------+------------+--------+------------+
+   | 00000000012 |  1  | pg-backup01.example.net | 1  | pgbackmandb.example.net | pgbackman | 41 01 * * * | FULL   | 7 days (1) | ACTIVE |            |
+   | 00000000011 |  1  | pg-backup01.example.net | 1  | pgbackmandb.example.net | pgbackman | * * * * *   | FULL   | 7 days (1) | ACTIVE | --inserts  |
+   | 00000000013 |  1  | pg-backup01.example.net | 1  | pgbackmandb.example.net | pgbackman | 41 01 * * * | SCHEMA | 7 days (1) | ACTIVE |            |
+   +-------------+-----+-------------------------+----+-------------------------+-----------+-------------+--------+------------+--------+------------+
 
 
 show_backup_details
 -------------------
+
+This command shows all the details for one particular backup job.
+
+::
+
+   show_backup_details [BckID]
+
+Parameters:
+
+* **[BckID]:** Backup ID
+
+This command can be run with or without parameters. e.g.:
+
+::
+
+   [pgbackman]$ show_backup_details 25
+   --------------------------------------------------------
+   # BckID: 25
+   --------------------------------------------------------
+   +--------------------------+--------------------------------------------------------------------------------------------------------------------------------+
+   |                   BckID: | 000000000025                                                                                                                   |
+   |                 ProcPID: | 2067                                                                                                                           |
+   |              Registered: | 2014-05-28 08:47:03+00:00                                                                                                      |
+   |                          |                                                                                                                                |
+   |                 Started: | 2014-05-28 08:47:00+00:00                                                                                                      |
+   |                Finished: | 2014-05-28 08:47:03+00:00                                                                                                      |
+   |                Duration: | 0:00:02                                                                                                                        |
+   |              Total size: | 3468 bytes                                                                                                                     |
+   |        Execution method: | AT                                                                                                                             |
+   |        Execution status: | SUCCEEDED                                                                                                                      |
+   |                          |                                                                                                                                |
+   |                   DefID: |                                                                                                                                |
+   |              SnapshotID: | 00000002                                                                                                                       |
+   |                  DBname: | dump_test                                                                                                                      |
+   | Backup server (ID/FQDN): | [1] / pg-backup01.example.net                                                                                                  |
+   |    PgSQL node (ID/FQDN): | [1] / pgbackmandb.example.net                                                                                                  |
+   |     Pg_dump/all release: | 9.3                                                                                                                            |
+   |                          |                                                                                                                                |
+   |                Schedule: |  [min hour day_month month weekday]                                                                                            |
+   |                 AT time: | 201405280847                                                                                                                   |
+   |               Retention: | 7 days                                                                                                                         |
+   |             Backup code: | FULL                                                                                                                           |
+   |        Extra parameters: | --inserts                                                                                                                      |
+   |                          |                                                                                                                                |
+   |            DB dump file: | /srv/pgbackman/pgsql_node_1/dump/dump_test-pgbackmandb.example.net-v9_3-snapid2-cFULL20140528T084700-DATABASE.sql (2363 bytes) |
+   |             DB log file: | /srv/pgbackman/pgsql_node_1/log/dump_test-pgbackmandb.example.net-v9_3-snapid2-cFULL20140528T084700-DATABASE.log               |
+   |                          |                                                                                                                                |
+   |               Role list: | test_rw,postgres,test_ro                                                                                                       |
+   |                          |                                                                                                                                |
+   |      DB roles dump file: | /srv/pgbackman/pgsql_node_1/dump/dump_test-pgbackmandb.example.net-v9_3-snapid2-cFULL20140528T084700-USERS.sql (533 bytes)     |
+   |       DB roles log file: | /srv/pgbackman/pgsql_node_1/log/dump_test-pgbackmandb.example.net-v9_3-snapid2-cFULL20140528T084700-USERS.log                  |
+   |                          |                                                                                                                                |
+   |     DB config dump file: | /srv/pgbackman/pgsql_node_1/dump/dump_test-pgbackmandb.example.net-v9_3-snapid2-cFULL20140528T084700-DBCONFIG.sql (572 bytes)  |
+   |      DB config log file: | /srv/pgbackman/pgsql_node_1/log/dump_test-pgbackmandb.example.net-v9_3-snapid2-cFULL20140528T084700-DBCONFIG.log               |
+   |                          |                                                                                                                                |
+   |           On disk until: | 2014-06-04 08:47:03+00:00                                                                                                      |
+   |           Error message: |                                                                                                                                |
+   +--------------------------+--------------------------------------------------------------------------------------------------------------------------------+
+
 
 show_backup_server_config
 -------------------------

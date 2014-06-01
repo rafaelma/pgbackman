@@ -123,7 +123,7 @@ body {
 margin: 40px;
 margin-right: auto;
 margin-left: auto;
-width: 1024px;
+width: 880px;
 font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
 font-size: 14px;
 line-height: 20px;
@@ -329,16 +329,17 @@ padding: 9.5px;
 margin: 0 0 10px;
 font-size: 13px;
 line-height: 20px;
-word-break: break-all;
-word-wrap: break-word;
-white-space: pre;
-white-space: pre-wrap;
+#word-break: break-all;
+#word-wrap: break-word;
+#white-space: pre;
+#white-space: pre-wrap;
 background-color: #f5f5f5;
 border: 1px solid #ccc;
 border: 1px solid rgba(0, 0, 0, 0.15);
 -webkit-border-radius: 4px;
 -moz-border-radius: 4px;
 border-radius: 4px;
+overflow: auto;
 }
  
 pre.prettyprint {
