@@ -2891,7 +2891,8 @@ class pgbackman_cli(cmd.Cmd):
     def do_show_empty_backup_catalogs(self,args):
         '''
         DESCRIPTION:
-        Command to get a list with all backup definitions with empty catalogs
+        This command shows a list with all backup definitions with
+        empty catalogs
 
         COMMAND:
         show_empty_backup_catalogs
