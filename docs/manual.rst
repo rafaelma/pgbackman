@@ -1378,6 +1378,25 @@ This command can be run with or without parameters. e.g.:
 show_backup_servers 
 -------------------
 
+This command shows all backup servers registered in PgBackMan.
+
+::
+
+  show_backup_servers
+
+This command can be run only without parameters. e.g.:
+
+::
+
+   [pgbackman]$ show_backup_servers
+   +-------+-------------------------+-------------+
+   | SrvID | FQDN                    | Remarks     |
+   +-------+-------------------------+-------------+
+   | 00001 | pg-backup01.example.net |             |
+   | 00003 | backup02.example.org    | test server |
+   +-------+-------------------------+-------------+
+
+
 show_empty_backup_catalogs
 --------------------------
 
