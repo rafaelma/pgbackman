@@ -2573,6 +2573,10 @@ class pgbackman_cli(cmd.Cmd):
         COMMAND:
         show_backup_server_stats [SrvID | FQDN]
 
+        [SrvID | FQDN]:
+        ---------------
+        SrvID in PgBackMan or FQDN of the backup server 
+
         '''    
 
         try: 
@@ -2594,7 +2598,7 @@ class pgbackman_cli(cmd.Cmd):
                 print '--------------------------------------------------------'
 
             except Exception as e:
-                print '\n[Aborted]\n'
+                print '\n[Aborted] Command interrupted by the user.\n'
                 return False
 
             try:

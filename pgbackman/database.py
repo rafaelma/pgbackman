@@ -1809,7 +1809,7 @@ class pgbackman_db():
                     x.add_row(["Newest backup in catalog:",str(newest_backup_job)])
                     x.add_row(["",""])
                     x.add_row(["Jobs waiting to be processed by pgbackman_control:",str(job_queue_cnt)])
-                    x.add_row(["Forced deletion of backups in catalog waiting to be processed:",str(defid_force_deletion_cnt)])
+                    x.add_row(["Forced deletion of backups waiting to be processed:",str(defid_force_deletion_cnt)])
                     
                     print x
                     print
@@ -1911,7 +1911,7 @@ class pgbackman_db():
                     x.add_row(["Newest backup in catalog:",str(newest_backup_job)])
                     x.add_row(["",""])
                     x.add_row(["Jobs waiting to be processed by pgbackman_control:",str(job_queue_cnt)])
-                    x.add_row(["Forced deletion of backups in catalog waiting to be processed:",str(defid_force_deletion_cnt)])
+                    x.add_row(["Forced deletion of backups waiting to be processed:",str(defid_force_deletion_cnt)])
                     
                     print x
                     print
