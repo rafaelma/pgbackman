@@ -1291,6 +1291,43 @@ This command can be run with or without parameters. e.g.:
 show_backup_server_config
 -------------------------
 
+This command shows the default configuration for a backup server.
+
+::
+
+ show_backup_server_config [SrvID | FQDN]
+
+Parameters:
+
+* **[SrvID | FQDN]:** SrvID in PgBackMan or FQDN of the backup server 
+
+This command can be run with or without parameters. e.g.:
+
+::
+
+   [pgbackman]$ show_backup_server_config
+   --------------------------------------------------------
+   # SrvID / FQDN: 1
+   --------------------------------------------------------
+   +-----------------------+----------------------------+-------------------------------------------+
+   | Parameter             | Value                      | Description                               |
+   +-----------------------+----------------------------+-------------------------------------------+
+   | admin_user            | postgres                   | postgreSQL admin user                     |
+   | backup_server_status  | RUNNING                    | Default backup server status - *Not used* |
+   | domain                | example.org                | Default domain                            |
+   | pgbackman_dump        | /usr/bin/pgbackman_dump    | Program used to take backup dumps         |
+   | pgbackman_restore     | /usr/bin/pgbackman_restore | Program used to restore backup dumps      |
+   | pgsql_bin_9_0         | /usr/pgsql-9.0/bin         | postgreSQL 9.0 bin directory              |
+   | pgsql_bin_9_1         | /usr/pgsql-9.1/bin         | postgreSQL 9.1 bin directory              |
+   | pgsql_bin_9_2         | /usr/pgsql-9.2/bin         | postgreSQL 9.2 bin directory              |
+   | pgsql_bin_9_3         | /usr/pgsql-9.3/bin         | postgreSQL 9.3 bin directory              |
+   | pgsql_bin_9_4         | /usr/pgsql-9.4/bin         | postgreSQL 9.4 bin directory              |
+   | root_backup_partition | /srv/pgbackman             | Main partition used by pgbackman          |
+   | root_cron_file        | /etc/cron.d/pgbackman      | Crontab file used by pgbackman *Not used* |
+   +-----------------------+----------------------------+-------------------------------------------+
+
+
+
 show_backup_server_stats
 ------------------------
 
