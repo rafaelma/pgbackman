@@ -1400,6 +1400,25 @@ This command can be run only without parameters. e.g.:
 show_empty_backup_catalogs
 --------------------------
 
+This command shows a list with all backup definitions with empty
+catalogs.
+
+::
+
+   show_empty_backup_catalogs
+
+This command can be run only without parameters. e.g.:
+
+::
+
+   [pgbackman]$ show_empty_backup_catalogs
+   +-------------+---------------------------+-----+-------------------------+----+-------------------------+-----------+-------------+------+------------+--------+------------+
+   |    DefID    |         Registered        | ID. | Backup server           | ID | PgSQL node              |   DBname  | Schedule    | Code | Retention  | Status | Parameters |
+   +-------------+---------------------------+-----+-------------------------+----+-------------------------+-----------+-------------+------+------------+--------+------------+
+   | 00000000012 | 2014-05-30 07:29:28+00:00 |  1  | pg-backup01.example.net | 1  | pgbackmandb.example.net | pgbackman | 41 01 * * * | FULL | 7 days (1) | ACTIVE |            |
+   +-------------+---------------------------+-----+-------------------------+----+-------------------------+-----------+-------------+------+------------+--------+------------+
+
+
 show_history
 ------------
 
