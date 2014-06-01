@@ -1305,7 +1305,7 @@ This command can be run with or without parameters. e.g.:
 
 ::
 
-   [pgbackman]$ show_backup_server_config
+   [pgbackman]$ show_backup_server_config 1
    --------------------------------------------------------
    # SrvID / FQDN: 1
    --------------------------------------------------------
@@ -1330,6 +1330,50 @@ This command can be run with or without parameters. e.g.:
 
 show_backup_server_stats
 ------------------------
+
+This command shows global statistics for a backup server
+
+::
+
+   show_backup_server_stats [SrvID | FQDN]
+
+Parameters:
+
+* **[SrvID | FQDN]:** SrvID in PgBackMan or FQDN of the backup server 
+
+This command can be run with or without parameters. e.g.:
+
+::
+
+   [pgbackman]$ show_backup_server_stats 1
+   --------------------------------------------------------
+   # SrvID: 1
+   --------------------------------------------------------
+   +-----------------------------------------------------+-----------------------------+
+   |                                      Backup server: | [1] pg-backup01.example.net |
+   |                                                     |                             |
+   |               PgSQL nodes using this backup server: | 1                           |
+   |                                                     |                             |
+   |                                Different databases: | 1                           |
+   |                             Active Backup job defs: | 3                           |
+   |                            Stopped Backup job defs: | 0                           |
+   |                  Backup job defs with CLUSTER code: | 0                           |
+   |                     Backup job defs with DATA code: | 0                           |
+   |                     Backup job defs with FULL code: | 2                           |
+   |                   Backup job defs with SCHEMA code: | 1                           |
+   |                                                     |                             |
+   |                       Succeeded backups in catalog: | 3890                        |
+   |                          Faulty backups in catalog: | 2                           |
+   |                   Total size of backups in catalog: | 1106 MB                     |
+   |           Total running time of backups in catalog: | 5:03:08.108701              |
+   |                           Oldest backup in catalog: | 2014-05-28 08:40:06+00:00   |
+   |                           Newest backup in catalog: | 2014-06-01 19:44:07+00:00   |
+   |                                                     |                             |
+   |  Jobs waiting to be processed by pgbackman_control: | 1                           |
+   | Forced deletion of backups waiting to be processed: | 0                           |
+   +-----------------------------------------------------+-----------------------------+
+
+
 
 show_backup_servers 
 -------------------
