@@ -850,7 +850,7 @@ INSERT INTO job_execution_method (code,description) VALUES ('AT','Job startet by
 \echo '# [Init: backup_server_default_config]\n'
 
 INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('root_backup_partition','/srv/pgbackman','Main partition used by pgbackman');
-INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('root_cron_file','/etc/cron.d/pgbackman','Crontab file used by pgbackman');
+INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('root_cron_file','/etc/cron.d/pgbackman','Crontab file used by pgbackman - *Not used*');
 INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('domain','example.org','Default domain');
 INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('backup_server_status','RUNNING','Default backup server status - *Not used*');
 INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('pgbackman_dump','/usr/bin/pgbackman_dump','Program used to take backup dumps');

@@ -2346,6 +2346,11 @@ class pgbackman_cli(cmd.Cmd):
         COMMAND:
         show_backup_details [BckID]
         
+        [BckID]:
+        --------
+        Backup ID
+
+
         '''
 
         try: 
@@ -2736,11 +2741,15 @@ class pgbackman_cli(cmd.Cmd):
     def do_show_backup_server_config(self,args):
         '''
         DESCRIPTION:
-        This command shows the default configuration 
-        for a backup server
+        This command shows the default configuration for a backup
+        server
 
         COMMAND:
         show_backup_server_config [SrvID | FQDN]
+
+        [SrvID | FQDN]:
+        ---------------
+        SrvID in PgBackMan or FQDN of the backup server 
 
         '''    
         
@@ -2763,7 +2772,7 @@ class pgbackman_cli(cmd.Cmd):
                 print '--------------------------------------------------------'
 
             except Exception as e:
-                print '\n[Aborted]\n'
+                print '\n[Aborted] Command interrupted by the user.\n'
                 return False
 
             try:
