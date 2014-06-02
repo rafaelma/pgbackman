@@ -726,11 +726,16 @@ This command quits/terminates the PgBackMan shell.
 
   quit
 
+A shortcut to this command is ``\q``.
+
 This command can be run only without parameters. e.g.:
 
 ::
 
    [pgbackman]$ quit
+   Done, thank you for using PgBackMan
+
+   [pgbackman]$ \q
    Done, thank you for using PgBackMan
 
 
@@ -1421,6 +1426,35 @@ This command can be run only without parameters. e.g.:
 
 show_history
 ------------
+
+Show the list of commands that have been entered during the PgBackMan
+shell session.
+
+::
+
+   show_history
+
+A shortcut to this command is ``\s``. One can also use the *Emacs
+Line-Edit Mode Command History Searching* to get previous commands
+containing a string. Hit ``[CTRL]+[r]`` in the PgBackMAn shell followed by
+the search string you are trying to find in the history.
+
+This command can be run only without parameters. e.g.:
+
+::
+
+   [pgbackman]$ show_history
+
+   [0]: help
+   [1]: help support
+   [2]: help show_history
+   [3]: shell df -h | grep /srv/pgbackman
+   [4]: show_history
+   [5]: help
+   [6]: show_history
+   [7]: show_backup_servers
+   [8]: show_pgsql_nodes
+
 
 show_jobs_queue
 ---------------
