@@ -3856,8 +3856,8 @@ class pgbackman_cli(cmd.Cmd):
     def do_show_history(self, args):
         '''
         DESCRIPTION: 
-        Show the list of commands that have been entered during the
-        PgBackMan shell session.
+        This command shows the list of commands that have been entered
+        during the PgBackMan shell session.
 
         COMMAND: 
         show_history
