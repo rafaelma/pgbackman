@@ -1883,6 +1883,68 @@ This command can be run with or without parameters. e.g.:
 update_backup_definition
 ------------------------
 
+This command updates the information of a backup definition.
+
+::
+
+   update_backup_definition [DefID]
+                            [min_cron] 
+                            [hour_cron] 
+                            [day-month_cron]
+                            [month_cron]
+                            [weekday_cron]
+                            [retention period] 
+			    [retention redundancy] 
+			    [extra backup parameters] 
+                            [job status] 
+                            [remarks] 
+
+Parameters:
+
+* **[DefID]:** Backup definition ID to update.
+
+* **[\*_cron]:** Schedule definition using the cron expression.
+
+* **[retention period]:** Time interval a backup will be available in
+  the catalog, e.g. 2 hours, 3 days, 1 week, 1 month, 2 years
+
+* **[retention redundancy]:** Minimun number of backups to keep in the
+  catalog regardless of the retention period used. e.g. 1,2,3
+
+* **[extra backup parameters]:** Extra parameters that can be used
+  with pg_dump / pg_dumpall
+
+* **[job status]**
+        
+  * ACTIVE: Backup job activated and in production.
+  * STOPPED: Backup job stopped.
+
+The default value for a parameter is shown between brackets ``[]``. If
+the user does not define any value, the default value will be
+used. This command can be run with or without parameters. e.g.:
+
+::
+
+   [pgbackman]$ update_backup_definition
+   --------------------------------------------------------
+   # DefID []: 12
+   # Minutes cron [41]: 
+   # Hours cron [01]: 
+   # Day-month cron [*]: 
+   # Month cron [*]: 
+   # Weekday cron [*]: 
+   # Retention period [7 days]: 5 days
+   # Retention redundancy [1]: 
+   # Extra backup parameters []: 
+   # Job status [STOPPED]: active
+   # Remarks []: 
+   
+   # Are all values to update correct (yes/no): yes
+   --------------------------------------------------------
+   
+   [Done] Backup definition DefID: 12 updated.
+
+
 update_backup_server
 --------------------
 
