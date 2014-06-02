@@ -3597,6 +3597,34 @@ class pgbackman_cli(cmd.Cmd):
                                  [job status] 
                                  [remarks] 
 
+        [DefID]:
+        --------
+        Backup definition ID to update.
+
+        [*cron]:
+        --------
+        Schedule definition using the cron expression. Check
+        http://en.wikipedia.org/wiki/Cron#CRON_expression for more
+        information.
+
+        [retention period]:
+        -------------------
+        Time interval, e.g. 2 hours, 3 days, 1 week, 1 month, 2 years, ... 
+
+        [retention redundancy]:
+        -----------------------
+        Integer: 1,2,3, .... Minimun number of backups to keep in the catalog
+        regardless of the retention period used.
+
+        [extra backup parameters]:
+        ---------------
+        Extra parameters that can be used with pg_dump / pg_dumpall
+
+        [job status]:
+        -------------
+        ACTIVE: Backup job activated and in production.
+        STOPPED: Backup job stopped.                         
+
         '''    
         
         try: 
@@ -3620,7 +3648,7 @@ class pgbackman_cli(cmd.Cmd):
                 def_id = raw_input('# DefID []: ')
                 
             except Exception as e:
-                print '\n[Aborted]\n',e 
+                print '\n[Aborted] Command interrupted by the user.\n',e 
                 return False
 
             if def_id.isdigit():
@@ -3642,7 +3670,7 @@ class pgbackman_cli(cmd.Cmd):
                     print '\n[ERROR]: Problems getting default values for parameters\n',e 
                     return False
             else:
-                print '\n[ERROR]: DefID has to be an integer\n'
+                print '\n[ERROR]: DefID has to be a digit\n'
                 return False
 
             try:
@@ -3664,7 +3692,7 @@ class pgbackman_cli(cmd.Cmd):
                 print '--------------------------------------------------------'
 
             except Exception as e:
-                print '\n[Aborted]\n',e
+                print '\n[Aborted] Command interrupted by the user.\n',e
                 return False
             
             if minutes_cron == '':
@@ -3702,7 +3730,7 @@ class pgbackman_cli(cmd.Cmd):
                     self.db.update_backup_definition(def_id,minutes_cron,hours_cron,weekday_cron,month_cron,day_month_cron,retention_period,
                                                      retention_redundancy,extra_backup_parameters,job_status.upper(),remarks)
                     
-                    print '\n[Done]\n'
+                    print '\n[Done] Backup definition DefID: ' + str(def_id) + ' updated.\n'
                     
                 except Exception as e:
                     print '\n[ERROR]: Could not update this Backup definition\n',e
@@ -3715,25 +3743,32 @@ class pgbackman_cli(cmd.Cmd):
         #
 
         elif len(arg_list) == 11:
-        
-            try:
-                minutes_cron_default = self.db.get_backup_definition_def_values(def_id,'minutes_cron')
-                hours_cron_default = self.db.get_backup_definition_def_values(def_id,'hours_cron')
-                weekday_cron_default = self.db.get_backup_definition_def_values(def_id,'weekday_cron')
-                month_cron_default = self.db.get_backup_definition_def_values(def_id,'month_cron')
-                day_month_cron_default = self.db.get_backup_definition_def_values(def_id,'day_month_cron')
             
-                retention_period_default = self.db.get_backup_definition_def_values(def_id,'retention_period')
-                retention_redundancy_default = self.db.get_backup_definition_def_values(def_id,'retention_redundancy')
-                extra_backup_parameters_default = self.db.get_backup_definition_def_values(def_id,'extra_backup_parameters')
-                job_status_default = self.db.get_backup_definition_def_values(def_id,'job_status')
-                remarks_default = self.db.get_backup_definition_def_values(def_id,'remarks')
+            def_id = arg_list[0]
+        
+            if def_id.isdigit():
+
+                try:
+                    minutes_cron_default = self.db.get_backup_definition_def_values(def_id,'minutes_cron')
+                    hours_cron_default = self.db.get_backup_definition_def_values(def_id,'hours_cron')
+                    weekday_cron_default = self.db.get_backup_definition_def_values(def_id,'weekday_cron')
+                    month_cron_default = self.db.get_backup_definition_def_values(def_id,'month_cron')
+                    day_month_cron_default = self.db.get_backup_definition_def_values(def_id,'day_month_cron')
+                    
+                    retention_period_default = self.db.get_backup_definition_def_values(def_id,'retention_period')
+                    retention_redundancy_default = self.db.get_backup_definition_def_values(def_id,'retention_redundancy')
+                    extra_backup_parameters_default = self.db.get_backup_definition_def_values(def_id,'extra_backup_parameters')
+                    job_status_default = self.db.get_backup_definition_def_values(def_id,'job_status')
+                    remarks_default = self.db.get_backup_definition_def_values(def_id,'remarks')
                 
-            except Exception as e:
-                print '\n[ERROR]: Problems getting default values for parameters\n',e 
+                except Exception as e:
+                    print '\n[ERROR]: Problems getting default values for parameters\n',e 
+                    return False
+                
+            else:
+                print '\n[ERROR]: DefID has to be a digit.\n'
                 return False
 
-            def_id = arg_list[0]
             minutes_cron = arg_list[1]
             hours_cron = arg_list[2]
             day_month_cron = arg_list[3]
@@ -3779,13 +3814,14 @@ class pgbackman_cli(cmd.Cmd):
                 self.db.update_backup_definition(def_id,minutes_cron,hours_cron,weekday_cron,month_cron,day_month_cron,retention_period,
                                                  retention_redundancy,extra_backup_parameters,job_status.upper(),remarks)
                 
-                print '\n[Done]\n'
-                
+                print '\n[Done] Backup definition DefID: ' + str(def_id) + ' updated.\n'
+ 
             except Exception as e:
                 print '\n[ERROR]: Could not update this Backup definition\n',e
                 
         else:
             print '\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n'
+
 
 
     # ############################################
