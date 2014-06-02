@@ -1860,19 +1860,33 @@ class pgbackman_cli(cmd.Cmd):
     def do_show_snapshot_definitions(self,args):
         '''
         DESCRIPTION:
-        This command shows all one time snapshot backup definitions 
-        with the status information.
+
+        This command shows all snapshot definitions for a particular
+        combination of parameter values.
 
         Status:
         -------
         WAITING: Waiting to define an AT job to run this snapshot 
         DEFINED: AT job for this snapshot has been defined
         ERROR:   Could not define the AT job for this snapshot. 
-                 Is 'at' installed and running?
 
         COMMAND:
-        show_snapshot_definitions [SrvID|FQDN] [NodeID|FQDN] [DBname]
+        show_snapshot_definitions [SrvID|FQDN] 
+                                  [NodeID|FQDN] 
+                                  [DBname]
         
+        [SrvID|FQDN]: 
+        -------------
+        SrvID in PgBackMan or FQDN of the backup server
+    
+        [NodeID|FQDN]: 
+        --------------
+        NodeID in PgBackMan or FQDN of the PgSQL node
+
+        [DBname]: 
+        ---------
+        Database name                       
+
         '''
 
         try: 
@@ -1896,7 +1910,7 @@ class pgbackman_cli(cmd.Cmd):
                 print '--------------------------------------------------------'
 
             except Exception as e:
-                print '\n[Aborted]\n'
+                print '\n[Aborted] Command interrupted by the user.\n'
                 return False
 
             if server_id == '' or server_id == 'all':
@@ -1946,9 +1960,9 @@ class pgbackman_cli(cmd.Cmd):
                 dbname_list = dbname.strip().replace(' ','').split(',')
 
             print '--------------------------------------------------------'
-            print '# SrvID / FQDN: ' + server_id
-            print '# NodeID / FQDN: ' + node_id
-            print '# DBname: ' + dbname
+            print '# SrvID / FQDN: ' + str(server_id)
+            print '# NodeID / FQDN: ' + str(node_id)
+            print '# DBname: ' + str(dbname)
             print '--------------------------------------------------------'
 
             try:
