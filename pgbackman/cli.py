@@ -2472,9 +2472,9 @@ class pgbackman_cli(cmd.Cmd):
     def do_show_pgbackman_config(self,args):
         '''
         DESCRIPTION:
-        This command shows the configuration parameters
-        used by the PgBackMan installation running in 
-        this backup server.
+
+        This command shows the configuration parameters used by this
+        PgBackMan shell session.
 
         COMMAND:
         show_pgbackman_config
