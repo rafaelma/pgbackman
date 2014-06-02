@@ -1567,6 +1567,50 @@ This command can be run only without parameters. e.g.:
 show_pgsql_node_config
 ----------------------
 
+This command shows the default configuration for a PgSQL node.
+
+::
+
+   show_pgsql_node_config [NodeID | FQDN]
+
+Parameters:
+
+* **[NodeID|FQDN]:** NodeID in PgBackMan or FQDN of the PgSQL node
+
+This command can be run with or without parameters. e.g.:
+
+::
+
+   [pgbackman]$ show_pgsql_node_config 1
+   --------------------------------------------------------
+   # NodeID / FQDN: 1
+   --------------------------------------------------------
+   +--------------------------+-----------------------------+------------------------------------------------------+
+   | Parameter                | Value                       | Description                                          |
+   +--------------------------+-----------------------------+------------------------------------------------------+
+   | admin_user               | postgres                    | postgreSQL admin user                                |
+   | backup_code              | FULL                        | Backup job code                                      |
+   | backup_day_month_cron    | *                           | Backup day_month cron default                        |
+   | backup_hours_interval    | 01-06                       | Backup hours interval                                |
+   | backup_job_status        | ACTIVE                      | Backup job status                                    |
+   | backup_minutes_interval  | 01-59                       | Backup minutes interval                              |
+   | backup_month_cron        | *                           | Backup month cron default                            |
+   | backup_weekday_cron      | *                           | Backup weekday cron default                          |
+   | domain                   | example.org                 | Default domain                                       |
+   | encryption               | false                       | GnuPG encryption - *Not used*                        |
+   | extra_backup_parameters  |                             | Extra backup parameters                              |
+   | extra_restore_parameters |                             | Extra restore parameters                             |
+   | logs_email               | example@example.org         | E-mail to send logs                                  |
+   | pgnode_backup_partition  | /srv/pgbackman/pgsql_node_1 | Partition to save pgbackman information for a pgnode |
+   | pgnode_crontab_file      | /etc/cron.d/pgsql_node_1    | Crontab file for pgnode in the backup server         |
+   | pgport                   | 5432                        | postgreSQL port                                      |
+   | pgsql_node_status        | STOPPED                     | pgsql node status                                    |
+   | retention_period         | 7 days                      | Retention period for a backup job                    |
+   | retention_redundancy     | 1                           | Retention redundancy for a backup job                |
+   +--------------------------+-----------------------------+------------------------------------------------------+
+
+
+
 show_pgsql_node_stats
 ---------------------
 
