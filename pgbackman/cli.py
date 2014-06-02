@@ -2646,6 +2646,10 @@ class pgbackman_cli(cmd.Cmd):
         COMMAND:
         show_pgsql_node_stats [NodeID | FQDN]
 
+        [NodeID|FQDN]:
+        --------------
+        NodeID in PgBackMan or FQDN of the PgSQL node
+
         '''    
 
         try: 
@@ -2667,7 +2671,7 @@ class pgbackman_cli(cmd.Cmd):
                 print '--------------------------------------------------------'
 
             except Exception as e:
-                print '\n[Aborted]\n'
+                print '\n[Aborted] Command interrupted by the user.\n'
                 return False
 
             try:
@@ -2688,7 +2692,7 @@ class pgbackman_cli(cmd.Cmd):
             node_id = arg_list[0]
 
             print '--------------------------------------------------------'
-            print '# NodeID: ' + node_id
+            print '# NodeID: ' + str(node_id)
             print '--------------------------------------------------------'
             
             try:
