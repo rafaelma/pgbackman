@@ -1513,10 +1513,25 @@ class pgbackman_cli(cmd.Cmd):
         '''
         DESCRIPTION:
         This command shows all restore catalog entries for a particular 
-        combination of search values.
+        combination of parameters values.
 
         COMMAND:
-        show_restore_catalog [SrvID|FQDN] [NodeID|FQDN] [DBname]
+        show_restore_catalog [SrvID|FQDN] 
+                             [NodeID|FQDN] 
+                             [DBname]
+
+
+        [SrvID|FQDN]: 
+        -------------
+        SrvID in PgBackMan or FQDN of the backup server
+    
+        [NodeID|FQDN]: 
+        --------------
+        NodeID in PgBackMan or FQDN of the PgSQL node
+
+        [DBname]: 
+        ---------
+        Database name
         
         '''
 
@@ -1541,7 +1556,7 @@ class pgbackman_cli(cmd.Cmd):
                 print '--------------------------------------------------------'
 
             except Exception as e:
-                print '\n[Aborted]\n'
+                print '\n[Aborted] Command interrupted by the user.\n'
                 return False
 
             if server_id == '' or server_id == 'all':
