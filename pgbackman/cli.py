@@ -2254,7 +2254,19 @@ class pgbackman_cli(cmd.Cmd):
         show_restore_definitions [SrvID|FQDN] 
                                  [NodeID|FQDN] 
                                  [DBname]
-        
+                                 
+        [SrvID|FQDN]: 
+        -------------
+        SrvID in PgBackMan or FQDN of the backup server
+    
+        [NodeID|FQDN]: 
+        --------------
+        NodeID in PgBackMan or FQDN of the PgSQL node
+
+        [DBname]: 
+        ---------
+        Database name                       
+
         '''
 
         try: 
@@ -2362,8 +2374,7 @@ class pgbackman_cli(cmd.Cmd):
         
         [BckID]:
         --------
-        Backup ID
-
+        Backup ID in the backup catalog.
 
         '''
 
@@ -2389,11 +2400,15 @@ class pgbackman_cli(cmd.Cmd):
                 print '\n[Aborted] Command interrupted by the user.\n'
                 return False 
 
-            try:
-                self.db.show_backup_details(bck_id)
-                
-            except Exception as e:
-                print '\n[ERROR]: ',e     
+            if bck_id.isdigit():
+                try:
+                    self.db.show_backup_details(bck_id)
+                    
+                except Exception as e:
+                    print '\n[ERROR]: ',e
+                    
+            else:
+                print '\n[ERROR]: The BckID must be a digit.\n'
                 
         #
         # Command with parameters
@@ -2407,12 +2422,16 @@ class pgbackman_cli(cmd.Cmd):
             print '# BckID: ' + str(bck_id)
             print '--------------------------------------------------------'
             
-            try:
-                self.db.show_backup_details(bck_id)
+            if bck_id.isdigit():
+                try:
+                    self.db.show_backup_details(bck_id)
+                    
+                except Exception as e:
+                    print '\n[ERROR]: ',e     
             
-            except Exception as e:
-                print '\n[ERROR]: ',e     
-                
+            else:
+                print '\n[ERROR]: The BckID must be a digit.\n'
+
         else:
             print '\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n'
         
@@ -2424,11 +2443,16 @@ class pgbackman_cli(cmd.Cmd):
     def do_show_restore_details(self,args):
         '''
         DESCRIPTION:
-        This command shows all the details for one particular restore job.
+        This command shows all the details for one particular restore
+        job.
 
         COMMAND:
         show_restore_details [RestoreID]
         
+        [RestoreID]:
+        ------------
+        Restore ID in the restore catalog.
+
         '''
 
         try: 
@@ -2450,14 +2474,18 @@ class pgbackman_cli(cmd.Cmd):
                 print '--------------------------------------------------------'
             
             except Exception as e:
-                print '\n[Aborted]\n'
+                print '\n[Aborted] Command interrupted by the user.\n'
                 return False
 
-            try:
-                self.db.show_restore_details(restore_id)
-                
-            except Exception as e:
-                print '\n[ERROR]: ',e     
+            if restore_id.isdigit():
+                try:
+                    self.db.show_restore_details(restore_id)
+                    
+                except Exception as e:
+                    print '\n[ERROR]: ',e
+            
+            else:
+                print '\n[ERROR]: The restoreID must be a digit.\n'
                 
         #
         # Command with parameters
@@ -2471,12 +2499,16 @@ class pgbackman_cli(cmd.Cmd):
             print '# RestoreID: ' + str(restore_id)
             print '--------------------------------------------------------'
             
-            try:
-                self.db.show_restore_details(restore_id)
+            if restore_id.isdigit():
+                try:
+                    self.db.show_restore_details(restore_id)
             
-            except Exception as e:
-                print '\n[ERROR]: ',e     
-                
+                except Exception as e:
+                    print '\n[ERROR]: ',e     
+        
+            else:
+                print '\n[ERROR]: The restoreID must be a digit.\n'
+
         else:
             print '\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n'
         
