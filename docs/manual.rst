@@ -1526,6 +1526,44 @@ This command can be run only without parameters. e.g.:
 show_pgbackman_stats 
 --------------------
 
+This command shows global statistics for this PgBackMan installation.
+
+::
+
+   show_pgbackman_stats
+
+This command can be run only without parameters. e.g.:
+
+::
+
+   [pgbackman]$ show_pgbackman_stats
+   +-----------------------------------------------------+---------------------------+
+   |                             Running Backup servers: | 5                         |
+   |                             Stopped Backup servers: | 0                         |
+   |                                                     |                           |
+   |                                Running PgSQL nodes: | 5                         |
+   |                                Stopped PgSQL nodes: | 2                         |
+   |                                                     |                           |
+   |                                Different databases: | 1                         |
+   |                             Active Backup job defs: | 3                         |
+   |                            Stopped Backup job defs: | 0                         |
+   |                  Backup job defs with CLUSTER code: | 0                         |
+   |                     Backup job defs with DATA code: | 0                         |
+   |                     Backup job defs with FULL code: | 2                         |
+   |                   Backup job defs with SCHEMA code: | 1                         |
+   |                                                     |                           |
+   |                       Succeeded backups in catalog: | 4509                      |
+   |                          Faulty backups in catalog: | 2                         |
+   |                   Total size of backups in catalog: | 1363 MB                   |
+   |           Total running time of backups in catalog: | 5:54:33.693734            |
+   |                           Oldest backup in catalog: | 2014-05-28 08:40:06+00:00 |
+   |                           Newest backup in catalog: | 2014-06-02 07:38:07+00:00 |
+   |                                                     |                           |
+   |  Jobs waiting to be processed by pgbackman_control: | 1                         |
+   | Forced deletion of backups waiting to be processed: | 0                         |
+   +-----------------------------------------------------+---------------------------+
+
+
 show_pgsql_node_config
 ----------------------
 
