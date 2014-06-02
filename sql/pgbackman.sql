@@ -1663,7 +1663,7 @@ ALTER FUNCTION update_pgsql_node(INTEGER,INTEGER,TEXT,TEXT,TEXT) OWNER TO pgback
 --
 -- ------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION update_pgsql_node_config(INTEGER,TEXT,TEXT,TEXT,TEXT,TEXT,TEXT,INTERVAL,INTEGER,TEXT,TEXT,TEXT,TEXT,TEXT,INTEGER,TEXT,TEXT,TEXT) RETURNS VOID
+CREATE OR REPLACE FUNCTION update_pgsql_node_config(INTEGER,TEXT,TEXT,TEXT,TEXT,TEXT,TEXT,INTERVAL,INTEGER,TEXT,TEXT;TEXT,TEXT,TEXT,TEXT,INTEGER,TEXT,TEXT,TEXT) RETURNS VOID
  LANGUAGE plpgsql 
  SECURITY INVOKER 
  SET search_path = public, pg_temp
@@ -1679,14 +1679,15 @@ CREATE OR REPLACE FUNCTION update_pgsql_node_config(INTEGER,TEXT,TEXT,TEXT,TEXT,
   retention_period_ ALIAS FOR $8;
   retention_redundancy_ ALIAS FOR $9;
   extra_backup_parameters_ ALIAS FOR $10;
-  backup_job_status_ ALIAS FOR $11;
-  domain_ ALIAS FOR $12;
-  logs_email_ ALIAS FOR $13;
-  admin_user_ ALIAS FOR $14;
-  pgport_ ALIAS FOR $15;
-  pgnode_backup_partition_ ALIAS FOR $16;
-  pgnode_crontab_file_ ALIAS FOR $17;
-  pgsql_node_status_ ALIAS FOR $18;
+  extra_restore_parameters_ ALIAS FOR $11;
+  backup_job_status_ ALIAS FOR $12;
+  domain_ ALIAS FOR $13;
+  logs_email_ ALIAS FOR $14;
+  admin_user_ ALIAS FOR $15;
+  pgport_ ALIAS FOR $16;
+  pgnode_backup_partition_ ALIAS FOR $17;
+  pgnode_crontab_file_ ALIAS FOR $18;
+  pgsql_node_status_ ALIAS FOR $19;
 
   node_cnt INTEGER;
   v_msg     TEXT;
@@ -1734,6 +1735,10 @@ CREATE OR REPLACE FUNCTION update_pgsql_node_config(INTEGER,TEXT,TEXT,TEXT,TEXT,
      USING pgsql_node_id_,
      	   extra_backup_parameters_;
 
+    EXECUTE 'UPDATE pgsql_node_config SET value = $2 WHERE node_id = $1 AND parameter = ''extra_restore_parameters'''
+     USING pgsql_node_id_,
+     	   extra_restore_parameters_;
+
     EXECUTE 'UPDATE pgsql_node_config SET value = $2 WHERE node_id = $1 AND parameter = ''backup_job_status'''
      USING pgsql_node_id_,
      	   backup_job_status_;
@@ -1779,7 +1784,7 @@ CREATE OR REPLACE FUNCTION update_pgsql_node_config(INTEGER,TEXT,TEXT,TEXT,TEXT,
   END;
 $$;
 
-ALTER FUNCTION update_pgsql_node_config(INTEGER,TEXT,TEXT,TEXT,TEXT,TEXT,TEXT,INTERVAL,INTEGER,TEXT,TEXT,TEXT,TEXT,TEXT,INTEGER,TEXT,TEXT,TEXT) OWNER TO pgbackman_role_rw;
+ALTER FUNCTION update_pgsql_node_config(INTEGER,TEXT,TEXT,TEXT,TEXT,TEXT,TEXT,INTERVAL,INTEGER,TEXT,TEXT,TEXT,TEXT,TEXT,TEXT,INTEGER,TEXT,TEXT,TEXT) OWNER TO pgbackman_role_rw;
 
 -- ------------------------------------------------------------
 -- Function: register_backup_definition()
@@ -2542,6 +2547,95 @@ CREATE OR REPLACE FUNCTION get_backup_definition_def_values(INTEGER,TEXT) RETURN
 $$;
 
 ALTER FUNCTION get_backup_definition_def_values(INTEGER,TEXT) OWNER TO pgbackman_role_rw;
+
+
+-- ------------------------------------------------------------
+-- Function: get_pgsql_node_default_config_value()
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION get_pgsql_node_default_config_value(INTEGER,TEXT) RETURNS TEXT 
+ LANGUAGE plpgsql 
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ DECLARE
+ pgsql_node_id_ ALIAS FOR $1;
+ parameter_ ALIAS FOR $2; 
+ value_ TEXT := '';
+
+ pgsql_node_id_cnt INTEGER;
+
+ BEGIN
+
+  SELECT count(*) FROM pgsql_node WHERE node_id = pgsql_node_id_ INTO pgsql_node_id_cnt;
+
+  IF pgsql_node_id_cnt = 0 THEN
+    RAISE EXCEPTION 'NodeID: % does not exist in the system',pgsql_node_id_;
+  END IF;
+
+  IF parameter_ = 'backup_minutes_interval' THEN
+   SELECT value FROM pgsql_node_config WHERE node_id = pgsql_node_id_ AND parameter = 'backup_minutes_interval' INTO value_;
+ 
+  ELSIF parameter_ = 'backup_hours_interval' THEN
+   SELECT value FROM pgsql_node_config WHERE node_id = pgsql_node_id_ AND parameter = 'backup_hours_interval' INTO value_;
+
+  ELSIF parameter_ = 'backup_day_month_cron' THEN
+   SELECT value FROM pgsql_node_config WHERE node_id = pgsql_node_id_ AND parameter = 'backup_day_month_cron' INTO value_;
+
+  ELSIF parameter_ = 'backup_month_cron' THEN
+   SELECT value FROM pgsql_node_config WHERE node_id = pgsql_node_id_ AND parameter = 'backup_month_cron' INTO value_;
+
+  ELSIF parameter_ = 'backup_weekday_cron' THEN
+   SELECT value FROM pgsql_node_config WHERE node_id = pgsql_node_id_ AND parameter = 'backup_weekday_cron' INTO value_;
+
+  ELSIF parameter_ = 'backup_code' THEN
+   SELECT value FROM pgsql_node_config WHERE node_id = pgsql_node_id_ AND parameter = 'backup_code' INTO value_;
+
+  ELSIF parameter_ = 'retention_period' THEN
+   SELECT value FROM pgsql_node_config WHERE node_id = pgsql_node_id_ AND parameter = 'retention_period' INTO value_;
+
+  ELSIF parameter_ = 'retention_redundancy' THEN
+   SELECT value FROM pgsql_node_config WHERE node_id = pgsql_node_id_ AND parameter = 'retention_redundancy' INTO value_;
+
+  ELSIF parameter_ = 'extra_backup_parameters' THEN
+   SELECT value FROM pgsql_node_config WHERE node_id = pgsql_node_id_ AND parameter = 'extra_backup_parameters' INTO value_;
+
+  ELSIF parameter_ = 'extra_restore_parameters' THEN
+   SELECT value FROM pgsql_node_config WHERE node_id = pgsql_node_id_ AND parameter = 'extra_restore_parameters' INTO value_;
+
+  ELSIF parameter_ = 'backup_job_status' THEN
+   SELECT value FROM pgsql_node_config WHERE node_id = pgsql_node_id_ AND parameter = 'backup_job_status' INTO value_;
+
+  ELSIF parameter_ = 'domain' THEN
+   SELECT value FROM pgsql_node_config WHERE node_id = pgsql_node_id_ AND parameter = 'domain' INTO value_;
+
+  ELSIF parameter_ = 'logs_email' THEN
+   SELECT value FROM pgsql_node_config WHERE node_id = pgsql_node_id_ AND parameter = 'logs_email' INTO value_;
+
+  ELSIF parameter_ = 'admin_user' THEN
+   SELECT value FROM pgsql_node_config WHERE node_id = pgsql_node_id_ AND parameter = 'admin_user' INTO value_;
+
+  ELSIF parameter_ = 'pgport' THEN
+   SELECT value FROM pgsql_node_config WHERE node_id = pgsql_node_id_ AND parameter = 'pgport' INTO value_;
+
+  ELSIF parameter_ = 'pgnode_backup_partition' THEN
+   SELECT value FROM pgsql_node_config WHERE node_id = pgsql_node_id_ AND parameter = 'pgnode_backup_partition' INTO value_;
+
+  ELSIF parameter_ = 'pgnode_crontab_file' THEN
+   SELECT value FROM pgsql_node_config WHERE node_id = pgsql_node_id_ AND parameter = 'pgnode_crontab_file' INTO value_;
+
+  ELSIF parameter_ = 'pgsql_node_status' THEN
+   SELECT value FROM pgsql_node_config WHERE node_id = pgsql_node_id_ AND parameter = 'pgsql_node_status' INTO value_;
+
+  ELSE
+     RAISE EXCEPTION 'Problems getting the value of NodeID: % - parameter: %',pgsql_node_id_,parameter_;
+  END IF;
+
+  RETURN value_;
+ END;
+$$;
+
+ALTER FUNCTION get_pgsql_node_default_config_value(INTEGER,TEXT) OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------------

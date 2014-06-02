@@ -346,7 +346,12 @@ class pgbackman_cli(cmd.Cmd):
         This command registers a PgSQL node in PgBackMan.
 
         COMMAND:
-        register_pgsql_node [hostname] [domain] [pgport] [admin_user] [status] [remarks]
+        register_pgsql_node [hostname] 
+                            [domain] 
+                            [pgport] 
+                            [admin_user] 
+                            [status] 
+                            [remarks]
 
         [hostname]:
         -----------
@@ -2993,10 +2998,11 @@ class pgbackman_cli(cmd.Cmd):
     def do_update_backup_server(self,args):
         '''
         DESCRIPTION:
-        This command updates the information of a backup server
+        This command updates the information of a backup server.
 
         COMMAND:
-        update_backup_server [SrvID | FQDN] [remarks]
+        update_backup_server [SrvID | FQDN] 
+                             [remarks]
 
         '''    
         
@@ -3027,7 +3033,7 @@ class pgbackman_cli(cmd.Cmd):
                 print '--------------------------------------------------------'
 
             except Exception as e:
-                print '\n[Aborted]\n'
+                print '\n[Aborted] Command interrupted by the user.\n'
                 return False
 
             try:
@@ -3043,7 +3049,7 @@ class pgbackman_cli(cmd.Cmd):
             if ack.lower() == 'yes':
                 try:
                     self.db.update_backup_server(backup_server_id,remarks.strip())
-                    print '\n[Done]\n'
+                    print '\n[Done] Backup server with SrvID: ' + str(backup_server_id) + ' updated.\n'
 
                 except Exception as e:
                     print '\n[ERROR]: Could not update this backup server\n',e
@@ -3072,7 +3078,7 @@ class pgbackman_cli(cmd.Cmd):
 
             try:
                 self.db.update_backup_server(backup_server_id,remarks.strip())
-                print '\n[Done]\n'
+                print '\n[Done] Backup server with SrvID: ' + str(backup_server_id) + ' updated.\n'
                 
             except Exception as e:
                 print '\n[ERROR]: Could not update this backup server\n',e
@@ -3082,38 +3088,41 @@ class pgbackman_cli(cmd.Cmd):
         
 
     # ############################################
-    # Method do_update_backup_server
-    # ############################################
-
-    def do_update_backup_server_config(self,args):
-        '''
-        Not implemented
-
-        DESCRIPTION:
-        This command updates the default configuration parameters
-        for a backup server.
-        
-        COMMAND:
-        update_backup_server_config
-
-        '''    
-        
-        print 'Not implemented'
-        print 'See: help update_backup_server_config'
-        print
-
-
-    # ############################################
     # Method do_update_pgsql_node
     # ############################################
 
     def do_update_pgsql_node(self,args):
         '''
         DESCRIPTION:
-        This command updates the information of a PgSQL node
+        This command updates the information of a PgSQL node.
 
         COMMAND:
-        update_pgsql_node [NodeID | FQDN] [pgport] [admin_user] [status] [remarks]
+        update_pgsql_node [NodeID | FQDN] 
+                          [pgport] 
+                          [admin_user] 
+                          [status] 
+                          [remarks]
+
+        [NodeID | FQDN]:
+        ----------------
+        NodeID in PgBackMan or FQDN of the PgSQL node to update.
+        
+        [pgport]:
+        ---------
+        PostgreSQL port.
+
+        [admin_user]:
+        -------------
+        PostgreSQL admin user.
+
+        [Status]:
+        ---------
+        RUNNING: PostgreSQL node running and online
+        DOWN: PostgreSQL node not online.
+
+        [remarks]:
+        ----------
+        Remarks
 
         '''    
         
@@ -3156,7 +3165,7 @@ class pgbackman_cli(cmd.Cmd):
                 print '--------------------------------------------------------'
 
             except Exception as e:
-                print '\n[Aborted]\n'
+                print '\n[Aborted] Command interrupted by the user.\n'
                 return False
 
             if port == '':
@@ -3182,7 +3191,7 @@ class pgbackman_cli(cmd.Cmd):
                 if self.check_port(port):  
                     try:
                         self.db.update_pgsql_node(pgsql_node_id,port.strip(),admin_user.lower().strip(),status.upper().strip(),remarks.strip())
-                        print '\n[Done]\n'
+                        print '\n[Done] PgSQL node with NodeID: ' + str(pgsql_node_id) + ' updated.\n'
 
                     except Exception as e:
                         print '\n[ERROR]: Could not update this PgSQL node\n',e
@@ -3224,8 +3233,8 @@ class pgbackman_cli(cmd.Cmd):
             if self.check_port(port):  
                 try:
                     self.db.update_pgsql_node(pgsql_node_id,port.strip(),admin_user.lower().strip(),status.upper().strip(),remarks.strip())
-                    print '\n[Done]\n'
-
+                    print '\n[Done] PgSQL node with NodeID: ' + str(pgsql_node_id) + ' updated.\n'
+                
                 except Exception as e:
                     print '\n[ERROR]: Could not update this PgSQL node\n',e
                 
@@ -3241,7 +3250,7 @@ class pgbackman_cli(cmd.Cmd):
         '''
         DESCRIPTION:
         This command updates the default configuration parameters 
-        for a PgSQl node 
+        for a PgSQL node 
 
         COMMAND:
         update_pgsql_node_config
@@ -3269,7 +3278,7 @@ class pgbackman_cli(cmd.Cmd):
                 print
 
             except Exception as e:
-                print '\n[Aborted]\n'
+                print '\n[Aborted] Command interrupted by the user.\n'
                 return False
 
             try:
@@ -3284,26 +3293,27 @@ class pgbackman_cli(cmd.Cmd):
                 return False
         
             try:
-                backup_minutes_interval_default = self.db.get_pgsql_node_parameter(pgsql_node_id,'backup_minutes_interval')
-                backup_hours_interval_default = self.db.get_pgsql_node_parameter(pgsql_node_id,'backup_hours_interval')
-                backup_weekday_cron_default = self.db.get_pgsql_node_parameter(pgsql_node_id,'backup_weekday_cron')
-                backup_month_cron_default = self.db.get_pgsql_node_parameter(pgsql_node_id,'backup_month_cron')
-                backup_day_month_cron_default = self.db.get_pgsql_node_parameter(pgsql_node_id,'backup_day_month_cron')
+                backup_minutes_interval_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'backup_minutes_interval')
+                backup_hours_interval_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'backup_hours_interval')
+                backup_weekday_cron_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'backup_weekday_cron')
+                backup_month_cron_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'backup_month_cron')
+                backup_day_month_cron_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'backup_day_month_cron')
 
-                backup_code_default = self.db.get_pgsql_node_parameter(pgsql_node_id,'backup_code')
-                retention_period_default = self.db.get_pgsql_node_parameter(pgsql_node_id,'retention_period')
-                retention_redundancy_default = self.db.get_pgsql_node_parameter(pgsql_node_id,'retention_redundancy')
-                extra_backup_parameters_default = self.db.get_pgsql_node_parameter(pgsql_node_id,'extra_backup_parameters')
-                backup_job_status_default = self.db.get_pgsql_node_parameter(pgsql_node_id,'backup_job_status')
+                backup_code_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'backup_code')
+                retention_period_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'retention_period')
+                retention_redundancy_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'retention_redundancy')
+                extra_backup_parameters_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'extra_backup_parameters')
+                extra_restore_parameters_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'extra_restore_parameters')
+                backup_job_status_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'backup_job_status')
 
-                domain_default = self.db.get_pgsql_node_parameter(pgsql_node_id,'domain')
-                logs_email_default = self.db.get_pgsql_node_parameter(pgsql_node_id,'logs_email')
-                admin_user_default = self.db.get_pgsql_node_parameter(pgsql_node_id,'admin_user')
-                pgport_default = self.db.get_pgsql_node_parameter(pgsql_node_id,'pgport')
+                domain_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'domain')
+                logs_email_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'logs_email')
+                admin_user_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'admin_user')
+                pgport_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'pgport')
 
-                pgnode_backup_partition_default = self.db.get_pgsql_node_parameter(pgsql_node_id,'pgnode_backup_partition')
-                pgnode_crontab_file_default = self.db.get_pgsql_node_parameter(pgsql_node_id,'pgnode_crontab_file')
-                pgsql_node_status_default = self.db.get_pgsql_node_parameter(pgsql_node_id,'pgsql_node_status')
+                pgnode_backup_partition_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'pgnode_backup_partition')
+                pgnode_crontab_file_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'pgnode_crontab_file')
+                pgsql_node_status_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'pgsql_node_status')
                                 
             except Exception as e:
                 print '\n[ERROR]: Problems getting default values for parameters\n',e 
@@ -3319,8 +3329,9 @@ class pgbackman_cli(cmd.Cmd):
                 backup_code = raw_input('# Backup code [' + backup_code_default + ']: ')
                 retention_period = raw_input('# Retention period [' + retention_period_default + ']: ')
                 retention_redundancy = raw_input('# Retention redundancy [' + retention_redundancy_default + ']: ')
-                extra_backup_parameters = raw_input('# Extra parameters [' + extra_backup_parameters_default + ']: ')
-                backup_job_status = raw_input('# Job status [' + backup_job_status_default + ']: ')
+                extra_backup_parameters = raw_input('# Extra backup parameters [' + extra_backup_parameters_default + ']: ')
+                extra_restore_parameters = raw_input('# Extra restore parameters [' + extra_restore_parameters_default + ']: ')
+                backup_job_status = raw_input('# Backup Job status [' + backup_job_status_default + ']: ')
                 print
                 domain = raw_input('# Domain [' + domain_default + ']: ')
                 logs_email = raw_input('# Logs e-mail [' + logs_email_default + ']: ')
@@ -3338,7 +3349,7 @@ class pgbackman_cli(cmd.Cmd):
                 print '--------------------------------------------------------'
 
             except Exception as e:
-                print '\n[Aborted]\n'
+                print '\n[Aborted] Command interrupted by the user.\n'
                 return False   
 
             if backup_minutes_interval != '':
@@ -3380,6 +3391,9 @@ class pgbackman_cli(cmd.Cmd):
             if extra_backup_parameters == '':
                 extra_backup_parameters = extra_backup_parameters_default
 
+            if extra_restore_parameters == '':
+                extra_restore_parameters = extra_restore_parameters_default
+
             if backup_job_status != '':
                 if backup_job_status.upper() not in ['ACTIVE','STOPPED']:
                     print '\n[WARNING]: Wrong job status, using default.'
@@ -3416,9 +3430,9 @@ class pgbackman_cli(cmd.Cmd):
                 try:
                     self.db.update_pgsql_node_config(pgsql_node_id,backup_minutes_interval.strip(),backup_hours_interval.strip(),backup_weekday_cron.strip(),
                                                      backup_month_cron.strip(),backup_day_month_cron.strip(),backup_code.strip().upper(),retention_period.strip(),
-                                                     retention_redundancy.strip(),extra_backup_parameters.strip(),backup_job_status.strip().upper(),domain.strip(),
+                                                     retention_redundancy.strip(),extra_backup_parameters.strip(),extra_restore_parameters.strip(),backup_job_status.strip().upper(),domain.strip(),
                                                      logs_email.strip(),admin_user.strip(),pgport,pgnode_backup_partition.strip(),pgnode_crontab_file.strip(),pgsql_node_status.strip().upper())
-                    print '\n[Done]\n'
+                    print '\n[Done] Default configuration parameters for NodeID: ' + str(pgsql_node_id) + ' updated.\n'
 
                 except Exception as e:
                     print '\n[ERROR]: Could not update the default configuration for this PgSQL node \n',e
@@ -3430,7 +3444,7 @@ class pgbackman_cli(cmd.Cmd):
         # Command with parameters
         #
                 
-        elif len(arg_list) == 18:
+        elif len(arg_list) == 19:
             
             pgsql_node = arg_list[0]
 
@@ -3446,26 +3460,27 @@ class pgbackman_cli(cmd.Cmd):
                 return False
         
             try:
-                backup_minutes_interval_default = self.db.get_pgsql_node_parameter(pgsql_node_id,'backup_minutes_interval')
-                backup_hours_interval_default = self.db.get_pgsql_node_parameter(pgsql_node_id,'backup_hours_interval')
-                backup_weekday_cron_default = self.db.get_pgsql_node_parameter(pgsql_node_id,'backup_weekday_cron')
-                backup_month_cron_default = self.db.get_pgsql_node_parameter(pgsql_node_id,'backup_month_cron')
-                backup_day_month_cron_default = self.db.get_pgsql_node_parameter(pgsql_node_id,'backup_day_month_cron')
+                backup_minutes_interval_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'backup_minutes_interval')
+                backup_hours_interval_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'backup_hours_interval')
+                backup_weekday_cron_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'backup_weekday_cron')
+                backup_month_cron_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'backup_month_cron')
+                backup_day_month_cron_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'backup_day_month_cron')
 
-                backup_code_default = self.db.get_pgsql_node_parameter(pgsql_node_id,'backup_code')
-                retention_period_default = self.db.get_pgsql_node_parameter(pgsql_node_id,'retention_period')
-                retention_redundancy_default = self.db.get_pgsql_node_parameter(pgsql_node_id,'retention_redundancy')
-                extra_backup_parameters_default = self.db.get_pgsql_node_parameter(pgsql_node_id,'extra_backup_parameters')
-                backup_job_status_default = self.db.get_pgsql_node_parameter(pgsql_node_id,'backup_job_status')
+                backup_code_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'backup_code')
+                retention_period_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'retention_period')
+                retention_redundancy_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'retention_redundancy')
+                extra_backup_parameters_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'extra_backup_parameters')
+                extra_restore_parameters_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'extra_restore_parameters')
+                backup_job_status_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'backup_job_status')
 
-                domain_default = self.db.get_pgsql_node_parameter(pgsql_node_id,'domain')
-                logs_email_default = self.db.get_pgsql_node_parameter(pgsql_node_id,'logs_email')
-                admin_user_default = self.db.get_pgsql_node_parameter(pgsql_node_id,'admin_user')
-                pgport_default = self.db.get_pgsql_node_parameter(pgsql_node_id,'pgport')
+                domain_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'domain')
+                logs_email_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'logs_email')
+                admin_user_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'admin_user')
+                pgport_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'pgport')
 
-                pgnode_backup_partition_default = self.db.get_pgsql_node_parameter(pgsql_node_id,'pgnode_backup_partition')
-                pgnode_crontab_file_default = self.db.get_pgsql_node_parameter(pgsql_node_id,'pgnode_crontab_file')
-                pgsql_node_status_default = self.db.get_pgsql_node_parameter(pgsql_node_id,'pgsql_node_status')
+                pgnode_backup_partition_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'pgnode_backup_partition')
+                pgnode_crontab_file_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'pgnode_crontab_file')
+                pgsql_node_status_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'pgsql_node_status')
                 
             except Exception as e:
                 print '\n[ERROR]: Problems getting default values for parameters\n',e 
@@ -3480,14 +3495,15 @@ class pgbackman_cli(cmd.Cmd):
             retention_period = arg_list[7]
             retention_redundancy = arg_list[8]
             extra_backup_parameters = arg_list[9]
-            backup_job_status = arg_list[10]
-            domain = arg_list[11]
-            logs_email = arg_list[12]
-            admin_user = arg_list[13]
-            pgport = arg_list[14]
-            pgnode_backup_partition = arg_list[15]
-            pgnode_crontab_file = arg_list[16]
-            pgsql_node_status = arg_list[17]
+            extra_restore_parameters = arg_list[10]
+            backup_job_status = arg_list[11]
+            domain = arg_list[12]
+            logs_email = arg_list[13]
+            admin_user = arg_list[14]
+            pgport = arg_list[15]
+            pgnode_backup_partition = arg_list[16]
+            pgnode_crontab_file = arg_list[17]
+            pgsql_node_status = arg_list[18]
 
             if backup_minutes_interval != '':
                 if not self.check_minutes_interval(backup_minutes_interval):
@@ -3528,6 +3544,9 @@ class pgbackman_cli(cmd.Cmd):
             if extra_backup_parameters == '':
                 extra_backup_parameters = extra_backup_parameters_default
 
+            if extra_restore_parameters == '':
+                extra_restore_parameters = extra_restore_parameters_default
+
             if backup_job_status == '':
                 if backup_job_status.upper() not in ['ACTIVE','STOPPED']:
                     print '\n[WARNING]: Wrong job status, using default.'
@@ -3563,9 +3582,9 @@ class pgbackman_cli(cmd.Cmd):
             try:
                 self.db.update_pgsql_node_config(pgsql_node_id,backup_minutes_interval.strip(),backup_hours_interval.strip(),backup_weekday_cron.strip(),
                                                  backup_month_cron.strip(),backup_day_month_cron.strip(),backup_code.strip().upper(),retention_period.strip(),
-                                                 retention_redundancy.strip(),extra_backup_parameters.strip(),backup_job_status.strip().upper(),domain.strip(),
+                                                 retention_redundancy.strip(),extra_backup_parameters.strip(),extra_restore_parameters.strip(),backup_job_status.strip().upper(),domain.strip(),
                                                  logs_email.strip(),admin_user.strip(),pgport,pgnode_backup_partition.strip(),pgnode_crontab_file.strip(),pgsql_node_status.strip().upper())
-                print '\n[Done]\n'
+                print '\n[Done] Default configuration parameters for NodeID: ' + str(pgsql_node_id) + ' updated.\n'
 
             except Exception as e:
                 print '\n[ERROR]: Could not update the default configuration for this PgSQL node \n',e
