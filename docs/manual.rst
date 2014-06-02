@@ -1826,6 +1826,60 @@ This command can be run with or without parameters. e.g.:
 show_snapshot_definitions
 -------------------------
 
+This command shows all snapshot definitions for a particular
+combination of parameter values. These values are combined with AND.
+
+::
+
+   show_snapshot_definitions [SrvID|FQDN] 
+                             [NodeID|FQDN] 
+                             [DBname]
+        
+Parameters:
+
+* **[SrvID|FQDN]:** SrvID in PgBackMan or FQDN of the backup server
+* **[NodeID|FQDN]:** NodeID in PgBackMan or FQDN of the PgSQL node
+* **[DBname]:** Database name
+
+The default value for a parameter is shown between brackets ``[]``. If the
+user does not define any value, the default value will be used.
+
+One can define multiple values for each parameter separated by a
+comma. These values are combined using OR.
+
+The status column in the output can have different values with these
+meanings:
+
+* WAITING: Waiting to define an AT job to run this restore job
+* DEFINED: AT job for this restore job has been defined
+* ERROR: Could not define the AT job for this restore job.
+
+This command can be run with or without parameters. e.g.:
+	 
+::
+
+   [pgbackman]$ show_snapshot_definitions
+   --------------------------------------------------------
+   # SrvID / FQDN [all]: 
+   # NodeID / FQDN [all]: 
+   # DBname [all]: 
+   --------------------------------------------------------
+   +-------------+---------------------------+-----+-------------------------+----+-------------------------+-------------+--------------+------+-----------+---------------------------+---------+
+   |  SnapshotID |         Registered        | ID. | Backup server           | ID | PgSQL node              | DBname      | AT time      | Code | Retention | Parameters                |  Status |
+   +-------------+---------------------------+-----+-------------------------+----+-------------------------+-------------+--------------+------+-----------+---------------------------+---------+
+   | 00000000002 | 2014-05-28 08:45:19+00:00 |  1  | pg-backup01.example.net | 1  | pgbackmandb.example.net | dump_test   | 201405280847 | FULL |   7 days  |                           | DEFINED |
+   | 00000000005 | 2014-05-28 08:50:47+00:00 |  1  | pg-backup01.example.net | 1  | pgbackmandb.example.net | dump_test   | 201405280852 | FULL |   7 days  |                           | DEFINED |
+   | 00000000006 | 2014-05-28 08:59:47+00:00 |  1  | pg-backup01.example.net | 1  | pgbackmandb.example.net | dump_test   | 201405280901 | FULL |   7 days  | --inserts --no-privileges | DEFINED |
+   | 00000000007 | 2014-05-28 09:00:11+00:00 |  1  | pg-backup01.example.net | 1  | pgbackmandb.example.net | dump_test   | 201405280901 | FULL |   7 days  |                           | DEFINED |
+   | 00000000004 | 2014-05-28 08:48:50+00:00 |  1  | pg-backup01.example.net | 1  | pgbackmandb.example.net | dump_test2  | 201405280849 | FULL |   7 days  |                           | DEFINED |
+   | 00000000003 | 2014-05-28 08:48:32+00:00 |  1  | pg-backup01.example.net | 1  | pgbackmandb.example.net | dump_test2  | 201405280849 | FULL |   7 days  |                           | DEFINED |
+   | 00000000008 | 2014-05-28 10:06:08+00:00 |  1  | pg-backup01.example.net | 1  | pgbackmandb.example.net | pgbackman   | 201405281006 | FULL |   7 days  |                           | DEFINED |
+   | 00000000010 | 2014-05-28 10:06:57+00:00 |  1  | pg-backup01.example.net | 1  | pgbackmandb.example.net | pgbackman   | 201405281007 | FULL |   7 days  | --inserts --no-privileges | DEFINED |
+   | 00000000009 | 2014-05-28 10:06:31+00:00 |  1  | pg-backup01.example.net | 1  | pgbackmandb.example.net | pgbackman   | 201405281007 | FULL |   7 days  | -j 4                      | WAITING |
+   +-------------+---------------------------+-----+-------------------------+----+-------------------------+-------------+--------------+------+-----------+---------------------------+---------+
+
+
+
 update_backup_definition
 ------------------------
 
