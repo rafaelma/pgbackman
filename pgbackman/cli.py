@@ -2536,7 +2536,8 @@ class pgbackman_cli(cmd.Cmd):
     def do_show_pgbackman_stats(self,args):
         '''
         DESCRIPTION:
-        This command shows global statistics for this PgBackMan installation
+        This command shows global statistics for this PgBackMan
+        installation
         
         COOMAND:
         show_pgbackman_stats
