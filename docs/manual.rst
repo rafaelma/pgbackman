@@ -1459,6 +1459,29 @@ This command can be run only without parameters. e.g.:
 show_jobs_queue
 ---------------
 
+This command shows the queue of jobs waiting to be processed by
+``pgbackman_control``.
+
+::
+
+   show_jobs_queue
+
+This queue changes when backup definitions get defined, updated or
+deleted. The queue has entries for the combination of backup server +
+PgSQL node affected by a change.  
+
+This command can be run only without parameters. e.g.:
+
+::
+
+   [pgbackman]$ show_jobs_queue
+   +-------+---------------------------+-------+-------------------------+--------+-------------------------+----------+
+   | JobID | Registered                | SrvID | Backup server           | NodeID | PgSQL node              | Assigned |
+   +-------+---------------------------+-------+-------------------------+--------+-------------------------+----------+
+   | 10    | 2014-05-30 07:29:28+00:00 |   1   | pg-backup01.example.net |   1    | pgbackmandb.example.net |  False   |
+   +-------+---------------------------+-------+-------------------------+--------+-------------------------+----------+
+
+
 show_pgbackman_config
 ---------------------
 
