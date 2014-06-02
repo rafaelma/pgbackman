@@ -1039,7 +1039,7 @@ Parameters:
 * **[extra backup parameters]:** Extra parameters that can be used
   with pg_dump / pg_dumpall
 
-The default value for a parameter is shown between brackets []. If the
+The default value for a parameter is shown between brackets ``[]``. If the
 user does not define any value, the default value will be used. This
 command can be run with or without parameters. e.g.:
 
@@ -1698,7 +1698,7 @@ Parameters:
 * **[NodeID|FQDN]:** NodeID in PgBackMan or FQDN of the PgSQL node
 * **[DBname]:** Database name
 
-The default value for a parameter is shown between brackets []. If the
+The default value for a parameter is shown between brackets ``[]``. If the
 user does not define any value, the default value will be used.
 
 One can define multiple values for each parameter separated by a
@@ -1724,6 +1724,54 @@ This command can be run with or without parameters. e.g.:
 
 show_restore_definitions
 ------------------------
+
+This command shows all restore definitions for a particular
+combination of parameter values. These values are combined with AND.
+
+::
+
+   show_restore_definitions [SrvID|FQDN] 
+                            [NodeID|FQDN] 
+                            [DBname]
+			
+Parameters:
+
+* **[SrvID|FQDN]:** SrvID in PgBackMan or FQDN of the backup server
+* **[NodeID|FQDN]:** NodeID in PgBackMan or FQDN of the PgSQL node
+* **[DBname]:** Database name
+
+The default value for a parameter is shown between brackets ``[]``. If the
+user does not define any value, the default value will be used.
+
+One can define multiple values for each parameter separated by a
+comma. These values are combined using OR.
+
+The status column in the output can have different values with these
+meanings:
+
+* WAITING: Waiting to define an AT job to run this restore job
+* DEFINED: AT job for this restore job has been defined
+* ERROR: Could not define the AT job for this restore job.
+
+This command can be run with or without parameters. e.g.:
+	 
+::
+
+   [pgbackman]$ show_restore_definitions
+   --------------------------------------------------------
+   # SrvID / FQDN [all]: 
+   # Target NodeID / FQDN [all]: 
+   # Target DBname [all]: 
+   --------------------------------------------------------
+   +------------+---------------------------+-------+----+-------------------------+----------------+------------------+--------------+------------------+---------+
+   | RestoreDef |         Registered        | BckID | ID | Target PgSQL node       | Target DBname  | Renamed database | AT time      | Extra parameters |  Status |
+   +------------+---------------------------+-------+----+-------------------------+----------------+------------------+--------------+------------------+---------+
+   |  00000005  | 2014-05-28 13:15:54+00:00 |   34  | 1  | pgbackmandb.example.net | pgbackman_1212 |       None       | 201405281316 |                  | DEFINED |
+   |  00000006  | 2014-05-28 13:18:13+00:00 |   34  | 1  | pgbackmandb.example.net | pgbackman_1313 |       None       | 201405281318 |       -j 4       | DEFINED |
+   |  00000007  | 2014-05-30 09:43:31+00:00 |   35  | 2  | pg-node01.example.net   | pgbackman      |       None       | 201405300944 |                  | WAITING |
+   +------------+---------------------------+-------+----+-------------------------+----------------+------------------+--------------+------------------+---------+
+
+
 
 show_restore_details
 --------------------
