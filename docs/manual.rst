@@ -1771,10 +1771,57 @@ This command can be run with or without parameters. e.g.:
    |  00000007  | 2014-05-30 09:43:31+00:00 |   35  | 2  | pg-node01.example.net   | pgbackman      |       None       | 201405300944 |                  | WAITING |
    +------------+---------------------------+-------+----+-------------------------+----------------+------------------+--------------+------------------+---------+
 
-
-
 show_restore_details
 --------------------
+
+This command shows all the details for one particular restore job.
+
+::
+
+   show_restore_details [RestoreID]
+
+Parameters:
+
+* **[RestoreID]:** Restore ID in the restore catalog.
+
+This command can be run with or without parameters. e.g.:
+	 
+::
+
+   [pgbackman]$ show_restore_details 
+   --------------------------------------------------------
+   # RestoreID: 6
+   --------------------------------------------------------
+   +------------------------------+---------------------------------------------------------------------------------------------+
+   |                   RestoreID: | 0000000006                                                                                  |
+   |                     ProcPID: | 6041                                                                                        |
+   |                  Registered: | 2014-05-28 13:18:49.879066+00:00                                                            |
+   |                              |                                                                                             |
+   |                     Started: | 2014-05-28 13:18:47+00:00                                                                   |
+   |                    Finished: | 2014-05-28 13:18:49+00:00                                                                   |
+   |                    Duration: | 0:00:01                                                                                     |
+   |            Execution status: | SUCCEEDED                                                                                   |
+   |                              |                                                                                             |
+   |                       BckID: | 34                                                                                          |
+   |               Source DBname: | pgbackman                                                                                   |
+   |               Target DBname: | pgbackman_1313                                                                              |
+   |              Renamed DBname: |                                                                                             |
+   |              Roles restored: |                                                                                             |
+   |                              |                                                                                             |
+   |     Backup server (ID/FQDN): | [1] / pg-backup01.example.net                                                               |
+   | Target PgSQL node (ID/FQDN): | [1] / pgbackmandb.example.net                                                               |
+   |  Pg_dump/all backup release: | 9.3                                                                                         |
+   |   Target PgSQL node release: | 9.3                                                                                         |
+   |                              |                                                                                             |
+   |                     AT time: | 2014-05-28 13:18:40.771670+00:00                                                            |
+   |            Extra parameters: | -j 4                                                                                        |
+   |                              |                                                                                             |
+   |            Restore log file: | /srv/pgbackman/pgsql_node_1/log/pgbackman_1313-pgbackmandb.example.net-v9_3-restoredef6.log |
+   |             Global log file: | /var/log/pgbackman/pgbackman.log                                                            |
+   |                              |                                                                                             |
+   |               Error message: |                                                                                             |
+   +------------------------------+---------------------------------------------------------------------------------------------+
+
 
 show_snapshot_definitions
 -------------------------
