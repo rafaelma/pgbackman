@@ -1683,6 +1683,45 @@ This command can be run only without parameters. e.g.:
 show_restore_catalog
 --------------------
 
+This command shows all restore catalog entries for a particular
+combination of parameters values. These values are combined with AND.
+
+::
+
+   show_restore_catalog [SrvID|FQDN] 
+                        [NodeID|FQDN] 
+			[DBname]
+
+Parameters:
+
+* **[SrvID|FQDN]:** SrvID in PgBackMan or FQDN of the backup server
+* **[NodeID|FQDN]:** NodeID in PgBackMan or FQDN of the PgSQL node
+* **[DBname]:** Database name
+
+The default value for a parameter is shown between brackets []. If the
+user does not define any value, the default value will be used.
+
+One can define multiple values for each parameter separated by a
+comma. These values are combined using OR.
+
+This command can be run with or without parameters. e.g.:
+
+::
+
+   [pgbackman]$ show_restore_catalog
+   --------------------------------------------------------
+   # SrvID / FQDN [all]: 
+   # Target NodeID / FQDN [all]: 
+   # Target DBname [all]: 
+   --------------------------------------------------------
+   +------------+------------+-------+---------------------------+-----+-------------------------+----+-------------------------+----------------+----------+-----------+
+   | RestoreID  | RestoreDef | BckID | Finished                  | ID. | Backup server           | ID | Target PgSQL node       | Target DBname  | Duration |   Status  |
+   +------------+------------+-------+---------------------------+-----+-------------------------+----+-------------------------+----------------+----------+-----------+
+   | 0000000006 | 0000000006 |   34  | 2014-05-28 13:18:49+00:00 |  1  | pg-backup01.example.net | 1  | pgbackmandb.example.net | pgbackman_1313 | 0:00:01  | SUCCEEDED |
+   | 0000000005 | 0000000005 |   34  | 2014-05-28 13:16:21+00:00 |  1  | pg-backup01.example.net | 1  | pgbackmandb.example.net | pgbackman_1212 | 0:00:02  | SUCCEEDED |
+   +------------+------------+-------+---------------------------+-----+-------------------------+----+-------------------------+----------------+----------+-----------+
+   
+
 show_restore_definitions
 ------------------------
 
