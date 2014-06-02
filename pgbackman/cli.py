@@ -112,7 +112,9 @@ class pgbackman_cli(cmd.Cmd):
         This command registers a backup server in PgBackMan.
 
         COMMAND:
-        register_backup_server [hostname] [domain] [remarks]
+        register_backup_server [hostname] 
+                               [domain] 
+                               [remarks]
 
         [hostname]:
         -----------
@@ -121,10 +123,6 @@ class pgbackman_cli(cmd.Cmd):
         [domain]:
         ---------
         Domain name of the backup server
-
-        [remarks]:
-        ----------
-        Remarks
 
         '''
         
@@ -3858,7 +3856,7 @@ class pgbackman_cli(cmd.Cmd):
     def do_show_history(self, args):
         '''
         DESCRIPTION: 
-        Print the list of commands that have been entered during the
+        Show the list of commands that have been entered during the
         PgBackMan shell session.
 
         COMMAND: 
