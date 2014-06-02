@@ -1575,7 +1575,7 @@ This command shows the default configuration for a PgSQL node.
 
 Parameters:
 
-* **[NodeID|FQDN]:** NodeID in PgBackMan or FQDN of the PgSQL node
+* **[NodeID|FQDN]:** NodeID in PgBackMan or FQDN of the PgSQL node.
 
 This command can be run with or without parameters. e.g.:
 
@@ -1613,6 +1613,48 @@ This command can be run with or without parameters. e.g.:
 
 show_pgsql_node_stats
 ---------------------
+
+This command shows global statistics for a PgSQL node.
+
+::
+
+   show_pgsql_node_stats [NodeID | FQDN]
+
+Parameters:
+
+* **[NodeID|FQDN]:** NodeID in PgBackMan or FQDN of the PgSQL node.
+
+This command can be run with or without parameters. e.g.:
+
+::
+
+   [pgbackman]$ show_pgsql_node_stats 1
+   --------------------------------------------------------
+   # NodeID: 1
+   --------------------------------------------------------
+   +----------------------------------------------------+-----------------------------+
+   |                                        PgSQL node: | [1] pgbackmandb.example.net |
+   |                                                    |                             |
+   |      Backup servers running backups for this Node: | 1                           |
+   |                                                    |                             |
+   |                               Different databases: | 1                           |
+   |                            Active Backup job defs: | 3                           |
+   |                           Stopped Backup job defs: | 0                           |
+   |                 Backup job defs with CLUSTER code: | 0                           |
+   |                    Backup job defs with DATA code: | 0                           |
+   |                    Backup job defs with FULL code: | 2                           |
+   |                  Backup job defs with SCHEMA code: | 1                           |
+   |                                                    |                             |
+   |                      Succeeded backups in catalog: | 4527                        |
+   |                         Faulty backups in catalog: | 2                           |
+   |                  Total size of backups in catalog: | 1371 MB                     |
+   |          Total running time of backups in catalog: | 5:56:02.793539              |
+   |                          Oldest backup in catalog: | 2014-05-28 08:40:06+00:00   |
+   |                          Newest backup in catalog: | 2014-06-02 07:56:06+00:00   |
+   |                                                    |                             |
+   | Jobs waiting to be processed by pgbackman_control: | 1                           |
+   +----------------------------------------------------+-----------------------------+
+
 
 show_pgsql_nodes
 ----------------
