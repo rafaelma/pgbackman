@@ -1485,6 +1485,44 @@ This command can be run only without parameters. e.g.:
 show_pgbackman_config
 ---------------------
 
+This command shows the configuration parameters used by this PgBackMan
+shell session.
+
+::
+
+   show_pgbackman_config
+
+This command can be run only without parameters. e.g.:
+
+::
+
+   [pgbackman]$ show_pgbackman_config
+   +---------------------------------------+----------------------------------+
+   |              Configuration file used: | /etc/pgbackman/pgbackman.conf    |
+   |                                       |                                  |
+   |                    PGBACKMAN DATABASE |                                  |
+   |                               DBhost: | pgbackmandb.example.net          |
+   |                           DBhostaddr: |                                  |
+   |                               DBport: | 5432                             |
+   |                               DBname: | pgbackman                        |
+   |                               DBuser: | pgbackman_role_rw                |
+   |            Connection retry interval: | 10 sec.                          |
+   |                                       |                                  |
+   |                     PGBACKMAN_CONTROL |                                  |
+   | LISTEN/NOTIFY channel check interval: | 60 sec.                          |
+   |                                       |                                  |
+   |                        PGBACKMAN_DUMP |                                  |
+   |                       Temp directory: | /tmp                             |
+   |                                       |                                  |
+   |                 PGBACKMAN_MAINTENANCE |                                  |
+   |                 Maintenance interval: | 70 sec.                          |
+   |                                       |                                  |
+   |                               LOGGING |                                  |
+   |                            Log level: | INFO                             |
+   |                             Log file: | /var/log/pgbackman/pgbackman.log |
+   +---------------------------------------+----------------------------------+
+
+
 show_pgbackman_stats 
 --------------------
 
