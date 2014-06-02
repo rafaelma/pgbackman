@@ -2241,18 +2241,19 @@ class pgbackman_cli(cmd.Cmd):
     def do_show_restore_definitions(self,args):
         '''
         DESCRIPTION:
-        This command shows all restore definitions 
-        with the status information.
+        This command shows all restore definitions for a particular
+        combination of parameter values.
 
-        Status:
-        -------
+        Status information:
+        -------------------
         WAITING: Waiting to define an AT job to run this restore job
         DEFINED: AT job for this restore job has been defined
         ERROR:   Could not define the AT job for this restore job. 
-                 Is 'at' installed and running?
 
         COMMAND:
-        show_restore_definitions [SrvID|FQDN] [NodeID|FQDN] [DBname]
+        show_restore_definitions [SrvID|FQDN] 
+                                 [NodeID|FQDN] 
+                                 [DBname]
         
         '''
 
@@ -2277,7 +2278,7 @@ class pgbackman_cli(cmd.Cmd):
                 print '--------------------------------------------------------'
 
             except Exception as e:
-                print '\n[Aborted]\n'
+                print '\n[Aborted] Command interrupted by the user.\n'
                 return False
             
             if server_id == '' or server_id == 'all':
