@@ -1659,6 +1659,27 @@ This command can be run with or without parameters. e.g.:
 show_pgsql_nodes
 ----------------
 
+This command shows all PgSQL nodes registered in PgBackMan.
+
+::
+ 
+   show_pgsql_nodes
+
+This command can be run only without parameters. e.g.:
+
+::
+
+   [pgbackman]$ show_pgsql_nodes
+   +--------+-------------------------+--------+------------+---------+-------------+
+   | NodeID | FQDN                    | Pgport | Admin user |  Status | Remarks     |
+   +--------+-------------------------+--------+------------+---------+-------------+
+   | 000001 | pgbackmandb.example.net |  5432  |  postgres  | RUNNING |             |
+   | 000002 | pg-node01.example.net   |  5432  |  postgres  | RUNNING |             |
+   | 000008 | pg-node02.example.net   |  5432  |  postgres  | STOPPED | test node   |
+   | 000005 | test.example.org        |  5432  |  postgres  | RUNNING | Test server |
+   +--------+-------------------------+--------+------------+---------+-------------+
+
+
 show_restore_catalog
 --------------------
 
