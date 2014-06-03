@@ -3403,7 +3403,25 @@ class pgbackman_cli(cmd.Cmd):
         for a PgSQL node 
 
         COMMAND:
-        update_pgsql_node_config
+        update_pgsql_node_config [NodeID / FQDN]
+                                 [min_cron interval]
+                                 [hours_cron interval]
+                                 [daymonth_cron]
+                                 [month_cron]
+                                 [weekday_cron]
+                                 [backup code]
+                                 [retention period]
+                                 [retention redundancy]
+                                 [extra backup parameters]
+                                 [extra restore parameters]
+                                 [backup job status]
+                                 [domain]
+                                 [logs email]
+                                 [admin user]
+                                 [pgport]
+                                 [pgnode backup dir]
+                                 [pgnode crontab file]
+                                 [pgnode status]
 
         '''    
 
@@ -3584,10 +3602,10 @@ class pgbackman_cli(cmd.Cmd):
                                                      backup_month_cron.strip(),backup_day_month_cron.strip(),backup_code.strip().upper(),retention_period.strip(),
                                                      retention_redundancy.strip(),extra_backup_parameters.strip(),extra_restore_parameters.strip(),backup_job_status.strip().upper(),domain.strip(),
                                                      logs_email.strip(),admin_user.strip(),pgport,pgnode_backup_partition.strip(),pgnode_crontab_file.strip(),pgsql_node_status.strip().upper())
-                    print '\n[Done] Default configuration parameters for NodeID: ' + str(pgsql_node_id) + ' updated.\n'
+                    print '\n[Done] Configuration parameters for NodeID: ' + str(pgsql_node_id) + ' updated.\n'
 
                 except Exception as e:
-                    print '\n[ERROR]: Could not update the default configuration for this PgSQL node \n',e
+                    print '\n[ERROR]: Could not update the configuration for this PgSQL node \n',e
 
             elif ack.lower() == 'no':
                 print '\n[Aborted]\n'
@@ -3736,10 +3754,10 @@ class pgbackman_cli(cmd.Cmd):
                                                  backup_month_cron.strip(),backup_day_month_cron.strip(),backup_code.strip().upper(),retention_period.strip(),
                                                  retention_redundancy.strip(),extra_backup_parameters.strip(),extra_restore_parameters.strip(),backup_job_status.strip().upper(),domain.strip(),
                                                  logs_email.strip(),admin_user.strip(),pgport,pgnode_backup_partition.strip(),pgnode_crontab_file.strip(),pgsql_node_status.strip().upper())
-                print '\n[Done] Default configuration parameters for NodeID: ' + str(pgsql_node_id) + ' updated.\n'
+                print '\n[Done] Configuration parameters for NodeID: ' + str(pgsql_node_id) + ' updated.\n'
 
             except Exception as e:
-                print '\n[ERROR]: Could not update the default configuration for this PgSQL node \n',e
+                print '\n[ERROR]: Could not update the configuration for this PgSQL node \n',e
                         
         else:
             print '\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n'
