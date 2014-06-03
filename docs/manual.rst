@@ -903,7 +903,8 @@ Parameters:
 * **[remarks]:** Remarks
 
 All backup definitions from a PgSQL node will be started/stopped
-automatisk if the PgSQL node gets the status changed to RUNNING/DOWN.
+automatically if the PgSQL node gets the status changed to
+RUNNING/DOWN.
 
 The default value for a parameter is shown between brackets ``[]``. If
 the user does not define any value, the default value will be
@@ -1948,56 +1949,187 @@ used. This command can be run with or without parameters. e.g.:
 update_backup_server
 --------------------
 
-update_backup_server_config
----------------------------
+This command updates the information of a backup server.
+
+::
+
+   update_backup_server [SrvID | FQDN] 
+                        [remarks]
+
+Parameters:
+
+* **[SrvID|FQDN]:** SrvID in PgBackMan or FQDN of the backup server
+* **[remarks]:** Remarks
+
+The default value for a parameter is shown between brackets ``[]``. If the
+user does not define any value, the default value will be used.
+
+This command can be run with or without parameters. e.g.:
+
+::
+
+   [pgbackman]$ update_backup_server
+   --------------------------------------------------------
+   # SrvID / FQDN []: 1
+   # Remarks []: Backup server - 01
+   
+   # Are all values to update correct (yes/no): yes
+   --------------------------------------------------------
+
+   [Done] Backup server with SrvID: 1 updated.
+
 
 update_pgsql_node
 -----------------
 
+This command updates the information of a PgSQL node.
+
+::
+
+  update_pgsql_node [NodeID | FQDN] 
+                    [pgport] 
+                    [admin_user] 
+                    [status] 
+                    [remarks]
+		    
+Parameters:
+
+* **[NodeID | FQDN]:** NodeID in PgBackMan or FQDN of the PgSQL node
+  to update.
+* **[pgport]:** PostgreSQL port
+* **[admin_user]:** PostgreSQL admin user
+* **[status]:**
+  
+  * RUNNING: PostgreSQL node running and online
+  * DOWN: PostgreSQL node not online.
+
+* **[remarks]:** Remarks
+
+All backup definitions from a PgSQL node will be started/stopped
+automatically if the PgSQL node gets the status changed to
+RUNNING/DOWN.
+
+The default value for a parameter is shown between brackets ``[]``. If
+the user does not define any value, the default value will be
+used. This command can be run with or without parameters. e.g:
+
+::
+
+   [pgbackman]$ update_pgsql_node
+   --------------------------------------------------------
+   # NodeID / FQDN []: 1
+   # Port [5432]: 
+   # Admin user [postgres]: 
+   # Status[RUNNING]: stopped
+   # Remarks []: Testing update
+   
+   # Are all values to update correct (yes/no): yes
+   --------------------------------------------------------
+
+   [Done] PgSQL node with NodeID: 1 updated.
+
+
 update_pgsql_node_config
 ------------------------
 
+This command updates the default configuration parameters for a PgSQL
+node.
 
+::
 
+   update_pgsql_node_config [NodeID / FQDN]
+                            [min_cron interval]
+			    [hours_cron interval]
+			    [daymonth_cron]
+                            [month_cron]
+                            [weekday_cron]
+			    [backup code]
+			    [retention period]
+                            [retention redundancy]
+                            [extra backup parameters]
+			    [extra restore parameters]
+                            [backup job status]
+                            [domain]
+			    [logs email]
+			    [admin user]
+			    [pgport]
+			    [pgnode backup dir]
+			    [pgnode crontab file]
+			    [pgnode status]
 
+Parameters:
 
+* **[NodeID / FQDN]:** NodeID in PgBackMan or FQDN of the PgSQL node
+  to update.
+* **[min_cron interval]:** Backup minutes interval, e.g. 01-59
+* **[hours_cron interval]:** Backup hours interval, e.g. 01-06
+* **[daymonth_cron]:** Backup day-month cron
+* **[month_cron]:** Backup month cron
+* **[weekday_cron]:** Backup weekday cron
+* **[backup code]:** Backup job code
+* **[retention period]:** Retention period for a backup job
+* **[retention redundancy]:** Retention redundancy for a backup job
+* **[extra backup parameters]:** Extra backup parameters
+* **[extra restore parameters]:** Extra restore parameters
+* **[backup job status]:** Backup job status
+* **[domain]:** Default domain
+* **[logs email]:** E-mail to send logs
+* **[admin user]:** PostgreSQL admin user
+* **[pgport]:** PostgreSQL port
+* **[pgnode backup dir]:** Directory to save pgbackman information for
+  a pgnode
+* **[pgnode crontab file]:** Crontab file for PgSQL node in the backup
+  server
+* **[pgnode status]:** PgSQL node status
 
-update_backup_server
---------------------
+The default value for a parameter is shown between brackets ``[]``. If
+the user does not define any value, the default value will be
+used. This command can be run with or without parameters. e.g:
 
-This command updates some parameters of a backup server defined in
-PgbackMan::
+::
 
-  Command: update_backup_server [SrvID | FQDN] [remarks]
+   [pgbackman]$ update_pgsql_node_config
+   --------------------------------------------------------
+   # NodeID / FQDN []: 1
+   
+   # Minutes cron interval [01-59]: 
+   # Hours cron interval [01-06]: 
+   # Day-month cron [*]: 
+   # Month cron [*]: 
+   # Weekday cron [*]: 
+   
+   # Backup code [FULL]: 
+   # Retention period [7 days]: 5 days
+   # Retention redundancy [1]: 
+   # Extra backup parameters []: 
+   # Extra restore parameters []: 
+   # Backup Job status [ACTIVE]: 
+   
+   # Domain [example.net]: 
+   # Logs e-mail [example@example.net]: 
+   # PostgreSQL admin user [postgres]: 
+   # Port [5432]: 
+   
+   # Backup directory [/srv/pgbackman/pgsql_node_1]: 
+   # Crontab file [/etc/cron.d/pgsql_node_1]: 
+   # PgSQL node status [STOPPED]: 
+   
+   # Are all values to update correct (yes/no): yes
+   --------------------------------------------------------
 
-It can be run with or without parameters. e.g.::
-
-  update_backup_server 1 "Main backup server"
-
-  [pgbackman]$ update_backup_server
-  --------------------------------------------------------
-  # SrvID / FQDN []: 1
-  # Remarks []: Main backup server
-
-  # Are all values to update correct (yes/no): yes
-  --------------------------------------------------------
-
-You can use the backup server ID in PgBackMan or the FQDN to choose
-the server to be updated.
-
-
-
+   [Done] Default configuration parameters for NodeID: 1 updated.
+		    
 
 
 About backups in PostgreSQL
 ===========================
 
-Taking backups is a very important administrative task that can have
-some disastrous consequences if it is not done right. The use of RAID
+Taking backups is an important administrative task that can have some
+disastrous consequences if it is not done right. The use of RAID
 configurations in your storage system, replication between nodes,
 clustering and trusting 100% that your SAN will be up ARE NOT backup
-strategies. They do not replace the necessity of taking backups of our
-databases..
+strategies. These measures are necessary for HA (High availability)
+but do not replace the necessity of taking backups of our databases.
 
 There are two different types of backup that can be use with
 PostgreSQL to implement a good backup and restore strategy. They are:
@@ -2006,15 +2138,26 @@ PostgreSQL to implement a good backup and restore strategy. They are:
 * Logical backups
 
 Regardless of the type of backup used to backup your databases, one
-needs a god *backup and restore plan* that takes into account
-interval, retention and performance issues during a backup and the
-time needed to get a full restore of a database.
+needs a good *backup and restore plan* that takes into account
+intervals, retention policies and performance issues for a backup and
+the time needed to get a full restore of a database.
 
 Physical backups
 ----------------
 	  
-This type of backup .... 
+This type of backup takes copies of the files where the PostgreSQL
+saves the databases. There are several techniques that can be used to
+take physical backups and we are not going to explain them here. Check
+the *Chapter 24. Backup and Restore* of the PostgreSQL documentation for
+more information.
 
+The important thing is that some of these techniques together with the
+continuous archiving of write ahead log (WAL) files can be used to
+implement PITR (Point in time recovery) backups and achieve a full
+disaster recovery solution.
+
+There are several solutions out there that can be use for PITR
+backups, such as PITRTools, OmniPITR, and Barman.
 	  
 Logical backups
 ---------------
@@ -2036,21 +2179,22 @@ archive versions of a database, move databases between PgSQL nodes and
 clone databases between production / pre-production and/or development
 servers.
 
-Anyway, they give us a great flexibility and are also an easy way of
-taken backups of databases not requiring PITR backups.
+Nevertheless, they give us a great flexibility in several cases and
+are also an easy way of taken backups of databases not requiring PITR
+backups.
 
 When taking a backup of a database we need the following information
 to be sure we can make a restore that includes 100% of the data and
 definitions from the target database:
 
-* Database schema
-* Database data
-* Roles owning objects in the database
-* Roles with privileges on objects in the database
-* Roles with privileges on the database or schemas
-* Creation of all the roles owning something or with privileges
-* Configuration parameters defined explicitly for a role
-* Configuration parameters defined explicitly for the database 
+#. Database schema
+#. Database data
+#. Roles owning objects in the database
+#. Roles with privileges on objects in the database
+#. Roles with privileges on the database or schemas
+#. Creation of all the roles owning something or with privileges
+#. Configuration parameters defined explicitly for a role
+#. Configuration parameters defined explicitly for the database 
 
 Unfortunately all this information cannot be obtained in a single
 execution for only one database. 1, 2, 3 and 4 can be obtained with
@@ -2068,6 +2212,7 @@ execution.
 In the meantime, PgBackMan takes care of all this and it delivers all
 the information needed to run a 100% restore of a database when we
 define a backup in the system.
+
 
 Submitting a bug
 ================
