@@ -910,11 +910,12 @@ CREATE OR REPLACE FUNCTION notify_pgsql_node_change() RETURNS TRIGGER
      PERFORM pg_notify('channel_pgsql_node_running','PgSQL node running');
   
   ELSEIF NEW.status = 'STOPPED' THEN
-       
+
      EXECUTE 'INSERT INTO pgsql_node_stopped (pgsql_node_id) VALUES ($1)'
      USING NEW.node_id; 
 
-     PERFORM pg_notify('channel_pgsql_node_stopped','PgSQL node stopped');  END IF;    
+     PERFORM pg_notify('channel_pgsql_node_stopped','PgSQL node stopped');  
+   END IF;    
 
   RETURN NULL;
 END;
@@ -1663,7 +1664,7 @@ ALTER FUNCTION update_pgsql_node(INTEGER,INTEGER,TEXT,TEXT,TEXT) OWNER TO pgback
 --
 -- ------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION update_pgsql_node_config(INTEGER,TEXT,TEXT,TEXT,TEXT,TEXT,TEXT,INTERVAL,INTEGER,TEXT,TEXT;TEXT,TEXT,TEXT,TEXT,INTEGER,TEXT,TEXT,TEXT) RETURNS VOID
+CREATE OR REPLACE FUNCTION update_pgsql_node_config(INTEGER,TEXT,TEXT,TEXT,TEXT,TEXT,TEXT,INTERVAL,INTEGER,TEXT,TEXT,TEXT,TEXT,TEXT,TEXT,INTEGER,TEXT,TEXT,TEXT) RETURNS VOID
  LANGUAGE plpgsql 
  SECURITY INVOKER 
  SET search_path = public, pg_temp
@@ -2149,6 +2150,40 @@ ALTER FUNCTION delete_force_backup_definition_dbname(INTEGER,TEXT) OWNER TO pgba
 
 
 -- ------------------------------------------------------------
+-- Function: delete_pgsql_node_to_delete()
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION delete_pgsql_node_to_delete(INTEGER,INTEGER) RETURNS VOID
+ LANGUAGE plpgsql 
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ DECLARE
+  backup_server_id_ ALIAS FOR $1;
+  pgsql_node_id_ ALIAS FOR $2;
+
+  v_msg     TEXT;
+  v_detail  TEXT;
+  v_context TEXT;
+ BEGIN
+
+     EXECUTE 'DELETE FROM pgsql_node_to_delete WHERE backup_server_id = $1 AND pgsql_node_id = $2'
+     USING backup_server_id_,
+     	   pgsql_node_id_;
+	   
+   EXCEPTION WHEN others THEN
+   	GET STACKED DIAGNOSTICS	
+            v_msg     = MESSAGE_TEXT,
+            v_detail  = PG_EXCEPTION_DETAIL,
+            v_context = PG_EXCEPTION_CONTEXT;
+        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \n----------------------------------------------\n', v_msg, v_detail;
+  END;
+$$;
+
+ALTER FUNCTION delete_pgsql_node_to_delete(INTEGER,INTEGER) OWNER TO pgbackman_role_rw;
+
+
+-- ------------------------------------------------------------
 -- Function: update_backup_definition()
 -- ------------------------------------------------------------
 
@@ -2488,7 +2523,7 @@ ALTER FUNCTION get_pgsql_node_parameter(INTEGER,TEXT) OWNER TO pgbackman_role_rw
 -- Function: get_backup_definition_def_value()
 -- ------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION get_backup_definition_def_values(INTEGER,TEXT) RETURNS TEXT 
+CREATE OR REPLACE FUNCTION get_backup_definition_def_value(INTEGER,TEXT) RETURNS TEXT 
  LANGUAGE plpgsql 
  SECURITY INVOKER 
  SET search_path = public, pg_temp
@@ -2546,14 +2581,98 @@ CREATE OR REPLACE FUNCTION get_backup_definition_def_values(INTEGER,TEXT) RETURN
  END;
 $$;
 
-ALTER FUNCTION get_backup_definition_def_values(INTEGER,TEXT) OWNER TO pgbackman_role_rw;
+ALTER FUNCTION get_backup_definition_def_value(INTEGER,TEXT) OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------------
--- Function: get_pgsql_node_default_config_value()
+-- Function: get_pgsql_node_def_value()
 -- ------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION get_pgsql_node_default_config_value(INTEGER,TEXT) RETURNS TEXT 
+CREATE OR REPLACE FUNCTION get_pgsql_node_def_value(INTEGER,TEXT) RETURNS TEXT 
+ LANGUAGE plpgsql 
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ DECLARE
+ pgsql_node_id_ ALIAS FOR $1;
+ parameter_ ALIAS FOR $2; 
+ value_ TEXT := '';
+
+ nodeid_cnt INTEGER;
+
+ BEGIN
+
+  SELECT count(*) FROM pgsql_node WHERE node_id = pgsql_node_id_ INTO nodeid_cnt;
+
+  IF nodeid_cnt = 0 THEN
+    RAISE EXCEPTION 'NodeID: % does not exist in the system',pgsql_node_id_;
+  END IF;
+
+  IF parameter_ = 'pgport' THEN
+   SELECT pgport FROM pgsql_node WHERE node_id = pgsql_node_id_ INTO value_;
+
+  ELSIF parameter_ = 'admin_user' THEN
+   SELECT admin_user FROM pgsql_node WHERE node_id = pgsql_node_id_ INTO value_;
+
+  ELSIF parameter_ = 'status' THEN
+   SELECT status FROM pgsql_node WHERE node_id = pgsql_node_id_ INTO value_;
+
+  ELSIF parameter_ = 'remarks' THEN
+   SELECT remarks FROM pgsql_node WHERE node_id = pgsql_node_id_ INTO value_;
+
+  ELSE
+     RAISE EXCEPTION 'Problems getting the value of NodeID: % - parameter: %',pgsql_node_id_,parameter_;
+  END IF;
+
+  RETURN value_;
+ END;
+$$;
+
+ALTER FUNCTION get_pgsql_node_def_value(INTEGER,TEXT) OWNER TO pgbackman_role_rw;
+
+-- ------------------------------------------------------------
+-- Function: get_backup_server_def_value()
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION get_backup_server_def_value(INTEGER,TEXT) RETURNS TEXT 
+ LANGUAGE plpgsql 
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ DECLARE
+ backup_server_id_ ALIAS FOR $1;
+ parameter_ ALIAS FOR $2; 
+ value_ TEXT := '';
+
+ serverid_cnt INTEGER;
+
+ BEGIN
+
+  SELECT count(*) FROM backup_server WHERE server_id = backup_server_id_ INTO serverid_cnt;
+
+  IF serverid_cnt = 0 THEN
+    RAISE EXCEPTION 'ServerID: % does not exist in the system',backup_server_id_;
+  END IF;
+
+  IF parameter_ = 'remarks' THEN
+   SELECT remarks FROM backup_server WHERE server_id = backup_server_id_ INTO value_;
+
+  ELSE
+     RAISE EXCEPTION 'Problems getting the value of ServerID: % - parameter: %',backup_server_id_,parameter_;
+  END IF;
+
+  RETURN value_;
+ END;
+$$;
+
+ALTER FUNCTION get_backup_server_def_value(INTEGER,TEXT) OWNER TO pgbackman_role_rw;
+
+
+-- ------------------------------------------------------------
+-- Function: get_pgsql_node_config_value()
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION get_pgsql_node_config_value(INTEGER,TEXT) RETURNS TEXT 
  LANGUAGE plpgsql 
  SECURITY INVOKER 
  SET search_path = public, pg_temp
@@ -2635,7 +2754,7 @@ CREATE OR REPLACE FUNCTION get_pgsql_node_default_config_value(INTEGER,TEXT) RET
  END;
 $$;
 
-ALTER FUNCTION get_pgsql_node_default_config_value(INTEGER,TEXT) OWNER TO pgbackman_role_rw;
+ALTER FUNCTION get_pgsql_node_config_value(INTEGER,TEXT) OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------------

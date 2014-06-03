@@ -3012,7 +3012,7 @@ class pgbackman_cli(cmd.Cmd):
         except ValueError as e:
             print '\n[ERROR]: ',e,'\n'
             return False
-                
+
         #
         # Command without parameters
         #
@@ -3024,7 +3024,30 @@ class pgbackman_cli(cmd.Cmd):
             try:
                 print '--------------------------------------------------------'
                 backup_server = raw_input('# SrvID / FQDN []: ')
-                remarks = raw_input('# Remarks []: ')
+
+            except Exception as e:
+                print '\n[Aborted] Command interrupted by the user.\n'
+                return False
+
+            try:
+                if backup_server.isdigit():
+                    backup_server_id = backup_server
+                else:
+                    backup_server_id = self.db.get_backup_server_id(backup_server)
+                    
+            except Exception as e:
+                print '\n[ERROR]: ',e 
+                return False
+            
+            try:
+                remarks_default = self.db.get_backup_server_def_value(backup_server_id,'remarks')
+            
+            except Exception as e:
+                print '\n[ERROR]: Problems getting default values for parameters\n',e 
+                return False
+
+            try:
+                remarks = raw_input('# Remarks [' + remarks_default + ']: ')
                 print
 
                 while ack != 'yes' and ack != 'no':
@@ -3036,15 +3059,8 @@ class pgbackman_cli(cmd.Cmd):
                 print '\n[Aborted] Command interrupted by the user.\n'
                 return False
 
-            try:
-                if backup_server.isdigit():
-                    backup_server_id = backup_server
-                else:
-                    backup_server_id = self.db.get_backup_server_id(backup_server)
-
-            except Exception as e:
-                print '\n[ERROR]: ',e 
-                return False
+            if remarks == '':
+                remarks = remarks_default
 
             if ack.lower() == 'yes':
                 try:
@@ -3064,8 +3080,7 @@ class pgbackman_cli(cmd.Cmd):
         elif len(arg_list) == 2:
             
             backup_server = arg_list[0]
-            remarks = arg_list[1]
-            
+
             try:
                 if backup_server.isdigit():
                     backup_server_id = backup_server
@@ -3075,6 +3090,18 @@ class pgbackman_cli(cmd.Cmd):
             except Exception as e:
                 print '\n[ERROR]: ',e 
                 return False
+
+            try:
+                remarks_default = self.db.get_backup_server_def_value(backup_server_id,'remarks')
+                
+            except Exception as e:
+                print '\n[ERROR]: Problems getting default values for parameters\n',e 
+                return False
+
+            remarks = arg_list[1]
+            
+            if remarks == '':
+                remarks = remarks_default
 
             try:
                 self.db.update_backup_server(backup_server_id,remarks.strip())
@@ -3132,15 +3159,6 @@ class pgbackman_cli(cmd.Cmd):
         except ValueError as e:
             print '\n[ERROR]: ',e,'\n'
             return False
-            
-        try:
-            port_default = self.db.get_default_pgsql_node_parameter('pgport')
-            admin_user_default = self.db.get_default_pgsql_node_parameter('admin_user')
-            status_default = self.db.get_default_pgsql_node_parameter('pgsql_node_status')
-            
-        except Exception as e:
-            print '\n[ERROR]: Problems getting default values for parameters\n',e 
-            return False
 
         #
         # Command without parameters
@@ -3153,10 +3171,36 @@ class pgbackman_cli(cmd.Cmd):
             try:
                 print '--------------------------------------------------------'
                 pgsql_node = raw_input('# NodeID / FQDN []: ')
+            
+            except Exception as e:
+                print '\n[Aborted] Command interrupted by the user.\n'
+                return False
+            
+            try:
+                if pgsql_node.isdigit():
+                    pgsql_node_id = pgsql_node
+                else:
+                    pgsql_node_id = self.db.get_pgsql_node_id(pgsql_node)
+                    
+            except Exception as e:
+                print '\n[ERROR]: ',e 
+                return False
+            
+            try:
+                port_default = self.db.get_pgsql_node_def_value(pgsql_node_id,'pgport')
+                admin_user_default = self.db.get_pgsql_node_def_value(pgsql_node_id,'admin_user')
+                status_default = self.db.get_pgsql_node_def_value(pgsql_node_id,'status')
+                remarks_default = self.db.get_pgsql_node_def_value(pgsql_node_id,'remarks')
+            
+            except Exception as e:
+                print '\n[ERROR]: Problems getting default values for parameters\n',e 
+                return False
+
+            try:
                 port = raw_input('# Port [' + port_default + ']: ')
                 admin_user = raw_input('# Admin user [' + admin_user_default + ']: ')
                 status = raw_input('# Status[' + status_default + ']: ')
-                remarks = raw_input('# Remarks []: ')
+                remarks = raw_input('# Remarks [' + remarks_default + ']: ')
                 print
 
                 while ack != 'yes' and ack != 'no':
@@ -3177,15 +3221,8 @@ class pgbackman_cli(cmd.Cmd):
             if status == '':
                 status = status_default
 
-            try:
-                if pgsql_node.isdigit():
-                    pgsql_node_id = pgsql_node
-                else:
-                    pgsql_node_id = self.db.get_pgsql_node_id(pgsql_node)
-
-            except Exception as e:
-                print '\n[ERROR]: ',e 
-                return False
+            if remarks == '':
+                remarks = remarks_default
 
             if ack.lower() == 'yes':
                 if self.check_port(port):  
@@ -3206,6 +3243,27 @@ class pgbackman_cli(cmd.Cmd):
         elif len(arg_list) == 5:
             
             pgsql_node = arg_list[0]
+
+            try:
+                if pgsql_node.isdigit():
+                    pgsql_node_id = pgsql_node
+                else:
+                    pgsql_node_id = self.db.get_pgsql_node_id(pgsql_node)
+
+            except Exception as e:
+                print '\n[ERROR]: ',e 
+                return False
+
+            try:
+                port_default = self.db.get_pgsql_node_def_value(pgsql_node_id,'pgport')
+                admin_user_default = self.db.get_pgsql_node_def_value(pgsql_node_id,'admin_user')
+                status_default = self.db.get_pgsql_node_def_value(pgsql_node_id,'status')
+                remarks_default = self.db.get_pgsql_node_def_value(pgsql_node_id,'remarks')
+                
+            except Exception as e:
+                print '\n[ERROR]: Problems getting default values for parameters\n',e 
+                return False
+            
             port = arg_list[1]
             admin_user = arg_list[2]
             status = arg_list[3]
@@ -3220,15 +3278,8 @@ class pgbackman_cli(cmd.Cmd):
             if status == '':
                 status = status_default
 
-            try:
-                if pgsql_node.isdigit():
-                    pgsql_node_id = pgsql_node
-                else:
-                    pgsql_node_id = self.db.get_pgsql_node_id(pgsql_node)
-
-            except Exception as e:
-                print '\n[ERROR]: ',e 
-                return False
+            if remarks == '':
+                remarks = remarks_default
 
             if self.check_port(port):  
                 try:
@@ -3293,27 +3344,27 @@ class pgbackman_cli(cmd.Cmd):
                 return False
         
             try:
-                backup_minutes_interval_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'backup_minutes_interval')
-                backup_hours_interval_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'backup_hours_interval')
-                backup_weekday_cron_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'backup_weekday_cron')
-                backup_month_cron_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'backup_month_cron')
-                backup_day_month_cron_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'backup_day_month_cron')
+                backup_minutes_interval_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'backup_minutes_interval')
+                backup_hours_interval_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'backup_hours_interval')
+                backup_weekday_cron_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'backup_weekday_cron')
+                backup_month_cron_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'backup_month_cron')
+                backup_day_month_cron_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'backup_day_month_cron')
 
-                backup_code_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'backup_code')
-                retention_period_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'retention_period')
-                retention_redundancy_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'retention_redundancy')
-                extra_backup_parameters_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'extra_backup_parameters')
-                extra_restore_parameters_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'extra_restore_parameters')
-                backup_job_status_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'backup_job_status')
+                backup_code_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'backup_code')
+                retention_period_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'retention_period')
+                retention_redundancy_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'retention_redundancy')
+                extra_backup_parameters_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'extra_backup_parameters')
+                extra_restore_parameters_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'extra_restore_parameters')
+                backup_job_status_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'backup_job_status')
 
-                domain_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'domain')
-                logs_email_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'logs_email')
-                admin_user_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'admin_user')
-                pgport_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'pgport')
+                domain_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'domain')
+                logs_email_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'logs_email')
+                admin_user_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'admin_user')
+                pgport_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'pgport')
 
-                pgnode_backup_partition_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'pgnode_backup_partition')
-                pgnode_crontab_file_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'pgnode_crontab_file')
-                pgsql_node_status_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'pgsql_node_status')
+                pgnode_backup_partition_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'pgnode_backup_partition')
+                pgnode_crontab_file_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'pgnode_crontab_file')
+                pgsql_node_status_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'pgsql_node_status')
                                 
             except Exception as e:
                 print '\n[ERROR]: Problems getting default values for parameters\n',e 
@@ -3460,27 +3511,27 @@ class pgbackman_cli(cmd.Cmd):
                 return False
         
             try:
-                backup_minutes_interval_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'backup_minutes_interval')
-                backup_hours_interval_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'backup_hours_interval')
-                backup_weekday_cron_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'backup_weekday_cron')
-                backup_month_cron_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'backup_month_cron')
-                backup_day_month_cron_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'backup_day_month_cron')
+                backup_minutes_interval_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'backup_minutes_interval')
+                backup_hours_interval_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'backup_hours_interval')
+                backup_weekday_cron_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'backup_weekday_cron')
+                backup_month_cron_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'backup_month_cron')
+                backup_day_month_cron_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'backup_day_month_cron')
 
-                backup_code_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'backup_code')
-                retention_period_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'retention_period')
-                retention_redundancy_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'retention_redundancy')
-                extra_backup_parameters_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'extra_backup_parameters')
-                extra_restore_parameters_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'extra_restore_parameters')
-                backup_job_status_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'backup_job_status')
+                backup_code_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'backup_code')
+                retention_period_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'retention_period')
+                retention_redundancy_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'retention_redundancy')
+                extra_backup_parameters_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'extra_backup_parameters')
+                extra_restore_parameters_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'extra_restore_parameters')
+                backup_job_status_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'backup_job_status')
 
-                domain_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'domain')
-                logs_email_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'logs_email')
-                admin_user_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'admin_user')
-                pgport_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'pgport')
+                domain_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'domain')
+                logs_email_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'logs_email')
+                admin_user_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'admin_user')
+                pgport_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'pgport')
 
-                pgnode_backup_partition_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'pgnode_backup_partition')
-                pgnode_crontab_file_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'pgnode_crontab_file')
-                pgsql_node_status_default = self.db.get_pgsql_node_default_config_value(pgsql_node_id,'pgsql_node_status')
+                pgnode_backup_partition_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'pgnode_backup_partition')
+                pgnode_crontab_file_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'pgnode_crontab_file')
+                pgsql_node_status_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'pgsql_node_status')
                 
             except Exception as e:
                 print '\n[ERROR]: Problems getting default values for parameters\n',e 
@@ -3673,17 +3724,17 @@ class pgbackman_cli(cmd.Cmd):
             if def_id.isdigit():
 
                 try:
-                    minutes_cron_default = self.db.get_backup_definition_def_values(def_id,'minutes_cron')
-                    hours_cron_default = self.db.get_backup_definition_def_values(def_id,'hours_cron')
-                    weekday_cron_default = self.db.get_backup_definition_def_values(def_id,'weekday_cron')
-                    month_cron_default = self.db.get_backup_definition_def_values(def_id,'month_cron')
-                    day_month_cron_default = self.db.get_backup_definition_def_values(def_id,'day_month_cron')
+                    minutes_cron_default = self.db.get_backup_definition_def_value(def_id,'minutes_cron')
+                    hours_cron_default = self.db.get_backup_definition_def_value(def_id,'hours_cron')
+                    weekday_cron_default = self.db.get_backup_definition_def_value(def_id,'weekday_cron')
+                    month_cron_default = self.db.get_backup_definition_def_value(def_id,'month_cron')
+                    day_month_cron_default = self.db.get_backup_definition_def_value(def_id,'day_month_cron')
                     
-                    retention_period_default = self.db.get_backup_definition_def_values(def_id,'retention_period')
-                    retention_redundancy_default = self.db.get_backup_definition_def_values(def_id,'retention_redundancy')
-                    extra_backup_parameters_default = self.db.get_backup_definition_def_values(def_id,'extra_backup_parameters')
-                    job_status_default = self.db.get_backup_definition_def_values(def_id,'job_status')
-                    remarks_default = self.db.get_backup_definition_def_values(def_id,'remarks')
+                    retention_period_default = self.db.get_backup_definition_def_value(def_id,'retention_period')
+                    retention_redundancy_default = self.db.get_backup_definition_def_value(def_id,'retention_redundancy')
+                    extra_backup_parameters_default = self.db.get_backup_definition_def_value(def_id,'extra_backup_parameters')
+                    job_status_default = self.db.get_backup_definition_def_value(def_id,'job_status')
+                    remarks_default = self.db.get_backup_definition_def_value(def_id,'remarks')
                 
                 except Exception as e:
                     print '\n[ERROR]: Problems getting default values for parameters\n',e 
@@ -3768,17 +3819,17 @@ class pgbackman_cli(cmd.Cmd):
             if def_id.isdigit():
 
                 try:
-                    minutes_cron_default = self.db.get_backup_definition_def_values(def_id,'minutes_cron')
-                    hours_cron_default = self.db.get_backup_definition_def_values(def_id,'hours_cron')
-                    weekday_cron_default = self.db.get_backup_definition_def_values(def_id,'weekday_cron')
-                    month_cron_default = self.db.get_backup_definition_def_values(def_id,'month_cron')
-                    day_month_cron_default = self.db.get_backup_definition_def_values(def_id,'day_month_cron')
+                    minutes_cron_default = self.db.get_backup_definition_def_value(def_id,'minutes_cron')
+                    hours_cron_default = self.db.get_backup_definition_def_value(def_id,'hours_cron')
+                    weekday_cron_default = self.db.get_backup_definition_def_value(def_id,'weekday_cron')
+                    month_cron_default = self.db.get_backup_definition_def_value(def_id,'month_cron')
+                    day_month_cron_default = self.db.get_backup_definition_def_value(def_id,'day_month_cron')
                     
-                    retention_period_default = self.db.get_backup_definition_def_values(def_id,'retention_period')
-                    retention_redundancy_default = self.db.get_backup_definition_def_values(def_id,'retention_redundancy')
-                    extra_backup_parameters_default = self.db.get_backup_definition_def_values(def_id,'extra_backup_parameters')
-                    job_status_default = self.db.get_backup_definition_def_values(def_id,'job_status')
-                    remarks_default = self.db.get_backup_definition_def_values(def_id,'remarks')
+                    retention_period_default = self.db.get_backup_definition_def_value(def_id,'retention_period')
+                    retention_redundancy_default = self.db.get_backup_definition_def_value(def_id,'retention_redundancy')
+                    extra_backup_parameters_default = self.db.get_backup_definition_def_value(def_id,'extra_backup_parameters')
+                    job_status_default = self.db.get_backup_definition_def_value(def_id,'job_status')
+                    remarks_default = self.db.get_backup_definition_def_value(def_id,'remarks')
                 
                 except Exception as e:
                     print '\n[ERROR]: Problems getting default values for parameters\n',e 

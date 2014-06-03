@@ -2060,7 +2060,7 @@ class pgbackman_db():
 
             if self.cur:
                 try:
-                    self.cur.execute('DELETE FROM pgsql_node_to_delete WHERE backup_server_id = %s AND pgsql_node_id = %s',(backup_server_id,pgsql_node_id))
+                    self.cur.execute('SELECT delete_pgsql_node_to_delete(%s,%s)',(backup_server_id,pgsql_node_id))
                     self.conn.commit()
                                     
                 except psycopg2.Error as e:
@@ -2644,7 +2644,7 @@ class pgbackman_db():
     # Method 
     # ############################################
            
-    def get_backup_definition_def_values(self,def_id,parameter):
+    def get_backup_definition_def_value(self,def_id,parameter):
         """A function to get the value of an attribute from a backup_definition"""
      
         try:
@@ -2652,7 +2652,7 @@ class pgbackman_db():
 
             if self.cur:
                 try:
-                    self.cur.execute('SELECT get_backup_definition_def_values(%s,%s)',(def_id,parameter))
+                    self.cur.execute('SELECT get_backup_definition_def_value(%s,%s)',(def_id,parameter))
                     self.conn.commit()
 
                     data = self.cur.fetchone()[0]
@@ -2671,7 +2671,7 @@ class pgbackman_db():
     # Method 
     # ############################################
            
-    def get_pgsql_node_default_config_value(self,pgsql_node_id,parameter):
+    def get_pgsql_node_config_value(self,pgsql_node_id,parameter):
         """A function to get the value of a default configuration parameter for a PgSQL node"""
      
         try:
@@ -2679,7 +2679,7 @@ class pgbackman_db():
 
             if self.cur:
                 try:
-                    self.cur.execute('SELECT get_pgsql_node_default_config_value(%s,%s)',(pgsql_node_id,parameter))
+                    self.cur.execute('SELECT get_pgsql_node_config_value(%s,%s)',(pgsql_node_id,parameter))
                     self.conn.commit()
 
                     data = self.cur.fetchone()[0]
@@ -2698,7 +2698,7 @@ class pgbackman_db():
     # Method 
     # ############################################
            
-    def get_pgsql_node_def_values(self,pgsql_node_id,parameter):
+    def get_pgsql_node_def_value(self,pgsql_node_id,parameter):
         """A function to get the value of an attribute from pgsql_node"""
      
         try:
@@ -2706,7 +2706,7 @@ class pgbackman_db():
 
             if self.cur:
                 try:
-                    self.cur.execute('SELECT get_pgsql_node_def_values(%s,%s)',(pgsql_node_id,parameter))
+                    self.cur.execute('SELECT get_pgsql_node_def_value(%s,%s)',(pgsql_node_id,parameter))
                     self.conn.commit()
 
                     data = self.cur.fetchone()[0]
@@ -2725,7 +2725,7 @@ class pgbackman_db():
     # Method 
     # ############################################
            
-    def get_backup_server_def_values(self,backup_server_id,parameter):
+    def get_backup_server_def_value(self,backup_server_id,parameter):
         """A function to get the value of an attribute from backup_server"""
      
         try:
@@ -2733,7 +2733,7 @@ class pgbackman_db():
 
             if self.cur:
                 try:
-                    self.cur.execute('SELECT get_backup_server_def_values(%s,%s)',(backup_server_id,parameter))
+                    self.cur.execute('SELECT get_backup_server_def_value(%s,%s)',(backup_server_id,parameter))
                     self.conn.commit()
 
                     data = self.cur.fetchone()[0]
