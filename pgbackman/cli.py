@@ -162,6 +162,7 @@ class pgbackman_cli(cmd.Cmd):
                 print '--------------------------------------------------------'
 
             except Exception as e:
+                print '\n--------------------------------------------------------' 
                 print '\n[Aborted] Command interrupted by the user.\n'
                 return False   
 
@@ -256,6 +257,7 @@ class pgbackman_cli(cmd.Cmd):
                 print '--------------------------------------------------------'
 
             except Exception as e:
+                print '\n--------------------------------------------------------'
                 print '\n[Aborted] Command interrupted by the user.\n'
                 return False
 
@@ -421,6 +423,7 @@ class pgbackman_cli(cmd.Cmd):
                 print '--------------------------------------------------------'
 
             except Exception as e:
+                print '\n--------------------------------------------------------' 
                 print '\n[Aborted] Command interrupted by the user.\n'
                 return False
 
@@ -536,6 +539,7 @@ class pgbackman_cli(cmd.Cmd):
                 print '--------------------------------------------------------'
             
             except Exception as e:
+                print '\n--------------------------------------------------------' 
                 print '\n[Aborted] Command interrupted by the user.\n'
                 return False
 
@@ -622,6 +626,7 @@ class pgbackman_cli(cmd.Cmd):
                 print '--------------------------------------------------------'
 
             except Exception as e:
+                print '\n--------------------------------------------------------' 
                 print '\n[Aborted] Command interrupted by the user.\n'
                 return False
 
@@ -806,6 +811,7 @@ class pgbackman_cli(cmd.Cmd):
                 pgsql_node = raw_input('# PgSQL node NodeID / FQDN []: ')
             
             except Exception as e:
+                print '\n--------------------------------------------------------' 
                 print '\n[Aborted] Command interrupted by the user.\n'
                 return False
 
@@ -873,6 +879,7 @@ class pgbackman_cli(cmd.Cmd):
                 print '--------------------------------------------------------'
                 
             except Exception as e:
+                print '\n--------------------------------------------------------' 
                 print '\n[Aborted] Command interrupted by the user.\n'
                 return False
 
@@ -1230,6 +1237,7 @@ class pgbackman_cli(cmd.Cmd):
                 print '--------------------------------------------------------'
             
             except Exception as e:
+                print '\n--------------------------------------------------------' 
                 print '\n[Aborted] Command interrupted by the user.\n'
                 return False
 
@@ -1353,6 +1361,7 @@ class pgbackman_cli(cmd.Cmd):
                 print '--------------------------------------------------------'
             
             except Exception as e:
+                print '\n--------------------------------------------------------' 
                 print '\n[Aborted] Command interrupted by the user\n'
                 return False
 
@@ -1472,6 +1481,7 @@ class pgbackman_cli(cmd.Cmd):
                 print '--------------------------------------------------------'
 
             except Exception as e:
+                print '\n--------------------------------------------------------' 
                 print '\n[Aborted] Command interrupted by the user.\n'
                 return False
 
@@ -1600,6 +1610,7 @@ class pgbackman_cli(cmd.Cmd):
                 print '--------------------------------------------------------'
 
             except Exception as e:
+                print '\n--------------------------------------------------------' 
                 print '\n[Aborted] Command interrupted by the user.\n'
                 return False
 
@@ -1742,6 +1753,7 @@ class pgbackman_cli(cmd.Cmd):
                 pgsql_node = raw_input('# PgSQL node NodeID / FQDN []: ')
 
             except Exception as e:
+                print '\n--------------------------------------------------------' 
                 print '\n[Aborted] Command interrupted by the user.\n'
                 return False
 
@@ -1787,6 +1799,7 @@ class pgbackman_cli(cmd.Cmd):
                 print '--------------------------------------------------------'
 
             except Exception as e:
+                print '\n--------------------------------------------------------' 
                 print '\n[Aborted] Command interrupted by the user.\n'
                 return False
 
@@ -1981,6 +1994,7 @@ class pgbackman_cli(cmd.Cmd):
                 print '--------------------------------------------------------'
 
             except Exception as e:
+                print '\n--------------------------------------------------------' 
                 print '\n[Aborted] Command interrupted by the user.\n'
                 return False
 
@@ -2116,6 +2130,7 @@ class pgbackman_cli(cmd.Cmd):
                 bck_id = raw_input('# BckID []: ')
 
             except Exception as e:
+                print '\n--------------------------------------------------------' 
                 print '\n[Aborted] Command interrupted by the user.\n'
                 return False
 
@@ -2136,6 +2151,7 @@ class pgbackman_cli(cmd.Cmd):
                 target_pgsql_node = raw_input('# Target NodeID / FQDN []: ')
                 
             except Exception as e:
+                print '\n--------------------------------------------------------' 
                 print '\n[Aborted] Command interrupted by the user.\n'
                 return False
 
@@ -2167,6 +2183,7 @@ class pgbackman_cli(cmd.Cmd):
                     ack_input = raw_input('# Are all values correct (yes/no): ')
                     
             except Exception as e:
+                print '\n--------------------------------------------------------' 
                 print '\n[Aborted] Command interrupted by the user.\n'
                 return False
             
@@ -2212,6 +2229,7 @@ class pgbackman_cli(cmd.Cmd):
                                 ack_rename = raw_input('# Rename it? (yes/no): ')
                                 
                         except Exception as e:
+                            print '\n--------------------------------------------------------' 
                             print '\n[Aborted] Command interrupted by the user.\n'
                             return False
 
@@ -2225,6 +2243,7 @@ class pgbackman_cli(cmd.Cmd):
                             try:
                                 renamed_dbname = raw_input('# Rename existing database to [' + renamed_dbname_default + ']: ')
                             except Exception as e:
+                                print '\n--------------------------------------------------------' 
                                 print '\n[Aborted] Command interrupted by the user.\n'
                                 return False
                             
@@ -2240,6 +2259,7 @@ class pgbackman_cli(cmd.Cmd):
                                         renamed_dbname = renamed_dbname_default
                                             
                             except Exception as e:
+                                print '\n--------------------------------------------------------' 
                                 print '\n[Aborted] Command interrupted by the user.\n'
                                 return False
 
@@ -2270,6 +2290,7 @@ class pgbackman_cli(cmd.Cmd):
                                 ack_reuse = raw_input('# Use the existing role? (yes/no): ')
                             
                         except Exception as e:
+                                print '\n--------------------------------------------------------' 
                                 print '\n[Aborted] Command interrupted by the user.\n'
                                 return False
 
@@ -2297,6 +2318,7 @@ class pgbackman_cli(cmd.Cmd):
                     print '--------------------------------------------------------'
                     
                 except Exception as e:
+                    print '\n--------------------------------------------------------' 
                     print '\n[Aborted] Command interrupted by the user.\n'
                     return False
 
@@ -2375,6 +2397,7 @@ class pgbackman_cli(cmd.Cmd):
                 print '--------------------------------------------------------'
 
             except Exception as e:
+                print '\n--------------------------------------------------------' 
                 print '\n[Aborted] Command interrupted by the user.\n'
                 return False
             
@@ -2482,6 +2505,7 @@ class pgbackman_cli(cmd.Cmd):
                 print '--------------------------------------------------------'
             
             except Exception as e:
+                print '\n--------------------------------------------------------' 
                 print '\n[Aborted] Command interrupted by the user.\n'
                 return False 
 
@@ -2559,6 +2583,7 @@ class pgbackman_cli(cmd.Cmd):
                 print '--------------------------------------------------------'
             
             except Exception as e:
+                print '\n--------------------------------------------------------' 
                 print '\n[Aborted] Command interrupted by the user.\n'
                 return False
 
@@ -2730,6 +2755,7 @@ class pgbackman_cli(cmd.Cmd):
                 print '--------------------------------------------------------'
 
             except Exception as e:
+                print '\n--------------------------------------------------------' 
                 print '\n[Aborted] Command interrupted by the user.\n'
                 return False
 
@@ -2804,6 +2830,7 @@ class pgbackman_cli(cmd.Cmd):
                 print '--------------------------------------------------------'
 
             except Exception as e:
+                print '\n--------------------------------------------------------' 
                 print '\n[Aborted] Command interrupted by the user.\n'
                 return False
 
@@ -2912,6 +2939,7 @@ class pgbackman_cli(cmd.Cmd):
                 print '--------------------------------------------------------'
 
             except Exception as e:
+                print '\n--------------------------------------------------------' 
                 print '\n[Aborted] Command interrupted by the user.\n'
                 return False
 
@@ -2987,6 +3015,7 @@ class pgbackman_cli(cmd.Cmd):
                 print '--------------------------------------------------------'
                 
             except Exception as e:
+                print '\n--------------------------------------------------------' 
                 print '\n[Aborted] Command interrupted by the user.\n'
                 return False
 
@@ -3092,6 +3121,7 @@ class pgbackman_cli(cmd.Cmd):
                 backup_server = raw_input('# SrvID / FQDN []: ')
 
             except Exception as e:
+                print '\n--------------------------------------------------------' 
                 print '\n[Aborted] Command interrupted by the user.\n'
                 return False
 
@@ -3122,6 +3152,7 @@ class pgbackman_cli(cmd.Cmd):
                 print '--------------------------------------------------------'
 
             except Exception as e:
+                print '\n--------------------------------------------------------' 
                 print '\n[Aborted] Command interrupted by the user.\n'
                 return False
 
@@ -3239,6 +3270,7 @@ class pgbackman_cli(cmd.Cmd):
                 pgsql_node = raw_input('# NodeID / FQDN []: ')
             
             except Exception as e:
+                print '\n--------------------------------------------------------' 
                 print '\n[Aborted] Command interrupted by the user.\n'
                 return False
             
@@ -3275,6 +3307,7 @@ class pgbackman_cli(cmd.Cmd):
                 print '--------------------------------------------------------'
 
             except Exception as e:
+                print '\n--------------------------------------------------------' 
                 print '\n[Aborted] Command interrupted by the user.\n'
                 return False
 
@@ -3395,6 +3428,7 @@ class pgbackman_cli(cmd.Cmd):
                 print
 
             except Exception as e:
+                print '\n--------------------------------------------------------' 
                 print '\n[Aborted] Command interrupted by the user.\n'
                 return False
 
@@ -3466,6 +3500,7 @@ class pgbackman_cli(cmd.Cmd):
                 print '--------------------------------------------------------'
 
             except Exception as e:
+                print '\n--------------------------------------------------------' 
                 print '\n[Aborted] Command interrupted by the user.\n'
                 return False   
 
@@ -3784,6 +3819,7 @@ class pgbackman_cli(cmd.Cmd):
                 def_id = raw_input('# DefID []: ')
                 
             except Exception as e:
+                print '\n--------------------------------------------------------' 
                 print '\n[Aborted] Command interrupted by the user.\n',e 
                 return False
 
@@ -3828,6 +3864,7 @@ class pgbackman_cli(cmd.Cmd):
                 print '--------------------------------------------------------'
 
             except Exception as e:
+                print '\n--------------------------------------------------------' 
                 print '\n[Aborted] Command interrupted by the user.\n',e
                 return False
             
