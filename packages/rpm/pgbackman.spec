@@ -21,7 +21,7 @@ Url:            http://www.pgbackman.org/
 Source0:        %{name}-%{version}.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-buildroot-%(%{__id_u} -n)
 BuildArch:      noarch
-Requires:       python-psycopg2 python-argparse at cron python-setuptools shadow-utils
+Requires:       python-psycopg2 python-argparse at cronie python-setuptools shadow-utils logrotate
 
 %description 
 PgBackMan is a tool for managing PostgreSQL logical backups created
@@ -40,15 +40,18 @@ elements associated to it.
 %setup -n pgbackman-%{version} -q
 
 %build
-python setup.py build
+python setup_packages.py build
 
 %install
-python setup.py install -O1 --skip-build --root %{buildroot}
+python setup_packages.py install -O1 --skip-build --root %{buildroot}
 mkdir -p %{buildroot}%{_sysconfdir}/%{name}
+mkdir -p %{buildroot}%{_sysconfdir}/init.d
+mkdir -p %{buildroot}%{_sysconfdir}/logrotate.d
 mkdir -p %{buildroot}/var/lib/%{name}
 mkdir -p %{buildroot}/var/log/%{name}
 install -pm 644 etc/pgbackman.conf %{buildroot}%{_sysconfdir}/%{name}/%{name}.conf
-install -m 755 pgbackman.init %{buildroot}%{_sysconfdir}/rc.d/init.d/%{name}
+install -m 755 etc/pgbackman_init_rh.sh %{buildroot}%{_sysconfdir}/init.d/%{name}
+install -pm 644 etc/pgbackman.logrotate %{buildroot}%{_sysconfdir}/logrotate.d/%{name}
 touch %{buildroot}/var/log/%{name}/%{name}.log
 
 %clean
@@ -56,10 +59,12 @@ rm -rf %{buildroot}
 
 %files
 %defattr(-,root,root)
-%doc INSTALL NEWS README
+#%doc INSTALL NEWS README
 %{python_sitelib}/%{name}-%{version}-py%{pybasever}.egg-info/
 %{python_sitelib}/%{name}/
 %{_bindir}/%{name}*
+%{_sysconfdir}/init.d/%{name}*
+%{_sysconfdir}/logrotate.d/%{name}*
 %config(noreplace) %{_sysconfdir}/%{name}/%{name}.conf
 %attr(700,%{pbm_owner},%{pbm_group}) %dir /var/lib/%{name}
 %attr(755,%{pbm_owner},%{pbm_group}) %dir /var/log/%{name}
@@ -70,6 +75,6 @@ groupadd -f -r pgbackman >/dev/null 2>&1 || :
 useradd -M -n -g pgbackman -r -d /var/lib/pgbackman -s /bin/bash \
         -c "PostgreSQL Backup Manager" pgbackman >/dev/null 2>&1 || :
 
-changelog
+%changelog
 * Mon Jun 09 2014 - Rafael Martinez Guerrero <rafael@postgresql.org.es> 1.0.0-1
 - New release 1.0.0
