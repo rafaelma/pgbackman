@@ -37,7 +37,7 @@ ensure a 100% restore of a logical backup of a database and the
 elements associated to it.
 
 %prep
-%setup -n pgbackman-%{version} -q
+%setup -n %{name}-%{version} -q
 
 %build
 python setup_packages.py build
@@ -49,9 +49,11 @@ mkdir -p %{buildroot}%{_sysconfdir}/init.d
 mkdir -p %{buildroot}%{_sysconfdir}/logrotate.d
 mkdir -p %{buildroot}/var/lib/%{name}
 mkdir -p %{buildroot}/var/log/%{name}
+mkdir -p %{buildroot}/usr/share/%{name}
 install -pm 644 etc/pgbackman.conf %{buildroot}%{_sysconfdir}/%{name}/%{name}.conf
 install -m 755 etc/pgbackman_init_rh.sh %{buildroot}%{_sysconfdir}/init.d/%{name}
 install -pm 644 etc/pgbackman.logrotate %{buildroot}%{_sysconfdir}/logrotate.d/%{name}
+install -pm 644 sql/pgbackman.sql %{buildroot}%{_datadir}/%{name}/%{name}-%{version}.sql
 touch %{buildroot}/var/log/%{name}/%{name}.log
 
 %clean
@@ -59,12 +61,13 @@ rm -rf %{buildroot}
 
 %files
 %defattr(-,root,root)
-#%doc INSTALL NEWS README
+%doc INSTALL
 %{python_sitelib}/%{name}-%{version}-py%{pybasever}.egg-info/
 %{python_sitelib}/%{name}/
 %{_bindir}/%{name}*
 %{_sysconfdir}/init.d/%{name}*
 %{_sysconfdir}/logrotate.d/%{name}*
+%{_datadir}/%{name}/*
 %config(noreplace) %{_sysconfdir}/%{name}/%{name}.conf
 %attr(700,%{pbm_owner},%{pbm_group}) %dir /var/lib/%{name}
 %attr(755,%{pbm_owner},%{pbm_group}) %dir /var/log/%{name}
