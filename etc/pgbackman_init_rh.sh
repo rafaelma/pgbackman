@@ -35,45 +35,60 @@ start(){
     
     echo -n "$PGBACKMAN_CONTROL_START"
 
-    $BINDIR/pgbackman_control >> "$PGBACKMAN_STARTUP_LOG" 2>&1 &
-    RETVAL=$?
-    PID=$!
-    sleep 2
-    
-    if [ "x$PID" != "x" ]
+    if [ ! -e "$lockfile_control" ]
     then
-        success
-	echo
+	$BINDIR/pgbackman_control >> "$PGBACKMAN_STARTUP_LOG" 2>&1 &
+	RETVAL=$?
+	PID=$!
+	sleep 2
+    
+	if [ "x$PID" != "x" ]
+	then
+            success
+	    echo
 
-        touch "$lockfile_control"
-        echo $PID > "$pidfile_control"
-    else
-        failure $"$PGBACKMAN_CONTROL_START"
-	echo
+            touch "$lockfile_control"
+            echo $PID > "$pidfile_control"
+	else
+            failure
+	    echo
 	
-	return $RETVAL
+	    return $RETVAL
+	fi
+
+    else
+	failure
+	echo	
     fi
 
     echo -n "$PGBACKMAN_MAINTENANCE_START"
 
-    $BINDIR/pgbackman_maintenance >> "$PGBACKMAN_STARTUP_LOG" 2>&1 &
-    RETVAL=$?
-    PID=$!
-    sleep 2
-    
-    if [ "x$PID" != "x" ]
+    if [ ! -e "$lockfile_maintenance" ]
     then
-        success 
-	echo
-
-        touch "$lockfile_maintenance"
-        echo $PID > "$pidfile_maintenance"
+	$BINDIR/pgbackman_maintenance >> "$PGBACKMAN_STARTUP_LOG" 2>&1 &
+	RETVAL=$?
+	PID=$!
+	sleep 2
+	
+	if [ "x$PID" != "x" ]
+	then
+            success
+	    echo
+	    
+            touch "$lockfile_maintenance"
+            echo $PID > "$pidfile_maintenance"
+	else
+            failure
+	    echo
+	    
+	    return $RETVAL
+	fi
+	
     else
-        failure $"$PGBACKMAN_MAINTENANCE_START"
-	echo
-
-	return $RETVAL
+	failure
+	echo	
     fi
+	
 }
 
 stop(){
@@ -81,10 +96,10 @@ stop(){
     PGBACKMAN_CONTROL_STOP="Stopping pgbackman_control service: "
     PGBACKMAN_MAINTENANCE_STOP="Stopping pgbackman_maintenance service: "
 
+    echo -n $PGBACKMAN_CONTROL_STOP
+
     if [ -e "$lockfile_control" ]
     then
-	echo -n $PGBACKMAN_CONTROL_STOP
-	
 	killproc -p "$pidfile_control" pgbackman_control
         RETVAL=$?
         
@@ -97,20 +112,21 @@ stop(){
             rm -f $pidfile_control
 	
 	else
-	    failure $"$PGBACKMAN_CONTROL_STOP"
+	    failure
 	    echo
 	    return $RETVAL
 	fi
 	
     else
         # not running; per LSB standards this is "ok"   
-        echo_success
+	success
+	echo
     fi
+    
+    echo -n $PGBACKMAN_MAINTENANCE_STOP
     
     if [ -e "$lockfile_maintenance" ]
     then
-	echo -n $PGBACKMAN_MAINTENANCE_STOP
-
 	killproc -p "$pidfile_maintenance" pgbackman_maintenance
         RETVAL=$?
         
@@ -123,15 +139,16 @@ stop(){
             rm -f $pidfile_maintenance
 	    
 	else
-	    failure $"$PGBACKMAN_MAINTENANCE_STOP"
+	    failure
 	    echo
 
 	    return $RETVAL
 	fi
 	
     else
-        # not running; per LSB standards this is "ok"   
-        echo_success
+        # not running; per LSB standards this is "ok"  
+        success
+	echo
     fi
     
 }
