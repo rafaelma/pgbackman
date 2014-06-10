@@ -25,10 +25,10 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
    end
 
    config.vm.define "pg-backup02" do |pgbackup2|
-    pgbackup2.vm.box = "chef/centos-6.5"
+    pgbackup2.vm.box = "chef/debian-7.4"
     pgbackup2.vm.network "private_network", ip: "10.10.10.102"
     pgbackup2.vm.hostname = "pg-backup02.example.net"
-    pgbackup2.vm.provision :shell, :path => "bootstrap.sh"
+    pgbackup2.vm.provision :shell, :path => "bootstrap_debian.sh"
 
     pgbackup2.vm.provider "virtualbox" do |vb2|
      # Use VBoxManage to customize the VM. For example to change memory:  
@@ -60,6 +60,41 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     end
    end
 
+   config.vm.define "centos6" do |centos6|
+    centos6.vm.box = "chef/centos-6.5"
+    centos6.vm.network "private_network", ip: "10.10.10.105"
+    centos6.vm.hostname = "centos6.example.net"
+    centos6.vm.provision :shell, :path => "bootstrap_centos.sh"
+
+    centos6.vm.provider "virtualbox" do |vb4|
+     # Use VBoxManage to customize the VM. For example to change memory:  
+     vb4.customize ["modifyvm", :id, "--memory", "512"]
+    end
+   end
+
+   config.vm.define "debian7" do |debian7|
+    debian7.vm.box = "chef/debian-7.4"
+    debian7.vm.network "private_network", ip: "10.10.10.106"
+    debian7.vm.hostname = "debian7.example.net"
+    debian7.vm.provision :shell, :path => "bootstrap_debian.sh"
+
+    debian7.vm.provider "virtualbox" do |vb4|
+     # Use VBoxManage to customize the VM. For example to change memory:  
+     vb4.customize ["modifyvm", :id, "--memory", "512"]
+    end
+   end
+
+   config.vm.define "ubuntu14" do |ubuntu14|
+    ubuntu14.vm.box = "chef/ubuntu-14.04"
+    ubuntu14.vm.network "private_network", ip: "10.10.10.107"
+    ubuntu14.vm.hostname = "ubuntu14.example.net"
+    ubuntu14.vm.provision :shell, :path => "bootstrap_debian.sh"
+
+    ubuntu14.vm.provider "virtualbox" do |vb4|
+     # Use VBoxManage to customize the VM. For example to change memory:  
+     vb4.customize ["modifyvm", :id, "--memory", "512"]
+    end
+   end
 
   # The url from where the 'config.vm.box' box will be fetched if it
   # doesn't already exist on the user's system.

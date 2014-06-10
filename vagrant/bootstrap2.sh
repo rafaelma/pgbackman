@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 
 rpm -ivh http://yum.postgresql.org/9.3/redhat/rhel-6-x86_64/pgdg-centos93-9.3-1.noarch.rpm
+yum -y update
 yum -y groupinstall "PostgreSQL Database Server 9.3 PGDG"
+yum -y upgrade
 
 echo "10.10.10.101   pg-backup01.example.net   pg-backup01" >> /etc/hosts
 echo "10.10.10.102   pg-backup02.example.net   pg-backup02" >> /etc/hosts
