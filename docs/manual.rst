@@ -6,8 +6,7 @@ PgBackMan - PostgreSQL Backup Manager
 | Version-1.0.0
 |
 | Author: Rafael Martinez Guerrero (University of Oslo)
-| E-mail: rafael@postgresql.org.es
-|         rafael@usit.uio.no
+| E-mail: rafael@postgresql.org.es / rafael@usit.uio.no
 | Source: https://github.com/rafaelma/pgbackman
 | Web: http://www.pgbackman.org/
 |
