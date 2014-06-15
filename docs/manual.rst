@@ -7,6 +7,7 @@ PgBackMan - PostgreSQL Backup Manager
 |
 | Author: Rafael Martinez Guerrero (University of Oslo)
 | E-mail: rafael@postgresql.org.es
+|         rafael@usit.uio.no
 | Source: https://github.com/rafaelma/pgbackman
 | Web: http://www.pgbackman.org/
 |
@@ -22,11 +23,11 @@ with ``pg_dump`` and ``pg_dumpall``.
 
 It is designed to manage backups from thousands of databases running
 in multiple PostgreSQL nodes, and it supports a multiple backup
-servers topology.
+server topology.
 
 It also manages role and database configuration information when
 creating a backup of a database. This information is necessary to
-ensure a 100% restore of a logical backup of a database and the
+ensure a 100% restoration of a logical backup of a database and the
 elements associated to it.
 
 Even though a backup created with ``pg_dump`` or ``pg_dumpall`` can
@@ -36,17 +37,17 @@ they are still necessary if you need to archive versions of a
 database, move databases between PgSQL nodes and clone databases
 between production, pre-production and/or development servers.
 
-They are also an easy way of taken backups of databases not requiring
-PITR backups.
+Logical backups are also an easy way of taken backups of databases not
+requiring PITR backups.
 	
 PgBackMan is not a tool for managing PITR (Point in time recovery)
-backups. There are several other solutions out there that can be use
-for PITR backups, such as PITRTools, OmniPITR, and Barman. 
+backups. There are other solutions that can be used for managing PITR
+backups, such as PITRTools, OmniPITR, and Barman.
 
 The PgBackMan code is distributed under the GNU General Public License
-3 and it is totally written in Python and PL/PgSQL. It has been
-developed and tested by members of the Database Operations Group at
-the Center for Information Technology at the University of Oslo.
+3 and it is written in Python and PL/PgSQL. It has been developed and
+tested by members of the Database Operations Group at the Center for
+Information Technology at the University of Oslo.
 
 An example of how a system using PgBackMan may look like can be seen
 in the next figure:
@@ -2140,7 +2141,7 @@ PostgreSQL to implement a good backup and restore strategy. They are:
 Regardless of the type of backup used to backup your databases, one
 needs a good *backup and restore plan* that takes into account
 intervals, retention policies and performance issues for a backup and
-the time needed to get a full restore of a database.
+the time needed to get a full restoration of a database.
 
 Physical backups
 ----------------
@@ -2148,16 +2149,16 @@ Physical backups
 This type of backup takes copies of the files where the PostgreSQL
 saves the databases. There are several techniques that can be used to
 take physical backups and we are not going to explain them here. Check
-the *Chapter 24. Backup and Restore* of the PostgreSQL documentation for
+*Chapter 24. Backup and Restore* of the PostgreSQL documentation for
 more information.
 
-The important thing is that some of these techniques together with the
-continuous archiving of write ahead log (WAL) files can be used to
-implement PITR (Point in time recovery) backups and achieve a full
-disaster recovery solution.
+The important thing with physical backups is that some of these
+techniques together with continuous archiving of write ahead log (WAL)
+files can be used to implement PITR (Point in time recovery) backups
+and achieve a full disaster recovery solution.
 
-There are several solutions out there that can be use for PITR
-backups, such as PITRTools, OmniPITR, and Barman.
+There are other solutions that can be used for managing PITR backups,
+such as PITRTools, OmniPITR, and Barman.
 	  
 Logical backups
 ---------------
@@ -2166,10 +2167,10 @@ PostgreSQL has two utilities, ``pg_dump`` and ``pg_dumpall``, for
 taking logical backups of databases. They take a snapshot of a
 database at a given moment.
 
-These utilities take consistent backups of a database or the hole
+These utilities take consistent backups of a database or the whole
 cluster even if the databases are being used concurrently. At the same
 time ``pg_dump`` and ``pg_dumpall`` do not block other users accessing
-the database when backups are been taking.
+the database when backups are being taken.
 
 Even though a backup or snapshot created with ``pg_dump`` or
 ``pg_dumpall`` can never guarantee a full disaster recovery of all
@@ -2179,13 +2180,13 @@ archive versions of a database, move databases between PgSQL nodes and
 clone databases between production / pre-production and/or development
 servers.
 
-Nevertheless, they give us a great flexibility in several cases and
-are also an easy way of taken backups of databases not requiring PITR
-backups.
+Nevertheless, logical backups give us a great flexibility in several
+situations and are also an easy way of taking backups of databases not
+requiring PITR backups.
 
 When taking a backup of a database we need the following information
-to be sure we can make a restore that includes 100% of the data and
-definitions from the target database:
+to be sure we can make a restoration that includes 100% of the data
+and definitions from the target database:
 
 #. Database schema
 #. Database data
@@ -2210,7 +2211,7 @@ so it gets easier to take a backup/snapshot of a database in a single
 execution.
 
 In the meantime, PgBackMan takes care of all this and it delivers all
-the information needed to run a 100% restore of a database when we
+the information needed to run a 100% restoration of a database when we
 define a backup in the system.
 
 
@@ -2239,8 +2240,8 @@ In alphabetical order:
 License and Contributions
 =========================
 
-PgBackMan is the property of Rafael Martinez Guerrero and
-PostgreSQL-es and its code is distributed under GNU General Public
-License 3.
+PgBackMan is the property of Rafael Martinez Guerrero / PostgreSQL-es
+and The University of Oslo, and its code is distributed under GNU
+General Public License 3.
 
-Copyright © 2013-2014 Rafael Martinez Guerrero - PostgreSQL-es.
+Copyright © 2013-2014 Rafael Martinez Guerrero / PostgreSQL-es & University of Oslo.
