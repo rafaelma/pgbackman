@@ -6,7 +6,7 @@ PgBackMan - PostgreSQL Backup Manager
 | Version-1.0.0
 |
 | Author: Rafael Martinez Guerrero (University of Oslo)
-| E-mail: rafael@postgresql.org.es / rafael@usit.uio.no
+| E-mail: rafael@postgresql.org.es
 | Source: https://github.com/rafaelma/pgbackman
 | Web: http://www.pgbackman.org/
 |
@@ -221,6 +221,10 @@ used to save all the metadata needed to manage the system.
 You can get this database from the directory ``sql/`` in the source
 code or under the directory ``/usr/share/pgbackman`` if you have
 installed PgBackMan via ``rpm`` or ``deb`` packages.
+
+::
+
+   psql -h <dbhost.domain> -f /usr/share/pgbackman/pgbackman-1.0.0.sql
 
 
 Configuration
