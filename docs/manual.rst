@@ -94,7 +94,7 @@ The components forming part of PgBackMan could be listed as follows:
 * **Backup servers:** One or several backup servers running
   PgBackMan. All SQL dumps and logfiles are saved in these
   servers. They need access via ``libpq`` to the postgreSQL nodes
-  where the backup server will be allow to run backups and restores.
+  where the backup server will be allowed to run backups and restores.
 
 * **PGnodes**: PostgreSQL servers running postgreSQL databases.
 
@@ -111,12 +111,12 @@ The components forming part of PgBackMan could be listed as follows:
   nodes are stopped or deleted, or when backup definitions are stopped
   or deleted.
 
-* **pgbackman_maintenence:** This programs runs in every backup server
+* **pgbackman_maintenance:** This program runs in every backup server
   and runs some maintenance jobs needed by PgBackMan. It enforces
   retentions for backup and snapshot definitions. It deletes backup
   and log files from catalog entries associated to a backup definition
   after this definition has been deleted with the force parameter. And
-  it process all pending backup/restore catalog log files in the
+  it processes all pending backup/restore catalog log files in the
   server created if the pgbackman database has been down when
   ``pgbackman_dump`` and ``pgbackman_restore`` have been running.
 
@@ -194,8 +194,7 @@ version from the master branch at the GitHub repository.
 This will install all users, groups, programs, configuration files, logfiles and the
 pgbackman module in your system.
 
-If you want to generate the PgBackMan manual with the documentation,
-you can do this::
+If you want to generate the PgBackMan, one can do this::
 
  [root@server]# cd pgbackman/docs
  [root@server]# make clean
@@ -232,8 +231,8 @@ Backup servers
 --------------
 
 A backup server needs to have access to the ``pgbackman`` database and
-to all PgSQL nodes where is taken backups or restoring data. This can
-be done like this:
+to all PgSQL nodes in which we need to take backups or restore data. This
+can be done like this:
 
 #. Update ``/etc/pgbackman/pgbackman.conf`` with the database
    parameters needed by PgBackMan to access the central metadata
@@ -241,26 +240,25 @@ be done like this:
    ``dbname``, ``database`` under the section
    ``[pgbackman_database]``.
 
-   You can also define ``password`` in this section but we discourage
+   You can also define a ``password`` in this section but we discourage
    to do this and recommend to define a ``.pgpass`` file in the home
    directory of the users ``root`` and ``pgbackman`` with this
    information, e.g.::
 
-     dbhost.domain:5432:pgbackman:pgbackman_role_rw:PASSWORD
+     <dbhost.domain>:5432:pgbackman:pgbackman_role_rw:PASSWORD
 
    and set the privileges of this file with ``chmod 400 ~/.pgpass``.
 
-   Even a better solution will be to use the ``cert`` autentication for
-   the pgbackman database user so we do not need to save passwords
-   around.
+   An even better solution will be to use ``cert`` autentication for
+   the pgbackman database user, so we do not need to save passwords.
 
 #. Update and reload the ``pg_hba.conf`` file in the postgreSQL server
    running the pgbackman database, with a line that gives access to
    the pgbackman database from the new backup server. We recommend to
-   use a SSL connection to encrypt all the trafikk between the database
+   use a SSL connection to encrypt all the traffic between the database
    server and the backup server, e.g.::
 
-     hostssl   pgbackman   pgbackman_role_rw    10.20.20.20.200/32     md5 
+     hostssl   pgbackman   pgbackman_role_rw    <backup_server_IP>/32     md5 
 
 #. Define the backup server in PgBackMan via the PgBackMan shell::
 
@@ -289,26 +287,30 @@ be done like this:
      | 00001 | pg-backup01.uio.no | Main backup server |
      +-------+------------------+----------------------+
 
-#. Create the root directory / partition in the backup derver that
-   will be used to save all backups, logfiles, and syem data needed by
-   PgBackMan in
+#. Create the directory / partition in the backup server that will be
+   used to save all backups, logfiles, and system data needed by
+   PgBackMan. By default the system will use ``/srv/pgbackman``. 
 
+   Set the privileges of this directory with ``chown
+   pgbackman:pgbackman /srv/pgbackman`` and ``chmod 400 ~/.pgpass``.
 
 
 PgSQL nodes
 -----------
 
 Every PgSQL node defined in PgBackMan will need to update and reload
-his ``pg_hba.conf`` file also to give access to the admin user
-(``postgres`` per default) from the backup serveres defined in
+its own ``pg_hba.conf`` file to give access to the admin user
+(``postgres`` per default) from the backup servers defined in
 PgBackMan, e.g.::
 
-    hostssl   *   postgres    10.20.20.20.200/32     md5 
+    hostssl   *   postgres    <backup_server_IP>/32     md5 
 
 Remember that the ``.pgpass`` file of the ``pgbackman`` user in the
 backup server has to be updated with the information needed to access
-every PgSQL node we are goint to take backups for.
+every PgSQL node we are going to take backups for.
 
+One can also use ``cert`` autentication for so we do not need to save
+passwords.
 
 
 System administration and maintenance
@@ -320,6 +322,7 @@ to PgSQL nodes registered in the system.
 
 They are started with the script ``/etc/init.d/pgbackman`` and must
 run in every Backup server running PgBackMan.
+
 
 pgbackman_crontrol
 ------------------
@@ -355,7 +358,7 @@ The actions this program can execute are:
 * Create an ``at`` job when a snapshot backup gets defined.
 * Create an ``at`` job when a backup restore gets defined.
 
-Every PgSQL node in the system will have its own directories and
+Every PgSQL node in the system will have its own directory and
 crontab file in every backup server running PgBackMan.
 
 
@@ -2157,7 +2160,7 @@ techniques together with continuous archiving of write ahead log (WAL)
 files can be used to implement PITR (Point in time recovery) backups
 and achieve a full disaster recovery solution.
 
-There are other solutions that can be used for managing PITR backups,
+There are several solutions that can be used for managing PITR backups,
 such as PITRTools, OmniPITR, and Barman.
 	  
 Logical backups
