@@ -47,9 +47,6 @@ class configuration():
         self.dsn = ''
         self.pg_connect_retry_interval = 10
 
-        # pgbackman2cron section
-        self.channels_check_interval = 60
-
         # pgbackman_dump section
         self.tmp_dir = '/tmp'
 
@@ -119,10 +116,6 @@ class configuration():
             if config.has_option('pgbackman_database','pg_connect_retry_interval'):
                 self.pg_connect_retry_interval = int(config.get('pgbackman_database','pg_connect_retry_interval'))
               
-            # pgbackman2cron section
-            if config.has_option('pgbackman_control','channels_check_interval'):
-                self.channels_check_interval = int(config.get('pgbackman_control','channels_check_interval'))
-
             # pgbackman_dump section
             if config.has_option('pgbackman_dump','tmp_dir'):
                 self.tmp_dir = config.get('pgbackman_dump','tmp_dir')

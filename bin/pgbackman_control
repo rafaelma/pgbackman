@@ -33,6 +33,7 @@ No changes will be lose if pgbackman_control is down.
 '''
 
 import subprocess
+import select
 import tempfile
 import shutil
 import pwd
@@ -40,6 +41,7 @@ import grp
 import sys
 import os
 import time
+import datetime
 import socket
 import signal
 
@@ -48,7 +50,7 @@ from pgbackman.database import *
 from pgbackman.config import *
 
 listen_list = []
-
+last_crontab_update = {}
 
 # ############################################
 # Function add_to_listen_channels()
@@ -127,6 +129,8 @@ def get_pgsql_node_id_from_channel(channel):
 def generate_crontab_backup_jobs(db,backup_server_id,pgsql_node_id):
     '''Generate a crontab file for a PgSQL node'''
 
+    global last_crontab_update
+
     try:
         crontab_file = db.get_pgsql_node_parameter(pgsql_node_id,'pgnode_crontab_file')
     
@@ -137,6 +141,8 @@ def generate_crontab_backup_jobs(db,backup_server_id,pgsql_node_id):
             file.flush()
 
             logs.logger.info('Crontab file: %s created/updated',crontab_file)
+
+        last_crontab_update[str(pgsql_node_id)] = datetime.datetime.now()    
       
     except Exception as e:
             
@@ -404,6 +410,8 @@ def create_pgsql_node_backup_directories(db,pgsql_node_id):
 def process_pgsql_node_to_delete(db,backup_server_id):
     '''Delete PgSQL node data from nodes that has been deleted.'''
     
+    global last_crontab_update
+
     try:
         for record in db.get_pgsql_node_to_delete(backup_server_id):
 
@@ -424,6 +432,8 @@ def process_pgsql_node_to_delete(db,backup_server_id):
 
             else:
                 logs.logger.warning('Crontab file: %s does not exist',crontab_file) 
+
+            del last_crontab_update[str(record[1])]
 
             #
             # Deleting cache file for PgSQL node
@@ -560,6 +570,7 @@ def check_database_connection(db):
 
 def main():
     global listen_list
+    global last_crontab_update
 
     conf = configuration()
     dsn = conf.dsn
@@ -568,7 +579,6 @@ def main():
     logs.logger.debug('Backup server ID from config file: %s',conf.backup_server)
     logs.logger.debug('Backup server FQDN: %s',socket.getfqdn())
     logs.logger.debug('DSN: host=%s hostaddr=%s port=%s database=%s user=%s ',conf.dbhost,conf.dbhostaddr,conf.dbport,conf.dbname,conf.dbuser)
-    logs.logger.debug('Channels check interval: %s',conf.channels_check_interval)
 
     db = pgbackman_db(dsn,'pgbackman_control')
 
@@ -636,6 +646,11 @@ def main():
                 and listen_channel != 'channel_restore_defined':
 
             pgsql_node_id = get_pgsql_node_id_from_channel(listen_channel)
+
+            #
+            # Initialize this variable for all PgSQL nodes in the system
+            #
+            last_crontab_update[str(pgsql_node_id)] = datetime.datetime.now()
             
             update_pgsql_node_cache_data(db,backup_server_id,pgsql_node_id)
             create_pgsql_node_backup_directories(db,pgsql_node_id)
@@ -663,6 +678,15 @@ def main():
         channels = []        
  
         try:
+
+            #
+            # We wait for notifies from the database. The select
+            # function blocks until we get a notify because the
+            # timeout argument is omitted.
+            #
+            
+            select.select([ db_notify.conn],[],[],)
+                
             db_notify.conn.poll()
 
             while db_notify.conn.notifies:
@@ -745,20 +769,38 @@ def main():
                     #
                     logs.logger.info('Notify: Restore defined')
                     generate_restore_at_jobs(db,backup_server_id,tmp_dir)
-
-                else:
                     
+                else:
                     #
                     # A backup job has been registered, updated or deleted
-                    #
-                    logs.logger.info('Notify: backup job registered, updated or deleted')
-                    
+                    #                    
+                    logs.logger.info('Notify: backup definition registered, updated or deleted. Channel: %s',channel)
                     pgsql_node_id = db.get_next_crontab_id_to_generate(backup_server_id)
+
+                    # 
+                    # We want to avoid the generation of a new crontab
+                    # file for a PgSQL node to often.
+                    #
+                    # This can happen if we define a bulk backup
+                    # definition for all the databases in a PgSQL node
+                    # with the special dbname "#all_databases#" and
+                    # the PgSQL node has many databases. The system
+                    # will generate a new NOTIFY for every new
+                    # database definition created.
+                    #
+                    # If the crontab file for a PgSQL node has been
+                    # updated less than 10 seconds ago, we will wait
+                    # 10 seconds before generating the file again.
+                    #
+
+                    if datetime.datetime.now() - datetime.timedelta(seconds=10) < last_crontab_update[str(pgsql_node_id)]: 
+
+                        logs.logger.info('Controlling update ratio of the crontab file for PgSQL node: %s. Waiting 10sec before updating it.',pgsql_node_id)
+                        time.sleep(10)
+
                     generate_crontab_backup_jobs(db,backup_server_id,pgsql_node_id)
-
-            # We check and receive all new notifications after waiting conf.channels_check_interval.
-            time.sleep(conf.channels_check_interval)
-
+                        
+            
         except psycopg2.OperationalError as e:
 
             #
