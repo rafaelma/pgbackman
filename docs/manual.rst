@@ -461,9 +461,9 @@ The PgBackMan interactive shell can be started by running the program
    help
 
 **NOTE:** It is possible to use the PgBackMan shell in a
- non-interactive modus by running ``/usr/bin/pgbackman`` with a
- command as a parameter in the OS shell. This can be used to run
- PgBackMan commands from shell scripts.e.g.::
+non-interactive modus by running ``/usr/bin/pgbackman`` with a command
+as a parameter in the OS shell. This can be used to run PgBackMan
+commands from shell scripts.e.g.::
 
    [pgbackman@pg-backup01 ~]# pgbackman show_backup_servers
    +-------+------------------+----------------------+
