@@ -147,7 +147,7 @@ System requirements
   - psycopg2
   - argparse
     
-* PostgreSQL >= 9.0 for the ``pgbackman`` database
+* PostgreSQL >= 9.2 for the ``pgbackman`` database
 * PostgreSQL >= 9.0 in all PgSQL nodes that are going to use PgBackMan
   to manage logical backups.
 * AT and CRON installed and running.
@@ -225,6 +225,22 @@ installed PgBackMan via ``rpm`` or ``deb`` packages.
 ::
 
    psql -h <dbhost.domain> -f /usr/share/pgbackman/pgbackman-1.0.0.sql
+
+One should update some default parameters in the ``pgbackman``
+database before one starts using the system. These parameters will be
+copied to the default configuration of the servers registered in
+PgBackMan.
+
+We recommend to update these three parameters with the values you want
+to use in your PgBackMan installation::
+
+  UPDATE pgsql_node_default_config SET value = 'address@your.domain' WHERE parameter = 'logs_email';
+  UPDATE pgsql_node_default_config SET value = 'your.domain' WHERE parameter = 'domain';
+  UPDATE backup_server_default_config SET value = 'your.domain' WHERE parameter = 'domain';
+
+These values are only the default suggestion one will get when a new
+backup server or PgSQL node is been registered in the
+system. They can be changed or updated via the PgBackMan shell.
 
 
 Configuration
