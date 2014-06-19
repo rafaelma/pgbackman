@@ -66,9 +66,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     centos6.vm.hostname = "centos6.example.net"
     centos6.vm.provision :shell, :path => "bootstrap_centos.sh"
 
-    centos6.vm.provider "virtualbox" do |vb4|
+    centos6.vm.provider "virtualbox" do |vb5|
      # Use VBoxManage to customize the VM. For example to change memory:  
-     vb4.customize ["modifyvm", :id, "--memory", "512"]
+     vb5.customize ["modifyvm", :id, "--memory", "512"]
     end
    end
 
@@ -78,9 +78,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     debian7.vm.hostname = "debian7.example.net"
     debian7.vm.provision :shell, :path => "bootstrap_debian.sh"
 
-    debian7.vm.provider "virtualbox" do |vb4|
+    debian7.vm.provider "virtualbox" do |vb6|
      # Use VBoxManage to customize the VM. For example to change memory:  
-     vb4.customize ["modifyvm", :id, "--memory", "512"]
+     vb6.customize ["modifyvm", :id, "--memory", "512"]
     end
    end
 
@@ -90,9 +90,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     ubuntu14.vm.hostname = "ubuntu14.example.net"
     ubuntu14.vm.provision :shell, :path => "bootstrap_debian.sh"
 
-    ubuntu14.vm.provider "virtualbox" do |vb4|
+    ubuntu14.vm.provider "virtualbox" do |vb7|
      # Use VBoxManage to customize the VM. For example to change memory:  
-     vb4.customize ["modifyvm", :id, "--memory", "512"]
+     vb7.customize ["modifyvm", :id, "--memory", "512"]
     end
    end
 
