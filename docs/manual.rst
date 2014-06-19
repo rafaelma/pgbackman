@@ -460,6 +460,32 @@ The PgBackMan interactive shell can be started by running the program
    ======================
    help
 
+**NOTE:** It is possible to use the PgBackMan shell in a
+ non-interactive modus by running ``/usr/bin/pgbackman`` with a
+ command as a parameter in the OS shell. This can be used to run
+ PgBackMan commands from shell scripts.e.g.::
+
+   [pgbackman@pg-backup01 ~]# pgbackman show_backup_servers
+   +-------+------------------+----------------------+
+   | SrvID | FQDN               | Remarks            |
+   +-------+--------------------+--------------------+
+   | 00001 | pg-backup01.uio.no | Main backup server |
+   +-------+------------------+----------------------+
+
+   [pgbackman@pg-backup01 ~]# pgbackman show_backup_definitions all all pgbackman
+   --------------------------------------------------------
+   # SrvID / FQDN: all
+   # NodeID / FQDN: all
+   # DBname: pgbackman
+   --------------------------------------------------------
+   +-------------+-----+-------------------------+----+-------------------------+-----------+-------------+--------+------------+--------+------------+
+   |    DefID    | ID. | Backup server           | ID | PgSQL node              | DBname    | Schedule    | Code   | Retention  | Status | Parameters |
+   +-------------+-----+-------------------------+----+-------------------------+-----------+-------------+--------+------------+--------+------------+
+   | 00000000012 |  1  | pg-backup01.example.net | 1  | pgbackmandb.example.net | pgbackman | 41 01 * * * | FULL   | 7 days (1) | ACTIVE |            |
+   | 00000000011 |  1  | pg-backup01.example.net | 1  | pgbackmandb.example.net | pgbackman | * * * * *   | FULL   | 7 days (1) | ACTIVE | --inserts  |
+   | 00000000013 |  1  | pg-backup01.example.net | 1  | pgbackmandb.example.net | pgbackman | 41 01 * * * | SCHEMA | 7 days (1) | ACTIVE |            |
+   +-------------+-----+-------------------------+----+-------------------------+-----------+-------------+--------+------------+--------+------------+
+
 
 clear
 -----
