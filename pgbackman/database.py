@@ -617,7 +617,7 @@ class pgbackman_db():
     # Method 
     # ############################################
 
-    def show_backup_catalog(self,backup_server_list,pgsql_node_list,dbname_list,def_id_list):
+    def show_backup_catalog(self,backup_server_list,pgsql_node_list,dbname_list,def_id_list,status_list):
         """A function to get a list of a backup catalog"""
 
         try:
@@ -675,8 +675,20 @@ class pgbackman_db():
                         
                     else:
                         def_id_sql = ''
+
+                    if status_list != None:
+                        status_sql = 'AND (FALSE '
+                        
+                        for status in status_list:
+                            status_sql = status_sql + 'OR "Status" = \'' + status + '\' '
+                                                                                   
+                        status_sql = status_sql + ') '
+                        
+                    else:
+                        status_sql = ''
+                    
                   
-                    self.cur.execute('SELECT \"BckID\",\"DefID\",\"SnapshotID\",\"Finished\",backup_server_id AS \"ID.\",\"Backup server\",pgsql_node_id AS \"ID\",\"PgSQL node\",\"DBname\",\"Duration\",\"Size\",\"Code\",\"Execution\",\"Status\" FROM show_backup_catalog WHERE TRUE ' + server_sql + node_sql + dbname_sql + def_id_sql)
+                    self.cur.execute('SELECT \"BckID\",\"DefID\",\"SnapshotID\",\"Finished\",backup_server_id AS \"ID.\",\"Backup server\",pgsql_node_id AS \"ID\",\"PgSQL node\",\"DBname\",\"Duration\",\"Size\",\"Code\",\"Execution\",\"Status\" FROM show_backup_catalog WHERE TRUE ' + server_sql + node_sql + dbname_sql + def_id_sql + status_sql)
                                      
                     colnames = [desc[0] for desc in self.cur.description]
                     self.print_results_table(self.cur,colnames,["Finished","Backup server","PgSQL node","DBname","Size"])

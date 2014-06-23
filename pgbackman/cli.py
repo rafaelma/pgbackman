@@ -1455,7 +1455,34 @@ class pgbackman_cli(cmd.Cmd):
         combination of search values.
 
         COMMAND:
-        show_backup_catalog [SrvID|FQDN] [NodeID|FQDN] [DBname] [DefID]
+        show_backup_catalog [SrvID|FQDN] 
+                            [NodeID|FQDN] 
+                            [DBname] 
+                            [DefID] 
+                            [Status]
+
+        [SrvID | FQDN]:
+        ---------------
+        SrvID in PgBackMan or FQDN of the backup server that run
+        the backup job.
+
+        [NodeID | FQDN]:
+        ----------------
+        NodeID in PgBackMan or FQDN of the PgSQL node running the
+        database.
+                                   
+        [Dbname]:
+        ---------
+        Database name.
+                    
+        [DefID]:
+        --------
+        Backup definition ID.
+
+        [Status]:
+        --------- 
+        SUCCEEDED: Execution finished without error. 
+        ERROR: Execution finished with errors.                 
         
         '''
 
@@ -1478,6 +1505,7 @@ class pgbackman_cli(cmd.Cmd):
                 node_id = raw_input('# NodeID / FQDN [all]: ')
                 dbname = raw_input('# DBname [all]: ')
                 def_id = raw_input('# DefID [all]: ')
+                status = raw_input('# Status [all]: ')
                 print '--------------------------------------------------------'
 
             except Exception as e:
@@ -1505,8 +1533,13 @@ class pgbackman_cli(cmd.Cmd):
             else:
                 def_id_list = def_id.strip().replace(' ','').split(',')
               
+            if status == '' or status == 'all':
+                status_list = None
+            else:
+                status_list = status.strip().replace(' ','').upper().split(',')
+              
             try:
-                self.db.show_backup_catalog(server_list,node_list,dbname_list,def_id_list)
+                self.db.show_backup_catalog(server_list,node_list,dbname_list,def_id_list,status_list)
                                                     
             except Exception as e:
                 print '\n[ERROR]: ',e
@@ -1515,12 +1548,13 @@ class pgbackman_cli(cmd.Cmd):
         # Command with parameters
         #             
 
-        elif len(arg_list) == 4:
+        elif len(arg_list) == 5:
 
             server_id = arg_list[0]
             node_id = arg_list[1]
             dbname = arg_list[2]
             def_id = arg_list[3]
+            status = arg_list[4]
 
             if server_id == '' or server_id == 'all':
                 server_list = None
@@ -1542,15 +1576,21 @@ class pgbackman_cli(cmd.Cmd):
             else:
                 def_id_list = def_id.strip().replace(' ','').split(',')
 
+            if status == '' or status == 'all':
+                status_list = None
+            else:
+                status_list = status.strip().replace(' ','').upper().split(',')
+
             print '--------------------------------------------------------'
             print '# SrvID / FQDN: ' + str(server_id)
             print '# NodeID / FQDN: ' + str(node_id)
             print '# DBname: ' + str(dbname)
             print '# DefID: ' + str(def_id)
+            print '# Status: ' + str(status)
             print '--------------------------------------------------------'
 
             try:
-                self.db.show_backup_catalog(server_list,node_list,dbname_list,def_id_list)
+                self.db.show_backup_catalog(server_list,node_list,dbname_list,def_id_list,status_list)
                 
             except Exception as e:
                 print '\n[ERROR]: ',e
