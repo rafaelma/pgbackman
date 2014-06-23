@@ -57,7 +57,7 @@ try:
     elif proc.returncode != 0:
         raise SystemExit('ERROR: Problems creating group pgbackman. Returncode: ' + str(proc.returncode))
     
-    useradd_command = '/usr/sbin/useradd -m -n -g pgbackman -r -d /var/lib/pgbackman -s /bin/bash -c "PostgreSQL Backup Manager" pgbackman'
+    useradd_command = '/usr/sbin/useradd -m -N -g pgbackman -r -d /var/lib/pgbackman -s /bin/bash -c "PostgreSQL Backup Manager" pgbackman'
     proc = subprocess.Popen([useradd_command],shell=True)
     proc.wait()
 
