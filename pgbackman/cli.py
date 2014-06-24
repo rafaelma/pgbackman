@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 #
-# Copyright (c) 2014 Rafael Martinez Guerrero (PostgreSQL-es)
+# Copyright (c) 2014 Rafael Martinez Guerrero / PostgreSQL-es
 # rafael@postgresql.org.es / http://www.postgresql.org.es/
+#
+# Copyright (c) 2014 USIT-University of Oslo
 #
 # This file is part of PgBackMan
 # https://github.com/rafaelma/pgbackman
@@ -33,6 +35,7 @@ from pgbackman.database import *
 from pgbackman.config import *
 from pgbackman.logs import *
 from pgbackman.prettytable import *
+import pgbackman.version
 
 
 # ############################################
@@ -4386,11 +4389,7 @@ class pgbackman_cli(cmd.Cmd):
         '''Get pgbackman version'''
         
         try:
-            pgbackman_version = {}
-            with open('pgbackman/version.py', 'r') as version_file:
-                exec (version_file.read(), pgbackman_version)
-        
-                return pgbackman_version['__version__']
+            return pgbackman.version.__version__
 
         except Exception as e:
             return 'Unknown'
