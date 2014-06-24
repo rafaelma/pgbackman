@@ -492,6 +492,13 @@ def update_backup_server_cache_data(db,backup_server_fqdn,backup_server_id):
     root_backup_partition = pgsql_bin_9_4 = pgsql_bin_9_3 = pgsql_bin_9_2 = pgsql_bin_9_1 = pgsql_bin_9_0 = None
     
     try:
+        uid = pwd.getpwnam('pgbackman').pw_uid
+        gid = grp.getgrnam('pgbackman').gr_gid
+
+    except Exception as e:
+        logs.logger.error('Problems getting UID and GID values for pgbackman - %s',e)  
+
+    try:
         root_backup_partition = db.get_backup_server_parameter(backup_server_id,'root_backup_partition')
 
         pgsql_bin_9_4 = db.get_backup_server_parameter(backup_server_id,'pgsql_bin_9_4')
@@ -517,6 +524,7 @@ def update_backup_server_cache_data(db,backup_server_fqdn,backup_server_id):
                                           'pgsql_bin_9_0::' + pgsql_bin_9_0 + '\n')
                 
                 os.chmod(backup_server_cache_file,0744)
+                os.chown(backup_server_cache_file, uid, gid)
                 logs.logger.info('Cache file: %s created/updated',backup_server_cache_file)
                 
     except Exception as e:
@@ -529,6 +537,13 @@ def update_backup_server_cache_data(db,backup_server_fqdn,backup_server_id):
 
 def update_pgsql_node_cache_data(db,backup_server_id,pgsql_node_id):
     '''Update the cache data for a PgSQL node'''
+        
+    try:
+        uid = pwd.getpwnam('pgbackman').pw_uid
+        gid = grp.getgrnam('pgbackman').gr_gid
+
+    except Exception as e:
+        logs.logger.error('Problems getting UID and GID values for pgbackman - %s',e)  
 
     try:
         pgsql_node_fqdn = db.get_pgsql_node_fqdn(pgsql_node_id)
@@ -546,6 +561,7 @@ def update_pgsql_node_cache_data(db,backup_server_id,pgsql_node_id):
                                        'pgnode_backup_partition::' + pgsql_node_backup_dir + '\n')
 
                 os.chmod(pgsql_node_cache_file,0744)
+                os.chown(pgsql_node_cache_file, uid, gid)
                 logs.logger.info('Cache file: %s created/updated',pgsql_node_cache_file)
                    
     except Exception as e:
