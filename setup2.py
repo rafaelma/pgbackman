@@ -22,6 +22,8 @@
 # along with Pgbackman.  If not, see <http://www.gnu.org/licenses/>.
 
 import subprocess
+import platform
+import shutil
 import sys
 import os
 import pwd
@@ -41,14 +43,38 @@ try:
     else:
         install_requires = ['psycopg2','argparse']
 
+    #
+    # Check linux distribution and define init script
+    #
+
+    distro = platform.linux_distribution()[0]
+
+    if distro == 'CentOS' or distro == 'Red Hat Enterprise Linux Server' or distro == 'Red Hat Enterprise Linux Workstation':
+        init_file = 'etc/pgbackman_init_rh.sh'
+        shutil.copy2(init_file, '/tmp/pgbackman')
+
+    
+    elif distro == 'debian' or distro == 'Ubuntu':
+        init_file = 'etc/pgbackman_init_debian.sh'
+        shutil.copy2(init_file, '/tmp/pgbackman')
+        
+    #
+    # Setup
+    #
+
     setup(name='pgbackman',
           version=pgbackman['__version__'],
           description='PGBACKMAN - PostgreSQL Backup Manager',
           author='Rafael Martinez Guerrero',
           author_email='rafael@postgresql.org.es',
-          url='https://www.pgbackman.org/',
+          url='http://www.pgbackman.org/',
           packages=['pgbackman',],
           scripts=['bin/pgbackman','bin/pgbackman_control','bin/pgbackman_maintenance','bin/pgbackman_dump','bin/pgbackman_restore'],
+          data_files=[('/etc/init.d', ['/tmp/pgbackman']),
+                      ('/etc/pgbackman', ['etc/pgbackman.conf']),
+                      ('/etc/logrotate.d', ['etc/pgbackman.logrotate']),
+                      ('/usr/share/pgbackman/', ['sql/pgbackman.sql']),
+                      ('/var/log/pgbackman',['README.md'])],
           install_requires=install_requires,
           platforms=['Linux'],
           classifiers=[
@@ -64,6 +90,9 @@ try:
             'Programming Language :: Python :: 2.7',
             ],
           )
+
+    except Exception as e:
+        print e
 
 except Exception as e:
     print e

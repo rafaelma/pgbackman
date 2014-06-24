@@ -1,0 +1,12 @@
+#!/bin/bash
+
+PGBACKMAN_GROUP=pgbackman
+PGBACKMAN_USER=pgbackman
+
+if [ -d /var/log/pgbackman ]
+then
+    touch /var/log/pgbackman/pgbackman.log
+    chown -R ${PGBACKMAN_USER}:${PGBACKMAN_GROUP} /var/log/pgbackman
+    chmod -R 1775 /var/log/pgbackman
+fi
+

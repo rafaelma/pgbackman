@@ -1,0 +1,16 @@
+#!/bin/bash
+
+PGBACKMAN_GROUP=pgbackman
+PGBACKMAN_USER=pgbackman
+
+/usr/sbin/groupadd -f -r $PGBACKMAN_GROUP
+/usr/sbin/useradd -m -N -g $PGBACKMAN_GROUP -r -d /var/lib/pgbackman -s /bin/bash -c "PostgreSQL Backup Manager" $PGBACKMAN_USER
+
+if [ -f /etc/init.d/pgbackman ] 
+then
+    /etc/init.d/pgbackman stop
+    sleep 2
+fi
+
+
+

@@ -101,6 +101,8 @@ try:
           scripts=['bin/pgbackman','bin/pgbackman_control','bin/pgbackman_maintenance','bin/pgbackman_dump','bin/pgbackman_restore'],
           data_files=[('/etc/init.d', ['/tmp/pgbackman']),
                       ('/etc/pgbackman', ['etc/pgbackman.conf']),
+                      ('/etc/logrotate.d', ['etc/pgbackman.logrotate']),
+                      ('/usr/share/pgbackman/', ['sql/pgbackman.sql']),
                       ('/var/log/pgbackman',['README.md'])],
           install_requires=install_requires,
           platforms=['Linux'],

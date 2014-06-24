@@ -44,16 +44,6 @@ python setup_packages.py build
 
 %install
 python setup_packages.py install -O1 --skip-build --root %{buildroot}
-mkdir -p %{buildroot}%{_sysconfdir}/%{name}
-mkdir -p %{buildroot}%{_sysconfdir}/init.d
-mkdir -p %{buildroot}%{_sysconfdir}/logrotate.d
-mkdir -p %{buildroot}/var/lib/%{name}
-mkdir -p %{buildroot}/var/log/%{name}
-mkdir -p %{buildroot}/usr/share/%{name}
-install -pm 644 etc/pgbackman.conf %{buildroot}%{_sysconfdir}/%{name}/%{name}.conf
-install -m 755 etc/pgbackman_init_rh.sh %{buildroot}%{_sysconfdir}/init.d/%{name}
-install -pm 644 etc/pgbackman.logrotate %{buildroot}%{_sysconfdir}/logrotate.d/%{name}
-install -pm 644 sql/pgbackman.sql %{buildroot}%{_datadir}/%{name}/%{name}-%{version}.sql
 touch %{buildroot}/var/log/%{name}/%{name}.log
 
 %clean
@@ -75,9 +65,9 @@ rm -rf %{buildroot}
 
 %pre
 groupadd -f -r pgbackman >/dev/null 2>&1 || :
-useradd -M -n -g pgbackman -r -d /var/lib/pgbackman -s /bin/bash \
+useradd -M -N -g pgbackman -r -d /var/lib/pgbackman -s /bin/bash \
         -c "PostgreSQL Backup Manager" pgbackman >/dev/null 2>&1 || :
 
 %changelog
-* Mon Jun 09 2014 - Rafael Martinez Guerrero <rafael@postgresql.org.es> 1.0.0-1
+* Mon Jun 24 2014 - Rafael Martinez Guerrero <rafael@postgresql.org.es> 1.0.0-1
 - New release 1.0.0
