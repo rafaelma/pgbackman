@@ -40,10 +40,11 @@ elements associated to it.
 %setup -n %{name}-%{version} -q
 
 %build
-python setup_packages.py build
+python setup.py build
 
 %install
-python setup_packages.py install -O1 --skip-build --root %{buildroot}
+python setup.py install -O1 --skip-build --root %{buildroot}
+mkdir -p %{buildroot}/var/lib/%{name}
 touch %{buildroot}/var/log/%{name}/%{name}.log
 
 %clean
@@ -58,6 +59,7 @@ rm -rf %{buildroot}
 %{_sysconfdir}/init.d/%{name}*
 %{_sysconfdir}/logrotate.d/%{name}*
 %{_datadir}/%{name}/*
+/var/log/%{name}/*
 %config(noreplace) %{_sysconfdir}/%{name}/%{name}.conf
 %attr(700,%{pbm_owner},%{pbm_group}) %dir /var/lib/%{name}
 %attr(755,%{pbm_owner},%{pbm_group}) %dir /var/log/%{name}
