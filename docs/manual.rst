@@ -155,13 +155,13 @@ System requirements
 Before you install PgBackMan you have to install the software needed
 by this tool
 
-In systems using ``yum``::
+In systems using ``yum``, e.g. Centos, RHEL, ...::
 
-  yum install python-psycopg2 python-argparse at
+  yum install python-psycopg2 python-argparse at cronie
 
-In system using ``apt-get``::
+In system using ``apt-get``, e.g. Debian, Ubuntu, ...::
 
-  apt-get install python-psycopg2 python-argparse at
+  apt-get install python-psycopg2 python-argparse at cron
 
 If you are going to install from source, you need to install also
 these packages: ``python-devel, python-setuptools, git, make, rst2pdf``
@@ -172,7 +172,7 @@ In systems using ``yum``::
 
 In system using ``apt-get``::
 
-  apt-get install python-devel python-setuptools git make rst2pdf
+  apt-get install python-dev python-setuptools git make rst2pdf
 
 
 Installing from source
@@ -202,12 +202,29 @@ If you want to generate the PgBackMan, one can do this::
 Installing via RPM packages
 ---------------------------
 
-RPM packages are available ...
+RPM packages for CentOS 6 and RHEL6 are available at
+http://www.pgbackman.org/www/download.html.
 
-Installing Via Deb packages
+Install the RPM package with::
+
+  [root@server]# rpm -Uvh pgbackman-<version>.rpm
+
+We are working to get RPM packages for PgBackMan in the official
+PostgreSQL Yum repository.
+
+
+Installing via Deb packages
 ----------------------------
 
-Deb packages are available ...
+Deb packages for Debian7 and Ubuntu14 are available at
+http://www.pgbackman.org/www/download.html.
+
+Install the Deb package with::
+
+  [root@server]# dpkg -i pgbackman_<version>.deb
+
+We are working to get DEB packages for PgBackMan in the official
+PostgreSQL apt repository.
 
 
 Installing the pgbackman Database
@@ -220,7 +237,7 @@ used to save all the metadata needed to manage the system.
 
 You can get this database from the directory ``sql/`` in the source
 code or under the directory ``/usr/share/pgbackman`` if you have
-installed PgBackMan via ``rpm`` or ``deb`` packages.
+installed PgBackMan via ``source``, ``rpm`` or ``deb`` packages.
 
 ::
 
@@ -341,6 +358,23 @@ to PgSQL nodes registered in the system.
 
 They are started with the script ``/etc/init.d/pgbackman`` and must
 run in every Backup server running PgBackMan.
+
+Run this commanmd after installing and configurating PgBakMan::
+
+   [root@server]# /etc/init.d/pgbackman start
+
+One can stop the PgBackMan components with the same script::
+  
+  [root@server]# /etc/init.d/pgbackman stop
+
+If you want the PgBackMan components to start automatically at the
+boot time, type this if you are using CentOS or RHEL::
+
+  [root@server]# chkconfig pgbackman on
+
+Or if you are using debian::
+
+  [root@server]# update-rc.d pgbackman defaults
 
 
 pgbackman_crontrol
@@ -1163,13 +1197,18 @@ combination of parameter values. These values are combined with AND.
                        [NodeID|FQDN] 
 		       [DBname] 
 		       [DefID]
-
+		       [Status]
+   
 Parameters:
 
 * **[SrvID|FQDN]:** SrvID in PgBackMan or FQDN of the backup server
 * **[NodeID|FQDN]:** NodeID in PgBackMan or FQDN of the PgSQL node
 * **[DBname]:** Database name
 * **[DefID]:** Backup definition ID
+* **[Status]:** Execution status of the backup. 
+
+  * SUCCEEDED: Execution finished without error. 
+  * ERROR: Execution finished with errors.
 
 The default value for a parameter is shown between brackets ``[]``. If the
 user does not define any value, the default value will be used. 
@@ -1181,12 +1220,13 @@ This command can be run with or without parameters. e.g.:
 
 ::
 
-   [pgbackman]$ show_backup_catalog 1 all dump_test,postgres all
+   [pgbackman]$ show_backup_catalog 1 all dump_test,postgres all all
    --------------------------------------------------------
    # SrvID / FQDN: 1
    # NodeID / FQDN: all
    # DBname: dump_test,test02
    # DefID: all
+   # Status: all
    --------------------------------------------------------
    +-----------+-------+------------+---------------------------+-----+-------------------------+----+-------------------------+-----------+----------+------------+------+-----------+-----------+
    |   BckID   | DefID | SnapshotID | Finished                  | ID. | Backup server           | ID | PgSQL node              | DBname    | Duration | Size       | Code | Execution |   Status  |
@@ -1202,12 +1242,13 @@ This command can be run with or without parameters. e.g.:
 
 ::
    
-   [pgbackman]$ show_backup_catalog all all "dump_test,test02" all
+   [pgbackman]$ show_backup_catalog
    --------------------------------------------------------
-   # SrvID / FQDN: all
+   # SrvID / FQDN: 1
    # NodeID / FQDN: all
    # DBname: dump_test,test02
    # DefID: all
+   # Status: all
    --------------------------------------------------------
    +-----------+-------+------------+---------------------------+-----+-------------------------+----+-------------------------+-----------+----------+------------+------+-----------+-----------+
    |   BckID   | DefID | SnapshotID | Finished                  | ID. | Backup server           | ID | PgSQL node              | DBname    | Duration | Size       | Code | Execution |   Status  |
