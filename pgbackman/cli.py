@@ -603,6 +603,18 @@ class pgbackman_cli(cmd.Cmd):
                                 [NodeID|FQDN] 
                                 [DBname]
         
+        [SrvID|FQDN]: 
+        -------------
+        SrvID in PgBackMan or FQDN of the backup server
+    
+        [NodeID|FQDN]: 
+        --------------
+        NodeID in PgBackMan or FQDN of the PgSQL node
+
+        [DBname]: 
+        ---------
+        Database name                                      
+
         '''
 
         try: 
@@ -1611,20 +1623,20 @@ class pgbackman_cli(cmd.Cmd):
 
         COMMAND:
         show_restore_catalog [SrvID|FQDN] 
-                             [NodeID|FQDN] 
-                             [DBname]
+                             [Target NodeID|FQDN] 
+                             [Target DBname]
 
 
         [SrvID|FQDN]: 
         -------------
         SrvID in PgBackMan or FQDN of the backup server
     
-        [NodeID|FQDN]: 
-        --------------
+        [Target NodeID|FQDN]: 
+        ---------------------
         NodeID in PgBackMan or FQDN of the PgSQL node
 
-        [DBname]: 
-        ---------
+        [Target DBname]: 
+        ----------------
         Database name
         
         '''
