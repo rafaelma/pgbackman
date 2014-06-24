@@ -1,10 +1,17 @@
 #!/bin/sh 
 #
-# This is the init script for starting up PgBackMan.
+# /etc/init.d/pgbackman
+# Init script for PgBackman
+#
+# chkconfig: 2345 95 05	
+# description: PgBackMan - PostgreSQL Backup Manager
 #
 
 # Source function library.
 . /etc/rc.d/init.d/functions
+
+# Pull in sysconfig settings
+[ -f /etc/sysconfig/pgbackman ] && . /etc/sysconfig/pgbackman
 
 # Variables
 BINDIR="/usr/bin"
