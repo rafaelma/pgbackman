@@ -500,7 +500,7 @@ CREATE TABLE restore_definition(
   remarks TEXT
 );
 
-ALTER TABLE restore_definition ADD PRIMARY KEY (target_pgsql_node_id,target_dbname,renamed_dbname,at_time);
+ALTER TABLE restore_definition ADD PRIMARY KEY (target_pgsql_node_id,target_dbname,at_time);
 
 CREATE INDEX ON restore_definition(backup_server_id);
 CREATE INDEX ON restore_definition(target_pgsql_node_id);
