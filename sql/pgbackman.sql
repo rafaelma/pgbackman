@@ -405,7 +405,7 @@ CREATE TABLE backup_definition(
   remarks TEXT
 );
 
-ALTER TABLE backup_definition ADD PRIMARY KEY (backup_server_id,pgsql_node_id,dbname,backup_code,extra_backup_parameters);
+ALTER TABLE backup_definition ADD PRIMARY KEY (backup_server_id,pgsql_node_id,dbname,minutes_cron,hours_cron,day_month_cron,month_cron,weekday_cron,backup_code,extra_backup_parameters);
 
 CREATE INDEX ON backup_definition(backup_server_id);
 CREATE INDEX ON backup_definition(pgsql_node_id);
@@ -498,10 +498,11 @@ CREATE TABLE restore_definition(
   remarks TEXT
 );
 
-ALTER TABLE restore_definition ADD PRIMARY KEY (restore_def);
+ALTER TABLE restore_definition ADD PRIMARY KEY (target_pgsql_node_id,target_dbname,renamed_dbname,at_time);
 
 CREATE INDEX ON restore_definition(backup_server_id);
 CREATE INDEX ON restore_definition(target_pgsql_node_id);
+CREATE INDEX ON restore_definition(target_dbname);
 
 ALTER TABLE restore_definition OWNER TO pgbackman_role_rw;
 
@@ -627,6 +628,8 @@ CREATE TABLE catalog_entries_to_delete(
 );
 
 ALTER TABLE catalog_entries_to_delete ADD PRIMARY KEY (del_id);
+CREATE INDEX ON catalog_entries_to_delete(backup_server_id);
+
 ALTER TABLE  catalog_entries_to_delete OWNER TO pgbackman_role_rw;
 
 
@@ -648,6 +651,8 @@ CREATE TABLE restore_logs_to_delete(
 );
 
 ALTER TABLE restore_logs_to_delete ADD PRIMARY KEY (del_id);
+CREATE INDEX ON restore_logs_to_delete(backup_server_id);
+
 ALTER TABLE  restore_logs_to_delete OWNER TO pgbackman_role_rw;
 
 
@@ -718,7 +723,7 @@ CREATE TABLE pgbackman_version(
   tag TEXT
 );
 
-ALTER TABLE pgbackman_version ADD PRIMARY KEY (version);
+ALTER TABLE pgbackman_version ADD PRIMARY KEY (version,tag);
 ALTER TABLE pgbackman_version OWNER TO pgbackman_role_rw;
 
 
