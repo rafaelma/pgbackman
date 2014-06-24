@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 #
-# Copyright (c) 2014 Rafael Martinez Guerrero (PostgreSQL-es)
+# Copyright (c) 2013-2014 Rafael Martinez Guerrero / PostgreSQL-es
 # rafael@postgresql.org.es / http://www.postgresql.org.es/
+#
+# Copyright (c) 2014 USIT-University of Oslo
 #
 # This file is part of Pgbackman
 # https://github.com/rafaelma/pgbackman
@@ -99,7 +101,7 @@ try:
           scripts=['bin/pgbackman','bin/pgbackman_control','bin/pgbackman_maintenance','bin/pgbackman_dump','bin/pgbackman_restore'],
           data_files=[('/etc/init.d', ['/tmp/pgbackman']),
                       ('/etc/pgbackman', ['etc/pgbackman.conf']),
-                      ('/var/log/pgbackman',['etc/pgbackman.log'])],
+                      ('/var/log/pgbackman',['README.md'])],
           install_requires=install_requires,
           platforms=['Linux'],
           classifiers=[
