@@ -3544,27 +3544,27 @@ class pgbackman_cli(cmd.Cmd):
                 return False
 
             try:
-                backup_minutes_interval = raw_input('# Minutes cron interval [' + backup_minutes_interval_default + ']: ')
-                backup_hours_interval = raw_input('# Hours cron interval [' + backup_hours_interval_default + ']: ')
-                backup_day_month_cron = raw_input('# Day-month cron [' + backup_day_month_cron_default + ']: ')
-                backup_month_cron = raw_input('# Month cron [' + backup_month_cron_default + ']: ')
-                backup_weekday_cron = raw_input('# Weekday cron [' + backup_weekday_cron_default + ']: ')
+                backup_minutes_interval = raw_input('# Minutes cron interval [' + backup_minutes_interval_default + ']: ').strip()
+                backup_hours_interval = raw_input('# Hours cron interval [' + backup_hours_interval_default + ']: ').strip()
+                backup_day_month_cron = raw_input('# Day-month cron [' + backup_day_month_cron_default + ']: ').strip()
+                backup_month_cron = raw_input('# Month cron [' + backup_month_cron_default + ']: ').strip()
+                backup_weekday_cron = raw_input('# Weekday cron [' + backup_weekday_cron_default + ']: ').strip()
                 print
-                backup_code = raw_input('# Backup code [' + backup_code_default + ']: ')
-                retention_period = raw_input('# Retention period [' + retention_period_default + ']: ')
-                retention_redundancy = raw_input('# Retention redundancy [' + retention_redundancy_default + ']: ')
-                extra_backup_parameters = raw_input('# Extra backup parameters [' + extra_backup_parameters_default + ']: ')
-                extra_restore_parameters = raw_input('# Extra restore parameters [' + extra_restore_parameters_default + ']: ')
-                backup_job_status = raw_input('# Backup Job status [' + backup_job_status_default + ']: ')
+                backup_code = raw_input('# Backup code [' + backup_code_default + ']: ').strip()
+                retention_period = raw_input('# Retention period [' + retention_period_default + ']: ').strip()
+                retention_redundancy = raw_input('# Retention redundancy [' + retention_redundancy_default + ']: ').strip()
+                extra_backup_parameters = raw_input('# Extra backup parameters [' + extra_backup_parameters_default + ']: ').strip()
+                extra_restore_parameters = raw_input('# Extra restore parameters [' + extra_restore_parameters_default + ']: ').strip()
+                backup_job_status = raw_input('# Backup Job status [' + backup_job_status_default + ']: ').strip()
                 print
-                domain = raw_input('# Domain [' + domain_default + ']: ')
-                logs_email = raw_input('# Logs e-mail [' + logs_email_default + ']: ')
-                admin_user = raw_input('# PostgreSQL admin user [' + admin_user_default + ']: ')
-                pgport = raw_input('# Port [' + pgport_default + ']: ')
+                domain = raw_input('# Domain [' + domain_default + ']: ').strip()
+                logs_email = raw_input('# Logs e-mail [' + logs_email_default + ']: ').strip()
+                admin_user = raw_input('# PostgreSQL admin user [' + admin_user_default + ']: ').strip()
+                pgport = raw_input('# Port [' + pgport_default + ']: ').strip()
                 print
-                pgnode_backup_partition = raw_input('# Backup directory [' + pgnode_backup_partition_default + ']: ')
-                pgnode_crontab_file = raw_input('# Crontab file [' + pgnode_crontab_file_default + ']: ')
-                pgsql_node_status = raw_input('# PgSQL node status [' + pgsql_node_status_default + ']: ')
+                pgnode_backup_partition = raw_input('# Backup directory [' + pgnode_backup_partition_default + ']: ').strip()
+                pgnode_crontab_file = raw_input('# Crontab file [' + pgnode_crontab_file_default + ']: ').strip()
+                pgsql_node_status = raw_input('# PgSQL node status [' + pgsql_node_status_default + ']: ').strip()
                 print
 
                 while ack != 'yes' and ack != 'no':
@@ -3887,12 +3887,12 @@ class pgbackman_cli(cmd.Cmd):
                 return False
 
             try:
-                pgsql_bin_9_0 = raw_input('# PgSQL bindir 9.0 [' + pgsql_bin_9_0_default + ']: ')
-                pgsql_bin_9_1 = raw_input('# PgSQL bindir 9.0 [' + pgsql_bin_9_1_default + ']: ')
-                pgsql_bin_9_2 = raw_input('# PgSQL bindir 9.0 [' + pgsql_bin_9_2_default + ']: ')
-                pgsql_bin_9_3 = raw_input('# PgSQL bindir 9.0 [' + pgsql_bin_9_3_default + ']: ')
-                pgsql_bin_9_4 = raw_input('# PgSQL bindir 9.0 [' + pgsql_bin_9_4_default + ']: ')
-                root_backup_partition = raw_input('# Main backup dir [' + root_backup_partition_default + ']: ')
+                pgsql_bin_9_0 = raw_input('# PgSQL bindir 9.0 [' + pgsql_bin_9_0_default + ']: ').strip()
+                pgsql_bin_9_1 = raw_input('# PgSQL bindir 9.1 [' + pgsql_bin_9_1_default + ']: ').strip()
+                pgsql_bin_9_2 = raw_input('# PgSQL bindir 9.2 [' + pgsql_bin_9_2_default + ']: ').strip()
+                pgsql_bin_9_3 = raw_input('# PgSQL bindir 9.3 [' + pgsql_bin_9_3_default + ']: ').strip()
+                pgsql_bin_9_4 = raw_input('# PgSQL bindir 9.4 [' + pgsql_bin_9_4_default + ']: ').strip()
+                root_backup_partition = raw_input('# Main backup dir [' + root_backup_partition_default + ']: ').strip()
                 print
 
                 while ack != 'yes' and ack != 'no':
