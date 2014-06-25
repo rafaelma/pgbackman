@@ -182,7 +182,7 @@ version from the master branch at the GitHub repository.
  [root@server]# git clone https://github.com/rafaelma/pgbackman.git
 
  [root@server]# cd pgbackman
- [root@server]# ./setup.py install
+ [root@server]# ./setup2.py install
  .....
 
 This will install all users, groups, programs, configuration files, logfiles and the
