@@ -321,7 +321,7 @@ can be done like this:
    Set the privileges of this directory with::
 
      chown -R pgbackman:pgbackman /srv/pgbackman
-     chmod -R 400 /srv/pgbackman
+     chmod -R 700 /srv/pgbackman
 
 
 PgSQL nodes
