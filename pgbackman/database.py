@@ -2282,13 +2282,13 @@ class pgbackman_db():
 
             if self.cur:
                 try:
-                    self.cur.execute('SELECT update_pgsql_node_config(%s,%s,%s,%s,%s,%s,%s)',(backup_server_id,
-                                                                                              pgsql_bin_9_0,
-                                                                                              pgsql_bin_9_1,
-                                                                                              pgsql_bin_9_2,
-                                                                                              pgsql_bin_9_3,
-                                                                                              pgsql_bin_9_4,
-                                                                                              root_backup_partition))
+                    self.cur.execute('SELECT update_backup_server_config(%s,%s,%s,%s,%s,%s,%s)',(backup_server_id,
+                                                                                                 pgsql_bin_9_0,
+                                                                                                 pgsql_bin_9_1,
+                                                                                                 pgsql_bin_9_2,
+                                                                                                 pgsql_bin_9_3,
+                                                                                                 pgsql_bin_9_4,
+                                                                                                 root_backup_partition))
                     self.conn.commit()                        
               
                 except psycopg2.Error as e:
