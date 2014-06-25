@@ -523,7 +523,7 @@ def update_backup_server_cache_data(db,backup_server_fqdn,backup_server_id):
                                           'pgsql_bin_9_1::' + pgsql_bin_9_1 + '\n' +
                                           'pgsql_bin_9_0::' + pgsql_bin_9_0 + '\n')
                 
-                os.chmod(backup_server_cache_file,0744)
+                os.chmod(backup_server_cache_file,0644)
                 os.chown(backup_server_cache_file, uid, gid)
                 logs.logger.info('Cache file: %s created/updated',backup_server_cache_file)
                 
@@ -560,7 +560,7 @@ def update_pgsql_node_cache_data(db,backup_server_id,pgsql_node_id):
                                        'pgsql_node_fqdn::' + pgsql_node_fqdn + '\n' +
                                        'pgnode_backup_partition::' + pgsql_node_backup_dir + '\n')
 
-                os.chmod(pgsql_node_cache_file,0744)
+                os.chmod(pgsql_node_cache_file,0644)
                 os.chown(pgsql_node_cache_file, uid, gid)
                 logs.logger.info('Cache file: %s created/updated',pgsql_node_cache_file)
                    
