@@ -3818,10 +3818,10 @@ class pgbackman_cli(cmd.Cmd):
             print '\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n'
 
     # ############################################
-    # Method do_update_pgsql_node_config
+    # Method do_update_backup_server_config
     # ############################################
 
-    def do_update_pgsql_node_config(self,args):
+    def do_update_backup_server_config(self,args):
         '''
         DESCRIPTION:
         This command updates the default configuration parameters 
