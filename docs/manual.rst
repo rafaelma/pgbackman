@@ -287,6 +287,12 @@ can be done like this:
 
      hostssl   pgbackman   pgbackman_role_rw    <backup_server_IP>/32     md5 
 
+#. Install the postgreSQL clients for all the versions you want to
+   support. PgBackMan can take backups of postgreSQL servers running a
+   version >= 9.0. We recommend using http://yum.postgresql.org/ or
+   http://apt.postgresql.org/ to install the client packages for the
+   different versions.
+
 #. Define the backup server in PgBackMan via the PgBackMan shell::
 
      [pgbackman@pg-backup01 ~]# pgbackman
@@ -313,6 +319,48 @@ can be done like this:
      +-------+--------------------+--------------------+
      | 00001 | pg-backup01.uio.no | Main backup server |
      +-------+------------------+----------------------+
+
+#. Check that the configuration parameters for this backup server are
+   correct. e.g. One will have to update the directories with the
+   postgreSQL client binaries if you are using Debian::
+
+     [pgbackman]$ update_backup_server_config
+     --------------------------------------------------------
+     # SrvID / FQDN []: 1
+
+     # PgSQL bindir 9.0 [/usr/pgsql-9.0/bin]: /usr/lib/postgresql/9.0/bin
+     # PgSQL bindir 9.1 [/usr/pgsql-9.1/bin]: /usr/lib/postgresql/9.1/bin
+     # PgSQL bindir 9.2 [/usr/pgsql-9.2/bin]: /usr/lib/postgresql/9.2/bin
+     # PgSQL bindir 9.3 [/usr/pgsql-9.3/bin]: /usr/lib/postgresql/9.3/bin
+     # PgSQL bindir 9.4 [/usr/pgsql-9.4/bin]: /usr/lib/postgresql/9.4/bin
+     # Main backup dir [/srv/pgbackman]: 
+
+     # Are all values to update correct (yes/no): yes
+     --------------------------------------------------------
+     
+     [Done] Configuration parameters for SrvID: 2 updated.
+
+     [pgbackman]$ show_backup_server_config
+     --------------------------------------------------------
+     # SrvID / FQDN: 1
+     --------------------------------------------------------
+     +-----------------------+-----------------------------+---------------------------------------------+
+     | Parameter             | Value                       | Description                                 |
+     +-----------------------+-----------------------------+---------------------------------------------+
+     | admin_user            | postgres                    | postgreSQL admin user                       |
+     | backup_server_status  | RUNNING                     | Default backup server status - *Not used*   |
+     | domain                | example.net                 | Default domain                              |
+     | pgbackman_dump        | /usr/bin/pgbackman_dump     | Program used to take backup dumps           |
+     | pgbackman_restore     | /usr/bin/pgbackman_restore  | Program used to restore backup dumps        |
+     | pgsql_bin_9_0         | /usr/lib/postgresql/9.0/bin | postgreSQL 9.0 bin directory                |
+     | pgsql_bin_9_1         | /usr/lib/postgresql/9.1/bin | postgreSQL 9.1 bin directory                |
+     | pgsql_bin_9_2         | /usr/lib/postgresql/9.2/bin | postgreSQL 9.2 bin directory                |
+     | pgsql_bin_9_3         | /usr/lib/postgresql/9.3/bin | postgreSQL 9.3 bin directory                |
+     | pgsql_bin_9_4         | /usr/lib/postgresql/9.4/bin | postgreSQL 9.4 bin directory                |
+     | root_backup_partition | /srv/pgbackman              | Main partition used by pgbackman            |
+     | root_cron_file        | /etc/cron.d/pgbackman       | Crontab file used by pgbackman - *Not used* |
+     +-----------------------+-----------------------------+---------------------------------------------+
+
 
 #. Create the directory or partition in the backup server that will be
    used to save all backups, logfiles, and system data needed by
