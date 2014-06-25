@@ -2134,11 +2134,11 @@ This command updates the default configuration of a backup server.
 Parameters:
 
 * **[SrvID|FQDN]:** SrvID in PgBackMan or FQDN of the backup server
-* **[PgSQL_bin_9.0]:** Directory with postgreSQL 9.1 bin software 
+* **[PgSQL_bin_9.0]:** Directory with postgreSQL 9.0 bin software 
 * **[PgSQL_bin_9.1]:** Directory with postgreSQL 9.1 bin software 
-* **[PgSQL_bin_9.2]:** Directory with postgreSQL 9.1 bin software 
-* **[PgSQL_bin_9.3]:** Directory with postgreSQL 9.1 bin software 
-* **[PgSQL_bin_9.4]:** Directory with postgreSQL 9.1 bin software 
+* **[PgSQL_bin_9.2]:** Directory with postgreSQL 9.2 bin software 
+* **[PgSQL_bin_9.3]:** Directory with postgreSQL 9.3 bin software 
+* **[PgSQL_bin_9.4]:** Directory with postgreSQL 9.4 bin software 
 * **[root_backup_dir]:** Backup directory used by PgBackMan. 
 
 The default value for a parameter is shown between brackets ``[]``. If the
