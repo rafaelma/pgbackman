@@ -320,7 +320,7 @@ can be done like this:
      | 00001 | pg-backup01.uio.no | Main backup server |
      +-------+------------------+----------------------+
 
-#. Check that the configuration parameters for this backup server are
+#. Check that the configuration parameters for the backup server are
    correct. e.g. One will have to update the directories with the
    postgreSQL client binaries if you are using Debian::
 
@@ -338,7 +338,7 @@ can be done like this:
      # Are all values to update correct (yes/no): yes
      --------------------------------------------------------
      
-     [Done] Configuration parameters for SrvID: 2 updated.
+     [Done] Configuration parameters for SrvID: 1 updated.
 
      [pgbackman]$ show_backup_server_config
      --------------------------------------------------------
