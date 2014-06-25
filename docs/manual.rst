@@ -1015,8 +1015,11 @@ used. This command can be run with or without parameters. e.g:
 register_restore_definition
 ---------------------------
 
-This command defines a restore job of a backup from the catalog. It
-can be run only interactively.
+This command defines a restore job of a backup from the
+catalog. Nowadays it can only restore automatically backups with code
+FULL (Schema + data).
+
+It can be run only interactively.
 
 Parameters:
 

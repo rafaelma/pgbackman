@@ -2127,7 +2127,9 @@ class pgbackman_cli(cmd.Cmd):
         '''
         DESCRIPTION: 
         This command defines a restore job of a backup from the
-        catalog. It can be run only interactively.
+        catalog. Nowadays it can only restore automatically backups
+        with code FULL (Schema + data). It can be run only
+        interactively.
 
         COMMAND:
         register_restore_definition 
