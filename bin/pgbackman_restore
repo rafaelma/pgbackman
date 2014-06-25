@@ -338,7 +338,7 @@ def get_backup_server_pgsql_bin_dir(db):
     global global_parameters
 
     try:
-        pgsql_bin_dir = db.get_backup_server_parameter(global_parameters['backup_server_id'],'pgsql_bin_' + global_parameters['pg_release'])
+        pgsql_bin_dir = db.get_backup_server_config_value(global_parameters['backup_server_id'],'pgsql_bin_' + global_parameters['pg_release'])
         logs.logger.debug('pgsql bin directory to use: %s',pgsql_bin_dir)
         
         return pgsql_bin_dir
@@ -625,7 +625,7 @@ def main():
         sys.exit(1) 
         
     try:
-        global_parameters['pgsql_node_backup_dir'] = db.get_pgsql_node_parameter(global_parameters['pgsql_node_id'],'pgnode_backup_partition')
+        global_parameters['pgsql_node_backup_dir'] = db.get_pgsql_node_config_value(global_parameters['pgsql_node_id'],'pgnode_backup_partition')
 
     except psycopg2.Error as e:
         global_parameters['pgsql_node_backup_dir'] = pgsql_node_cache_data['pgnode_backup_partition']

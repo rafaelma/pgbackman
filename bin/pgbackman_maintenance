@@ -271,7 +271,7 @@ def process_pending_backup_catalog_log_file(db,backup_server_id):
     try:
         db.pg_connect()
         
-        root_backup_partition = db.get_backup_server_parameter(backup_server_id,'root_backup_partition')
+        root_backup_partition = db.get_backup_server_config_value(backup_server_id,'root_backup_partition')
         pending_catalog = root_backup_partition + '/pending_updates'
         
         for pending_log_file in os.listdir(pending_catalog):
@@ -361,7 +361,7 @@ def process_pending_restore_catalog_log_file(db,backup_server_id):
     try:
         db.pg_connect()
         
-        root_backup_partition = db.get_backup_server_parameter(backup_server_id,'root_backup_partition')
+        root_backup_partition = db.get_backup_server_config_value(backup_server_id,'root_backup_partition')
         pending_catalog = root_backup_partition + '/pending_updates'
         
         for pending_log_file in os.listdir(pending_catalog):

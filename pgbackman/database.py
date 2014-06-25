@@ -954,58 +954,6 @@ class pgbackman_db():
     # Method 
     # ############################################
            
-    def get_backup_server_parameter(self,backup_server_id,param):
-        """A function to get the value of a configuration parameter for a backup server"""
-
-        try:
-            self.pg_connect()
-
-            if self.cur:
-                try:
-                    self.cur.execute('SELECT get_backup_server_parameter(%s,%s)',(backup_server_id,param))
-                    
-                    data = self.cur.fetchone()[0]
-                    return data
-
-                except psycopg2.Error as e:
-                    raise e
-                
-            self.pg_close()
-
-        except psycopg2.Error as e:
-            raise e
-            
-
-    # ############################################
-    # Method 
-    # ############################################
-           
-    def get_pgsql_node_parameter(self,pgsql_node_id,param):
-        """A function to get the value of a configuration parameter for a PgSQL node"""
-
-        try:
-            self.pg_connect()
-
-            if self.cur:
-                try:
-                    self.cur.execute('SELECT get_pgsql_node_parameter(%s,%s)',(pgsql_node_id,param))
-                    
-                    data = self.cur.fetchone()[0]
-                    return data
-
-                except psycopg2.Error as e:
-                    raise e
-                
-            self.pg_close()
-    
-        except psycopg2.Error as e:
-            raise e
-
-
-    # ############################################
-    # Method 
-    # ############################################
-           
     def get_minute_from_interval(self,param):
         """A function to get a random minute from an interval"""
 
@@ -2291,13 +2239,56 @@ class pgbackman_db():
 
             if self.cur:
                 try:
-                    self.cur.execute('SELECT update_pgsql_node_config(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',(pgsql_node_id,backup_minutes_interval,backup_hours_interval,
-                                                                                                                               backup_weekday_cron,backup_month_cron,backup_day_month_cron,
-                                                                                                                               backup_code,retention_period,retention_redundancy,
-                                                                                                                               extra_backup_parameters,extra_restore_parameters,
-                                                                                                                                  backup_job_status,domain,
-                                                                                                                               logs_email,admin_user,pgport,pgnode_backup_partition,
-                                                                                                                               pgnode_crontab_file,pgsql_node_status))
+                    self.cur.execute('SELECT update_pgsql_node_config(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',(pgsql_node_id,
+                                                                                                                                  backup_minutes_interval,
+                                                                                                                                  backup_hours_interval,
+                                                                                                                                  backup_weekday_cron,
+                                                                                                                                  backup_month_cron,
+                                                                                                                                  backup_day_month_cron,
+                                                                                                                                  backup_code,
+                                                                                                                                  retention_period,
+                                                                                                                                  retention_redundancy,
+                                                                                                                                  extra_backup_parameters,
+                                                                                                                                  extra_restore_parameters,
+                                                                                                                                  backup_job_status,
+                                                                                                                                  domain,
+                                                                                                                                  logs_email,
+                                                                                                                                  admin_user,
+                                                                                                                                  pgport,
+                                                                                                                                  pgnode_backup_partition,
+                                                                                                                                  pgnode_crontab_file,
+                                                                                                                                  pgsql_node_status))
+                    
+                    self.conn.commit()                        
+              
+                except psycopg2.Error as e:
+                    raise e
+                    
+            self.pg_close()
+   
+        except psycopg2.Error as e:
+            raise e
+    
+
+    # ############################################
+    # Method 
+    # ############################################
+                      
+    def update_backup_server_config(self,backup_server_id,pgsql_bin_9_0,pgsql_bin_9_1,pgsql_bin_9_2,pgsql_bin_9_3,pgsql_bin_9_4,root_backup_partition):
+        """A function to update the configuration of a backup server"""
+
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT update_pgsql_node_config(%s,%s,%s,%s,%s,%s,%s)',(backup_server_id,
+                                                                                              pgsql_bin_9_0,
+                                                                                              pgsql_bin_9_1,
+                                                                                              pgsql_bin_9_2,
+                                                                                              pgsql_bin_9_3,
+                                                                                              pgsql_bin_9_4,
+                                                                                              root_backup_partition))
                     self.conn.commit()                        
               
                 except psycopg2.Error as e:
@@ -2694,6 +2685,32 @@ class pgbackman_db():
             if self.cur:
                 try:
                     self.cur.execute('SELECT get_pgsql_node_config_value(%s,%s)',(pgsql_node_id,parameter))
+                    self.conn.commit()
+
+                    data = self.cur.fetchone()[0]
+                    return data
+                                    
+                except psycopg2.Error as e:
+                    raise e
+
+            self.pg_close()
+
+        except psycopg2.Error as e:
+            raise e
+
+    # ############################################
+    # Method 
+    # ############################################
+           
+    def get_backup_server_config_value(self,backup_server_id,parameter):
+        """A function to get the value of a default configuration parameter for a backup server"""
+     
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT get_backup_server_config_value(%s,%s)',(backup_server_id,parameter))
                     self.conn.commit()
 
                     data = self.cur.fetchone()[0]

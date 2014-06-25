@@ -134,7 +134,7 @@ def generate_crontab_backup_jobs(db,backup_server_id,pgsql_node_id):
     global last_crontab_update
 
     try:
-        crontab_file = db.get_pgsql_node_parameter(pgsql_node_id,'pgnode_crontab_file')
+        crontab_file = db.get_pgsql_node_config_value(pgsql_node_id,'pgnode_crontab_file')
     
         with open(crontab_file,'w') as file:
             data = db.generate_crontab_backup_jobs(backup_server_id,pgsql_node_id)
@@ -274,7 +274,7 @@ def create_global_directories(db,backup_server_fqdn,backup_server_id):
         logs.logger.error('Problems getting UID and GID values for pgbackman - %s',e)  
 
     try:
-        root_backup_partition = db.get_backup_server_parameter(backup_server_id,'root_backup_partition')
+        root_backup_partition = db.get_backup_server_config_value(backup_server_id,'root_backup_partition')
 
     except Exception as e:
         logs.logger.error('Problems getting root backup partition used in %s - %s',backup_server_fqdn,e)    
@@ -347,7 +347,7 @@ def create_pgsql_node_backup_directories(db,pgsql_node_id):
         logs.logger.error('Problems getting UID and GID values for pgbackman - %s',e)  
 
     try:
-        pgnode_backup_partition = db.get_pgsql_node_parameter(pgsql_node_id,'pgnode_backup_partition')
+        pgnode_backup_partition = db.get_pgsql_node_config_value(pgsql_node_id,'pgnode_backup_partition')
 
     except Exception as e:
         logs.logger.error('Problems getting backup partition used for NodeID: %s - %s',pgsql_node_id,e)   
@@ -417,7 +417,7 @@ def process_pgsql_node_to_delete(db,backup_server_id):
     try:
         for record in db.get_pgsql_node_to_delete(backup_server_id):
 
-            root_backup_partition = db.get_backup_server_parameter(backup_server_id,'root_backup_partition')
+            root_backup_partition = db.get_backup_server_config_value(backup_server_id,'root_backup_partition')
             pgsql_node_backup_dir = root_backup_partition + '/pgsql_node_' + str(record[1])
             crontab_file = '/etc/cron.d/pgsql_node_' + str(record[1])
 
@@ -475,7 +475,7 @@ def process_pgsql_node_stopped(db,backup_server_id):
     try:
         for record in db.get_pgsql_node_stopped():
 
-            crontab_file = db.get_pgsql_node_parameter(record[0],'pgnode_crontab_file')
+            crontab_file = db.get_pgsql_node_config_value(record[0],'pgnode_crontab_file')
             generate_crontab_backup_jobs(db,backup_server_id,record[0])
 
     except Exception as e:
@@ -499,13 +499,13 @@ def update_backup_server_cache_data(db,backup_server_fqdn,backup_server_id):
         logs.logger.error('Problems getting UID and GID values for pgbackman - %s',e)  
 
     try:
-        root_backup_partition = db.get_backup_server_parameter(backup_server_id,'root_backup_partition')
+        root_backup_partition = db.get_backup_server_config_value(backup_server_id,'root_backup_partition')
 
-        pgsql_bin_9_4 = db.get_backup_server_parameter(backup_server_id,'pgsql_bin_9_4')
-        pgsql_bin_9_3 = db.get_backup_server_parameter(backup_server_id,'pgsql_bin_9_3')
-        pgsql_bin_9_2 = db.get_backup_server_parameter(backup_server_id,'pgsql_bin_9_2')
-        pgsql_bin_9_1 = db.get_backup_server_parameter(backup_server_id,'pgsql_bin_9_1')
-        pgsql_bin_9_0 = db.get_backup_server_parameter(backup_server_id,'pgsql_bin_9_0')
+        pgsql_bin_9_4 = db.get_backup_server_config_value(backup_server_id,'pgsql_bin_9_4')
+        pgsql_bin_9_3 = db.get_backup_server_config_value(backup_server_id,'pgsql_bin_9_3')
+        pgsql_bin_9_2 = db.get_backup_server_config_value(backup_server_id,'pgsql_bin_9_2')
+        pgsql_bin_9_1 = db.get_backup_server_config_value(backup_server_id,'pgsql_bin_9_1')
+        pgsql_bin_9_0 = db.get_backup_server_config_value(backup_server_id,'pgsql_bin_9_0')
         
         
         backup_server_cache_dir = root_backup_partition +  '/cache_dir'
@@ -547,8 +547,8 @@ def update_pgsql_node_cache_data(db,backup_server_id,pgsql_node_id):
 
     try:
         pgsql_node_fqdn = db.get_pgsql_node_fqdn(pgsql_node_id)
-        pgsql_node_backup_dir = db.get_pgsql_node_parameter(pgsql_node_id,'pgnode_backup_partition')
-        root_backup_partition = db.get_backup_server_parameter(backup_server_id,'root_backup_partition')
+        pgsql_node_backup_dir = db.get_pgsql_node_config_value(pgsql_node_id,'pgnode_backup_partition')
+        root_backup_partition = db.get_backup_server_config_value(backup_server_id,'root_backup_partition')
            
         backup_server_cache_dir = root_backup_partition +  '/cache_dir'
         pgsql_node_cache_file = backup_server_cache_dir + '/pgsql_node_' + str(pgsql_node_id) + '.cache'

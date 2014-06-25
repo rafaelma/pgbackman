@@ -852,17 +852,17 @@ class pgbackman_cli(cmd.Cmd):
             #
 
             try:
-                minutes_cron_default = self.db.get_minute_from_interval(self.db.get_pgsql_node_parameter(pgsql_node_id,'backup_minutes_interval'))
-                hours_cron_default = self.db.get_hour_from_interval(self.db.get_pgsql_node_parameter(pgsql_node_id,'backup_hours_interval'))
-                weekday_cron_default = self.db.get_pgsql_node_parameter(pgsql_node_id,'backup_weekday_cron')
-                month_cron_default = self.db.get_pgsql_node_parameter(pgsql_node_id,'backup_month_cron')
-                day_month_cron_default = self.db.get_pgsql_node_parameter(pgsql_node_id,'backup_day_month_cron')
-                backup_code_default = self.db.get_pgsql_node_parameter(pgsql_node_id,'backup_code')
-                encryption_default = self.db.get_pgsql_node_parameter(pgsql_node_id,'encryption')
-                retention_period_default = self.db.get_pgsql_node_parameter(pgsql_node_id,'retention_period')
-                retention_redundancy_default = self.db.get_pgsql_node_parameter(pgsql_node_id,'retention_redundancy')
-                extra_backup_parameters_default = self.db.get_pgsql_node_parameter(pgsql_node_id,'extra_backup_parameters')
-                backup_job_status_default = self.db.get_pgsql_node_parameter(pgsql_node_id,'backup_job_status')
+                minutes_cron_default = self.db.get_minute_from_interval(self.db.get_pgsql_node_config_value(pgsql_node_id,'backup_minutes_interval'))
+                hours_cron_default = self.db.get_hour_from_interval(self.db.get_pgsql_node_config_value(pgsql_node_id,'backup_hours_interval'))
+                weekday_cron_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'backup_weekday_cron')
+                month_cron_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'backup_month_cron')
+                day_month_cron_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'backup_day_month_cron')
+                backup_code_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'backup_code')
+                encryption_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'encryption')
+                retention_period_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'retention_period')
+                retention_redundancy_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'retention_redundancy')
+                extra_backup_parameters_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'extra_backup_parameters')
+                backup_job_status_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'backup_job_status')
                 
             except Exception as e:
                 print '\n[ERROR]: Problems getting default values for parameters\n',e 
@@ -961,8 +961,8 @@ class pgbackman_cli(cmd.Cmd):
                     if database == '#all_databases#' or len(database_list) > 1:
 
                         try:
-                            minutes_cron = self.db.get_minute_from_interval(self.db.get_pgsql_node_parameter(pgsql_node_id,'backup_minutes_interval'))
-                            hours_cron = self.db.get_hour_from_interval(self.db.get_pgsql_node_parameter(pgsql_node_id,'backup_hours_interval'))
+                            minutes_cron = self.db.get_minute_from_interval(self.db.get_pgsql_node_config_value(pgsql_node_id,'backup_minutes_interval'))
+                            hours_cron = self.db.get_hour_from_interval(self.db.get_pgsql_node_config_value(pgsql_node_id,'backup_hours_interval'))
                                     
                         except Exception as e:
                             print '\n[ERROR]: Problems getting default values for parameters\n',e 
@@ -1055,17 +1055,17 @@ class pgbackman_cli(cmd.Cmd):
             #
 
             try:
-                minutes_cron_default = self.db.get_minute_from_interval(self.db.get_pgsql_node_parameter(pgsql_node_id,'backup_minutes_interval'))
-                hours_cron_default = self.db.get_hour_from_interval(self.db.get_pgsql_node_parameter(pgsql_node_id,'backup_hours_interval'))
-                weekday_cron_default = self.db.get_pgsql_node_parameter(pgsql_node_id,'backup_weekday_cron')
-                month_cron_default = self.db.get_pgsql_node_parameter(pgsql_node_id,'backup_month_cron')
-                day_month_cron_default = self.db.get_pgsql_node_parameter(pgsql_node_id,'backup_day_month_cron')
-                backup_code_default = self.db.get_pgsql_node_parameter(pgsql_node_id,'backup_code')
-                encryption_default = self.db.get_pgsql_node_parameter(pgsql_node_id,'encryption')
-                retention_period_default = self.db.get_pgsql_node_parameter(pgsql_node_id,'retention_period')
-                retention_redundancy_default = self.db.get_pgsql_node_parameter(pgsql_node_id,'retention_redundancy')
-                extra_backup_parameters_default = self.db.get_pgsql_node_parameter(pgsql_node_id,'extra_backup_parameters')
-                backup_job_status_default = self.db.get_pgsql_node_parameter(pgsql_node_id,'backup_job_status')
+                minutes_cron_default = self.db.get_minute_from_interval(self.db.get_pgsql_node_config_value(pgsql_node_id,'backup_minutes_interval'))
+                hours_cron_default = self.db.get_hour_from_interval(self.db.get_pgsql_node_config_value(pgsql_node_id,'backup_hours_interval'))
+                weekday_cron_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'backup_weekday_cron')
+                month_cron_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'backup_month_cron')
+                day_month_cron_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'backup_day_month_cron')
+                backup_code_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'backup_code')
+                encryption_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'encryption')
+                retention_period_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'retention_period')
+                retention_redundancy_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'retention_redundancy')
+                extra_backup_parameters_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'extra_backup_parameters')
+                backup_job_status_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'backup_job_status')
                 
             except Exception as e:
                 print '\n[ERROR]: Problems getting default values for parameters\n',e 
@@ -1129,8 +1129,8 @@ class pgbackman_cli(cmd.Cmd):
                 if database == '#all_databases#' or len(database_list) > 1:
 
                     try:
-                        minutes_cron = self.db.get_minute_from_interval(self.db.get_pgsql_node_parameter(pgsql_node_id,'backup_minutes_interval'))
-                        hours_cron = self.db.get_hour_from_interval(self.db.get_pgsql_node_parameter(pgsql_node_id,'backup_hours_interval'))
+                        minutes_cron = self.db.get_minute_from_interval(self.db.get_pgsql_node_config_value(pgsql_node_id,'backup_minutes_interval'))
+                        hours_cron = self.db.get_hour_from_interval(self.db.get_pgsql_node_config_value(pgsql_node_id,'backup_hours_interval'))
 
                     except Exception as e:
                         print '\n[ERROR]: Problems getting default values for parameters\n',e 
@@ -1831,9 +1831,9 @@ class pgbackman_cli(cmd.Cmd):
 
             try:
                 at_time_default = datetime.datetime.now()+ datetime.timedelta(minutes=1)
-                backup_code_default = self.db.get_pgsql_node_parameter(pgsql_node_id,'backup_code')
-                retention_period_default = self.db.get_pgsql_node_parameter(pgsql_node_id,'retention_period')
-                extra_backup_parameters_default = self.db.get_pgsql_node_parameter(pgsql_node_id,'extra_backup_parameters')
+                backup_code_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'backup_code')
+                retention_period_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'retention_period')
+                extra_backup_parameters_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'extra_backup_parameters')
                 
             except Exception as e:
                 print '\n[ERROR]: Problems getting default values for parameters\n',e 
@@ -1929,9 +1929,9 @@ class pgbackman_cli(cmd.Cmd):
 
             try:
                 at_time_default = datetime.datetime.now()+ datetime.timedelta(minutes=1)
-                backup_code_default = self.db.get_pgsql_node_parameter(pgsql_node_id,'backup_code')
-                retention_period_default = self.db.get_pgsql_node_parameter(pgsql_node_id,'retention_period')
-                extra_backup_parameters_default = self.db.get_pgsql_node_parameter(pgsql_node_id,'extra_backup_parameters')
+                backup_code_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'backup_code')
+                retention_period_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'retention_period')
+                extra_backup_parameters_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'extra_backup_parameters')
                 
             except Exception as e:
                 print '\n[ERROR]: Problems getting default values for parameters\n',e 
@@ -2223,7 +2223,7 @@ class pgbackman_cli(cmd.Cmd):
                 return False      
             
             try:
-                extra_restore_parameters_default = self.db.get_pgsql_node_parameter(pgsql_node_id,'extra_restore_parameters')
+                extra_restore_parameters_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'extra_restore_parameters')
 
             except Exception as e:
                 print '\n[ERROR]: ',e 
@@ -3817,6 +3817,191 @@ class pgbackman_cli(cmd.Cmd):
         else:
             print '\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n'
 
+    # ############################################
+    # Method do_update_pgsql_node_config
+    # ############################################
+
+    def do_update_pgsql_node_config(self,args):
+        '''
+        DESCRIPTION:
+        This command updates the default configuration parameters 
+        for a backup server 
+
+        COMMAND:
+        update_backup_server_config [SrvID / FQDN]
+                                    [PgSQL_bin_9.0]
+                                    [PgSQL_bin_9.1]
+                                    [PgSQL_bin_9.2]
+                                    [PgSQL_bin_9.3]
+                                    [PgSQL_bin_9.4]
+                                    [root_backup_dir]
+                                    
+        '''    
+
+        try: 
+            arg_list = shlex.split(args)
+        
+        except ValueError as e:
+            print '\n[ERROR]: ',e,'\n'
+            return False
+            
+        #
+        # Command without parameters
+        #
+        
+        if len(arg_list) == 0:
+            
+            ack = ''
+
+            try:
+                print '--------------------------------------------------------'
+                backup_server = raw_input('# SrvID / FQDN []: ')
+                print
+
+            except Exception as e:
+                print '\n--------------------------------------------------------' 
+                print '\n[Aborted] Command interrupted by the user.\n'
+                return False
+
+            try:
+                if backup_server.isdigit():
+                    backup_server_fqdn = self.db.get_backup_server_fqdn(backup_server)
+                    backup_server_id = backup_server
+                else:
+                    backup_server_id = self.db.get_backup_server_id(backup_server)
+                    
+            except Exception as e:
+                print '\n[ERROR]: ',e 
+                return False
+        
+            try:
+                pgsql_bin_9_0_default = self.db.get_backup_server_config_value(backup_server_id,'pgsql_bin_9_0')
+                pgsql_bin_9_1_default = self.db.get_backup_server_config_value(backup_server_id,'pgsql_bin_9_1')
+                pgsql_bin_9_2_default = self.db.get_backup_server_config_value(backup_server_id,'pgsql_bin_9_2')
+                pgsql_bin_9_3_default = self.db.get_backup_server_config_value(backup_server_id,'pgsql_bin_9_3')
+                pgsql_bin_9_4_default = self.db.get_backup_server_config_value(backup_server_id,'pgsql_bin_9_4')
+                root_backup_partition_default = self.db.get_backup_server_config_value(backup_server_id,'root_backup_partition')
+                                                
+            except Exception as e:
+                print '\n[ERROR]: Problems getting default values for parameters\n',e 
+                return False
+
+            try:
+                pgsql_bin_9_0 = raw_input('# PgSQL bindir 9.0 [' + pgsql_bin_9_0_default + ']: ')
+                pgsql_bin_9_1 = raw_input('# PgSQL bindir 9.0 [' + pgsql_bin_9_1_default + ']: ')
+                pgsql_bin_9_2 = raw_input('# PgSQL bindir 9.0 [' + pgsql_bin_9_2_default + ']: ')
+                pgsql_bin_9_3 = raw_input('# PgSQL bindir 9.0 [' + pgsql_bin_9_3_default + ']: ')
+                pgsql_bin_9_4 = raw_input('# PgSQL bindir 9.0 [' + pgsql_bin_9_4_default + ']: ')
+                root_backup_partition = raw_input('# Main backup dir [' + root_backup_partition_default + ']: ')
+                print
+
+                while ack != 'yes' and ack != 'no':
+                    ack = raw_input('# Are all values to update correct (yes/no): ')
+
+                print '--------------------------------------------------------'
+
+            except Exception as e:
+                print '\n--------------------------------------------------------' 
+                print '\n[Aborted] Command interrupted by the user.\n'
+                return False   
+
+            if pgsql_bin_9_0  == '': 
+                pgsql_bin_9_0 = pgsql_bin_9_0_default
+
+            if pgsql_bin_9_1  == '': 
+                pgsql_bin_9_1 = pgsql_bin_9_1_default
+
+            if pgsql_bin_9_2  == '': 
+                pgsql_bin_9_2 = pgsql_bin_9_2_default
+
+            if pgsql_bin_9_3  == '': 
+                pgsql_bin_9_3 = pgsql_bin_9_3_default
+
+            if pgsql_bin_9_4  == '': 
+                pgsql_bin_9_4 = pgsql_bin_9_4_default
+
+            if root_backup_partition == '':
+                root_backup_partition = root_backup_partition_default
+
+
+            if ack.lower() == 'yes':
+                try:
+                    self.db.update_backup_server_config(backup_server_id,pgsql_bin_9_0,pgsql_bin_9_1,pgsql_bin_9_2,pgsql_bin_9_3,pgsql_bin_9_4,root_backup_partition)
+                    
+                    print '\n[Done] Configuration parameters for SrvID: ' + str(backup_server_id) + ' updated.\n'
+
+                except Exception as e:
+                    print '\n[ERROR]: Could not update the configuration for this Backup server \n',e
+
+            elif ack.lower() == 'no':
+                print '\n[Aborted]\n'
+            
+        #
+        # Command with parameters
+        #
+                
+        elif len(arg_list) == 7:
+            
+            backup_server = arg_list[0]
+
+            try:
+                if backup_server.isdigit():
+                    backup_server_fqdn = self.db.get_backup_server_fqdn(backup_server)
+                    backup_server_id = backup_server
+                else:
+                    backup_server_id = self.db.get_backup_server_id(backup_server)
+                    
+            except Exception as e:
+                print '\n[ERROR]: ',e 
+                return False
+        
+            try:
+                pgsql_bin_9_0_default = self.db.get_backup_server_config_value(backup_server_id,'pgsql_bin_9_0')
+                pgsql_bin_9_1_default = self.db.get_backup_server_config_value(backup_server_id,'pgsql_bin_9_1')
+                pgsql_bin_9_2_default = self.db.get_backup_server_config_value(backup_server_id,'pgsql_bin_9_2')
+                pgsql_bin_9_3_default = self.db.get_backup_server_config_value(backup_server_id,'pgsql_bin_9_3')
+                pgsql_bin_9_4_default = self.db.get_backup_server_config_value(backup_server_id,'pgsql_bin_9_4')
+                root_backup_partition_default = self.db.get_backup_server_config_value(backup_server_id,'root_backup_partition')
+                
+            except Exception as e:
+                print '\n[ERROR]: Problems getting default values for parameters\n',e 
+                return False
+            
+            pgsql_bin_9_0 = arg_list[1]
+            pgsql_bin_9_1 = arg_list[2]
+            pgsql_bin_9_2 = arg_list[3]
+            pgsql_bin_9_3 = arg_list[4]
+            pgsql_bin_9_4 = arg_list[5]
+            root_backup_partition = arg_list[6]
+
+            if pgsql_bin_9_0  == '': 
+                pgsql_bin_9_0 = pgsql_bin_9_0_default
+
+            if pgsql_bin_9_1  == '': 
+                pgsql_bin_9_1 = pgsql_bin_9_1_default
+
+            if pgsql_bin_9_2  == '': 
+                pgsql_bin_9_2 = pgsql_bin_9_2_default
+
+            if pgsql_bin_9_3  == '': 
+                pgsql_bin_9_3 = pgsql_bin_9_3_default
+
+            if pgsql_bin_9_4  == '': 
+                pgsql_bin_9_4 = pgsql_bin_9_4_default
+
+            if root_backup_partition == '':
+                root_backup_partition = root_backup_partition_default
+
+            try:
+                self.db.update_backup_server_config(backup_server_id,pgsql_bin_9_0,pgsql_bin_9_1,pgsql_bin_9_2,pgsql_bin_9_3,pgsql_bin_9_4,root_backup_partition)
+                
+                print '\n[Done] Configuration parameters for SrvID: ' + str(backup_server_id) + ' updated.\n'
+
+            except Exception as e:
+                print '\n[ERROR]: Could not update the configuration for this Backup server \n',e
+                        
+        else:
+            print '\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n'
 
 
     # ############################################

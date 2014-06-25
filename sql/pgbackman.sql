@@ -1795,6 +1795,75 @@ $$;
 ALTER FUNCTION update_pgsql_node_config(INTEGER,TEXT,TEXT,TEXT,TEXT,TEXT,TEXT,INTERVAL,INTEGER,TEXT,TEXT,TEXT,TEXT,TEXT,TEXT,INTEGER,TEXT,TEXT,TEXT) OWNER TO pgbackman_role_rw;
 
 -- ------------------------------------------------------------
+-- Function: update_backup_server_config()
+--
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION update_backup_server_config(INTEGER,TEXT,TEXT,TEXT,TEXT,TEXT,TEXT) RETURNS VOID
+ LANGUAGE plpgsql 
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ DECLARE
+  backup_server_id_ ALIAS FOR $1;
+  pgsql_bin_9_0_ ALIAS FOR $2;
+  pgsql_bin_9_1_ ALIAS FOR $3;
+  pgsql_bin_9_2_ ALIAS FOR $4;
+  pgsql_bin_9_3_ ALIAS FOR $5;
+  pgsql_bin_9_4_ ALIAS FOR $6;
+  root_backup_partition_ ALIAS FOR $7;
+
+  server_cnt INTEGER;
+  v_msg     TEXT;
+  v_detail  TEXT;
+  v_context TEXT;
+ BEGIN
+
+   SELECT count(*) FROM backup_server WHERE sewrver_id = backup_server_id_ INTO server_cnt;
+
+   IF server_cnt != 0 THEN
+
+     EXECUTE 'UPDATE backup_server_config SET value = $2 WHERE server_id = $1 AND parameter = ''pgsql_bin_9_0'''
+     USING backup_server_id_,
+     	   pgsql_bin_9_0_;
+
+     EXECUTE 'UPDATE backup_server_config SET value = $2 WHERE server_id = $1 AND parameter = ''pgsql_bin_9_1'''
+     USING backup_server_id_,
+     	   pgsql_bin_9_1_;
+   				
+    EXECUTE 'UPDATE backup_server_config SET value = $2 WHERE server_id = $1 AND parameter = ''pgsql_bin_9_2'''
+     USING backup_server_id_,
+     	   pgsql_bin_9_2_;
+
+    EXECUTE 'UPDATE backup_server_config SET value = $2 WHERE server_id = $1 AND parameter = ''pgsql_bin_9_3'''
+     USING backup_server_id_,
+     	   pgsql_bin_9_3_;
+
+    EXECUTE 'UPDATE backup_server_config SET value = $2 WHERE server_id = $1 AND parameter = ''pgsql_bin_9_4'''
+     USING backup_server_id_,
+     	   pgsql_bin_9_4_;
+
+   EXECUTE 'UPDATE backup_server_config SET value = $2 WHERE server_id = $1 AND parameter = ''root_backup_partition'''
+     USING backup_server_id_,
+     	   root_backup_partition_;
+
+    ELSE
+      RAISE EXCEPTION 'Backup server % does not exist',backup_server_id_; 
+    END IF;
+	   
+   EXCEPTION WHEN others THEN
+   	GET STACKED DIAGNOSTICS	
+            v_msg     = MESSAGE_TEXT,
+            v_detail  = PG_EXCEPTION_DETAIL,
+            v_context = PG_EXCEPTION_CONTEXT;
+        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \n----------------------------------------------\n', v_msg, v_detail;
+  END;
+$$;
+
+ALTER FUNCTION update_backup_server_config(INTEGER,TEXT,TEXT,TEXT,TEXT,TEXT,TEXT) OWNER TO pgbackman_role_rw;
+
+
+-- ------------------------------------------------------------
 -- Function: register_backup_definition()
 -- ------------------------------------------------------------
 
@@ -2440,34 +2509,6 @@ $$;
 ALTER FUNCTION get_default_backup_server_parameter(TEXT) OWNER TO pgbackman_role_rw;
 
 
--- ------------------------------------------------------------
--- Function: get_backup_server_parameter()
--- ------------------------------------------------------------
-
-CREATE OR REPLACE FUNCTION get_backup_server_parameter(INTEGER,TEXT) RETURNS TEXT 
- LANGUAGE plpgsql 
- SECURITY INVOKER 
- SET search_path = public, pg_temp
- AS $$
- DECLARE
- server_id_ ALIAS FOR $1;
- parameter_ ALIAS FOR $2; 
- value_ TEXT := '';
-
- BEGIN
-
-  SELECT value from backup_server_config WHERE server_id = server_id_ AND parameter = parameter_ INTO value_;
-
-  IF value_ IS NULL THEN
-    RAISE EXCEPTION 'Parameter: % for server % does not exist in this system',parameter_,server_id_;
-  END IF;
-
-  RETURN value_;
- END;
-$$;
-
-ALTER FUNCTION get_backup_server_parameter(INTEGER,TEXT) OWNER TO pgbackman_role_rw;
-
 
 -- ------------------------------------------------------------
 -- Function: get_default_pgsql_node_parameter()
@@ -2496,34 +2537,6 @@ $$;
 
 ALTER FUNCTION get_default_pgsql_node_parameter(TEXT) OWNER TO pgbackman_role_rw;
 
-
--- ------------------------------------------------------------
--- Function: get_pgsql_node_parameter()
--- ------------------------------------------------------------
-
-CREATE OR REPLACE FUNCTION get_pgsql_node_parameter(INTEGER,TEXT) RETURNS TEXT 
- LANGUAGE plpgsql 
- SECURITY INVOKER 
- SET search_path = public, pg_temp
- AS $$
- DECLARE
- node_id_ ALIAS FOR $1;
- parameter_ ALIAS FOR $2; 
- value_ TEXT := '';
-
- BEGIN
-
-  SELECT value from pgsql_node_config WHERE node_id = node_id_ AND parameter = parameter_ INTO value_;
-
-  IF value_ IS NULL THEN
-    RAISE EXCEPTION 'Parameter: % for server % does not exist in this system',parameter_,node_id_;
-  END IF;
-
-  RETURN value_;
- END;
-$$;
-
-ALTER FUNCTION get_pgsql_node_parameter(INTEGER,TEXT) OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------------
@@ -2699,61 +2712,9 @@ CREATE OR REPLACE FUNCTION get_pgsql_node_config_value(INTEGER,TEXT) RETURNS TEX
     RAISE EXCEPTION 'NodeID: % does not exist in the system',pgsql_node_id_;
   END IF;
 
-  IF parameter_ = 'backup_minutes_interval' THEN
-   SELECT value FROM pgsql_node_config WHERE node_id = pgsql_node_id_ AND parameter = 'backup_minutes_interval' INTO value_;
- 
-  ELSIF parameter_ = 'backup_hours_interval' THEN
-   SELECT value FROM pgsql_node_config WHERE node_id = pgsql_node_id_ AND parameter = 'backup_hours_interval' INTO value_;
+  SELECT value FROM pgsql_node_config WHERE node_id = pgsql_node_id_ AND parameter = parameter_ INTO value_;
 
-  ELSIF parameter_ = 'backup_day_month_cron' THEN
-   SELECT value FROM pgsql_node_config WHERE node_id = pgsql_node_id_ AND parameter = 'backup_day_month_cron' INTO value_;
-
-  ELSIF parameter_ = 'backup_month_cron' THEN
-   SELECT value FROM pgsql_node_config WHERE node_id = pgsql_node_id_ AND parameter = 'backup_month_cron' INTO value_;
-
-  ELSIF parameter_ = 'backup_weekday_cron' THEN
-   SELECT value FROM pgsql_node_config WHERE node_id = pgsql_node_id_ AND parameter = 'backup_weekday_cron' INTO value_;
-
-  ELSIF parameter_ = 'backup_code' THEN
-   SELECT value FROM pgsql_node_config WHERE node_id = pgsql_node_id_ AND parameter = 'backup_code' INTO value_;
-
-  ELSIF parameter_ = 'retention_period' THEN
-   SELECT value FROM pgsql_node_config WHERE node_id = pgsql_node_id_ AND parameter = 'retention_period' INTO value_;
-
-  ELSIF parameter_ = 'retention_redundancy' THEN
-   SELECT value FROM pgsql_node_config WHERE node_id = pgsql_node_id_ AND parameter = 'retention_redundancy' INTO value_;
-
-  ELSIF parameter_ = 'extra_backup_parameters' THEN
-   SELECT value FROM pgsql_node_config WHERE node_id = pgsql_node_id_ AND parameter = 'extra_backup_parameters' INTO value_;
-
-  ELSIF parameter_ = 'extra_restore_parameters' THEN
-   SELECT value FROM pgsql_node_config WHERE node_id = pgsql_node_id_ AND parameter = 'extra_restore_parameters' INTO value_;
-
-  ELSIF parameter_ = 'backup_job_status' THEN
-   SELECT value FROM pgsql_node_config WHERE node_id = pgsql_node_id_ AND parameter = 'backup_job_status' INTO value_;
-
-  ELSIF parameter_ = 'domain' THEN
-   SELECT value FROM pgsql_node_config WHERE node_id = pgsql_node_id_ AND parameter = 'domain' INTO value_;
-
-  ELSIF parameter_ = 'logs_email' THEN
-   SELECT value FROM pgsql_node_config WHERE node_id = pgsql_node_id_ AND parameter = 'logs_email' INTO value_;
-
-  ELSIF parameter_ = 'admin_user' THEN
-   SELECT value FROM pgsql_node_config WHERE node_id = pgsql_node_id_ AND parameter = 'admin_user' INTO value_;
-
-  ELSIF parameter_ = 'pgport' THEN
-   SELECT value FROM pgsql_node_config WHERE node_id = pgsql_node_id_ AND parameter = 'pgport' INTO value_;
-
-  ELSIF parameter_ = 'pgnode_backup_partition' THEN
-   SELECT value FROM pgsql_node_config WHERE node_id = pgsql_node_id_ AND parameter = 'pgnode_backup_partition' INTO value_;
-
-  ELSIF parameter_ = 'pgnode_crontab_file' THEN
-   SELECT value FROM pgsql_node_config WHERE node_id = pgsql_node_id_ AND parameter = 'pgnode_crontab_file' INTO value_;
-
-  ELSIF parameter_ = 'pgsql_node_status' THEN
-   SELECT value FROM pgsql_node_config WHERE node_id = pgsql_node_id_ AND parameter = 'pgsql_node_status' INTO value_;
-
-  ELSE
+  IF value_ IS NULL OR value_ = '' THEN
      RAISE EXCEPTION 'Problems getting the value of NodeID: % - parameter: %',pgsql_node_id_,parameter_;
   END IF;
 
@@ -2762,6 +2723,43 @@ CREATE OR REPLACE FUNCTION get_pgsql_node_config_value(INTEGER,TEXT) RETURNS TEX
 $$;
 
 ALTER FUNCTION get_pgsql_node_config_value(INTEGER,TEXT) OWNER TO pgbackman_role_rw;
+
+
+-- ------------------------------------------------------------
+-- Function: get_backup_server_config_value()
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION get_backup_server_config_value(INTEGER,TEXT) RETURNS TEXT 
+ LANGUAGE plpgsql 
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ DECLARE
+ backup_server_id_ ALIAS FOR $1;
+ parameter_ ALIAS FOR $2; 
+ value_ TEXT := '';
+
+ backup_server_id_cnt INTEGER;
+
+ BEGIN
+
+  SELECT count(*) FROM backup_server WHERE server_id = backup_server_id_ INTO backup_server_id_cnt;
+
+  IF backup_server_id_cnt = 0 THEN
+    RAISE EXCEPTION 'SrvID: % does not exist in the system',backup_server_id_;
+  END IF;
+
+  SELECT value FROM backup_server_config WHERE server_id = backup_server_id_ AND parameter = parameter_ INTO value_;
+
+  IF value_ IS NULL OR value_ = '' THEN
+     RAISE EXCEPTION 'Problems getting the value of SrvID: % - parameter: %',backup_server_id_,parameter_;
+  END IF;
+
+  RETURN value_;
+ END;
+$$;
+
+ALTER FUNCTION get_backup_server_config_value(INTEGER,TEXT) OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------------
@@ -3054,7 +3052,7 @@ CREATE OR REPLACE FUNCTION generate_crontab_backup_jobs(INTEGER,INTEGER) RETURNS
  AS $$
  DECLARE
   backup_server_id_ ALIAS FOR $1;
-  pgsql_node_id_ ALIAS FOR $2;
+  pgsql_node_id_ ALIAS FOR $2;generate_crontab_backup_jobs
   backup_server_fqdn TEXT;
   pgsql_node_fqdn TEXT;
   pgsql_node_port TEXT;
@@ -3077,14 +3075,14 @@ BEGIN
   RETURN output;
  END IF;
 
- logs_email := get_pgsql_node_parameter(pgsql_node_id_,'logs_email');
- pgnode_crontab_file := get_pgsql_node_parameter(pgsql_node_id_,'pgnode_crontab_file');
- root_backup_dir := get_backup_server_parameter(backup_server_id_,'root_backup_partition');
+ logs_email := get_pgsql_node_config_value(pgsql_node_id_,'logs_email');
+ pgnode_crontab_file := get_pgsql_node_config_value(pgsql_node_id_,'pgnode_crontab_file');
+ root_backup_dir := get_backup_server_config_value(backup_server_id_,'root_backup_partition');
  backup_server_fqdn := get_backup_server_fqdn(backup_server_id_);
  pgsql_node_fqdn := get_pgsql_node_fqdn(pgsql_node_id_);
  pgsql_node_port := get_pgsql_node_port(pgsql_node_id_);
  admin_user := get_pgsql_node_admin_user(pgsql_node_id_);
- pgbackman_dump := get_backup_server_parameter(backup_server_id_,'pgbackman_dump');
+ pgbackman_dump := get_backup_server_config_value(backup_server_id_,'pgbackman_dump');
 
  output := output || '# File: ' || COALESCE(pgnode_crontab_file,'') || E'\n';
  output := output || '# ' || E'\n';
@@ -3179,12 +3177,12 @@ BEGIN
  SELECT backup_server_id FROM snapshot_definition WHERE snapshot_id = snapshot_id_ INTO backup_server_id_;
  SELECT pgsql_node_id FROM snapshot_definition WHERE snapshot_id = snapshot_id_ INTO pgsql_node_id_; 
 
- root_backup_dir := get_backup_server_parameter(backup_server_id_,'root_backup_partition');
+ root_backup_dir := get_backup_server_config_value(backup_server_id_,'root_backup_partition');
  backup_server_fqdn := get_backup_server_fqdn(backup_server_id_);
  pgsql_node_fqdn := get_pgsql_node_fqdn(pgsql_node_id_);
  pgsql_node_port := get_pgsql_node_port(pgsql_node_id_);
  admin_user := get_pgsql_node_admin_user(pgsql_node_id_);
- pgbackman_dump := get_backup_server_parameter(backup_server_id_,'pgbackman_dump');
+ pgbackman_dump := get_backup_server_config_value(backup_server_id_,'pgbackman_dump');
 
  FOR snapshot_row IN (
  SELECT *
@@ -3250,11 +3248,11 @@ BEGIN
  SELECT backup_server_id FROM restore_definition WHERE restore_def = restore_def_ INTO backup_server_id_;
  SELECT target_pgsql_node_id FROM restore_definition WHERE restore_def = restore_def_ INTO pgsql_node_id_; 
 
- root_backup_dir := get_backup_server_parameter(backup_server_id_,'root_backup_partition');
+ root_backup_dir := get_backup_server_config_value(backup_server_id_,'root_backup_partition');
  pgsql_node_fqdn := get_pgsql_node_fqdn(pgsql_node_id_);
  pgsql_node_port := get_pgsql_node_port(pgsql_node_id_);
  admin_user := get_pgsql_node_admin_user(pgsql_node_id_);
- pgbackman_restore := get_backup_server_parameter(backup_server_id_,'pgbackman_restore');
+ pgbackman_restore := get_backup_server_config_value(backup_server_id_,'pgbackman_restore');
 
  FOR restore_row IN (
   SELECT a.restore_def,
