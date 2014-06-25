@@ -1064,7 +1064,7 @@ register_restore_definition
 ---------------------------
 
 This command defines a restore job of a backup from the
-catalog. Nowadays it can only restore automatically backups with code
+catalog. Nowadays it can only restore backups with code
 FULL (Schema + data).
 
 It can be run only interactively.
@@ -1125,7 +1125,7 @@ of a backup. What happens if we want to restore a backup of a database
 or a role that already exists in the target server?
 
 This flowchar figure explains the logic used when restoring a backup
-if our restore definition create some conflicts:
+if our restore definition creates some conflicts:
 
 .. figure:: images/register_restore.jpg
    :scale: 50%
