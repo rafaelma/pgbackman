@@ -822,8 +822,8 @@ class pgbackman_cli(cmd.Cmd):
             try:
 
                 print '--------------------------------------------------------'
-                backup_server = raw_input('# Backup server SrvID / FQDN []: ')
-                pgsql_node = raw_input('# PgSQL node NodeID / FQDN []: ')
+                backup_server = raw_input('# Backup server SrvID / FQDN []: ').strip()
+                pgsql_node = raw_input('# PgSQL node NodeID / FQDN []: ').strip()
             
             except Exception as e:
                 print '\n--------------------------------------------------------' 
@@ -1804,8 +1804,8 @@ class pgbackman_cli(cmd.Cmd):
 
             try:
                 print '--------------------------------------------------------'
-                backup_server = raw_input('# Backup server SrvID / FQDN []: ')
-                pgsql_node = raw_input('# PgSQL node NodeID / FQDN []: ')
+                backup_server = raw_input('# Backup server SrvID / FQDN []: ').strip()
+                pgsql_node = raw_input('# PgSQL node NodeID / FQDN []: ').strip()
 
             except Exception as e:
                 print '\n--------------------------------------------------------' 
@@ -2203,7 +2203,7 @@ class pgbackman_cli(cmd.Cmd):
                 return False
 
             try:
-                target_pgsql_node = raw_input('# Target NodeID / FQDN []: ')
+                target_pgsql_node = raw_input('# Target NodeID / FQDN []: ').strip()
                 
             except Exception as e:
                 print '\n--------------------------------------------------------' 
@@ -3173,7 +3173,7 @@ class pgbackman_cli(cmd.Cmd):
             
             try:
                 print '--------------------------------------------------------'
-                backup_server = raw_input('# SrvID / FQDN []: ')
+                backup_server = raw_input('# SrvID / FQDN []: ').strip()
 
             except Exception as e:
                 print '\n--------------------------------------------------------' 
@@ -3322,7 +3322,7 @@ class pgbackman_cli(cmd.Cmd):
 
             try:
                 print '--------------------------------------------------------'
-                pgsql_node = raw_input('# NodeID / FQDN []: ')
+                pgsql_node = raw_input('# NodeID / FQDN []: ').strip()
             
             except Exception as e:
                 print '\n--------------------------------------------------------' 
@@ -3497,7 +3497,7 @@ class pgbackman_cli(cmd.Cmd):
 
             try:
                 print '--------------------------------------------------------'
-                pgsql_node = raw_input('# NodeID / FQDN []: ')
+                pgsql_node = raw_input('# NodeID / FQDN []: ').strip()
                 print
 
             except Exception as e:
@@ -3855,7 +3855,7 @@ class pgbackman_cli(cmd.Cmd):
 
             try:
                 print '--------------------------------------------------------'
-                backup_server = raw_input('# SrvID / FQDN []: ')
+                backup_server = raw_input('# SrvID / FQDN []: ').strip()
                 print
 
             except Exception as e:
