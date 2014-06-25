@@ -2,7 +2,7 @@ Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 
 Upstream-Name: pgbackman
 Source: http://www.pgbackman.org/
-Upstream Author: Rafael Martinez Guerrero <rafael@postgresql.org.es>
+Upstream-Contact: Rafael Martinez Guerrero <rafael@postgresql.org.es>
 
 Files: *
 Copyright: 2013-2014, Rafael Martinez Guerrero <rafael@postgresql.org.es>

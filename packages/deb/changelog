@@ -1,5 +1,5 @@
 pgbackman (1.0.0-1) unstable; urgency=low
 
-  * Initial release (Closes: #nnnn)  <nnnn is the bug number of your ITP>
+  * Initial release
 
  -- Rafael Martinez Guerrero <rafael@postgresql.org.es>  Sat, 21 Jun 2014 13:48:05 +0000
