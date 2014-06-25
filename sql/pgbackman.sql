@@ -1819,7 +1819,7 @@ CREATE OR REPLACE FUNCTION update_backup_server_config(INTEGER,TEXT,TEXT,TEXT,TE
   v_context TEXT;
  BEGIN
 
-   SELECT count(*) FROM backup_server WHERE sewrver_id = backup_server_id_ INTO server_cnt;
+   SELECT count(*) FROM backup_server WHERE server_id = backup_server_id_ INTO server_cnt;
 
    IF server_cnt != 0 THEN
 
@@ -2714,7 +2714,7 @@ CREATE OR REPLACE FUNCTION get_pgsql_node_config_value(INTEGER,TEXT) RETURNS TEX
 
   SELECT value FROM pgsql_node_config WHERE node_id = pgsql_node_id_ AND parameter = parameter_ INTO value_;
 
-  IF value_ IS NULL OR value_ = '' THEN
+  IF value_ IS NULL THEN
      RAISE EXCEPTION 'Problems getting the value of NodeID: % - parameter: %',pgsql_node_id_,parameter_;
   END IF;
 
@@ -2751,7 +2751,7 @@ CREATE OR REPLACE FUNCTION get_backup_server_config_value(INTEGER,TEXT) RETURNS 
 
   SELECT value FROM backup_server_config WHERE server_id = backup_server_id_ AND parameter = parameter_ INTO value_;
 
-  IF value_ IS NULL OR value_ = '' THEN
+  IF value_ IS NULL  THEN
      RAISE EXCEPTION 'Problems getting the value of SrvID: % - parameter: %',backup_server_id_,parameter_;
   END IF;
 
