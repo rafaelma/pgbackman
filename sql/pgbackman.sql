@@ -3052,7 +3052,7 @@ CREATE OR REPLACE FUNCTION generate_crontab_backup_jobs(INTEGER,INTEGER) RETURNS
  AS $$
  DECLARE
   backup_server_id_ ALIAS FOR $1;
-  pgsql_node_id_ ALIAS FOR $2;generate_crontab_backup_jobs
+  pgsql_node_id_ ALIAS FOR $2;
   backup_server_fqdn TEXT;
   pgsql_node_fqdn TEXT;
   pgsql_node_port TEXT;
