@@ -75,14 +75,8 @@ The main features of PgBackMan are:
 * Automatic restore procedures
 * Autonomous pgbackman_dump program that functions even if the central database with metadata is not available.
 * Handling of error situations.
-* Totally written in Python and PL/PgSQL 
+* Written in Python and PL/PgSQL 
 * Distributed under the GNU General Public License 3
-
-Future features will include:
-
-* Moving of backup definitions between backup servers.
-* Automatic cloning of databases between PgSQL nodes.
-* Disk space reports 
 
 
 Architecture and components
@@ -115,8 +109,8 @@ The components forming part of PgBackMan could be listed as follows:
   retentions for backup and snapshot definitions. It deletes backup
   and log files from catalog entries associated to a backup definition
   after this definition has been deleted with the force parameter. And
-  it processes all pending backup/restore catalog log files in the
-  server created if the pgbackman database has been down when
+  it processes all pending backup/restore catalog log files created in
+  the server if the pgbackman database has been down when
   ``pgbackman_dump`` and ``pgbackman_restore`` have been running.
 
 * **pgbackman_dump:** This program runs in the backup servers when a backup
@@ -144,8 +138,9 @@ System requirements
 * Linux/Unix
 * Python 2.6 or 2.7
 * Python modules:
-  - psycopg2
-  - argparse
+  
+  * psycopg2
+  * argparse
     
 * PostgreSQL >= 9.2 for the ``pgbackman`` database
 * PostgreSQL >= 9.0 in all PgSQL nodes that are going to use PgBackMan
@@ -164,7 +159,7 @@ In system using ``apt-get``, e.g. Debian, Ubuntu, ...::
   apt-get install python-psycopg2 python-argparse at cron
 
 If you are going to install from source, you need to install also
-these packages: ``python-devel, python-setuptools, git, make, rst2pdf``
+these packages: ``python-dev(el), python-setuptools, git, make, rst2pdf``
 
 In systems using ``yum``::
 
@@ -193,17 +188,12 @@ version from the master branch at the GitHub repository.
 This will install all users, groups, programs, configuration files, logfiles and the
 pgbackman module in your system.
 
-If you want to generate the PgBackMan, one can do this::
-
- [root@server]# cd pgbackman/docs
- [root@server]# make clean
- [root@server]# make
 
 Installing via RPM packages
 ---------------------------
 
 RPM packages for CentOS 6 and RHEL6 are available at
-http://www.pgbackman.org/www/download.html.
+http://www.pgbackman.org/download.html
 
 Install the RPM package with::
 
@@ -216,8 +206,8 @@ PostgreSQL Yum repository.
 Installing via Deb packages
 ----------------------------
 
-Deb packages for Debian7 and Ubuntu14 are available at
-http://www.pgbackman.org/www/download.html.
+Deb packages for Debian7 are available at
+http://www.pgbackman.org/download.html
 
 Install the Deb package with::
 
@@ -241,7 +231,7 @@ installed PgBackMan via ``source``, ``rpm`` or ``deb`` packages.
 
 ::
 
-   psql -h <dbhost.domain> -f /usr/share/pgbackman/pgbackman-1.0.0.sql
+   psql -h <dbhost.domain> -f /usr/share/pgbackman/pgbackman.sql
 
 One should update some default parameters in the ``pgbackman``
 database before one starts using the system. These parameters will be
@@ -256,8 +246,8 @@ to use in your PgBackMan installation::
   UPDATE backup_server_default_config SET value = 'your.domain' WHERE parameter = 'domain';
 
 These values are only the default suggestion one will get when a new
-backup server or PgSQL node is been registered in the
-system. They can be changed or updated via the PgBackMan shell.
+backup server or PgSQL node is registered in the system. They can be
+changed or updated via the PgBackMan shell at any time.
 
 
 Configuration
@@ -286,10 +276,11 @@ can be done like this:
    and set the privileges of this file with ``chmod 400 ~/.pgpass``.
 
    An even better solution will be to use ``cert`` autentication for
-   the pgbackman database user, so we do not need to save passwords.
+   the pgbackman database user, so we do not need to save passwords
+   values.
 
 #. Update and reload the ``pg_hba.conf`` file in the postgreSQL server
-   running the pgbackman database, with a line that gives access to
+   running the ``pgbackman`` database, with a line that gives access to
    the pgbackman database from the new backup server. We recommend to
    use a SSL connection to encrypt all the traffic between the database
    server and the backup server, e.g.::
@@ -323,12 +314,14 @@ can be done like this:
      | 00001 | pg-backup01.uio.no | Main backup server |
      +-------+------------------+----------------------+
 
-#. Create the directory / partition in the backup server that will be
+#. Create the directory or partition in the backup server that will be
    used to save all backups, logfiles, and system data needed by
    PgBackMan. By default the system will use ``/srv/pgbackman``. 
 
-   Set the privileges of this directory with ``chown
-   pgbackman:pgbackman /srv/pgbackman`` and ``chmod 400 ~/.pgpass``.
+   Set the privileges of this directory with::
+
+     chown -R pgbackman:pgbackman /srv/pgbackman
+     chmod -R 400 /srv/pgbackman
 
 
 PgSQL nodes
@@ -345,8 +338,11 @@ Remember that the ``.pgpass`` file of the ``pgbackman`` user in the
 backup server has to be updated with the information needed to access
 every PgSQL node we are going to take backups for.
 
-One can also use ``cert`` autentication for so we do not need to save
-passwords.
+We recommend to use a SSL connection to encrypt all the traffic
+between the database server and the backup server.
+
+One can also use ``cert`` autentication so we do not need to save
+passwords values.
 
 
 System administration and maintenance
@@ -2330,7 +2326,8 @@ License and Contributions
 =========================
 
 PgBackMan is the property of Rafael Martinez Guerrero / PostgreSQL-es
-and The University of Oslo, and its code is distributed under GNU
+and USIT-University of Oslo, and its code is distributed under GNU
 General Public License 3.
 
-Copyright © 2013-2014 Rafael Martinez Guerrero / PostgreSQL-es & University of Oslo.
+| Copyright © 2013-2014 Rafael Martinez Guerrero / PostgreSQL-es
+| Copyright © 2014 USIT-University of Oslo.
