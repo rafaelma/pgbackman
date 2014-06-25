@@ -16,18 +16,26 @@
 # Variables
 BINDIR="/usr/bin"
 PGBACKMAN_STARTUP_LOG=/var/log/pgbackman/pgbackman_startup.log
+PGBACKMAN_LOG=/var/log/pgbackman/pgbackman.log
 
-lockfile_control="/var/lock/subsys/pgbackman_control"
-pidfile_control="/var/run/pgbackman_control.pid"
+LOCKFILE_CONTROL="/var/lock/subsys/pgbackman_control"
+PIDFILE_CONTROL="/var/run/pgbackman_control.pid"
 
-lockfile_maintenance="/var/lock/subsys/pgbackman_maintenance"
-pidfile_maintenance="/var/run/pgbackman_maintenance.pid"
-
-script_result=0
+LOCKFILE_MAINTENANCE="/var/lock/subsys/pgbackman_maintenance"
+PIDFILE_MAINTENANCE="/var/run/pgbackman_maintenance.pid"
 
 # Exit if the scripts are not installed
 [ -f "$BINDIR/pgbackman_control" ] || exit 1
 [ -f "$BINDIR/pgbackman_maintenance" ] || exit 1
+
+# Create logfile if it does not exist
+if [ ! -f "$PGBACKMAN_LOG" ] 
+then
+    touch "$PGBACKMAN_LOG"
+    chown -R pgbackman:pgbackman "$PGBACKMAN_LOG"
+else
+    chown -R pgbackman:pgbackman "$PGBACKMAN_LOG"
+fi
 
 start(){
     PGBACKMAN_CONTROL_START="Starting pgbackman_control service: "
@@ -42,7 +50,7 @@ start(){
     
     echo -n "$PGBACKMAN_CONTROL_START"
 
-    if [ ! -e "$lockfile_control" ]
+    if [ ! -e "$LOCKFILE_CONTROL" ]
     then
 	$BINDIR/pgbackman_control >> "$PGBACKMAN_STARTUP_LOG" 2>&1 &
 	RETVAL=$?
@@ -54,8 +62,8 @@ start(){
             success
 	    echo
 
-            touch "$lockfile_control"
-            echo $PID > "$pidfile_control"
+            touch "$LOCKFILE_CONTROL"
+            echo $PID > "$PIDFILE_CONTROL"
 	else
             failure
 	    echo
@@ -70,7 +78,7 @@ start(){
 
     echo -n "$PGBACKMAN_MAINTENANCE_START"
 
-    if [ ! -e "$lockfile_maintenance" ]
+    if [ ! -e "$LOCKFILE_MAINTENANCE" ]
     then
 	$BINDIR/pgbackman_maintenance >> "$PGBACKMAN_STARTUP_LOG" 2>&1 &
 	RETVAL=$?
@@ -82,8 +90,8 @@ start(){
             success
 	    echo
 	    
-            touch "$lockfile_maintenance"
-            echo $PID > "$pidfile_maintenance"
+            touch "$LOCKFILE_MAINTENANCE"
+            echo $PID > "$PIDFILE_MAINTENANCE"
 	else
             failure
 	    echo
@@ -105,9 +113,9 @@ stop(){
 
     echo -n $PGBACKMAN_CONTROL_STOP
 
-    if [ -e "$lockfile_control" ]
+    if [ -e "$LOCKFILE_CONTROL" ]
     then
-	killproc -p "$pidfile_control" pgbackman_control
+	killproc -p "$PIDFILE_CONTROL" pgbackman_control
         RETVAL=$?
         
 	if [ $RETVAL -eq 0 ] 
@@ -115,8 +123,8 @@ stop(){
 	    success 
 	    echo
 
-	    rm -f $lockfile_control
-            rm -f $pidfile_control
+	    rm -f $LOCKFILE_CONTROL
+            rm -f $PIDFILE_CONTROL
 	
 	else
 	    failure
@@ -132,9 +140,9 @@ stop(){
     
     echo -n $PGBACKMAN_MAINTENANCE_STOP
     
-    if [ -e "$lockfile_maintenance" ]
+    if [ -e "$LOCKFILE_MAINTENANCE" ]
     then
-	killproc -p "$pidfile_maintenance" pgbackman_maintenance
+	killproc -p "$PIDFILE_MAINTENANCE" pgbackman_maintenance
         RETVAL=$?
         
 	if [ $RETVAL -eq 0 ] 
@@ -142,8 +150,8 @@ stop(){
 	    success 
 	    echo
 
-	    rm -f $lockfile_maintenance
-            rm -f $pidfile_maintenance
+	    rm -f $LOCKFILE_MAINTENANCE
+            rm -f $PIDFILE_MAINTENANCE
 	    
 	else
 	    failure
@@ -174,8 +182,8 @@ case "$1" in
         stop
         ;;
   status)
-        status -p $pidfile_control pgbackman_control
-	status -p $pidfile_maintenance pgbackman_maintenance
+        status -p $PIDFILE_CONTROL pgbackman_control
+	status -p $PIDFILE_MAINTENANCE pgbackman_maintenance
         ;;
   restart)
 	restart
