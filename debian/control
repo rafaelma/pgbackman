@@ -3,24 +3,26 @@ Section: database
 Priority: optional
 Maintainer: Rafael Martinez Guerrero <rafael@postgresql.org.es>
 Build-Depends: debhelper (>= 8.0.0), 
-	       python, python-dev, 
+	       python, 
+	       python-dev, 
 	       python-setuptools
-Standards-Version: 3.9.3
+Standards-Version: 3.9.5
 Vcs-Browser: https://github.com/rafaelma/pgbackman
 Vcs-Git: git://github.com/rafaelma/pgbackman.git
 Homepage: http://www.pgbackman.org/
-XS-Python-Version: >=2.6
+X-Python-Version: >= 2.6
 
 Package: pgbackman
-Architecture: any
+Architecture: all
 Depends: ${shlibs:Depends}, 
 	 ${misc:Depends}, 
-	 python, 
+	 ${python:Depends},
 	 python-psycopg2, 
 	 python-argparse, 
 	 at, 
-	 cron
-Description: PgBackMan - PostgreSQL Backup Manager
+	 cron,
+	 adduser
+Description: PostgreSQL Backup Manager
  PgBackMan is a tool for managing PostgreSQL logical backups created
  with pg_dump and pg_dumpall.
  .

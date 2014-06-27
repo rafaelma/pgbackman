@@ -1,28 +1,11 @@
 #!/bin/sh
 ### BEGIN INIT INFO
 # Provides:          pgbackman
-# Required-Start:    $network $local_fs
-# Required-Stop:
+# Required-Start:    $network $local_fs $remote_fs
+# Required-Stop:     $network $local_fs $remote_fs
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
-# Short-Description: PgBackMan - PostgreSQL Backup Manager
-
-# Description:       PgBackMan is a tool for managing PostgreSQL logical
-#                    backups created with pg_dump and pg_dumpall.
-#
-#		     It is designed to manage backups from thousands of databases running
-#		     in multiple PostgreSQL nodes, and it supports a multiple backup
-#		     server topology.
-#
-#		     It also manages role and database configuration information when
-#		     creating a backup of a database. This information is necessary to
-#		     ensure a 100% restoration of a logical backup of a database and the
-#		     elements associated to it.
-#		     
-#		     PgBackMan is not a tool for managing PITR (Point in time recovery)
-#		     backups. There are several other solutions that can be used for
-#		     managing PITR backups, such as PITRTools, OmniPITR, and Barman.
-#                    
+# Short-Description: PostgreSQL Backup Manager
 ### END INIT INFO
 
 # Author: Rafael Martinez Guerrero <rafael@postgresql.org.es>
@@ -197,7 +180,7 @@ case "$1" in
         exit 0
 	;;
 
-    restart)
+    restart|force-reload)
 
 	log_daemon_msg "Restarting pgbackman control"
 	do_stop_control
@@ -233,6 +216,7 @@ case "$1" in
 		;;
 	esac
 	;;
+	
     *)
 	echo "Usage: $SCRIPTNAME {start|stop|status|restart}" >&2
 	exit 3
