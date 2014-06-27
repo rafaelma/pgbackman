@@ -898,7 +898,8 @@ Parameters:
 
 * **[DBname]:** Database name. You can use the special value
   ``#all_databases#`` if you want to register the backup definition
-  for all databases in the cluster except 'template0' and 'template1'.
+  for all databases in the cluster except 'template0', 'template1' and
+  'postgres'.
 
 * **[\*_cron]:** Schedule definition using the cron expression.
 

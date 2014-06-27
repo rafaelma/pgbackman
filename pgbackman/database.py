@@ -2162,7 +2162,7 @@ class pgbackman_db():
 
             if self.cur:
                 try:
-                    self.cur.execute('SELECT datname FROM pg_database WHERE datname NOT IN (\'template0\',\'template1\') ORDER BY datname')
+                    self.cur.execute('SELECT datname FROM pg_database WHERE datname NOT IN (\'template0\',\'template1\',\'postgres\') ORDER BY datname')
                     self.conn.commit()
 
                     return self.cur

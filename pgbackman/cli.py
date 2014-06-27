@@ -754,7 +754,7 @@ class pgbackman_cli(cmd.Cmd):
 
         You can use the special value '#all_databases#' if you want to
         register the backup definition for all databases in the cluster
-        except 'template0' and 'template1'.
+        except 'template0','template1' and 'postgres'.
                                            
         [*cron]:
         --------
