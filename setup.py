@@ -49,15 +49,18 @@ try:
 
     distro = platform.linux_distribution()[0]
 
-    if distro == 'CentOS' or distro == 'Red Hat Enterprise Linux Server' or distro == 'Red Hat Enterprise Linux Workstation':
+    if distro == 'CentOS' or distro == 'Red Hat Enterprise Linux Server' or distro == 'Red Hat Enterprise Linux Workstation' or distro == 'Fedora':
         init_file = 'etc/pgbackman_init_rh.sh'
         shutil.copy2(init_file, '/tmp/pgbackman')
-
     
     elif distro == 'debian' or distro == 'Ubuntu':
         init_file = 'etc/pgbackman_init_debian.sh'
         shutil.copy2(init_file, '/tmp/pgbackman')
-        
+
+    else:
+        init_file = 'etc/pgbackman_init_rh.sh'
+        shutil.copy2(init_file, '/tmp/pgbackman') 
+                
     #
     # Setup
     #
