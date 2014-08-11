@@ -142,55 +142,57 @@ PgBackMan y como interaccionan entre ellos.
    :scale: 50%
 
 
-Installation
-============
+Instalación
+===========
 
-You will have to install the PgBackMan software in all the servers
-that are going to be used as backup servers by PgBackMan.
+Tendreis que instalar PgBackMan en todas las maquinas que vayan a ser
+usadas como servidores de backup por PgBackMan.
 
-System requirements
--------------------
+Requerimientos del sistema
+--------------------------
 
 * Linux/Unix
 * Python 2.6 or 2.7
-* Python modules:
+* Módulos Python:
   
   * psycopg2
   * argparse
     
-* PostgreSQL >= 9.2 for the ``pgbackman`` database
-* PostgreSQL >= 9.0 in all PgSQL nodes that are going to use PgBackMan
-  to manage logical backups.
-* AT and CRON installed and running.
+* PostgreSQL >= 9.2 para la base de datos ``pgbackman``
+* PostgreSQL >= 9.0 en todos los servidores PgSQL que vayan a utilizar
+  PgBackMan para administrar sus copias de respaldo lógicas.
+* AT y CRON instalados y ejecutandose.
 
-Before you install PgBackMan you have to install the software needed
-by this tool
+Antes de instalar PgBackMan hay que instalar los programas requeridos
+por el mismo.
 
-In systems using ``yum``, e.g. Centos, RHEL, ...::
+En sistemas que usen ``yum``, e.g. Centos, RHEL, ...::
 
   yum install python-psycopg2 python-argparse at cronie
 
-In system using ``apt-get``, e.g. Debian, Ubuntu, ...::
+En sistemas que usen ``apt-get``, e.g. Debian, Ubuntu, ...::
 
   apt-get install python-psycopg2 python-argparse at cron
 
-If you are going to install from source, you need to install also
-these packages: ``python-dev(el), python-setuptools, git, make, rst2pdf``
+Si vais a instalar PgBackMan usando las fuentes, tendreis que instalar
+tambien estos paquetes: ``python-dev(el), python-setuptools, git,
+make, rst2pdf``
 
-In systems using ``yum``::
+En sistemas que usen ``yum``::
 
   yum install python-devel python-setuptools git make rst2pdf
 
-In system using ``apt-get``::
+en sistemas que usen ``apt-get``::
 
   apt-get install python-dev python-setuptools git make rst2pdf
 
 
-Installing from source
-----------------------
+Instalando desde las fuentes
+----------------------------
 
-The easiest way to install PgBackMan from source is to get the last
-version from the master branch at the GitHub repository.
+La manera más fácil de instalar PgBackMan desde las fuentes es
+conseguir la última versión de la rama ``master`` en el repositorio
+GitHub.
 
 ::
 
@@ -201,36 +203,35 @@ version from the master branch at the GitHub repository.
  [root@server]# ./setup2.py install
  .....
 
-This will install all users, groups, programs, configuration files, logfiles and the
-pgbackman module in your system.
+Esto instalará todos los usuarios, grupos, programas, archivos de
+configuración y el módulo de python pgbackman en tu sistema.
 
+Instalando desde paquetes RPM
+-----------------------------
 
-Installing via RPM packages
----------------------------
-
-RPM packages for CentOS 6 and RHEL6 are available at
+Paquetes RPM para CentOS 6 y RHEL6 están disponibles en:
 http://www.pgbackman.org/download.html
 
-Install the RPM package with::
+Instalar el paquete RPM con::
 
   [root@server]# rpm -Uvh pgbackman-<version>.rpm
 
-We are working to get RPM packages for PgBackMan in the official
-PostgreSQL Yum repository.
+Nota:Estamos trabajando para incluir los paquetes RPM de PgBackMan en
+el repositorio oficial de PostgreSQL.
 
 
-Installing via Deb packages
-----------------------------
+Instalando desde paquetes Deb
+-----------------------------
 
-Deb packages for Debian7 are available at
+Paquetes Deb para Debian7 están disponibles en:
 http://www.pgbackman.org/download.html
 
-Install the Deb package with::
+Instalar el paquete Deb con::
 
   [root@server]# dpkg -i pgbackman_<version>.deb
 
-We are working to get DEB packages for PgBackMan in the official
-PostgreSQL apt repository.
+Nota:Estamos trabajando para incluir los paquetes DEB de PgBackMan en
+el repositorio oficial de PostgreSQL.
 
 
 Installing the pgbackman Database
