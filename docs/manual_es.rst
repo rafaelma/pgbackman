@@ -247,7 +247,7 @@ El código de esta base de datos se puede obtener del directorio
 ``/usr/share/pgbackman`` si has instalado PgBackMan desde las
 ``fuentes`` o paquetes ``rpm`` o ``deb``.
 
-Para instalar la base de datos ``pgbackman`` podeis user este comando:
+Para instalar la base de datos ``pgbackman`` podeis usar este comando:
 
 ::
 
@@ -270,50 +270,56 @@ se registra un nuevo servidor de backup og nodo PgSQL. En cualquier
 momento se podrán actualizar usando el shell PgBackMan.
 
 
-Configuration
+Configuración
 =============
 
-Backup servers
---------------
+Servidores de backup
+--------------------
 
-A backup server needs to have access to the ``pgbackman`` database and
-to all PgSQL nodes in which we need to take backups or restore data. This
-can be done like this:
+Un servidor de backup necesita tener acceso a la base de datos
+``pgbackman`` y a todos los nodos PgSQL en los cuales tenga que
+realizar copias de respaldo o restauración de datos. 
 
-#. Update ``/etc/pgbackman/pgbackman.conf`` with the database
-   parameters needed by PgBackMan to access the central metadata
-   database. You need to define ``host`` or ``hostaddr``, ``port``,
-   ``dbname``, ``database`` under the section
-   ``[pgbackman_database]``.
+A continuación teneis los pasos a seguir para configurar un servidor
+de backups en PgBackMan:
 
-   You can also define a ``password`` in this section but we discourage
-   to do this and recommend to define a ``.pgpass`` file in the home
-   directory of the users ``root`` and ``pgbackman`` with this
-   information, e.g.::
+#. Actualizar ``/etc/pgbackman/pgbackman.conf`` con los parámetros
+   necesarios por PgBackMan para acceder la base de metadatos
+   ``pgbackman``. Hay que definir ``host`` o ``hostaddr``, ``port``,
+   ``dbname``, ``database`` en la seción ``[pgbackman_database]``.
+
+   También se puede definir ``password`` en esta sección, pero
+   desaconsejamos el uso de este parámetro en este fichero y
+   recomendamos crear un fichero ``.pgpass`` en el directorio personal
+   (home) de los usuarios ``root`` y ``pbackman`` con esta
+   información::
 
      <dbhost.domain>:5432:pgbackman:pgbackman_role_rw:PASSWORD
 
-   and set the privileges of this file with ``chmod 400 ~/.pgpass``.
+   No olvidar definir los privilegios de este archivo con ``chmod 400
+   ~/.pgpass``.
+ 
+   Una solución aun mejor seria el uso de la autentificación de tipo
+   ``cert`` para el usuario usado para acceder la base datos
+   ``pgbackman``. De esta manera evitariamos el tener que grabar los
+   valores de las claves en texto plano.
 
-   An even better solution will be to use ``cert`` autentication for
-   the pgbackman database user, so we do not need to save passwords
-   values.
-
-#. Update and reload the ``pg_hba.conf`` file in the postgreSQL server
-   running the ``pgbackman`` database, with a line that gives access to
-   the pgbackman database from the new backup server. We recommend to
-   use a SSL connection to encrypt all the traffic between the database
-   server and the backup server, e.g.::
+#. Actualizar y recargar el archivo ``pg_hba.conf`` en el servidor
+   PostgreSQL ejecutando la base de datos ``pgbackman``. Recomendamos
+   usar una conexión SSL para cifrar el trafico entre el servidor de
+   backup y la base de datos.::
 
      hostssl   pgbackman   pgbackman_role_rw    <backup_server_IP>/32     md5 
 
-#. Install the postgreSQL clients for all the versions you want to
-   support. PgBackMan can take backups of postgreSQL servers running a
-   version >= 9.0. We recommend using http://yum.postgresql.org/ or
-   http://apt.postgresql.org/ to install the client packages for the
-   different versions.
+#. Instalar los clientes PostgreSQL para todas la versiones de
+   PostgreSQL que querais soportar en el servidor de backups.
+   PgBackMan puede realizar copias de respaldo de PostgreSQL siempre y
+   cuando la versión del nodo PgSQL sea mayor o igual a
+   9.0. Recomendamos utilizar los repositorios de PostgreSQL.org,
+   http://yum.postgresql.org/ o http://apt.postgresql.org/ para
+   instalar los paquetes cliente para las diferentes versiones.
 
-#. Define the backup server in PgBackMan via the PgBackMan shell::
+#. Definir el servidor de backups en PgBackMan via el shell PgBackMan::
 
      [pgbackman@pg-backup01 ~]# pgbackman
 
@@ -340,9 +346,10 @@ can be done like this:
      | 00001 | pg-backup01.uio.no | Main backup server |
      +-------+------------------+----------------------+
 
-#. Check that the configuration parameters for the backup server are
-   correct. e.g. One will have to update the directories with the
-   postgreSQL client binaries if you are using Debian::
+#. Comprobar que los parámetros de configuración del servidor de
+   backup están definidos con los valores correctos. Por ejemplo,
+   tendreis que actualizar los valores de los directorios con los
+   programas clientes de PostgreSQL si usais Debian::
 
      [pgbackman]$ update_backup_server_config
      --------------------------------------------------------
@@ -381,36 +388,43 @@ can be done like this:
      | root_cron_file        | /etc/cron.d/pgbackman       | Crontab file used by pgbackman - *Not used* |
      +-----------------------+-----------------------------+---------------------------------------------+
 
+#. Crear el directorio o partición en el servidor de backups que será
+   usada para grabar todos las copias de respaldo, archivos de
+   registro y datos de sistema usados por PgBackMan. Por defecto el
+   sistema usará ``/srv/pgbackman``.
 
-#. Create the directory or partition in the backup server that will be
-   used to save all backups, logfiles, and system data needed by
-   PgBackMan. By default the system will use ``/srv/pgbackman``. 
-
-   Set the privileges of this directory with::
+   Definir los privilegios de este directorio con::
 
      chown -R pgbackman:pgbackman /srv/pgbackman
      chmod -R 700 /srv/pgbackman
 
 
-PgSQL nodes
+Nodos PgSQL
 -----------
 
-Every PgSQL node defined in PgBackMan will need to update and reload
-its own ``pg_hba.conf`` file to give access to the admin user
-(``postgres`` per default) from the backup servers defined in
-PgBackMan, e.g.::
+Todos los nodos PgSQL definidos en PgBackMan necesitan actualizar y
+recargar sus archivos ``pg_hba.conf`` para dar acceso al usuario
+administrador (``postgres`` por defecto) desde todos los servidores de
+backup definidos en PgBackMan::
 
     hostssl   *   postgres    <backup_server_IP>/32     md5 
 
-Remember that the ``.pgpass`` file of the ``pgbackman`` user in the
-backup server has to be updated with the information needed to access
-every PgSQL node we are going to take backups for.
+No olvidar que el archivo ``.pgpass`` del usuario ``pgbackman`` en los
+servidores de backup debe de actualizarse también con la información
+necesaria para acceder todos los nodos PgSQL de los vamos a realizar
+copias de respaldo::
 
-We recommend to use a SSL connection to encrypt all the traffic
-between the database server and the backup server.
+  <dbhost.domain>:5432:pgbackman:pgbackman_role_rw:PASSWORD
+  <PgSQL node 1>:5432:*:postgres:PASSWORD
+  <PgSQL node 2>:5432:*:postgres:PASSWORD
+  <PgSQL node 3>:5432:*:postgres:PASSWORD
+  ........
 
-One can also use ``cert`` autentication so we do not need to save
-passwords values.
+Recomendamos usar una conexión SSL para cifrar todo el tráfico entra
+los nodos PgSQL y los servidores de backup.
+
+Tambien se puede usar la autentificación ``cert`` para evitar el tener
+que grabar los valores de las claves en texto plano.
 
 
 System administration and maintenance
