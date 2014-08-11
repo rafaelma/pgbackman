@@ -97,7 +97,7 @@ continuación:
   vayan a tener acceso para realizar copias de respaldo y restauración
   de datos.
 
-* **Nodos PGSQL:** Servidores PostgreSQL con diferentes bases de datos.
+* **Nodos PgSQL:** Servidores PostgreSQL con diferentes bases de datos.
 
 * **PgBackMan DB:**: Base de datos central usada por PgBackMan para
   grabar metadatos. Todos los servidores de backup necesitan acceso a
@@ -234,37 +234,40 @@ Nota:Estamos trabajando para incluir los paquetes DEB de PgBackMan en
 el repositorio oficial de PostgreSQL.
 
 
-Installing the pgbackman Database
----------------------------------
+Instalando la base de datos pgbackman
+-------------------------------------
 
-After the requirements and the PgBackMan software are installed, you
-have to install the ``pgbackman`` database in a server running
-PostgreSQL. This database is the core of the PgBackMan tool and it is
-used to save all the metadata needed to manage the system.
+Despues de instalar el software PgBackMan hay que instalar la base de
+datos ``pgbackman`` en un servidor PostgreSQL. Esta base de datos es
+el núcleo de la herramienta PgBackMan y es utilizada para grabar todos
+los metadatos necesarios para que el sistema funcione.
 
-You can get this database from the directory ``sql/`` in the source
-code or under the directory ``/usr/share/pgbackman`` if you have
-installed PgBackMan via ``source``, ``rpm`` or ``deb`` packages.
+El código de esta base de datos se puede obtener del directorio
+``sql/`` en el código fuente de PgBackMan o del directorio
+``/usr/share/pgbackman`` si has instalado PgBackMan desde las
+``fuentes`` o paquetes ``rpm`` o ``deb``.
+
+Para instalar la base de datos ``pgbackman`` podeis user este comando:
 
 ::
 
    psql -h <dbhost.domain> -f /usr/share/pgbackman/pgbackman.sql
 
-One should update some default parameters in the ``pgbackman``
-database before one starts using the system. These parameters will be
-copied to the default configuration of the servers registered in
-PgBackMan.
+Antes de empezar a usar el sistema es recomendable actualizar los
+valores por defecto de algunas parámetros de configuración. Los
+valores de estos parametros serán utilizados como valores por defecto
+en la configuración de los servidores registrados en PgBackman.
 
-We recommend to update these three parameters with the values you want
-to use in your PgBackMan installation::
+Recomendamos actualizar estos tres parámetros con los valores que
+querais tener en vuestra instalación PgBackMan::
 
   UPDATE pgsql_node_default_config SET value = 'address@your.domain' WHERE parameter = 'logs_email';
   UPDATE pgsql_node_default_config SET value = 'your.domain' WHERE parameter = 'domain';
   UPDATE backup_server_default_config SET value = 'your.domain' WHERE parameter = 'domain';
 
-These values are only the default suggestion one will get when a new
-backup server or PgSQL node is registered in the system. They can be
-changed or updated via the PgBackMan shell at any time.
+Estos valores son solamente los valores por defecto sugeridos cuando
+se registra un nuevo servidor de backup og nodo PgSQL. En cualquier
+momento se podrán actualizar usando el shell PgBackMan.
 
 
 Configuration
