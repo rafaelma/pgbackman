@@ -427,30 +427,33 @@ Tambien se puede usar la autentificación ``cert`` para evitar el tener
 que grabar los valores de las claves en texto plano.
 
 
-System administration and maintenance
-=====================================
+Administración del sistema y mantenimiento
+==========================================
 
-PgBackMan has two components which are used to administrate and
-maintain the backups, snapshots, restores and information associated
-to PgSQL nodes registered in the system.
+PgBackMan tiene dos componentes que son usados para administar y
+mantener las copias de seguridad, los snapshots, los trabajos de
+restauración y la información asociada a los nodos PgSQL registrados
+en el sistema.
 
-They are started with the script ``/etc/init.d/pgbackman`` and must
-run in every Backup server running PgBackMan.
+Estos componentes se arrancan con el script ``/etc/init.d/pgbackman``
+y se deben de ejecutar en todos los servidores de backup que esten
+ejecutando PgBackMan.
 
-Run this commanmd after installing and configurating PgBakMan::
+Ejecutar este comando despues de instalar y configurar PgBackMan::
 
    [root@server]# /etc/init.d/pgbackman start
 
-One can stop the PgBackMan components with the same script::
-  
+Los componentes de PgBackMan se pueden parar con el mismo programa::
+
   [root@server]# /etc/init.d/pgbackman stop
 
-If you want the PgBackMan components to start automatically at the
-boot time, type this if you are using CentOS or RHEL::
+Si quereis que los componentes de PgBackMan se arranquen
+automáticamente cuando se arranque el servidor, ejecutar este comando
+si estais en un sistema CentOS o RHEL::
 
   [root@server]# chkconfig pgbackman on
 
-Or if you are using debian::
+O este comando si estais usando un sistema Debian::
 
   [root@server]# update-rc.d pgbackman defaults
 
@@ -458,72 +461,84 @@ Or if you are using debian::
 pgbackman_crontrol
 ------------------
 
-This program runs in a loop waiting for NOTIFY messages from the
-``pgbackman`` database before executing an action. It will get a
-notification when:
+Este programa espera por mensajes NOTIFY enviados por la base de datos
+``pgbackman`` antes de efectuar ninguna acción. Recibe notificaciones
+de la base de datos central cuando:
 
-* A new PgSQL node has been defined in the system.
-* A PgSQL node is deleted from the system.
-* A PgSQL node changes its status from RUNNING to STOPPED or vice
-  versa.
-* A snapshot backup has been defined.
-* A backup restore has been defined.
-* A new backup definition has been defined.
-* A backup definition has been deleted.
-* A backup definition has been updated.
+* Un nuevo nodo PgSQL ha sido definido en el sistema.
+* Un nodo PgSQL es borrado del sistema.
+* Un nodo PgSQL cambia su estatus de RUNNING a STOPPED o viceversa.
+* Una copia de respaldo de tipo snapshot ha sido definida.
+* Un trabajo de restauración de datos ha sido definido.
+* Una copia de respaldo programada nuevo ha sido definida.
+* Una copia de respaldo programada ha sido borrada. 
+* Una copia de respaldo programada ha sido actualizada.
 
-The actions this program can execute are:
+Las acciones que este programa puede ejecutar son:
 
-* Create the directory used for cached information from backup servers
-  and PgSQL nodes.
-* Delete the associated cache information when a PgSQL node gets
-  deleted.
-* Create a directory for pending log information.
-* Create directories for backups and logs per PgSQL node defined in
-  the system.
-* Delete directories for backups and logs when a PgSQL node gets deleted.
-* Update crontab files when new backup definitions get defined or
-  deleted.
-* Update crontab files when nodes get updated.
-* Delete crontab files when nodes get deleted.
-* Create an ``at`` job when a snapshot backup gets defined.
-* Create an ``at`` job when a backup restore gets defined.
+* Crear el directorio usado para grabar datos de cache de servidores
+  de backup y nodos PgSQL.
+* Borrar los datos de cache asociados a un nodo PgSQL cuando este es
+  borrado del sistema.
+* Crear el directorio usado para grabar información pendiente de
+  registro en la base de datos.
+* Crear directorios para grabar copias de respaldo y archivos de
+  registro para todos los nodos PgSQL definidos en el sistema.
+* Borrar los directorios para grabar copias de respaldo y archivos de
+  registro de un nodo PgSQL cuando este es borrado del sistema.
+* Actualizar los archivos crontab afectados cuando copias de respaldo
+  programadas se definen o borran.
+* Actualizar los archivos crontab afectados cuando se actualizan nodos
+  PgSQL.
+* Actualizar los archivos crontab afectados cuando se borran nodos
+  PgSQL.
+* Crear un trabajo ``at`` cuando una copia de respaldo de tipo
+  snapshot es definida.
+* Crear un trabajo ``at`` cuando un trabajo de restauración de datos
+  es definino.
 
-Every PgSQL node in the system will have its own directory and
-crontab file in every backup server running PgBackMan.
+Cada nodo PgSQL definido en el sistema tiene sus propios directorios
+para datos y archivos crontab en todos y cada uno de los servidores de
+backup que esten ejecutando PgBackMan.
 
 
 pgbackman_maintenance
 ---------------------
 
-This program can be executed in a cron modus (one single interaction per
-execution) or in a loop (default).
+Este programa puede ser ejecutado en modo cron (Una sola interacción
+por ejecución) on en modo continuo (por defecto).
 
-It runs these maintenance tasks:
+Este programa ejecuta estas tareas de mantenimiento:
 
-* Enforce retention policies for backup definitions. It deletes backup
-  files, log files and catalog information for backups that have
-  expired.
+* Gestiona la políticas de retención de copias de respaldo
+  programadas. Borra archivos de respaldo, de registro y la
+  información del catálogo de las copias de respaldo que hayan
+  expirado.
 
-* Enforce retention policies for snapshots. It deletes backup
-  files, log files and catalog information for snapshots that have
-  expired.
+* Gestiona la políticas de retención de copias de respaldo de tipo
+  snapshot. Borra archivos de respaldo, de registro y la información
+  del catálogo de las copias de respaldo snapshot que hayan expirado.
 
-* Delete backup and log files from catalog entries associated to a
-  backup definition after this definition has been deleted with the
-  ``force-deletion`` parameter.
+* Borra archivos de respaldo y registro asociados a entradas del
+  catálogo pertenecientes a definiciones de copias de respaldo que
+  hayan sido borradas con la opción ``force-deletion``.
 
-* Delete restore logs files when definitions/catalogs used by the
-  restore are deleted.
+* Borra archivos de registros de trabajos de restauración cuando las
+  definiciones y catalogos usados por el trabajo de restauracón son
+  borrados.
 
-* Process pending backup catalog log files in the backup server. These
-  files are created when the ``pgbackman`` database is not available
-  for updating the catalog information metadata after a backup.
+* Procesa archivos con información de copias de seguridad pendientes
+  de registro en la base de datos. Estos archivos se crean cuando la
+  bases de datos ``pgbackman`` no se encuentra disponible para
+  actualizar el catalogo con los metadatos generados despues de
+  ejecutar una copia de respaldo.
 
-* Process pending restore catalog log files in the backup
-  server. These files are created when the ``pgbackman`` database is
-  not available for updating the catalog information metadata after a
-  restore.
+* Procesa archivos con información de trabajos de restauración
+  pendientes de registro en la base de datos. Estos archivos se crean
+  cuando la bases de datos ``pgbackman`` no se encuentra disponible
+  para actualizar el catalogo con los metadatos generados despues de
+  ejecutar un trabajo de restauración..
+
 
 
 PgBackMan shell
