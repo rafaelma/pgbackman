@@ -1,4 +1,3 @@
-
 ================================================
 PgBackMan - Administrador de copias de seguridad
 ================================================
@@ -541,11 +540,11 @@ Este programa ejecuta estas tareas de mantenimiento:
 
 
 
-PgBackMan shell
+Shell PgBackMan
 ===============
 
-The PgBackMan interactive shell can be started by running the program
-``/usr/bin/pgbackman``
+El shell interactivo de PgBackMan se puede acceder al ejecutar el
+programa ``/usr/bin/pgbackman``
 
 ::
 
@@ -587,10 +586,10 @@ The PgBackMan interactive shell can be started by running the program
    ======================
    help
 
-**NOTE:** It is possible to use the PgBackMan shell in a
-non-interactive modus by running ``/usr/bin/pgbackman`` with a command
-as a parameter in the OS shell. This can be used to run PgBackMan
-commands from shell scripts.e.g.::
+**NOTA** Es posible usar el shell PgBackMan en modo no interactivo
+ejecutando en el shell del sistema operativo ``/usr/bin/pgbackman``
+con un comando PgBackMan como parametro. Este metodo puede utilizarse
+para ejecutar comandos PgBackMan desde shell scripts. Por ejemplo::
 
    [pgbackman@pg-backup01 ~]# pgbackman show_backup_servers
    +-------+------------------+----------------------+
@@ -617,13 +616,13 @@ commands from shell scripts.e.g.::
 clear
 -----
 
-This command clears the screen and shows the welcome banner
+Este comando limpia la terminal y muestra una cabecera de bienvenida.
 
 ::
 
    clear
 
-This command can be run only without parameters. e.g.:
+Este comando puede ser ejecutado solamente sin parametros, e.g.:
 
 ::
 
@@ -640,28 +639,31 @@ This command can be run only without parameters. e.g.:
 delete_backup_definition_dbname 
 --------------------------------
 
-**NOTE: Use this command with precaution**
+**NOTA:Usar este comando con precaución** 
 
-This command deletes all backup definitions for a database.::
+Este comando borra todas las definiciones de copias de respaldo
+programadas para una base de datos.::
 
   delete_backup_definition_dbname [NodeID/FQDN] 
                                   [DBname] 
 				  [force-deletion]
 
-Parameters:
+Parámetros:
 
-* **[NodeID/FQDN]:** NodeID in PgBackMan or FQDN of the PgSQL node
-  running the database.
-* **[DBname]:** Database name to delete
-* **[force-deletion]:** Use force deletion.
+* **[NodeID/FQDN]:** NodeID en PgBackMan o FQDN del nodo PgSQL
+  ejecutando la base de datos.
+* **[DBname]:** Base de datos a la que se le borran las definiciones
+  de copias de respaldo.
+* **[force-deletion]:** Forzar el borrado
 
-You have to use the parameter ``force-deletion`` if you want to force
-the deletion of backup definitions with active backups in the
-catalog. If you use ``force-deletion``, all backups in the catalog for
-the backup definition deleted, will be deleted regardless of the
-retention period or retention redundancy used.
+Hay que usar el parametro ``force-deletion`` si queremos activar el
+borrado forzoso de una definición de copia de respaldo que tenga
+entradas activas en el catálogo. Si se usa ``force-deletion``, todas
+las copias de respaldo asociadas a la definición borrada serán también
+borradas del catalogo independientemente del periodo de retención y la
+redundancia definidas para la definición.
 
-This command can be run with or without parameters. e.g.
+Este comando puede ejecutarse con o sin parametros.
 
 ::
 
@@ -708,25 +710,28 @@ This command can be run with or without parameters. e.g.
 delete_backup_definition_id 
 ---------------------------
 
-**NOTE: Use this command with precaution**
+**NOTA: Usar este comando con precaución**
 
-This command deletes a backup definition for a DefID.::
+Este comando borra una definición de copia de respaldo con
+identificación DefID::
 
   delete_backup_definition_id [DefID] 
                               [force-deletion]
 
-Parameters:
+Parámetros:
 
-* **[DefID]:** ID of the backup definition to delete.
-* **[force-deletion]:** Use force deletion.
+* **[DefID]:** ID de la definición de copia de respaldo que queremos
+  borrar.
+* **[force-deletion]:** Forzar el borrado
 
-You have to use the parameter ``force-deletion`` if you want to force
-the deletion of backup definitions with active backups in the
-catalog. If you use ``force-deletion``, all backups in the catalog for the
-backup definition deleted will be deleted regardless of the retention
-period or retention redundancy used.
+Hay que usar el parametro ``force-deletion`` si queremos activar el
+borrado forzoso de una definición de copia de respaldo que tenga
+entradas activas en el catálogo. Si se usa ``force-deletion``, todas
+las copias de respaldo asociadas a la definición borrada serán también
+borradas del catalogo independientemente del periodo de retención y la
+redundancia definidas para la definición.
 
-This command can be run with or without parameters. e.g.
+Este comando puede ejecutarse con o sin parametros.
 
 ::
 
@@ -771,28 +776,29 @@ This command can be run with or without parameters. e.g.
 delete_backup_server
 --------------------
 
-This command deletes a backup server defined in PgBackMan::
+Este comando borra un servidor de backup definido en PgBackMan::
 
   Command: delete_backup_server [SrvID | FQDN]
 
-Parameters:
+Parámetros:
 
-* **[SrvID | FQDN]:** SrvID in PgBackMan or FQDN of the backup server
-  to delete.
+* **[SrvID | FQDN]:** SrvID en PgBackMan o FQDN del servidor de backup
+  que queremos borrar.
 
-You can use the backup server ID in PgBackMan or the FQDN of the
-server to choose the server to be deleted.
+Se puede usar la ID en PgBackMan o la FQDN para definir el servidor de
+backup que queremos borrar.
 
-One have to delete all backup definitions associated to a backup
-server or move them to another backup server before one can delete a
-backup server from the system.
+Todas las definiciones de copias de respaldo asociadas a un servidor
+de backup deben de borrarse o ser asignadas a otro servidor para que
+se pueda borrar un servidor de backup del sistema.
 
-You will get an error if you try to delete a backup server that has
-active backup definitions associated. This is a safety measure to avoid
-operational errors with catastrophic consequences. This type of
-deletion cannot be forced.
+El sistema generará un error si se intenta borrar un servidor de
+backup que tenga definiciones de copias de respaldo activas. Esto es
+una medida de seguridad para evitar errores de operación con
+consecuencias catastróficas. Este tipo de borrado no puede ser
+forzado.
 
-This command can be run with or without parameters. e.g.::
+Este comando se puede ejecutar con o sin parametros::
 
   [pgbackman]$ delete_backup_server 2
 
@@ -833,26 +839,26 @@ This command can be run with or without parameters. e.g.::
 delete_pgsql_node
 -----------------
 
-This command deletes a PgSQL node registered in PgBackMan.
+Este comando borra un node PgSQL definido en PgBackMan.
 
 ::
 
    delete_pgsql_node [NodeID | FQDN]
 
-Parameters:
+Parámetros:
 
-* **[NodeID | FQDN]:** NodeID in PgBackMan or FQDN of the PgSQL node
-  to delete.
+* **[NodeID | FQDN]:** NodeID en PgBackMan o FQDN del nodo PgSQL que
+  queremos borrar.
 
-One have to delete all backup definitions associated to a PgSQL node
-before one can delete a PgSQL node from the system.
+Todas las definiciones de copias de respaldo asociadas a un nodo PgSQL
+deben de borrarse antes de borrar un nodo PgSQL del sistema.
 
-You will get an error if you try to delete a PgSQL node that has
-active backup definitions associated. This is a safety measure to
-avoid operational errors with catastrophic consequences. This type of
-deletion cannot be forced.
+El sistema generará un error si se intenta borrar un nodo PgSQL que
+tenga definiciones de copias de respaldo activas. Esto es una medida
+de seguridad para evitar errores de operación con consecuencias
+catastróficas. Este tipo de borrado no puede ser forzado.
 
-This command can be run with or without parameters. e.g.:
+Este comando se puede ejecutar con o sin parametros::
 
 ::
 
@@ -896,15 +902,16 @@ This command can be run with or without parameters. e.g.:
 quit
 ----
 
-This command quits/terminates the PgBackMan shell.
+Este comando termina y sale de el shell PgBackMan.
 
 ::
 
   quit
 
-A shortcut to this command is ``\q``.
+Existe un alias para este comando ``\q`` que se puede utilizar en vez
+de ``quit``.
 
-This command can be run only without parameters. e.g.:
+Este comando se puede ejecutar solamente sin parametros, e.g.:
 
 ::
 
@@ -918,8 +925,7 @@ This command can be run only without parameters. e.g.:
 register_backup_definition 
 ---------------------------
 
-This command registers a backup definition that will be run
-periodically by PgBackMan.::
+Este comando registra un definición de copia de respaldo programada::
 
   register_backup_definition [SrvID | FQDN] 
                              [NodeID | FQDN] 
@@ -937,51 +943,61 @@ periodically by PgBackMan.::
                              [job status] 
                              [remarks]
 
-Parameters:
+Parámetros:
 
-* **[SrvID | FQDN]:** SrvID in PgBackMan or FQDN of the backup server
-  that will run the backup job.
+* **[SrvID | FQDN]:** SrvID en PgBackMan o FQDN del servidor de backup
+  que ejecutará la copia de respaldo programada.
 
-* **[NodeID | FQDN]:** NodeID in PgBackMan or FQDN of the PgSQL node
-  running the database to backup.
+* **[NodeID | FQDN]:** NodeID en PgBackMan o FQDN del nodo PgSQL
+  ejecutando la base de datos a la que se la va a realizar una copia
+  de respaldo.
 
-* **[DBname]:** Database name. You can use the special value
-  ``#all_databases#`` if you want to register the backup definition
-  for all databases in the cluster except 'template0', 'template1' and
-  'postgres'.
-
-* **[\*_cron]:** Schedule definition using the cron expression.
+* **[DBname]:** Nombre de la base de datos. Se puede utilizar el valor
+  especial ``#all_databases#`` si se quiere definir una definición de
+  copia de respaldo para todas las bases de datos existentes en el
+  nodo PgSQL (excepto 'template0', 'template1' y 'postgres')
+ 
+* **[\*_cron]:** Definición del momento de ejecución de la copia de
+  respaldo usando una expresión cron.
 
 * **[backup code]:** 
 
-  * CLUSTER: Backup of all databases in a PgSQL node using ``pg_dumpall``
-  * FULL: Full Backup of a database. Schema + data + owner globals + DB globals.
-  * SCHEMA: Schema backup of a database. Schema + owner globals + DB globals.
-  * DATA: Data backup of the database.
+  * CLUSTER: Copia de respaldo de todas las bases de datos en el nodo
+    PgSQL usando ``pg_dumpall``
+  * FULL: Copia de respaldo completa de una base de datos. Esquema +
+    datos + globales de usuarios + globales de la base de datos.
+  * SCHEMA: Copia de respaldo de solamente el esquema de una base de
+    datos. Esquema + globales de usuarios + globales de la base de
+    datos.
+  * DATA: Copia de respaldo de solamente los datos de una base de
+    datos.
 
-* **[encryption]:** This parameter is not used at the moment. But it
-  will be used in the future.
+* **[encryption]:** Este parametro no esta activado actualmente pero
+  se utilizará en un futuro próximo.
 
-  * TRUE: GnuPG encryption activated.
-  * FALSE: GnuPG encryption not activated.
+  * TRUE: Cifrado GnuPG  activado.
+  * FALSE: Cifrado GnuPG desactivado.
 
-* **[retention period]:** Time interval a backup will be available in
-  the catalog, e.g. 2 hours, 3 days, 1 week, 1 month, 2 years
+* **[retention period]:** Intervalo de tiempo que una copia de
+  respaldo estará disponible en el catálogo, e.g. 2 hours, 3 days, 1
+  week, 1 month, 2 years
 
-* **[retention redundancy]:** Minimun number of backups to keep in the
-  catalog regardless of the retention period used. e.g. 1,2,3
+* **[retention redundancy]:** Numero mínimo de copias de respaldo a
+  mantener en el catálogo independientemente del periodo de retención
+  definido. e.g. 1,2,3
 
-* **[extra backup parameters]:** Extra parameters that can be used
-  with pg_dump / pg_dumpall
+* **[extra backup parameters]:** Parámetros extras que se pueden usar
+  con pg_dump / pg_dumpall
 
 * **[job status]**
         
-  * ACTIVE: Backup job activated and in production.
-  * STOPPED: Backup job stopped.
+  * ACTIVE: Copia de respaldo activada y en producción.
+  * STOPPED: Copia de respaldo detenida.
 
-The default value for a parameter is shown between brackets ``[]``. If
-the user does not define any value, the default value will be
-used. This command can be run with or without parameters. e.g.:
+Los valores por defecto de un parametro se enseñan entre
+corchetes``[]``. Si el usuario no define ningún valor, PgBackMan
+utilizará el valor por defecto. Este comando se puede ejecutar con o
+sin parametros:
 
 ::
 
@@ -1018,22 +1034,22 @@ used. This command can be run with or without parameters. e.g.:
 register_backup_server
 ----------------------
 
-This command registers a backup server in PgBackMan::
+Este comando registra un servidor de backup en PgBackMan::
 
   Command: register_backup_server [hostname] 
                                   [domain] 
 				  [remarks]
 
-Parameters:
+Parámetros:
 
-* **[hostname]:** Hostname of the backup server.
-* **[domain]:** Domain name of the backup server.
-* **[remarks]:** Remarks
+* **[hostname]:** Nombre del servidor de backup.
+* **[domain]:** Dominio del servidor de backup.
+* **[remarks]:** Comentarios
 
-The default value for a parameter is shown between brackets ``[]``. If
-the user does not define any value, the default value will be
-used. This command can be run with or without parameters. e.g
-
+Los valores por defecto de un parametro se enseñan entre
+corchetes``[]``. Si el usuario no define ningún valor, PgBackMan
+utilizará el valor por defecto. Este comando se puede ejecutar con o
+sin parametros:
 ::
 
     [pgbackman]$ register_backup_server backup01 "" "Test server"
@@ -1057,7 +1073,7 @@ used. This command can be run with or without parameters. e.g
 register_pgsql_node
 -------------------
 
-This command registers a PgSQL node in PgBackMan.::
+este comando registra un nodo PgSQL en PgBackMan.::
 
   register_pgsql_node [hostname] 
                       [domain] 
@@ -1066,26 +1082,27 @@ This command registers a PgSQL node in PgBackMan.::
 		      [status] 
 		      [remarks]
 
-Parameters:
+Parámetros:
 
-* **[hostname]:** Hostname of the PgSQL node
-* **[domain]:** Domain name of the PgSQL node
-* **[pgport]:** PostgreSQL port
-* **[admin_user]:** PostgreSQL admin user
+* **[hostname]:** Nombre del nodo PgSQL
+* **[domain]:** Dominio del nodo PgSQL
+* **[pgport]:** Puerto usado por PostgreSQL
+* **[admin_user]:** Usuario administrador de PostgreSQL
 * **[status]:**
   
-  * RUNNING: PostgreSQL node running and online
-  * DOWN: PostgreSQL node not online.
+  * RUNNING: El nodo PgSQL esta activo y en producción. 
+  * DOWN: El nodo PgSQL no se encuentra activado.
 
-* **[remarks]:** Remarks
+* **[remarks]:** Comentarios
 
-All backup definitions from a PgSQL node will be started/stopped
-automatically if the PgSQL node gets the status changed to
-RUNNING/DOWN.
+Todas las definiciones de copias de respaldo programadas asociadas a
+un nodo PgSQL serán activadas/desactivadas automáticamente si el
+estatus del nodo PgSQL es cambiado a RUNNING/DOWN.
 
-The default value for a parameter is shown between brackets ``[]``. If
-the user does not define any value, the default value will be
-used. This command can be run with or without parameters. e.g:
+Los valores por defecto de un parametro se enseñan entre
+corchetes``[]``. Si el usuario no define ningún valor, PgBackMan
+utilizará el valor por defecto. Este comando se puede ejecutar con o
+sin parametros:
 
 ::
 
@@ -1113,13 +1130,15 @@ used. This command can be run with or without parameters. e.g:
 register_restore_definition
 ---------------------------
 
-This command defines a restore job of a backup from the
-catalog. Nowadays it can only restore backups with code
-FULL (Schema + data).
+Este comando define un proceso de restauración de datos a partir de
+una copia de respaldo registrada en el catálogo. Actualmente solamente
+se pueden restaurar automáticamente copias de respaldo con código FULL
+(esquema + data).
 
-It can be run only interactively.
+Este comando solamente se puede ejecutar interactivamente desde el
+shell PgBackMan.
 
-Parameters:
+Parámetros:
 
 * **[AT time]:** Timestamp to run the restore job.
 * **[BckID]:** ID of the backup to restore.
@@ -1130,7 +1149,7 @@ Parameters:
 * **[Extra parameters]:** Extra parameters that can be used with
   pg_restore
 
-This command can be run only without parameters. e.g:
+Este comando se puede ejecutar solamente sin parametros.e.g.: 
 
 ::
 
@@ -1170,12 +1189,14 @@ This command can be run only without parameters. e.g:
 
    [Done] Restore definition registered.
 
-There are some issues we have to take care of when running a restore
-of a backup. What happens if we want to restore a backup of a database
-or a role that already exists in the target server?
+Existen una serie de puntos que tenemos que tener en cuenta cuando
+vayamos a ejecutar una restauración de datos desde una copia de
+respaldo. ¿Qué ocurre si queremos realizar la restauración de una base
+de datos o un usuario que ya existe en el sistema donde vayamos a
+realizar la restauración?
 
-This flowchar figure explains the logic used when restoring a backup
-if our restore definition creates some conflicts:
+El siguiente gráfico explica la lógica usada por este comando cuando
+vayamos a realizar una restauración de datos con conflictos:
 
 .. figure:: images/register_restore.jpg
    :scale: 50%
@@ -1184,7 +1205,8 @@ if our restore definition creates some conflicts:
 register_snapshot_definition
 ----------------------------
 
-This command registers a one time snapshot backup of a database.
+Este comando registra una copia de respaldo de tipo snapshot
+(instatánea).
 
 ::
 
@@ -1197,32 +1219,41 @@ This command registers a one time snapshot backup of a database.
                      [extra backup parameters] 
                      [remarks] 
 
-Parameters:
+Parámetros:
 
-* **[SrvID | FQDN]:** SrvID in PgBackMan or FQDN of the backup server
-  that will run the snapshot job.
+* **[SrvID | FQDN]:** SrvID en PgBackMan o FQDN del servidor de backup
+  que ejecutará la copia de respaldo instantánea.
 
-* **[NodeID | FQDN]:** NodeID in PgBackMan or FQDN of the PgSQL node
-  running the database to backup.
+* **[NodeID | FQDN]:** NodeID en PgBackMan o FQDN del nodo PgSQL
+  ejecutando la base de datos a la que se la va a realizar una copia
+  de respaldo.
 
-* **[DBname]:** Database name
-* **[AT time]:**  Timestamp to run the snapshot
+* **[DBname]:** Nombre de la base de datos.
+* **[AT time]:** Momento en el que se ejecutará la copia de respaldo.
 * **[backup code]:** 
 
-  * CLUSTER: Backup of all databases in a PgSQL node using ``pg_dumpall``
-  * FULL: Full Backup of a database. Schema + data + owner globals + DB globals.
-  * SCHEMA: Schema backup of a database. Schema + owner globals + DB globals.
-  * DATA: Data backup of the database.
+  * CLUSTER: Copia de respaldo de todas las bases de datos en el nodo
+    PgSQL usando ``pg_dumpall``
+  * FULL: Copia de respaldo completa de una base de datos. Esquema +
+    datos + globales de usuarios + globales de la base de datos.
+  * SCHEMA: Copia de respaldo de solamente el esquema de una base de
+    datos. Esquema + globales de usuarios + globales de la base de
+    datos.
+  * DATA: Copia de respaldo de solamente los datos de una base de
+    datos.
 
-* **[retention period]:** Time interval a backup will be available in
-  the catalog, e.g. 2 hours, 3 days, 1 week, 1 month, 2 years
+* **[retention period]:** Intervalo de tiempo que una copia de
+  respaldo estará disponible en el catálogo, e.g. 2 hours, 3 days, 1
+  week, 1 month, 2 years
 
-* **[extra backup parameters]:** Extra parameters that can be used
-  with pg_dump / pg_dumpall
+* **[extra backup parameters]:** Parámetros extras que se pueden usar
+  con pg_dump / pg_dumpall
 
-The default value for a parameter is shown between brackets ``[]``. If the
-user does not define any value, the default value will be used. This
-command can be run with or without parameters. e.g.:
+Los valores por defecto de un parametro se enseñan entre
+corchetes``[]``. Si el usuario no define ningún valor, PgBackMan
+utilizará el valor por defecto.
+
+Este comando se puede ejecutar con o sin parametros, e.g.:
 
 ::
 
@@ -1252,18 +1283,20 @@ command can be run with or without parameters. e.g.:
 shell
 -----
 
-This command runs a command in the operative system.
+Este comando ejecuta un comando en el sistema operativo.
 
 ::
 
    shell [command]
 
-Parameters:
+Parámetros:
 
-* **[command]:** Any command that can be run in the operative system.
+* **[command]:** Comando a ejecutar en el sistema operativo.
 
-It exists a shortcut ``[!]`` for this command that can be used insteed
-of ``shell``. This command can be run only with parameters. e.g.:
+Existe un alias para este comando ``!`` que se puede utilizar en vez
+de ``shell``.
+
+Este comando se puede ejecutar solamente sin parametros:
 
 ::
 
@@ -1285,8 +1318,9 @@ of ``shell``. This command can be run only with parameters. e.g.:
 show_backup_catalog
 -------------------
 
-This command shows all backup catalog entries for a particular
-combination of parameter values. These values are combined with AND.
+Este comando muestra todas las entradas en el catálogo que cumplan una
+serie de condiciones de busqueda. Las condiciones de busqueda se
+combinan con el operador lógico AND.
 
 ::
 
@@ -1296,28 +1330,30 @@ combination of parameter values. These values are combined with AND.
 		       [DefID]
 		       [Status]
    
-Parameters:
+Parámetros:
 
-* **[SrvID|FQDN]:** SrvID in PgBackMan or FQDN of the backup server
-* **[NodeID|FQDN]:** NodeID in PgBackMan or FQDN of the PgSQL node
-* **[DBname]:** Database name
-* **[DefID]:** Backup definition ID
-* **[Status]:** Execution status of the backup. 
+* **[SrvID|FQDN]:** SrvID en PgBackMan o FQDN del servidor de backup
+* **[NodeID|FQDN]:** NodeID en PgBackMan o FQDN del nodo PgSQL
+* **[DBname]:** Nombre de la base de datos
+* **[DefID]:** ID de la definición de copia de respaldo.
+* **[Status]:** Estatus de la ejecución de la copia de respaldo.
 
-  * SUCCEEDED: Execution finished without error. 
-  * ERROR: Execution finished with errors.
+  * SUCCEEDED: Ejecución terminada sin problemas.
+  * ERROR: Ejecución terminada con problemas.
 
-The default value for a parameter is shown between brackets ``[]``. If the
-user does not define any value, the default value will be used. 
+Los valores por defecto de un parametro se enseñan entre
+corchetes``[]``. Si el usuario no define ningún valor, PgBackMan
+utilizará el valor por defecto.
 
-One can define multiple values for each parameter separated by a
-comma. These values are combined using OR.
+Se pueden definir valores múltiples separados por comas para cada
+condición de busqueda. Estos valores multiples se combinan usando el
+operador lógico OR.
 
-This command can be run with or without parameters. e.g.:
+Este comando se puede ejecutar con o sin parametros, e.g.:
 
 ::
 
-   [pgbackman]$ show_backup_catalog 1 all dump_test,postgres all all
+   [pgbackman]$ show_backup_catalog 1 all dump_test,test02 all all
    --------------------------------------------------------
    # SrvID / FQDN: 1
    # NodeID / FQDN: all
@@ -1372,19 +1408,20 @@ of parameter values. These values are combined with AND.
                            [NodeID|FQDN] 
 			   [DBname]
 
-Parameters:
+Parámetros:
 
 * **[SrvID|FQDN]:** SrvID in PgBackMan or FQDN of the backup server
 * **[NodeID|FQDN]:** NodeID in PgBackMan or FQDN of the PgSQL node
 * **[DBname]:** Database name
 
-The default value for a parameter is shown between brackets ``[]``. If the
-user does not define any value, the default value will be used. 
+Los valores por defecto de un parametro se enseñan entre
+corchetes``[]``. Si el usuario no define ningún valor, PgBackMan
+utilizará el valor por defecto.
 
 One can define multiple values for each parameter separated by a
 comma. These values are combined using OR.
 
-This command can be run with or without parameters. e.g.:
+Este comando se puede ejecutar con o sin parametros, e.g.:
 
 ::
 
@@ -1422,17 +1459,18 @@ This command can be run with or without parameters. e.g.:
 show_backup_details
 -------------------
 
-This command shows all the details for one particular backup job.
+Este comando muestra todos los detalles asociados a una caopia de
+respaldo en particular. 
 
 ::
 
    show_backup_details [BckID]
 
-Parameters:
+Parámetros:
 
-* **[BckID]:** Backup ID
+* **[BckID]:** ID (código de identificación) de la copia de respaldo.
 
-This command can be run with or without parameters. e.g.:
+Este comando se puede ejecutar con o sin parametros, e.g.:
 
 ::
 
@@ -1484,17 +1522,18 @@ This command can be run with or without parameters. e.g.:
 show_backup_server_config
 -------------------------
 
-This command shows the default configuration for a backup server.
+Este comando muestra la configuración por defecto usada por un
+servidor de backup.
 
 ::
 
  show_backup_server_config [SrvID | FQDN]
 
-Parameters:
+Parámetros:
 
-* **[SrvID | FQDN]:** SrvID in PgBackMan or FQDN of the backup server 
+* **[SrvID | FQDN]:** SrvID en PgBackMan o FQDN del servidor de backup 
 
-This command can be run with or without parameters. e.g.:
+Este comando se puede ejecutar con o sin parametros, e.g.:
 
 ::
 
@@ -1524,17 +1563,18 @@ This command can be run with or without parameters. e.g.:
 show_backup_server_stats
 ------------------------
 
-This command shows global statistics for a backup server
+Este comando muestra las estadísticas globales de un servidor de
+backup.
 
 ::
 
    show_backup_server_stats [SrvID | FQDN]
 
-Parameters:
+Parámetros:
 
-* **[SrvID | FQDN]:** SrvID in PgBackMan or FQDN of the backup server 
+* **[SrvID | FQDN]:** SrvID en PgBackMan o FQDN del servidor de backup. 
 
-This command can be run with or without parameters. e.g.:
+Este comando se puede ejecutar con o sin parametros, e.g.:
 
 ::
 
@@ -1571,13 +1611,14 @@ This command can be run with or without parameters. e.g.:
 show_backup_servers 
 -------------------
 
-This command shows all backup servers registered in PgBackMan.
+Este comando muestra todos los servidores de backups registrados en
+PgBackMan.
 
 ::
 
   show_backup_servers
 
-This command can be run only without parameters. e.g.:
+Este comando puede ser ejecutado solamente sin parámetros, e.g.:
 
 ::
 
@@ -1593,14 +1634,14 @@ This command can be run only without parameters. e.g.:
 show_empty_backup_catalogs
 --------------------------
 
-This command shows a list with all backup definitions with empty
-catalogs.
+Este comando muestra una lista con todas las definiciones de copias de
+seguridad que no tengan ninguna entrada en el catálogo.
 
 ::
 
    show_empty_backup_catalogs
 
-This command can be run only without parameters. e.g.:
+Este comando puede ser ejecutado solamente sin parametros, e.g.:
 
 ::
 
@@ -1615,19 +1656,23 @@ This command can be run only without parameters. e.g.:
 show_history
 ------------
 
-Show the list of commands that have been entered during the PgBackMan
-shell session.
+Muestra una lista de comandos que han sido ejecutados durante la
+sesión en uso en el shell de PgBackMan.  
 
 ::
 
    show_history
 
-A shortcut to this command is ``\s``. One can also use the *Emacs
-Line-Edit Mode Command History Searching* to get previous commands
-containing a string. Hit ``[CTRL]+[r]`` in the PgBackMAn shell followed by
-the search string you are trying to find in the history.
+Existe un alias para este comando, ``\s``, que se puede utilizar en
+vez de ``show_history``. 
 
-This command can be run only without parameters. e.g.:
+Tambièn se puede usar el *modo Emacs de busqueda en la historia de
+comandos* para obtener comandos ejecutados que contengan una cadena
+alfanumérica. Para entrar en este modo de busqueda pulsar
+``[CTRL]+[r]`` en el shell de PgBackMan seguido de la cadena
+alfanumérica que querais buscar en el historial de comandos.
+
+Este comando se puede ejecutar solamente sin parametros, e.g.:
 
 ::
 
@@ -1647,18 +1692,18 @@ This command can be run only without parameters. e.g.:
 show_jobs_queue
 ---------------
 
-This command shows the queue of jobs waiting to be processed by
-``pgbackman_control``.
+este comando muestra la cola de trabajos esperando a ser procesados
+por ``pgbackman_control``.
 
 ::
 
    show_jobs_queue
 
-This queue changes when backup definitions get defined, updated or
-deleted. The queue has entries for the combination of backup server +
-PgSQL node affected by a change.  
+Esta cola se actualiza cuando una definición de copia de respaldo es
+definida, actualizada o borrada. Las entradas de la cola muestran la
+combinación servidor de backup + nodo PgSQL afectado por un cambio.
 
-This command can be run only without parameters. e.g.:
+Este comando se puede ejecutar solamente sin parametros, e.g.:
 
 ::
 
@@ -1761,11 +1806,11 @@ This command shows the default configuration for a PgSQL node.
 
    show_pgsql_node_config [NodeID | FQDN]
 
-Parameters:
+Parámetros:
 
 * **[NodeID|FQDN]:** NodeID in PgBackMan or FQDN of the PgSQL node.
 
-This command can be run with or without parameters. e.g.:
+Este comando se puede ejecutar con o sin parametros, e.g.:
 
 ::
 
@@ -1808,11 +1853,11 @@ This command shows global statistics for a PgSQL node.
 
    show_pgsql_node_stats [NodeID | FQDN]
 
-Parameters:
+Parámetros:
 
 * **[NodeID|FQDN]:** NodeID in PgBackMan or FQDN of the PgSQL node.
 
-This command can be run with or without parameters. e.g.:
+Este comando se puede ejecutar con o sin parametros, e.g.:
 
 ::
 
@@ -1880,7 +1925,7 @@ combination of parameters values. These values are combined with AND.
                         [NodeID|FQDN] 
 			[DBname]
 
-Parameters:
+Parámetros:
 
 * **[SrvID|FQDN]:** SrvID in PgBackMan or FQDN of the backup server
 * **[NodeID|FQDN]:** NodeID in PgBackMan or FQDN of the PgSQL node
@@ -1892,7 +1937,7 @@ user does not define any value, the default value will be used.
 One can define multiple values for each parameter separated by a
 comma. These values are combined using OR.
 
-This command can be run with or without parameters. e.g.:
+Este comando se puede ejecutar con o sin parametros, e.g.:
 
 ::
 
@@ -1922,7 +1967,7 @@ combination of parameter values. These values are combined with AND.
                             [NodeID|FQDN] 
                             [DBname]
 			
-Parameters:
+Parámetros:
 
 * **[SrvID|FQDN]:** SrvID in PgBackMan or FQDN of the backup server
 * **[NodeID|FQDN]:** NodeID in PgBackMan or FQDN of the PgSQL node
@@ -1941,7 +1986,7 @@ meanings:
 * DEFINED: AT job for this restore job has been defined
 * ERROR: Could not define the AT job for this restore job.
 
-This command can be run with or without parameters. e.g.:
+Este comando se puede ejecutar con o sin parametros, e.g.:
 	 
 ::
 
@@ -1968,11 +2013,11 @@ This command shows all the details for one particular restore job.
 
    show_restore_details [RestoreID]
 
-Parameters:
+Parámetros:
 
 * **[RestoreID]:** Restore ID in the restore catalog.
 
-This command can be run with or without parameters. e.g.:
+Este comando se puede ejecutar con o sin parametros, e.g.:
 	 
 ::
 
@@ -2023,7 +2068,7 @@ combination of parameter values. These values are combined with AND.
                              [NodeID|FQDN] 
                              [DBname]
         
-Parameters:
+Parámetros:
 
 * **[SrvID|FQDN]:** SrvID in PgBackMan or FQDN of the backup server
 * **[NodeID|FQDN]:** NodeID in PgBackMan or FQDN of the PgSQL node
@@ -2042,7 +2087,7 @@ meanings:
 * DEFINED: AT job for this restore job has been defined
 * ERROR: Could not define the AT job for this restore job.
 
-This command can be run with or without parameters. e.g.:
+Este comando se puede ejecutar con o sin parametros, e.g.:
 	 
 ::
 
@@ -2087,7 +2132,7 @@ This command updates the information of a backup definition.
                             [job status] 
                             [remarks] 
 
-Parameters:
+Parámetros:
 
 * **[DefID]:** Backup definition ID to update.
 
@@ -2109,7 +2154,7 @@ Parameters:
 
 The default value for a parameter is shown between brackets ``[]``. If
 the user does not define any value, the default value will be
-used. This command can be run with or without parameters. e.g.:
+used. Este comando se puede ejecutar con o sin parametros, e.g.:
 
 ::
 
@@ -2143,7 +2188,7 @@ This command updates the information of a backup server.
    update_backup_server [SrvID | FQDN] 
                         [remarks]
 
-Parameters:
+Parámetros:
 
 * **[SrvID|FQDN]:** SrvID in PgBackMan or FQDN of the backup server
 * **[remarks]:** Remarks
@@ -2151,7 +2196,7 @@ Parameters:
 The default value for a parameter is shown between brackets ``[]``. If the
 user does not define any value, the default value will be used.
 
-This command can be run with or without parameters. e.g.:
+Este comando se puede ejecutar con o sin parametros, e.g.:
 
 ::
 
@@ -2181,7 +2226,7 @@ This command updates the default configuration of a backup server.
                                [PgSQL_bin_9.4]
 			       [root_backup_dir]
 
-Parameters:
+Parámetros:
 
 * **[SrvID|FQDN]:** SrvID in PgBackMan or FQDN of the backup server
 * **[PgSQL_bin_9.0]:** Directory with postgreSQL 9.0 bin software 
@@ -2194,7 +2239,7 @@ Parameters:
 The default value for a parameter is shown between brackets ``[]``. If the
 user does not define any value, the default value will be used.
 
-This command can be run with or without parameters. e.g.:
+Este comando se puede ejecutar con o sin parametros, e.g.:
 
 ::
 
@@ -2228,7 +2273,7 @@ This command updates the information of a PgSQL node.
                     [status] 
                     [remarks]
 		    
-Parameters:
+Parámetros:
 
 * **[NodeID | FQDN]:** NodeID in PgBackMan or FQDN of the PgSQL node
   to update.
@@ -2293,7 +2338,7 @@ node.
 			    [pgnode crontab file]
 			    [pgnode status]
 
-Parameters:
+Parámetros:
 
 * **[NodeID / FQDN]:** NodeID in PgBackMan or FQDN of the PgSQL node
   to update.
