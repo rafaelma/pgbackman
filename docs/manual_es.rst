@@ -1399,8 +1399,9 @@ Este comando se puede ejecutar con o sin parametros, e.g.:
 show_backup_definitions
 -----------------------
 
-This command shows all backup definitions for a particular combination
-of parameter values. These values are combined with AND.
+Este comando muestra todas las definiciones de copias de respaldo
+programadas que cumplan una serie de condiciones de busqueda. Las
+condiciones de busqueda se combinan con el operador lógico AND.
 
 ::
 
@@ -1410,16 +1411,17 @@ of parameter values. These values are combined with AND.
 
 Parámetros:
 
-* **[SrvID|FQDN]:** SrvID in PgBackMan or FQDN of the backup server
-* **[NodeID|FQDN]:** NodeID in PgBackMan or FQDN of the PgSQL node
-* **[DBname]:** Database name
+* **[SrvID|FQDN]:** SrvID en PgBackMan o FQDN del servidor de backup
+* **[NodeID|FQDN]:** NodeID en PgBackMan o FQDN del nodo PgSQL
+* **[DBname]:** Nombre de la base de datos
 
 Los valores por defecto de un parametro se enseñan entre
 corchetes``[]``. Si el usuario no define ningún valor, PgBackMan
 utilizará el valor por defecto.
 
-One can define multiple values for each parameter separated by a
-comma. These values are combined using OR.
+Se pueden definir valores múltiples separados por comas para cada
+condición de busqueda. Estos valores multiples se combinan usando el
+operador lógico OR.
 
 Este comando se puede ejecutar con o sin parametros, e.g.:
 
@@ -1459,7 +1461,7 @@ Este comando se puede ejecutar con o sin parametros, e.g.:
 show_backup_details
 -------------------
 
-Este comando muestra todos los detalles asociados a una caopia de
+Este comando muestra todos los detalles asociados a una copia de
 respaldo en particular. 
 
 ::
@@ -1692,16 +1694,17 @@ Este comando se puede ejecutar solamente sin parametros, e.g.:
 show_jobs_queue
 ---------------
 
-este comando muestra la cola de trabajos esperando a ser procesados
+Este comando muestra la cola de trabajos esperando a ser procesados
 por ``pgbackman_control``.
 
 ::
 
    show_jobs_queue
 
-Esta cola se actualiza cuando una definición de copia de respaldo es
-definida, actualizada o borrada. Las entradas de la cola muestran la
-combinación servidor de backup + nodo PgSQL afectado por un cambio.
+Esta cola se actualiza cuando una definición de copia de respaldo
+programada es definida, actualizada o borrada. Las entradas de la cola
+muestran la combinación servidor de backup + nodo PgSQL afectado por
+un cambio.
 
 Este comando se puede ejecutar solamente sin parametros, e.g.:
 
@@ -1718,14 +1721,14 @@ Este comando se puede ejecutar solamente sin parametros, e.g.:
 show_pgbackman_config
 ---------------------
 
-This command shows the configuration parameters used by this PgBackMan
-shell session.
+Este comando muestra los parámetros de configuración usados por la
+sesión en uso del shell de PgBackMan.
 
 ::
 
    show_pgbackman_config
 
-This command can be run only without parameters. e.g.:
+Este comando se puede ejecutar solamente sin parámetros, e.g.:
 
 ::
 
@@ -1759,13 +1762,14 @@ This command can be run only without parameters. e.g.:
 show_pgbackman_stats 
 --------------------
 
-This command shows global statistics for this PgBackMan installation.
+Este comando muestra las estadísticas globales de la instalación en
+uso de PgBackMan.
 
 ::
 
    show_pgbackman_stats
 
-This command can be run only without parameters. e.g.:
+Este comando se puede ejecutar solamente sin parámetros, e.g.:
 
 ::
 
@@ -1800,7 +1804,7 @@ This command can be run only without parameters. e.g.:
 show_pgsql_node_config
 ----------------------
 
-This command shows the default configuration for a PgSQL node.
+Este comando muestra la configuración por defecto de un nodo PgSQL.
 
 ::
 
@@ -1808,7 +1812,7 @@ This command shows the default configuration for a PgSQL node.
 
 Parámetros:
 
-* **[NodeID|FQDN]:** NodeID in PgBackMan or FQDN of the PgSQL node.
+* **[NodeID|FQDN]:** NodeID en PgBackMan o FQDN del nodo PgSQL.
 
 Este comando se puede ejecutar con o sin parametros, e.g.:
 
@@ -1847,7 +1851,7 @@ Este comando se puede ejecutar con o sin parametros, e.g.:
 show_pgsql_node_stats
 ---------------------
 
-This command shows global statistics for a PgSQL node.
+Este comando muestra las estadísticas globales de un nodo PgSQL.
 
 ::
 
@@ -1855,7 +1859,7 @@ This command shows global statistics for a PgSQL node.
 
 Parámetros:
 
-* **[NodeID|FQDN]:** NodeID in PgBackMan or FQDN of the PgSQL node.
+* **[NodeID|FQDN]:** NodeID en PgBackMan o FQDN del nodo PgSQL.
 
 Este comando se puede ejecutar con o sin parametros, e.g.:
 
@@ -1892,13 +1896,13 @@ Este comando se puede ejecutar con o sin parametros, e.g.:
 show_pgsql_nodes
 ----------------
 
-This command shows all PgSQL nodes registered in PgBackMan.
+Este comando muestra todos los nodos PgSQL registrados en PgBackMan.
 
 ::
  
    show_pgsql_nodes
 
-This command can be run only without parameters. e.g.:
+Este comando se puede ejecutar solamente sin parametros, e.g.:
 
 ::
 
@@ -1916,8 +1920,10 @@ This command can be run only without parameters. e.g.:
 show_restore_catalog
 --------------------
 
-This command shows all restore catalog entries for a particular
-combination of parameters values. These values are combined with AND.
+Este comando muestra todas las entradas en el catálogo de
+restauraciones de datos que cumplan una serie de condiciones de
+busqueda. Las condiciones de búsqueda se combinan con el operador
+lógico AND.
 
 ::
 
@@ -1927,15 +1933,17 @@ combination of parameters values. These values are combined with AND.
 
 Parámetros:
 
-* **[SrvID|FQDN]:** SrvID in PgBackMan or FQDN of the backup server
-* **[NodeID|FQDN]:** NodeID in PgBackMan or FQDN of the PgSQL node
-* **[DBname]:** Database name
+* **[SrvID|FQDN]:** SrvID en PgBackMan o FQDN del servidor de backup.
+* **[NodeID|FQDN]:** NodeID en PgBackMan o FQDN del nodo PgSQL.
+* **[DBname]:** Nombre de la base de datos
 
-The default value for a parameter is shown between brackets ``[]``. If the
-user does not define any value, the default value will be used.
+Los valores por defecto de un parametro se enseñan entre
+corchetes``[]``. Si el usuario no define ningún valor, PgBackMan
+utilizará el valor por defecto.
 
-One can define multiple values for each parameter separated by a
-comma. These values are combined using OR.
+Se pueden definir valores múltiples separados por comas para cada
+condición de busqueda. Estos valores multiples se combinan usando el
+operador lógico OR.
 
 Este comando se puede ejecutar con o sin parametros, e.g.:
 
@@ -1958,8 +1966,9 @@ Este comando se puede ejecutar con o sin parametros, e.g.:
 show_restore_definitions
 ------------------------
 
-This command shows all restore definitions for a particular
-combination of parameter values. These values are combined with AND.
+Este comando muestra todas las definiciones de restauración que
+cumplan una serie de condiciones de busqueda. Las condiciones de
+busqueda se combinan con el operador lógico AND.
 
 ::
 
@@ -1969,22 +1978,25 @@ combination of parameter values. These values are combined with AND.
 			
 Parámetros:
 
-* **[SrvID|FQDN]:** SrvID in PgBackMan or FQDN of the backup server
-* **[NodeID|FQDN]:** NodeID in PgBackMan or FQDN of the PgSQL node
-* **[DBname]:** Database name
+* **[SrvID|FQDN]:** SrvID en PgBackMan o FQDN del servidor de backup
+* **[NodeID|FQDN]:** NodeID en PgBackMan o FQDN del nodo PgSQL
+* **[DBname]:** Nombre de la base de datos
 
-The default value for a parameter is shown between brackets ``[]``. If the
-user does not define any value, the default value will be used.
+Los valores por defecto de un parametro se enseñan entre
+corchetes``[]``. Si el usuario no define ningún valor, PgBackMan
+utilizará el valor por defecto.
 
-One can define multiple values for each parameter separated by a
-comma. These values are combined using OR.
+Se pueden definir valores múltiples separados por comas para cada
+condición de busqueda. Estos valores multiples se combinan usando el
+operador lógico OR.
 
-The status column in the output can have different values with these
-meanings:
+La columna con los valores de estatus de la restauración puede tener
+diferentes valores con los siguientes significados:
 
-* WAITING: Waiting to define an AT job to run this restore job
-* DEFINED: AT job for this restore job has been defined
-* ERROR: Could not define the AT job for this restore job.
+* WAITING: Esperando a definir un proceso AT que ejecute la
+  restauración de datos
+* DEFINED: Proceso AT definido
+* ERROR: No se ha podido definir el proceso AT
 
 Este comando se puede ejecutar con o sin parametros, e.g.:
 	 
@@ -2007,7 +2019,8 @@ Este comando se puede ejecutar con o sin parametros, e.g.:
 show_restore_details
 --------------------
 
-This command shows all the details for one particular restore job.
+Este comando muestra todos los detalles asociados a un proceso de
+restauración de datos en particular.
 
 ::
 
@@ -2015,7 +2028,8 @@ This command shows all the details for one particular restore job.
 
 Parámetros:
 
-* **[RestoreID]:** Restore ID in the restore catalog.
+* **[RestoreID]:** ID de la restauración en el catálogo de
+  restauraciones.
 
 Este comando se puede ejecutar con o sin parametros, e.g.:
 	 
@@ -2059,8 +2073,9 @@ Este comando se puede ejecutar con o sin parametros, e.g.:
 show_snapshot_definitions
 -------------------------
 
-This command shows all snapshot definitions for a particular
-combination of parameter values. These values are combined with AND.
+Este comando muestra todas las copias de respaldo de tipo snapshot que
+cumplan una serie de condiciones de busqueda. Las condiciones de
+busqueda se combinan con el operador lógico AND.
 
 ::
 
@@ -2070,22 +2085,26 @@ combination of parameter values. These values are combined with AND.
         
 Parámetros:
 
-* **[SrvID|FQDN]:** SrvID in PgBackMan or FQDN of the backup server
-* **[NodeID|FQDN]:** NodeID in PgBackMan or FQDN of the PgSQL node
-* **[DBname]:** Database name
+* **[SrvID|FQDN]:** SrvID en PgBackMan o FQDN del servidor de backup
+* **[NodeID|FQDN]:** NodeID en PgBackMan o FQDN del nodo PgSQL
+* **[DBname]:** Nombre de la base de datos
 
-The default value for a parameter is shown between brackets ``[]``. If the
-user does not define any value, the default value will be used.
+Los valores por defecto de un parametro se enseñan entre
+corchetes``[]``. Si el usuario no define ningún valor, PgBackMan
+utilizará el valor por defecto.
 
-One can define multiple values for each parameter separated by a
-comma. These values are combined using OR.
+Se pueden definir valores múltiples separados por comas para cada
+condición de busqueda. Estos valores multiples se combinan usando el
+operador lógico OR.
 
-The status column in the output can have different values with these
-meanings:
+La columna con los valores de estatus de la copia de respaldo de tipo
+snapshot puede tener diferentes valores con los siguientes
+significados:
 
-* WAITING: Waiting to define an AT job to run this restore job
-* DEFINED: AT job for this restore job has been defined
-* ERROR: Could not define the AT job for this restore job.
+* WAITING: Esperando a definir un proceso AT que ejecute la copia de
+  respaldo snapshot.
+* DEFINED: Proceso AT definido
+* ERROR: No se ha podido definir el proceso AT
 
 Este comando se puede ejecutar con o sin parametros, e.g.:
 	 
@@ -2116,7 +2135,8 @@ Este comando se puede ejecutar con o sin parametros, e.g.:
 update_backup_definition
 ------------------------
 
-This command updates the information of a backup definition.
+este comando actualiza la información de una definición de copias de
+respaldo programada. 
 
 ::
 
@@ -2134,27 +2154,32 @@ This command updates the information of a backup definition.
 
 Parámetros:
 
-* **[DefID]:** Backup definition ID to update.
+* **[DefID]:** ID de la definición que se va a actualizar.
 
-* **[\*_cron]:** Schedule definition using the cron expression.
+* **[\*_cron]:** Definición del momento de ejecución de la copia de
+  respaldo usando una expresión cron.
 
-* **[retention period]:** Time interval a backup will be available in
-  the catalog, e.g. 2 hours, 3 days, 1 week, 1 month, 2 years
+* **[retention period]:** Intervalo de tiempo que una copia de
+  respaldo estará disponible en el catálogo, e.g. 2 hours, 3 days, 1
+  week, 1 month, 2 years
 
-* **[retention redundancy]:** Minimun number of backups to keep in the
-  catalog regardless of the retention period used. e.g. 1,2,3
+* **[retention redundancy]:** Numero mínimo de copias de respaldo a
+  mantener en el catálogo independientemente del periodo de retención
+  definido. e.g. 1,2,3
 
-* **[extra backup parameters]:** Extra parameters that can be used
-  with pg_dump / pg_dumpall
+* **[extra backup parameters]:** Parámetros extras que se pueden usar
+  con pg_dump / pg_dumpall
 
 * **[job status]**
         
-  * ACTIVE: Backup job activated and in production.
-  * STOPPED: Backup job stopped.
+  * ACTIVE: Copia de respaldo activada y en producción.
+  * STOPPED: Copia de respaldo detenida.
 
-The default value for a parameter is shown between brackets ``[]``. If
-the user does not define any value, the default value will be
-used. Este comando se puede ejecutar con o sin parametros, e.g.:
+Los valores por defecto de un parametro se enseñan entre
+corchetes``[]``. Si el usuario no define ningún valor, PgBackMan
+utilizará el valor por defecto.
+
+Este comando se puede ejecutar con o sin parametros, e.g.:
 
 ::
 
@@ -2181,7 +2206,7 @@ used. Este comando se puede ejecutar con o sin parametros, e.g.:
 update_backup_server
 --------------------
 
-This command updates the information of a backup server.
+Este comando actualiza la información de un servidor de backup.
 
 ::
 
@@ -2190,11 +2215,12 @@ This command updates the information of a backup server.
 
 Parámetros:
 
-* **[SrvID|FQDN]:** SrvID in PgBackMan or FQDN of the backup server
-* **[remarks]:** Remarks
+* **[SrvID|FQDN]:** SrvID en PgBackMan o FQDN del servidor de backup
+* **[remarks]:** Comentarios
 
-The default value for a parameter is shown between brackets ``[]``. If the
-user does not define any value, the default value will be used.
+Los valores por defecto de un parametro se enseñan entre
+corchetes``[]``. Si el usuario no define ningún valor, PgBackMan
+utilizará el valor por defecto.
 
 Este comando se puede ejecutar con o sin parametros, e.g.:
 
@@ -2214,7 +2240,8 @@ Este comando se puede ejecutar con o sin parametros, e.g.:
 update_backup_server_config
 ---------------------------
 
-This command updates the default configuration of a backup server.
+Este comando actualiza la configuración por defecto de un servidor de
+backup.
 
 ::
 
@@ -2228,16 +2255,17 @@ This command updates the default configuration of a backup server.
 
 Parámetros:
 
-* **[SrvID|FQDN]:** SrvID in PgBackMan or FQDN of the backup server
-* **[PgSQL_bin_9.0]:** Directory with postgreSQL 9.0 bin software 
-* **[PgSQL_bin_9.1]:** Directory with postgreSQL 9.1 bin software 
-* **[PgSQL_bin_9.2]:** Directory with postgreSQL 9.2 bin software 
-* **[PgSQL_bin_9.3]:** Directory with postgreSQL 9.3 bin software 
-* **[PgSQL_bin_9.4]:** Directory with postgreSQL 9.4 bin software 
-* **[root_backup_dir]:** Backup directory used by PgBackMan. 
+* **[SrvID|FQDN]:** SrvID en PgBackMan o FQDN del servidor de backups
+* **[PgSQL_bin_9.0]:** Directorio con los binarios de PostgreSQL 9.0 
+* **[PgSQL_bin_9.1]:** Directorio con los binarios de PostgreSQL 9.1 
+* **[PgSQL_bin_9.2]:** Directorio con los binarios de PostgreSQL 9.2 
+* **[PgSQL_bin_9.3]:** Directorio con los binarios de PostgreSQL 9.3 
+* **[PgSQL_bin_9.4]:** Directorio con los binarios de PostgreSQL 9.4 
+* **[root_backup_dir]:** Directorio para copias de respaldo usado por PgBackMan. 
 
-The default value for a parameter is shown between brackets ``[]``. If the
-user does not define any value, the default value will be used.
+Los valores por defecto de un parametro se enseñan entre
+corchetes``[]``. Si el usuario no define ningún valor, PgBackMan
+utilizará el valor por defecto.
 
 Este comando se puede ejecutar con o sin parametros, e.g.:
 
@@ -2263,7 +2291,7 @@ Este comando se puede ejecutar con o sin parametros, e.g.:
 update_pgsql_node
 -----------------
 
-This command updates the information of a PgSQL node.
+Este comando actualiza la información de un nodo PgSQL.
 
 ::
 
@@ -2275,24 +2303,25 @@ This command updates the information of a PgSQL node.
 		    
 Parámetros:
 
-* **[NodeID | FQDN]:** NodeID in PgBackMan or FQDN of the PgSQL node
-  to update.
-* **[pgport]:** PostgreSQL port
-* **[admin_user]:** PostgreSQL admin user
+* **[NodeID | FQDN]:** NodeID en PgBackMan o FQDN del nodo PgSQL 
+* **[pgport]:** Puerto usado por PostgreSQL
+* **[admin_user]:** Usuario administrador en el nodo PgSQL
 * **[status]:**
   
-  * RUNNING: PostgreSQL node running and online
-  * DOWN: PostgreSQL node not online.
+  * RUNNING: El nodo PgSQL esta activo y en producción. 
+  * DOWN: El nodo PgSQL no se encuentra activado.
 
-* **[remarks]:** Remarks
+* **[remarks]:** Comentarios
 
-All backup definitions from a PgSQL node will be started/stopped
-automatically if the PgSQL node gets the status changed to
-RUNNING/DOWN.
+Las definiciones de copias de respaldo programadas asociadas a un nodo
+PgSQL serán activadas/desactivadas si el nodo PgSQL cambia su estatus
+a RUNNING/DOWN.
 
-The default value for a parameter is shown between brackets ``[]``. If
-the user does not define any value, the default value will be
-used. This command can be run with or without parameters. e.g:
+Los valores por defecto de un parametro se enseñan entre
+corchetes``[]``. Si el usuario no define ningún valor, PgBackMan
+utilizará el valor por defecto.
+
+Este comando se puede ejecutar con o sin parametros, e.g.:
 
 ::
 
@@ -2313,8 +2342,8 @@ used. This command can be run with or without parameters. e.g:
 update_pgsql_node_config
 ------------------------
 
-This command updates the default configuration parameters of a PgSQL
-node.
+Este comando actualiza los parámetros de configuración por defecto de
+un nodo PgSQL.
 
 ::
 
@@ -2340,32 +2369,34 @@ node.
 
 Parámetros:
 
-* **[NodeID / FQDN]:** NodeID in PgBackMan or FQDN of the PgSQL node
-  to update.
-* **[min_cron interval]:** Backup minutes interval, e.g. 01-59
-* **[hours_cron interval]:** Backup hours interval, e.g. 01-06
-* **[daymonth_cron]:** Backup day-month cron
-* **[month_cron]:** Backup month cron
-* **[weekday_cron]:** Backup weekday cron
-* **[backup code]:** Backup job code
-* **[retention period]:** Retention period for a backup job
-* **[retention redundancy]:** Retention redundancy for a backup job
-* **[extra backup parameters]:** Extra backup parameters
-* **[extra restore parameters]:** Extra restore parameters
-* **[backup job status]:** Backup job status
-* **[domain]:** Default domain
-* **[logs email]:** E-mail to send logs
-* **[admin user]:** PostgreSQL admin user
-* **[pgport]:** PostgreSQL port
-* **[pgnode backup dir]:** Directory to save pgbackman information for
-  a pgnode
-* **[pgnode crontab file]:** Crontab file for PgSQL node in the backup
-  server
-* **[pgnode status]:** PgSQL node status
+* **[NodeID / FQDN]:** NodeID en PgBackMan o FQDN del nodo PgSQL
+* **[min_cron interval]:** Intervalo de minutos cron, e.g. 01-59
+* **[hours_cron interval]:** Intervalo de horas cron, e.g. 01-06
+* **[daymonth_cron]:** Dia del mes cron
+* **[month_cron]:** Mes cron
+* **[weekday_cron]:** Dia de la semana cron
+* **[backup code]:** Tipo de copia de respaldo
+* **[retention period]:** Intervalo de tiempo que una copia de
+  respaldo estará disponible en el catálogo
+* **[retention redundancy]:** Numero mínimo de copias de respaldo a
+  mantener en el catálogo independientemente del periodo de retención
+  definido
+* **[extra backup parameters]:** Parámetros extras que se pueden usar con pg_dump/pg_dumpall
+* **[extra restore parameters]:** Parámetros extrasque se pueden usar con pg_restore
+* **[backup job status]:** Estatus de las copias de respaldo
+* **[domain]:** Dominio
+* **[logs email]:** Correo electronico para mandar informes
+* **[admin user]:** Usuario administrador del nodo PgSQL
+* **[pgport]:** Puerto usado por postgreSQL
+* **[pgnode backup dir]:** Directorio usado para grabar los datos del nodo PgSQL
+* **[pgnode crontab file]:** Archivo Crontab para el nodo PgSQL 
+* **[pgnode status]:** Estatus del nodo PgSQL
 
-The default value for a parameter is shown between brackets ``[]``. If
-the user does not define any value, the default value will be
-used. This command can be run with or without parameters. e.g:
+Los valores por defecto de un parametro se enseñan entre
+corchetes``[]``. Si el usuario no define ningún valor, PgBackMan
+utilizará el valor por defecto.
+
+Este comando se puede ejecutar con o sin parametros, e.g.:
 
 ::
 
@@ -2402,114 +2433,132 @@ used. This command can be run with or without parameters. e.g:
 		    
 
 
-About backups in PostgreSQL
-===========================
+Sobre copias de respaldo en PostgreSQL
+======================================
 
-Taking backups is an important administrative task that can have some
-disastrous consequences if it is not done right. The use of RAID
-configurations in your storage system, replication between nodes,
-clustering and trusting 100% that your SAN will be up ARE NOT backup
-strategies. These measures are necessary for HA (High availability)
-but do not replace the necessity of taking backups of our databases.
+Realizar copias de respaldo es una tarea de administración importante
+que puede tener consecuencias desastrosas si no se realiza
+adecuadamente. El uso de sistemas RAID en los sistemas de
+almacenamiento, replicación de datos entre nodos, el uso de clusters y
+confiar al 100% en que la SAN no fallará NO pueden reemplazar a una
+buena política de copias de respaldo. Estas medidas son necesarias
+para implementar sistemas de alta disponibilidad (HA) pero no pueden
+reemplazar a una copia de respaldo.
 
-There are two different types of backup that can be use with
-PostgreSQL to implement a good backup and restore strategy. They are:
+Existen dos tipos diferentes de copias de respaldo que pueden ser
+usadas para implementar una buena política de copias de respaldo y
+restauración de datos:
 
-* Physical backups 
-* Logical backups
+* Copias de respaldo físicas
+* Copias de respaldo lógicas
 
-Regardless of the type of backup used to backup your databases, one
-needs a good *backup and restore plan* that takes into account
-intervals, retention policies and performance issues for a backup and
-the time needed to get a full restoration of a database.
-
-Physical backups
-----------------
-	  
-This type of backup takes copies of the files where the PostgreSQL
-saves the databases. There are several techniques that can be used to
-take physical backups and we are not going to explain them here. Check
-*Chapter 24. Backup and Restore* of the PostgreSQL documentation for
-more information.
-
-The important thing with physical backups is that some of these
-techniques together with continuous archiving of write ahead log (WAL)
-files can be used to implement PITR (Point in time recovery) backups
-and achieve a full disaster recovery solution.
-
-There are several solutions that can be used for managing PITR backups,
-such as PITRTools, OmniPITR, and Barman.
-	  
-Logical backups
----------------
-
-PostgreSQL has two utilities, ``pg_dump`` and ``pg_dumpall``, for
-taking logical backups of databases. They take a snapshot of a
-database at a given moment.
-
-These utilities take consistent backups of a database or the whole
-cluster even if the databases are being used concurrently. At the same
-time ``pg_dump`` and ``pg_dumpall`` do not block other users accessing
-the database when backups are being taken.
-
-Even though a backup or snapshot created with ``pg_dump`` or
-``pg_dumpall`` can never guarantee a full disaster recovery of all
-data changed between the moment when the backup was taken and the
-moment of a future crash, they are still necessary if you need to
-archive versions of a database, move databases between PgSQL nodes and
-clone databases between production / pre-production and/or development
-servers.
-
-Nevertheless, logical backups give us a great flexibility in several
-situations and are also an easy way of taking backups of databases not
-requiring PITR backups.
-
-When taking a backup of a database we need the following information
-to be sure we can make a restoration that includes 100% of the data
-and definitions from the target database:
-
-#. Database schema
-#. Database data
-#. Roles owning objects in the database
-#. Roles with privileges on objects in the database
-#. Roles with privileges on the database or schemas
-#. Creation of all the roles owning something or with privileges
-#. Configuration parameters defined explicitly for a role
-#. Configuration parameters defined explicitly for the database 
-
-Unfortunately all this information cannot be obtained in a single
-execution for only one database. 1, 2, 3 and 4 can be obtained with
-``pg_dump``. 5, 7 and 8 can be obtained with a full ``pg_dumpall`` and
-6 either with a ``pg_dumpall -r`` or a full ``pg_dumpall``.
-
-At the same time, ``pg_dumpall`` will return all this information for
-all databases in a cluster, not only the database one wants to take a
-backup of.
-
-This is something that PostgreSQL will have to improve in the future
-so it gets easier to take a backup/snapshot of a database in a single
-execution.
-
-In the meantime, PgBackMan takes care of all this and it delivers all
-the information needed to run a 100% restoration of a database when we
-define a backup in the system.
+Independientemente del tipo de copia de respaldo usada, es necesario
+tener un buen plan de copias y restauración de datos que tenga en
+cuenta los intervalos de ejecución de las copias, políticas de
+retención de los mismos, problemas de rendimiento de las copias de
+respaldo a realizar y el tiempo necesario para realizar una
+restauración completa de datos a partir de una copia de resplado.
 
 
-Submitting a bug
-================
+Copias de respaldo físicas
+--------------------------
 
-PgBakMan has been extensively tested, and is currently being used in
-production at the University of Oslo. However, as any software,
-PgBackMan is not bug free.
+Este tipo de copia de respaldo copia los archivos donde PostgreSQL
+graba los datos de las bases de datos. Existen numerosas técnicas y
+metodos para realizar estas copias físicas de los archivos que no
+tienen cabida en este manual. Consultar el capítulo 24 del manual de
+PostgreSQL, *Chapter 24. Backup and Restore*, para obtener información
+sobre estas técnicas.
 
-If you discover a bug, please file a bug through the GitHub Issue page
-for the project at: https://github.com/rafaelma/pgbackman/issues
+Lo más importante con las copias de respaldo físicas es que algunos de
+los métodos que se utilizan para realizarlas junto con el archivo
+continuo de archivos WAL (write ahead log) se pueden utilizar para
+implementar PITR (Point in time recovery) y conseguir una solución
+completa de recuperación de desastres.
+
+Existen numerosas soluciones que se pueden usar para administrar
+sistemas que implementen PITR, entre ellas PITRTools, OmniPITR y
+Barman.
+
+Copias de respaldo lógicas	  
+--------------------------
+
+PostgreSQL tiene dos programas, ``pg_dump`` y ``pg_dumpall``, que se
+pueden utilizar para realizar copias de respaldo lógicas de bases de
+datos PostgreSQL. Estos crean una instantanea (snapshot) de la base de
+datos en el momento en que se ejecutan.
+
+Estos programas crean copias consistentes de una o todas las bases de
+datos en el servidor incluso si se estan utilizando activamente
+durante la creación de las copias de respaldo. Otra característica a
+destacar de ``pg_dump`` y ``pg_dumpall`` es que no bloquean a otros
+usuarios durante la ejecución de la copia de respaldo, pudiendo estos
+acceder a los datos sin problemas.
+
+Aunque una copia de respaldo creada con ``pg_dump`` o ``pg_dumpall``
+nunca puede garantizar una recuperación de todos los datos
+actualizados entre el momento en que la copia se crea y el momento de
+un futuro desastre con perdida de datos, estas son necesarias en
+numerosos casos, e.g. para archivar versiones de una base de datos,
+para mover bases de datos entre servidores, para clonar bases de datos
+entre sistemas de producción, pre-producción y desarrollo, o para
+extraer una base de datos en particular despues de restaurar una copia
+de respaldo PITR.
+
+De todas maneras, las copias de respaldo lógicas nos proporcionan una
+gran flexibilidad en numerosas ocasiones y son también una manera
+fácil de crear copias de respaldo de bases de datos que no requieran
+PITR.
+
+Cuando creamos una copia de respaldo lógica de una base de datos
+necesitamos la siguiente información para asegurarnos que podremos
+realizar una restauración completa de los datos:
 
 
-Authors
+#. Esquema (schema) de la base de datos
+#. Datos grabados en la base de datos
+#. Roles que sean dueños de objetos en la base de datos
+#. Roles con privilegios sobre objetos en la base de datos
+#. Roles con privilegios sobre la base de datos o el esquema
+#. Como crear todos los roles dueños de objetos o con privilegios
+#. Paramétros de configuración definidos explicitamente para un rol
+#. Parámetros de configuración definidos explicitamente para la base de datos
+
+Desafortunadamente, toda esta información no se puede obtener en una
+ejecución única para una base de datos. 1, 2, 3 y 4 se pueden obtener
+con ``pg_dump``. 5, 7 y 8 con ``pg_dumpall`` y 6 o con ``pg_dumpall
+-r`` o un ``pg_dumpall`` completo.
+
+Al mismo tiempo ``pg_dumpall`` retorna toda esta información para
+todas las bases de datos en un cluster PostgreSQL y no solamente para
+la base de datos de la cual queremos realizar una copia de respaldo.
+
+Esto es algo que PostgreSQL tiene que mejorar en un futuro para que
+sea más fácil crear copias de respaldo lógicas completas en una única
+ejecución.
+
+Mientras tanto, PgBackMan tiene cuidado de esto y tiene en cuenta toda
+la información necesaria para realizar una restauración completa de
+una base de datos cuando registramos una copia de respaldo en el
+sistema.
+
+
+Enviando informes sobre errores
+===============================
+
+PgBackMan ha sido comprobado extensivamente y actualmente se encuentra
+en producción en la Universidad de Oslo. Sin embargo, como cualquier
+software, PgBackMan no está libre de errores.
+
+Si descubre algún error, mande por favor un informe a traves de la
+página de GitHub disponible para este propósito:
+https://github.com/rafaelma/pgbackman/issues
+
+
+Autores
 =======
 
-In alphabetical order:
+En orden alfabético:
 
 |
 | Rafael Martinez Guerrero
@@ -2517,12 +2566,13 @@ In alphabetical order:
 | PostgreSQL-es / University Center for Information Technology (USIT), University of Oslo, Norway
 |
 
-License and Contributions
+
+Licencia y contribuciones
 =========================
 
-PgBackMan is the property of Rafael Martinez Guerrero / PostgreSQL-es
-and USIT-University of Oslo, and its code is distributed under GNU
-General Public License 3.
+PgBackMan es propiedad de Rafael Martinez Guerrero / PostgreSQL-es y
+USIT-Universidad de Oslo, y el código fuente es distribuido bajo la
+licencia GNU General Public License 3.
 
 | Copyright © 2013-2014 Rafael Martinez Guerrero / PostgreSQL-es
 | Copyright © 2014 USIT-University of Oslo.
