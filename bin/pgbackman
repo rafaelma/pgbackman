@@ -31,7 +31,18 @@ if __name__ == '__main__':
     try:
         
         if len(sys.argv) > 1:
-            pgbackman_cli().onecmd(' '.join(sys.argv[1:]))
+            if sys.argv[1] =='--use-csv-format':
+
+                cli = pgbackman_cli()
+                cli.output_format = 'csv'
+                cli.db.output_format = 'csv'
+                    
+                cli.onecmd(' '.join(sys.argv[2:]))
+
+            else:
+                cli = pgbackman_cli()
+                cli.onecmd(' '.join(sys.argv[1:]))
+
         elif len(sys.argv) == 1:
             os.system('clear')
             pgbackman_cli().cmdloop()

@@ -71,6 +71,7 @@ class pgbackman_cli(cmd.Cmd):
         self.logs = logs('pgbackman_cli')
 
         self.db = pgbackman_db(self.dsn,'pgbackman_cli')
+        self.output_format = 'table'
 
 
     # ############################################
@@ -691,11 +692,13 @@ class pgbackman_cli(cmd.Cmd):
             else:
                 dbname_list = dbname.strip().replace(' ','').split(',')
 
-            print '--------------------------------------------------------'
-            print '# SrvID / FQDN: ' + server_id
-            print '# NodeID / FQDN: ' + node_id
-            print '# DBname: ' + dbname
-            print '--------------------------------------------------------'
+            if self.output_format == 'table':
+
+                print '--------------------------------------------------------'
+                print '# SrvID / FQDN: ' + server_id
+                print '# NodeID / FQDN: ' + node_id
+                print '# DBname: ' + dbname
+                print '--------------------------------------------------------'
 
             try:
                 self.db.show_backup_definitions(server_list,node_list,dbname_list)
@@ -1596,13 +1599,15 @@ class pgbackman_cli(cmd.Cmd):
             else:
                 status_list = status.strip().replace(' ','').upper().split(',')
 
-            print '--------------------------------------------------------'
-            print '# SrvID / FQDN: ' + str(server_id)
-            print '# NodeID / FQDN: ' + str(node_id)
-            print '# DBname: ' + str(dbname)
-            print '# DefID: ' + str(def_id)
-            print '# Status: ' + str(status)
-            print '--------------------------------------------------------'
+            if self.output_format == 'table':
+
+                print '--------------------------------------------------------'
+                print '# SrvID / FQDN: ' + str(server_id)
+                print '# NodeID / FQDN: ' + str(node_id)
+                print '# DBname: ' + str(dbname)
+                print '# DefID: ' + str(def_id)
+                print '# Status: ' + str(status)
+                print '--------------------------------------------------------'
 
             try:
                 self.db.show_backup_catalog(server_list,node_list,dbname_list,def_id_list,status_list)
@@ -1715,11 +1720,13 @@ class pgbackman_cli(cmd.Cmd):
             else:
                 dbname_list = dbname.strip().replace(' ','').split(',')
 
-            print '--------------------------------------------------------'
-            print '# SrvID / FQDN: ' + str(server_id)
-            print '# NodeID / FQDN: ' + str(node_id)
-            print '# DBname: ' + str(dbname)
-            print '--------------------------------------------------------'
+            if self.output_format == 'table':
+
+                print '--------------------------------------------------------'
+                print '# SrvID / FQDN: ' + str(server_id)
+                print '# NodeID / FQDN: ' + str(node_id)
+                print '# DBname: ' + str(dbname)
+                print '--------------------------------------------------------'
 
             try:
                 self.db.show_restore_catalog(server_list,node_list,dbname_list)
@@ -2099,11 +2106,13 @@ class pgbackman_cli(cmd.Cmd):
             else:
                 dbname_list = dbname.strip().replace(' ','').split(',')
 
-            print '--------------------------------------------------------'
-            print '# SrvID / FQDN: ' + str(server_id)
-            print '# NodeID / FQDN: ' + str(node_id)
-            print '# DBname: ' + str(dbname)
-            print '--------------------------------------------------------'
+            if self.output_format == 'table':
+
+                print '--------------------------------------------------------'
+                print '# SrvID / FQDN: ' + str(server_id)
+                print '# NodeID / FQDN: ' + str(node_id)
+                print '# DBname: ' + str(dbname)
+                print '--------------------------------------------------------'
 
             try:
                 self.db.show_sbapshot_definitions(server_list,node_list,dbname_list)
@@ -2504,11 +2513,13 @@ class pgbackman_cli(cmd.Cmd):
             else:
                 dbname_list = dbname.strip().replace(' ','').split(',')
 
-            print '--------------------------------------------------------'
-            print '# SrvID / FQDN: ' + server_id
-            print '# Target NodeID / FQDN: ' + node_id
-            print '# Target DBname: ' + dbname
-            print '--------------------------------------------------------'
+            if self.output_format == 'table':
+
+                print '--------------------------------------------------------'
+                print '# SrvID / FQDN: ' + server_id
+                print '# Target NodeID / FQDN: ' + node_id
+                print '# Target DBname: ' + dbname
+                print '--------------------------------------------------------'
 
             try:
                 self.db.show_restore_definitions(server_list,node_list,dbname_list)
@@ -2584,10 +2595,12 @@ class pgbackman_cli(cmd.Cmd):
 
             bck_id = arg_list[0]
             
-            print '--------------------------------------------------------'
-            print '# BckID: ' + str(bck_id)
-            print '--------------------------------------------------------'
-            
+            if self.output_format == 'table':
+
+                print '--------------------------------------------------------'
+                print '# BckID: ' + str(bck_id)
+                print '--------------------------------------------------------'
+                
             if bck_id.isdigit():
                 try:
                     self.db.show_backup_details(bck_id)
@@ -2662,9 +2675,11 @@ class pgbackman_cli(cmd.Cmd):
 
             restore_id = arg_list[0]
             
-            print '--------------------------------------------------------'
-            print '# RestoreID: ' + str(restore_id)
-            print '--------------------------------------------------------'
+            if self.output_format == 'table':
+                            
+                print '--------------------------------------------------------'
+                print '# RestoreID: ' + str(restore_id)
+                print '--------------------------------------------------------'
             
             if restore_id.isdigit():
                 try:
@@ -2833,9 +2848,11 @@ class pgbackman_cli(cmd.Cmd):
 
             server_id = arg_list[0]
 
-            print '--------------------------------------------------------'
-            print '# SrvID: ' + server_id
-            print '--------------------------------------------------------'
+            if self.output_format == 'table':
+
+                print '--------------------------------------------------------'
+                print '# SrvID: ' + server_id
+                print '--------------------------------------------------------'
             
             try:
                 if server_id.isdigit():
@@ -2908,9 +2925,11 @@ class pgbackman_cli(cmd.Cmd):
 
             node_id = arg_list[0]
 
-            print '--------------------------------------------------------'
-            print '# NodeID: ' + str(node_id)
-            print '--------------------------------------------------------'
+            if self.output_format == 'table':
+
+                print '--------------------------------------------------------'
+                print '# NodeID: ' + str(node_id)
+                print '--------------------------------------------------------'
             
             try:
                 if node_id.isdigit():
@@ -3017,9 +3036,11 @@ class pgbackman_cli(cmd.Cmd):
 
             server_id = arg_list[0]
             
-            print '--------------------------------------------------------'
-            print '# SrvID / FQDN: ' + server_id
-            print '--------------------------------------------------------'
+            if self.output_format == 'table':
+
+                print '--------------------------------------------------------'
+                print '# SrvID / FQDN: ' + server_id
+                print '--------------------------------------------------------'
 
             try:
                 if server_id.isdigit():
@@ -3093,9 +3114,11 @@ class pgbackman_cli(cmd.Cmd):
 
             pgsql_node_id = arg_list[0]
             
-            print '--------------------------------------------------------'
-            print '# NodeID / FQDN: ' + str(pgsql_node_id)
-            print '--------------------------------------------------------'
+            if self.output_format == 'table':
+
+                print '--------------------------------------------------------'
+                print '# NodeID / FQDN: ' + str(pgsql_node_id)
+                print '--------------------------------------------------------'
 
             try:
                 if pgsql_node_id.isdigit():

@@ -51,6 +51,9 @@ class pgbackman_db():
         self.conn = None
         self.server_version = None
         self.cur = None
+
+        self.output_format = 'table'
+
        
     # ############################################
     # Method pg_connect()
@@ -1313,23 +1316,36 @@ class pgbackman_db():
             
     def print_results_table(self,cur,colnames,left_columns):
         '''A function to print a table with sql results'''
-
-        x = PrettyTable(colnames)
-        x.padding_width = 1
         
-        for column in left_columns:
-            x.align[column] = "l"
+        if self.output_format == 'table':
         
-        for records in cur:
-            columns = []
-
-            for index in range(len(colnames)):
-                columns.append(records[index])
-
-            x.add_row(columns)
+            x = PrettyTable(colnames)
+            x.padding_width = 1
             
-        print x.get_string()
-        print
+            for column in left_columns:
+                x.align[column] = "l"
+        
+            for records in cur:
+                columns = []
+
+                for index in range(len(colnames)):
+                    columns.append(records[index])
+
+                x.add_row(columns)
+            
+            print x.get_string()
+            print
+
+        elif self.output_format == 'csv':
+            
+            for records in cur:
+                columns = []
+                
+                for index in range(len(colnames)):
+                    columns.append(str(records[index]))
+                    
+                print ','.join(columns)
+
 
     # ############################################
     # Method 
