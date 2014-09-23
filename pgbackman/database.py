@@ -24,7 +24,7 @@
 import sys
 import psycopg2
 import psycopg2.extensions
-from psycopg2.extras import wait_select
+import psycopg2.extras
 
 from pgbackman.prettytable import *
 
@@ -67,7 +67,7 @@ class pgbackman_db():
         
             if self.conn:
                 self.conn.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
-                wait_select(self.conn)
+                #psycopg2.extras.wait_select(self.conn)
 
                 self.cur = self.conn.cursor()
 
@@ -2791,5 +2791,56 @@ class pgbackman_db():
 
             self.pg_close()
 
+        except psycopg2.Error as e:
+            raise e
+
+
+    # ############################################
+    # Method 
+    # ############################################
+
+    def get_pgbackman_database_version(self):
+        """A function to get information of the pgbackman version installed in the database"""
+
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT registered,version,tag FROM pgbackman_version ORDER BY version DESC LIMIT 1')
+                    self.conn.commit()
+
+                    return self.cur
+                                        
+                except psycopg2.Error as e:
+                    raise e
+
+            self.pg_close()
+    
+        except psycopg2.Error as e:
+            raise e
+
+
+    # ############################################
+    # Method 
+    # ############################################
+
+    def run_sql_file(self,sqlfile):
+        """A function to run a sql file"""
+
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+                    self.cur.execute(open(sqlfile,'r').read())
+
+                    return 
+                                        
+                except psycopg2.Error as e:
+                    raise e
+
+            self.pg_close()
+    
         except psycopg2.Error as e:
             raise e

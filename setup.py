@@ -66,7 +66,7 @@ try:
     #
 
     setup(name='pgbackman',
-          version=pgbackman['__version__'],
+          version=pgbackman['__version__'].split(':')[1],
           description='PGBACKMAN - PostgreSQL Backup Manager',
           author='Rafael Martinez Guerrero',
           author_email='rafael@postgresql.org.es',
@@ -77,6 +77,7 @@ try:
                       ('/etc/pgbackman', ['etc/pgbackman.conf']),
                       ('/etc/logrotate.d', ['etc/pgbackman.logrotate']),
                       ('/usr/share/pgbackman/', ['sql/pgbackman.sql']),
+                      ('/usr/share/pgbackman/', ['sql/pgbackman_2.sql']),
                       ('/var/log/pgbackman',['README.md'])],
           install_requires=install_requires,
           platforms=['Linux'],

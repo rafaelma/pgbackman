@@ -45,6 +45,8 @@ if __name__ == '__main__':
 
         elif len(sys.argv) == 1:
             os.system('clear')
+
+            pgbackman_cli().check_pgbackman_database_version()
             pgbackman_cli().cmdloop()
         else:
             raise NotImplementedError
