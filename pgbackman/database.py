@@ -899,6 +899,33 @@ class pgbackman_db():
       
         except psycopg2.Error as e:
             raise e    
+
+
+    # ############################################
+    # Method 
+    # ############################################
+
+    def show_snapshots_in_progress(self):
+        """A function to get a list with snapshot jobs in progress"""
+
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+    
+                    self.cur.execute('SELECT \"SnapshotID\",\"Registered\",backup_server_id AS \"ID.\",\"Backup server\",pgsql_node_id AS \"ID\",\"PgSQL node\",\"DBname\",\"AT time\",\"Code\",\"Retention\",\"Status\" FROM show_snapshots_in_progress')
+                                     
+                    colnames = [desc[0] for desc in self.cur.description]
+                    self.print_results_table(self.cur,colnames,["Backup server","PgSQL node","DBname","AT time","Code"])
+            
+                except psycopg2.Error as e:
+                    raise e
+                
+            self.pg_close()
+    
+        except psycopg2.Error as e:
+            raise e
       
 
     # ############################################

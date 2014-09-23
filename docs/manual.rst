@@ -2018,6 +2018,27 @@ This command can be run with or without parameters. e.g.:
    +-------------+---------------------------+-----+-------------------------+----+-------------------------+-------------+--------------+------+-----------+---------------------------+---------+
 
 
+show_snapshots_in_progress
+--------------------------
+
+This command shows all snapshot jobs that are in progress and have not
+completed.  ::
+
+   show_snapshots_in_progress
+        
+This command can be run only without parameters. e.g.:
+	 
+::
+
+   [pgbackman]$ show_snapshots_in_progress
+   +-------------+---------------------------+-----+-------------------------+----+-------------------------+-----------+--------------+------+-----------+-------------+
+   |  SnapshotID |         Registered        | ID. | Backup server           | ID | PgSQL node              | DBname    | AT time      | Code | Retention |    Status   |
+   +-------------+---------------------------+-----+-------------------------+----+-------------------------+-----------+--------------+------+-----------+-------------+
+   | 00000000002 | 2014-09-22 21:09:25+00:00 |  2  | pg-backup01.example.net | 2  | pgbackmandb.example.net | pgbackman | 201409231314 | FULL |   7 days  | IN PROGRESS |
+   | 00000000005 | 2014-09-22 21:51:15+00:00 |  2  | pg-backup01.example.net | 2  | pgbackmandb.example.net | pgbackman | 201409231356 | FULL |   7 days  | IN PROGRESS |
+   +-------------+---------------------------+-----+-------------------------+----+-------------------------+-----------+--------------+------+-----------+-------------+
+
+
 
 update_backup_definition
 ------------------------
