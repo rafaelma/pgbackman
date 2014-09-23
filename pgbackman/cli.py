@@ -55,11 +55,12 @@ class pgbackman_cli(cmd.Cmd):
     def __init__(self):
         cmd.Cmd.__init__(self)
         
-        self.version = self.get_version()
+        self.software_version_tag = self.get_pgbackman_software_version_tag()
+        self.software_version_number = self.get_pgbackman_software_version_number()
 
-        self.intro =  '\n#############################################################\n' + \
-            'Welcome to the PostgreSQL Backup Manager shell (v.' + self.version + ')\n' + \
-            '#############################################################\n' + \
+        self.intro =  '\n####################################################################\n' + \
+            'Welcome to the PostgreSQL Backup Manager shell ver.' + self.software_version_tag + '\n' + \
+            '####################################################################\n' + \
             'Type help or \? to list commands.\n'
         
         self.prompt = '[pgbackman]$ '
@@ -2729,6 +2730,7 @@ class pgbackman_cli(cmd.Cmd):
             x.align['..'] = 'l'
             x.padding_width = 1
             
+            x.add_row(['Software version:','[' + str(self.software_version_number) + ']:' + str(self.software_version_tag).replace('.','_')])
             x.add_row(['Configuration file used:',self.conf.config_file])
             x.add_row(['',''])
             x.add_row(['PGBACKMAN DATABASE',''])
@@ -2738,6 +2740,11 @@ class pgbackman_cli(cmd.Cmd):
             x.add_row(['DBname:',self.conf.dbname])
             x.add_row(['DBuser:',self.conf.dbuser])
             x.add_row(['Connection retry interval:',str(self.conf.pg_connect_retry_interval) + ' sec.'])
+            x.add_row(['Database source dir:',str(self.conf.database_source_dir)])
+            x.add_row(['',''])
+            database_version = self.get_pgbackman_database_version_info()
+            x.add_row(['DB version installed:',str(database_version[0])])
+            x.add_row(['DB version:','[' + str(database_version[1]) + ']:' + str(database_version[2]).replace('v_','')])
             x.add_row(['',''])
             x.add_row(['PGBACKMAN_DUMP',''])
             x.add_row(['Temp directory:',self.conf.tmp_dir])
@@ -4589,18 +4596,190 @@ class pgbackman_cli(cmd.Cmd):
 
 
     # ############################################
-    # Method get_version
+    # Method get_pgbackman_software_version_tag
     # ############################################
 
-    def get_version(self):
-        '''Get pgbackman version'''
+    def get_pgbackman_software_version_tag(self):
+        '''Get pgbackman software version'''
         
         try:
-            return pgbackman.version.__version__
+            return pgbackman.version.__version__.split(':')[1]
 
         except Exception as e:
             return 'Unknown'
 
+
+    # ############################################
+    # Method get_pgbackman_software_version_number
+    # ############################################
+
+    def get_pgbackman_software_version_number(self):
+        '''Get pgbackman software version'''
+        
+        try:
+            return pgbackman.version.__version__.split(':')[0]
+
+        except Exception as e:
+            return 'Unknown'
+
+
+
+    # ############################################
+    # Method get_pgbackman_database_version
+    # ############################################
+
+    def get_pgbackman_database_version_info(self):
+        '''Get pgbackman database version'''
+        
+        try:
+            
+            for version in self.db.get_pgbackman_database_version():
+                return version
+                
+        except Exception as e:
+            print e
+            return 'Unknown' 
+
+
+    # ############################################
+    # Method check_pgbackman_database_version
+    # ############################################
+
+    def check_pgbackman_database_version(self):
+        '''Check pgbackman database version'''
+
+        ack_input = ''
+        software_version_tag = 'v_'+ self.software_version_tag.replace('.','_')
+        software_version_number = int(self.software_version_number)
+        database_version_tag = self.get_pgbackman_database_version_info()[2]
+        database_version_number = int(self.get_pgbackman_database_version_info()[1])
+                
+        if software_version_number > database_version_number:
+            
+            print '#################'
+            print 'A T T E N T I O N'
+            print '#################'
+            print
+
+            print 'The PgBackMan software version [' + str(software_version_number) + ':' + software_version_tag + '] is different from'
+            print 'the PgBackMan database version [' + str(database_version_number) + ':' + database_version_tag + '].'
+            print 
+            
+            self.logs.logger.error('PgBackMan software version %s is different from PgBackMan database version %s',
+                                   str(software_version_number) + ':' + software_version_tag,
+                                   str(database_version_number) + ':' + database_version_tag)
+
+            try:
+                while ack_input.lower() != 'yes' and ack_input.lower() != 'no':
+                    ack_input = raw_input('# Do you want to upgrade the PgBackMan database to version: [' + str(software_version_number) + ':' + software_version_tag + '] (yes/no): ')
+                    
+            except Exception as e:
+                sys.exit(1)
+            
+            if ack_input.lower() == 'yes':
+                self.update_pgbackman_database_version()
+                
+            elif ack_input.lower() == 'no':
+                print
+                print '[EXITING]: PgBackMan can not run with different PgBackMan software' 
+                print '           and PgBackMan database versions.' 
+                print 
+
+                self.logs.logger.info('Database upgrade not confirmed by the user. Exiting!')
+
+                sys.exit(1)
+
+        elif software_version_number < database_version_number:
+
+            print '#################'
+            print 'A T T E N T I O N'
+            print '#################'
+            print
+            
+            print 'The PgBackMan software version [' + str(software_version_number) + ':' + software_version_tag + '] is different from '
+            print 'the PgBackMan database version [' + str(database_version_number) + ':' + database_version_tag + '].'
+
+            self.logs.logger.error('PgBackMan software version %s is different from PgBackMan database version %s',
+                                   str(software_version_number) + ':' + software_version_tag,
+                                   str(database_version_number) + ':' + database_version_tag)
+
+            self.logs.logger.info('Upgrade PgBackMan software to version %s. Exiting!',database_version_tag )
+
+            print 
+            print '[EXITING]: PgBackMan can not run with different PgBackMan software' 
+            print '           and PgBackMan database versions.'
+            print '           Upgrade the PgBackMan software to version [' + str(database_version_number) + ':' + database_version_tag + '].'
+            print
+            
+            sys.exit(1)
+
+
+    # ############################################
+    # Method update_database_version
+    # ############################################
+
+    def update_pgbackman_database_version(self):
+        '''Update pgbackman database version'''
+
+        software_version_tag = 'v_'+ self.software_version_tag.replace('.','_')
+        software_version_number = int(self.software_version_number)
+        database_version_number = int(self.get_pgbackman_database_version_info()[1])
+        check_file_errors = 0
+
+        self.logs.logger.info('Upgrading the PgBackMan database')
+
+        print
+        print '############################'
+        print 'Upgrading PgBackMan database'
+        print '############################'
+        print
+        
+        for n in range(database_version_number+1,software_version_number+1):
+        
+            file = self.conf.database_source_dir + '/pgbackman_' + str(n) + '.sql'
+
+            if os.path.exists(file):
+                print '[OK]: File: ' + file + ' exists.'
+                self.logs.logger.info('File: %s exists',file)
+            
+            else:
+                print '[ERROR]: File: ' + file + ' does not exist.'
+                self.logs.logger.error('File: %s does not exist',file)
+                
+                check_file_errors = check_file_errors + 1
+                
+        if check_file_errors > 0:
+            print
+            print '[ABORTING]: Some database source files needed to upgrade do not exist.'
+            print
+
+            self.logs.logger.error('Aborting the PgBackMan database upgrade. Exiting!')
+            sys.exit(1)
+
+        elif check_file_errors == 0:
+            
+            print 
+
+            for n in range(database_version_number+1,software_version_number+1):
+
+                file = self.conf.database_source_dir + '/pgbackman_' + str(n) + '.sql'
+                
+                try:
+                    self.db.run_sql_file(file)
+
+                    print '[OK]: File ' + file + ' installed.' 
+                    self.logs.logger.info('File: %s installed',file)
+
+                except Exception as e:
+                    print '[ERROR]: Problems upgrading to: ' + file
+                    print 'Exception: ' + str(e)
+                    print
+
+                    self.logs.logger.error('Problems upgrading to: %s - %s',file,e)
+                    self.logs.logger.error('Aborting the PgBackMan database upgrade. Exiting!')
+                    sys.exit(1)
+                    
+            self.logs.logger.info('PgBackMan upgraded to version %s',str(software_version_number) + ':' + software_version_tag)
 
 if __name__ == '__main__':
 
