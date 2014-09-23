@@ -67,7 +67,7 @@ class pgbackman_db():
         
             if self.conn:
                 self.conn.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
-                #psycopg2.extras.wait_select(self.conn)
+                psycopg2.extras.wait_select(self.conn)
 
                 self.cur = self.conn.cursor()
 

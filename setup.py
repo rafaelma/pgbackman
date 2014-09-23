@@ -41,7 +41,7 @@ try:
     if sys.version_info < (2, 6):
         raise SystemExit('ERROR: pgbackman needs at least python 2.6 to work')
     else:
-        install_requires = ['psycopg2','argparse']
+        install_requires = ['psycopg2>=2.4.0','argparse']
 
     #
     # Check linux distribution and define init script

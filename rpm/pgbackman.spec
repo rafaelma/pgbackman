@@ -21,7 +21,7 @@ Url:            http://www.pgbackman.org/
 Source0:        %{name}-%{version}.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-buildroot-%(%{__id_u} -n)
 BuildArch:      noarch
-Requires:       python-psycopg2 python-argparse at cronie python-setuptools shadow-utils logrotate
+Requires:       python-psycopg2 >= 2.4.0, python-argparse, at, cronie, python-setuptools, shadow-utils, logrotate
 
 %description 
 PgBackMan is a tool for managing PostgreSQL logical backups created
