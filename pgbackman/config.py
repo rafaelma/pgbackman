@@ -42,12 +42,13 @@ class configuration():
         # pgbackman database section
         self.dbhost = ''
         self.dbhostaddr = ''
-        self.dbport = ''
+        self.dbport = '5432'
         self.dbname = 'pgbackman'
         self.dbuser = 'pgbackman_role_rw'
         self.dbpassword = ''
         self.dsn = ''
         self.pg_connect_retry_interval = 10
+        self.database_source_dir = '/usr/share/pgbackman'
 
         # pgbackman_dump section
         self.tmp_dir = '/tmp'
@@ -118,6 +119,9 @@ class configuration():
             if config.has_option('pgbackman_database','pg_connect_retry_interval'):
                 self.pg_connect_retry_interval = int(config.get('pgbackman_database','pg_connect_retry_interval'))
               
+            if config.has_option('pgbackman_database','database_source_dir'):
+                self.database_source_dir = config.get('pgbackman_database','database_source_dir')
+
             # pgbackman_dump section
             if config.has_option('pgbackman_dump','tmp_dir'):
                 self.tmp_dir = config.get('pgbackman_dump','tmp_dir')
