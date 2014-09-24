@@ -2740,8 +2740,8 @@ class pgbackman_cli(cmd.Cmd):
             x.add_row(['DBname:',self.conf.dbname])
             x.add_row(['DBuser:',self.conf.dbuser])
             x.add_row(['Connection retry interval:',str(self.conf.pg_connect_retry_interval) + ' sec.'])
-            x.add_row(['Database source dir:',str(self.conf.database_source_dir)])
             x.add_row(['',''])
+            x.add_row(['Database source dir:',str(self.conf.database_source_dir)])
             database_version = self.get_pgbackman_database_version_info()
             x.add_row(['DB version installed:',str(database_version[0])])
             x.add_row(['DB version:','[' + str(database_version[1]) + ']:' + str(database_version[2]).replace('v_','')])
@@ -3583,6 +3583,7 @@ class pgbackman_cli(cmd.Cmd):
                                  [backup code]
                                  [retention period]
                                  [retention redundancy]
+                                 [automatic deletion retention]
                                  [extra backup parameters]
                                  [extra restore parameters]
                                  [backup job status]
@@ -3642,6 +3643,7 @@ class pgbackman_cli(cmd.Cmd):
                 backup_code_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'backup_code')
                 retention_period_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'retention_period')
                 retention_redundancy_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'retention_redundancy')
+                automatic_deletion_retention_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'automatic_deletion_retention')
                 extra_backup_parameters_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'extra_backup_parameters')
                 extra_restore_parameters_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'extra_restore_parameters')
                 backup_job_status_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'backup_job_status')
@@ -3669,6 +3671,7 @@ class pgbackman_cli(cmd.Cmd):
                 backup_code = raw_input('# Backup code [' + backup_code_default + ']: ').strip()
                 retention_period = raw_input('# Retention period [' + retention_period_default + ']: ').strip()
                 retention_redundancy = raw_input('# Retention redundancy [' + retention_redundancy_default + ']: ').strip()
+                automatic_deletion_retention = raw_input('# Automatic deletion retention [' + automatic_deletion_retention_default + ']: ').strip()
                 extra_backup_parameters = raw_input('# Extra backup parameters [' + extra_backup_parameters_default + ']: ').strip()
                 extra_restore_parameters = raw_input('# Extra restore parameters [' + extra_restore_parameters_default + ']: ').strip()
                 backup_job_status = raw_input('# Backup Job status [' + backup_job_status_default + ']: ').strip()
@@ -3729,6 +3732,9 @@ class pgbackman_cli(cmd.Cmd):
             if retention_redundancy == '':
                 retention_redundancy = retention_redundancy_default
 
+            if automatic_deletion_retention == '':
+                automatic_deletion_retention = automatic_deletion_retention_default
+
             if extra_backup_parameters == '':
                 extra_backup_parameters = extra_backup_parameters_default
 
@@ -3771,8 +3777,10 @@ class pgbackman_cli(cmd.Cmd):
                 try:
                     self.db.update_pgsql_node_config(pgsql_node_id,backup_minutes_interval.strip(),backup_hours_interval.strip(),backup_weekday_cron.strip(),
                                                      backup_month_cron.strip(),backup_day_month_cron.strip(),backup_code.strip().upper(),retention_period.strip(),
-                                                     retention_redundancy.strip(),extra_backup_parameters.strip(),extra_restore_parameters.strip(),backup_job_status.strip().upper(),domain.strip(),
-                                                     logs_email.strip(),admin_user.strip(),pgport,pgnode_backup_partition.strip(),pgnode_crontab_file.strip(),pgsql_node_status.strip().upper())
+                                                     retention_redundancy.strip(),automatic_deletion_retention.strip(),extra_backup_parameters.strip(),
+                                                     extra_restore_parameters.strip(),backup_job_status.strip().upper(),domain.strip(),logs_email.strip(),
+                                                     admin_user.strip(),pgport,pgnode_backup_partition.strip(),pgnode_crontab_file.strip(),pgsql_node_status.strip().upper())
+
                     print '\n[Done] Configuration parameters for NodeID: ' + str(pgsql_node_id) + ' updated.\n'
 
                 except Exception as e:
@@ -3785,7 +3793,7 @@ class pgbackman_cli(cmd.Cmd):
         # Command with parameters
         #
                 
-        elif len(arg_list) == 19:
+        elif len(arg_list) == 20:
             
             pgsql_node = arg_list[0]
 
@@ -3810,6 +3818,7 @@ class pgbackman_cli(cmd.Cmd):
                 backup_code_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'backup_code')
                 retention_period_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'retention_period')
                 retention_redundancy_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'retention_redundancy')
+                automatic_deletion_retention_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'automatic_deletion_retention')
                 extra_backup_parameters_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'extra_backup_parameters')
                 extra_restore_parameters_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'extra_restore_parameters')
                 backup_job_status_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'backup_job_status')
@@ -3837,14 +3846,15 @@ class pgbackman_cli(cmd.Cmd):
             retention_redundancy = arg_list[8]
             extra_backup_parameters = arg_list[9]
             extra_restore_parameters = arg_list[10]
-            backup_job_status = arg_list[11]
-            domain = arg_list[12]
-            logs_email = arg_list[13]
-            admin_user = arg_list[14]
-            pgport = arg_list[15]
-            pgnode_backup_partition = arg_list[16]
-            pgnode_crontab_file = arg_list[17]
-            pgsql_node_status = arg_list[18]
+            automatic_deletion_retention  = arg_list[11]
+            backup_job_status = arg_list[12]
+            domain = arg_list[13]
+            logs_email = arg_list[14]
+            admin_user = arg_list[15]
+            pgport = arg_list[16]
+            pgnode_backup_partition = arg_list[17]
+            pgnode_crontab_file = arg_list[18]
+            pgsql_node_status = arg_list[19]
 
             if backup_minutes_interval != '':
                 if not self.check_minutes_interval(backup_minutes_interval):
@@ -3881,6 +3891,9 @@ class pgbackman_cli(cmd.Cmd):
 
             if retention_redundancy == '':
                 retention_redundancy = retention_redundancy_default
+
+            if automatic_deletion_retention == '':
+                automatic_deletion_retention = automatic_deletion_retention_default
 
             if extra_backup_parameters == '':
                 extra_backup_parameters = extra_backup_parameters_default
@@ -3923,8 +3936,10 @@ class pgbackman_cli(cmd.Cmd):
             try:
                 self.db.update_pgsql_node_config(pgsql_node_id,backup_minutes_interval.strip(),backup_hours_interval.strip(),backup_weekday_cron.strip(),
                                                  backup_month_cron.strip(),backup_day_month_cron.strip(),backup_code.strip().upper(),retention_period.strip(),
-                                                 retention_redundancy.strip(),extra_backup_parameters.strip(),extra_restore_parameters.strip(),backup_job_status.strip().upper(),domain.strip(),
-                                                 logs_email.strip(),admin_user.strip(),pgport,pgnode_backup_partition.strip(),pgnode_crontab_file.strip(),pgsql_node_status.strip().upper())
+                                                 retention_redundancy.strip(),automatic_deletion_retention.strip(),extra_backup_parameters.strip(),
+                                                 extra_restore_parameters.strip(),backup_job_status.strip().upper(),domain.strip(),logs_email.strip(),
+                                                 admin_user.strip(),pgport,pgnode_backup_partition.strip(),pgnode_crontab_file.strip(),pgsql_node_status.strip().upper())
+                
                 print '\n[Done] Configuration parameters for NodeID: ' + str(pgsql_node_id) + ' updated.\n'
 
             except Exception as e:

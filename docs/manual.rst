@@ -1721,34 +1721,34 @@ This command can be run with or without parameters. e.g.:
 
 ::
 
-   [pgbackman]$ show_pgsql_node_config 1
+   [pgbackman]$ show_pgsql_node_config 5
    --------------------------------------------------------
-   # NodeID / FQDN: 1
+   # NodeID / FQDN: 5
    --------------------------------------------------------
-   +--------------------------+-----------------------------+------------------------------------------------------+
-   | Parameter                | Value                       | Description                                          |
-   +--------------------------+-----------------------------+------------------------------------------------------+
-   | admin_user               | postgres                    | postgreSQL admin user                                |
-   | backup_code              | FULL                        | Backup job code                                      |
-   | backup_day_month_cron    | *                           | Backup day_month cron default                        |
-   | backup_hours_interval    | 01-06                       | Backup hours interval                                |
-   | backup_job_status        | ACTIVE                      | Backup job status                                    |
-   | backup_minutes_interval  | 01-59                       | Backup minutes interval                              |
-   | backup_month_cron        | *                           | Backup month cron default                            |
-   | backup_weekday_cron      | *                           | Backup weekday cron default                          |
-   | domain                   | example.org                 | Default domain                                       |
-   | encryption               | false                       | GnuPG encryption - *Not used*                        |
-   | extra_backup_parameters  |                             | Extra backup parameters                              |
-   | extra_restore_parameters |                             | Extra restore parameters                             |
-   | logs_email               | example@example.org         | E-mail to send logs                                  |
-   | pgnode_backup_partition  | /srv/pgbackman/pgsql_node_1 | Partition to save pgbackman information for a pgnode |
-   | pgnode_crontab_file      | /etc/cron.d/pgsql_node_1    | Crontab file for pgnode in the backup server         |
-   | pgport                   | 5432                        | postgreSQL port                                      |
-   | pgsql_node_status        | STOPPED                     | pgsql node status                                    |
-   | retention_period         | 7 days                      | Retention period for a backup job                    |
-   | retention_redundancy     | 1                           | Retention redundancy for a backup job                |
-   +--------------------------+-----------------------------+------------------------------------------------------+
-
+   +------------------------------+-----------------------------+-----------------------------------------------------------+
+   | Parameter                    | Value                       | Description                                               |
+   +------------------------------+-----------------------------+-----------------------------------------------------------+
+   | admin_user                   | postgres                    | postgreSQL admin user                                     |
+   | automatic_deletion_retention | 14 days                     | Retention after automatic deletion of a backup definition |
+   | backup_code                  | FULL                        | Backup job code                                           |
+   | backup_day_month_cron        | *                           | Backup day_month cron default                             |
+   | backup_hours_interval        | 01-06                       | Backup hours interval                                     |
+   | backup_job_status            | ACTIVE                      | Backup job status                                         |
+   | backup_minutes_interval      | 01-59                       | Backup minutes interval                                   |
+   | backup_month_cron            | *                           | Backup month cron default                                 |
+   | backup_weekday_cron          | *                           | Backup weekday cron default                               |
+   | domain                       | example.org                 | Default domain                                            |
+   | encryption                   | false                       | GnuPG encryption - *Not used*                             |
+   | extra_backup_parameters      |                             | Extra backup parameters                                   |
+   | extra_restore_parameters     |                             | Extra restore parameters                                  |
+   | logs_email                   | example@example.org         | E-mail to send logs                                       |
+   | pgnode_backup_partition      | /srv/pgbackman/pgsql_node_5 | Partition to save pgbackman information for a pgnode      |
+   | pgnode_crontab_file          | /etc/cron.d/pgsql_node_5    | Crontab file for pgnode in the backup server              |
+   | pgport                       | 5432                        | postgreSQL port                                           |
+   | pgsql_node_status            | STOPPED                     | pgsql node status                                         |
+   | retention_period             | 7 days                      | Retention period for a backup job                         |
+   | retention_redundancy         | 1                           | Retention redundancy for a backup job                     |
+   +------------------------------+-----------------------------+-----------------------------------------------------------+
 
 
 show_pgsql_node_stats
@@ -2277,7 +2277,8 @@ node.
 			    [backup code]
 			    [retention period]
                             [retention redundancy]
-                            [extra backup parameters]
+			    [automatic deletion retention]
+			    [extra backup parameters]
 			    [extra restore parameters]
                             [backup job status]
                             [domain]
@@ -2300,6 +2301,9 @@ Parameters:
 * **[backup code]:** Backup job code
 * **[retention period]:** Retention period for a backup job
 * **[retention redundancy]:** Retention redundancy for a backup job
+* **[automatic deletion retention]:** Retention period that backups
+  for a dbname will be keep in the catalog after the dbname has been
+  deleted in a PgSQL node
 * **[extra backup parameters]:** Extra backup parameters
 * **[extra restore parameters]:** Extra restore parameters
 * **[backup job status]:** Backup job status
@@ -2332,6 +2336,7 @@ used. This command can be run with or without parameters. e.g:
    # Backup code [FULL]: 
    # Retention period [7 days]: 5 days
    # Retention redundancy [1]: 
+   # Automatic deletion retention [14 days]: 30 days
    # Extra backup parameters []: 
    # Extra restore parameters []: 
    # Backup Job status [ACTIVE]: 

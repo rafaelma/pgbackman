@@ -2299,7 +2299,7 @@ class pgbackman_db():
     # ############################################
                       
     def update_pgsql_node_config(self,pgsql_node_id,backup_minutes_interval,backup_hours_interval,backup_weekday_cron,
-                                 backup_month_cron,backup_day_month_cron,backup_code,retention_period,retention_redundancy,
+                                 backup_month_cron,backup_day_month_cron,backup_code,retention_period,retention_redundancy,automatic_deletion_retention,
                                  extra_backup_parameters,extra_restore_parameters,backup_job_status,domain,logs_email,admin_user,pgport,pgnode_backup_partition,
                                  pgnode_crontab_file,pgsql_node_status):
         """A function to update the configuration of a pgsql node"""
@@ -2309,25 +2309,26 @@ class pgbackman_db():
 
             if self.cur:
                 try:
-                    self.cur.execute('SELECT update_pgsql_node_config(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',(pgsql_node_id,
-                                                                                                                                  backup_minutes_interval,
-                                                                                                                                  backup_hours_interval,
-                                                                                                                                  backup_weekday_cron,
-                                                                                                                                  backup_month_cron,
-                                                                                                                                  backup_day_month_cron,
-                                                                                                                                  backup_code,
-                                                                                                                                  retention_period,
-                                                                                                                                  retention_redundancy,
-                                                                                                                                  extra_backup_parameters,
-                                                                                                                                  extra_restore_parameters,
-                                                                                                                                  backup_job_status,
-                                                                                                                                  domain,
-                                                                                                                                  logs_email,
-                                                                                                                                  admin_user,
-                                                                                                                                  pgport,
-                                                                                                                                  pgnode_backup_partition,
-                                                                                                                                  pgnode_crontab_file,
-                                                                                                                                  pgsql_node_status))
+                    self.cur.execute('SELECT update_pgsql_node_config(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',(pgsql_node_id,
+                                                                                                                                     backup_minutes_interval,
+                                                                                                                                     backup_hours_interval,
+                                                                                                                                     backup_weekday_cron,
+                                                                                                                                     backup_month_cron,
+                                                                                                                                     backup_day_month_cron,
+                                                                                                                                     backup_code,
+                                                                                                                                     retention_period,
+                                                                                                                                     retention_redundancy,
+                                                                                                                                     automatic_deletion_retention,
+                                                                                                                                     extra_backup_parameters,
+                                                                                                                                     extra_restore_parameters,
+                                                                                                                                     backup_job_status,
+                                                                                                                                     domain,
+                                                                                                                                     logs_email,
+                                                                                                                                     admin_user,
+                                                                                                                                     pgport,
+                                                                                                                                     pgnode_backup_partition,
+                                                                                                                                     pgnode_crontab_file,
+                                                                                                                                     pgsql_node_status))
                     
                     self.conn.commit()                        
               

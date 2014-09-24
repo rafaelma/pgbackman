@@ -835,6 +835,7 @@ INSERT INTO backup_code (code,description) VALUES ('CONFIG','Backup of the confi
 
 INSERT INTO job_definition_status (code,description) VALUES ('ACTIVE','Backup job activated and in production');
 INSERT INTO job_definition_status (code,description) VALUES ('STOPPED','Backup job stopped');
+INSERT INTO job_definition_status (code,description) VALUES ('DELETED','Backup job automatically deleted after dbname has been deleted in a PgSQL node ');
 
 \echo '# [Init: at_definition_status]\n'
 
@@ -891,6 +892,8 @@ INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('bac
 INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('extra_backup_parameters','','Extra backup parameters');
 INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('extra_restore_parameters','','Extra restore parameters');
 INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('logs_email','example@example.org','E-mail to send logs');
+INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('automatic_deletion_retention','14 days','Retention after automatic deletion of a backup definition');
+
 
 \echo '# [Update: pgbackman_version]\n'
 
@@ -1671,7 +1674,7 @@ ALTER FUNCTION update_pgsql_node(INTEGER,INTEGER,TEXT,TEXT,TEXT) OWNER TO pgback
 --
 -- ------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION update_pgsql_node_config(INTEGER,TEXT,TEXT,TEXT,TEXT,TEXT,TEXT,INTERVAL,INTEGER,TEXT,TEXT,TEXT,TEXT,TEXT,TEXT,INTEGER,TEXT,TEXT,TEXT) RETURNS VOID
+CREATE OR REPLACE FUNCTION update_pgsql_node_config(INTEGER,TEXT,TEXT,TEXT,TEXT,TEXT,TEXT,INTERVAL,INTEGER,INTERVAL,TEXT,TEXT,TEXT,TEXT,TEXT,TEXT,INTEGER,TEXT,TEXT,TEXT) RETURNS VOID
  LANGUAGE plpgsql 
  SECURITY INVOKER 
  SET search_path = public, pg_temp
@@ -1686,16 +1689,17 @@ CREATE OR REPLACE FUNCTION update_pgsql_node_config(INTEGER,TEXT,TEXT,TEXT,TEXT,
   backup_code_ ALIAS FOR $7;
   retention_period_ ALIAS FOR $8;
   retention_redundancy_ ALIAS FOR $9;
-  extra_backup_parameters_ ALIAS FOR $10;
-  extra_restore_parameters_ ALIAS FOR $11;
-  backup_job_status_ ALIAS FOR $12;
-  domain_ ALIAS FOR $13;
-  logs_email_ ALIAS FOR $14;
-  admin_user_ ALIAS FOR $15;
-  pgport_ ALIAS FOR $16;
-  pgnode_backup_partition_ ALIAS FOR $17;
-  pgnode_crontab_file_ ALIAS FOR $18;
-  pgsql_node_status_ ALIAS FOR $19;
+  automatic_deletion_retention_ ALIAS FOR $10;
+  extra_backup_parameters_ ALIAS FOR $11;
+  extra_restore_parameters_ ALIAS FOR $12;
+  backup_job_status_ ALIAS FOR $13;
+  domain_ ALIAS FOR $14;
+  logs_email_ ALIAS FOR $15;
+  admin_user_ ALIAS FOR $16;
+  pgport_ ALIAS FOR $17;
+  pgnode_backup_partition_ ALIAS FOR $18;
+  pgnode_crontab_file_ ALIAS FOR $19;
+  pgsql_node_status_ ALIAS FOR $20;
 
   node_cnt INTEGER;
   v_msg     TEXT;
@@ -1738,6 +1742,10 @@ CREATE OR REPLACE FUNCTION update_pgsql_node_config(INTEGER,TEXT,TEXT,TEXT,TEXT,
     EXECUTE 'UPDATE pgsql_node_config SET value = $2 WHERE node_id = $1 AND parameter = ''retention_redundancy'''
      USING pgsql_node_id_,
      	   retention_redundancy_;
+
+    EXECUTE 'UPDATE pgsql_node_config SET value = $2 WHERE node_id = $1 AND parameter = ''automatic_deletion_retention'''
+     USING pgsql_node_id_,
+     	   automatic_deletion_retention_;				
 
     EXECUTE 'UPDATE pgsql_node_config SET value = $2 WHERE node_id = $1 AND parameter = ''extra_backup_parameters'''
      USING pgsql_node_id_,
@@ -1792,7 +1800,7 @@ CREATE OR REPLACE FUNCTION update_pgsql_node_config(INTEGER,TEXT,TEXT,TEXT,TEXT,
   END;
 $$;
 
-ALTER FUNCTION update_pgsql_node_config(INTEGER,TEXT,TEXT,TEXT,TEXT,TEXT,TEXT,INTERVAL,INTEGER,TEXT,TEXT,TEXT,TEXT,TEXT,TEXT,INTEGER,TEXT,TEXT,TEXT) OWNER TO pgbackman_role_rw;
+ALTER FUNCTION update_pgsql_node_config(INTEGER,TEXT,TEXT,TEXT,TEXT,TEXT,TEXT,INTERVAL,INTEGER,INTERVAL,TEXT,TEXT,TEXT,TEXT,TEXT,TEXT,INTEGER,TEXT,TEXT,TEXT) OWNER TO pgbackman_role_rw;
 
 -- ------------------------------------------------------------
 -- Function: update_backup_server_config()
