@@ -2030,14 +2030,16 @@ This command can be run only without parameters. e.g.:
 	 
 ::
 
-   [pgbackman]$ show_snapshots_in_progress
-   +-------------+---------------------------+-----+-------------------------+----+-------------------------+-----------+--------------+------+-----------+-------------+
-   |  SnapshotID |         Registered        | ID. | Backup server           | ID | PgSQL node              | DBname    | AT time      | Code | Retention |    Status   |
-   +-------------+---------------------------+-----+-------------------------+----+-------------------------+-----------+--------------+------+-----------+-------------+
-   | 00000000002 | 2014-09-22 21:09:25+00:00 |  2  | pg-backup01.example.net | 2  | pgbackmandb.example.net | pgbackman | 201409231314 | FULL |   7 days  | IN PROGRESS |
-   | 00000000005 | 2014-09-22 21:51:15+00:00 |  2  | pg-backup01.example.net | 2  | pgbackmandb.example.net | pgbackman | 201409231356 | FULL |   7 days  | IN PROGRESS |
-   +-------------+---------------------------+-----+-------------------------+----+-------------------------+-----------+--------------+------+-----------+-------------+
-
+   pgbackman]$ show_snapshots_in_progress
+   +-------------+---------------------------+-----+-------------------------+----+-------------------------+-----------+---------------------+------+--------------+-------------+
+   |  SnapshotID |         Registered        | ID. | Backup server           | ID | PgSQL node              | DBname    | AT time             | Code | Elapsed time |    Status   |
+   +-------------+---------------------------+-----+-------------------------+----+-------------------------+-----------+---------------------+------+--------------+-------------+
+   | 00000000002 | 2014-09-22 21:09:25+00:00 |  2  | pg-backup01.example.net | 2  | pgbackmandb.example.net | pgbackman | 2014-09-23 13:14:06 | FULL |   17:56:58   | IN PROGRESS |
+   | 00000000007 | 2014-09-22 22:17:07+00:00 |  2  | pg-backup01.example.net | 2  | pgbackmandb.example.net | postgres  | 2014-09-24 06:30:06 | FULL |   00:40:58   | IN PROGRESS |
+   | 00000000008 | 2014-09-22 22:17:25+00:00 |  2  | pg-backup01.example.net | 2  | pgbackmandb.example.net | pgbackman | 2014-09-24 06:30:24 | FULL |   00:40:39   | IN PROGRESS |
+   | 00000000009 | 2014-09-24 06:45:43+00:00 |  2  | pg-backup01.example.net | 2  | pgbackmandb.example.net | pgbackman | 2014-09-25 00:00:00 | FULL |  -16:48:55   | IN PROGRESS |
+   | 00000000010 | 2014-09-24 07:05:16+00:00 |  2  | pg-backup01.example.net | 2  | pgbackmandb.example.net | pgbackman | 2014-09-25 01:00:00 | FULL |  -17:48:55   | IN PROGRESS |
+   +-------------+---------------------------+-----+-------------------------+----+-------------------------+-----------+---------------------+------+--------------+-------------+
 
 
 update_backup_definition
