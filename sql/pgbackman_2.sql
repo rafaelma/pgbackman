@@ -22,8 +22,7 @@ CREATE OR REPLACE VIEW show_snapshots_in_progress AS
        	  a.dbname AS "DBname",
        	  to_char(a.at_time, 'YYYY-MM-DD HH24:MI:SS'::text) AS "AT time",
        	  a.backup_code AS "Code",
-       	  date_trunc('second',now()-a.at_time)::text AS "Elapsed time",
-       	  'IN PROGRESS'::text AS "Status"
+       	  date_trunc('second',now()-a.at_time)::text AS "Elapsed time"
    FROM snapshot_definition a
    LEFT JOIN backup_catalog b
    ON a.snapshot_id = b.snapshot_id 

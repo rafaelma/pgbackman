@@ -914,7 +914,7 @@ class pgbackman_db():
             if self.cur:
                 try:
     
-                    self.cur.execute('SELECT \"SnapshotID\",\"Registered\",backup_server_id AS \"ID.\",\"Backup server\",pgsql_node_id AS \"ID\",\"PgSQL node\",\"DBname\",\"AT time\",\"Code\",\"Elapsed time\",\"Status\" FROM show_snapshots_in_progress')
+                    self.cur.execute('SELECT \"SnapshotID\",\"Registered\",backup_server_id AS \"ID.\",\"Backup server\",pgsql_node_id AS \"ID\",\"PgSQL node\",\"DBname\",\"AT time\",\"Code\",\"Elapsed time\" FROM show_snapshots_in_progress')
                                      
                     colnames = [desc[0] for desc in self.cur.description]
                     self.print_results_table(self.cur,colnames,["Backup server","PgSQL node","DBname","AT time","Code"])
