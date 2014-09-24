@@ -932,6 +932,33 @@ class pgbackman_db():
     # Method 
     # ############################################
 
+    def show_restores_in_progress(self):
+        """A function to get a list with restores jobs in progress"""
+
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+    
+                    self.cur.execute('SELECT \"RestoreDef\",\"Registered\",\"BckID\",backup_server_id AS \"ID.\",\"Backup server\",target_pgsql_node_id AS \"ID\",\"Target PgSQL node\",\"Target DBname\",\"AT time\",\"Elapsed time\" FROM show_restores_in_progress')
+                                     
+                    colnames = [desc[0] for desc in self.cur.description]
+                    self.print_results_table(self.cur,colnames,["Backup server","Target PgSQL node","Target DBname","AT time"])
+            
+                except psycopg2.Error as e:
+                    raise e
+                
+            self.pg_close()
+    
+        except psycopg2.Error as e:
+            raise e
+      
+
+    # ############################################
+    # Method 
+    # ############################################
+
     def get_default_backup_server_parameter(self,param):
         """A function to get the default value of a configuration parameter"""
 

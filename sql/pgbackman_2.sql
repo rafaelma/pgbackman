@@ -31,6 +31,26 @@ CREATE OR REPLACE VIEW show_snapshots_in_progress AS
 
 ALTER VIEW show_snapshots_in_progress OWNER TO pgbackman_role_rw;
 
+CREATE OR REPLACE VIEW show_restores_in_progress AS
+   SELECT lpad(a.restore_def::text, 11, '0'::text) AS "RestoreDef",
+   	  date_trunc('seconds'::text, a.registered) AS "Registered",
+	  a.bck_id AS "BckID",
+       	  a.backup_server_id,
+       	  get_backup_server_fqdn(a.backup_server_id) AS "Backup server",
+       	  a.target_pgsql_node_id,
+       	  get_pgsql_node_fqdn(a.target_pgsql_node_id) AS "Target PgSQL node",
+       	  a.target_dbname AS "Target DBname",
+       	  to_char(a.at_time, 'YYYY-MM-DD HH24:MI:SS'::text) AS "AT time",
+       	  date_trunc('second',now()-a.at_time)::text AS "Elapsed time"
+   FROM restore_definition a
+   LEFT JOIN restore_catalog b
+   ON a.restore_def = b.restore_def 
+   WHERE b.restore_def IS NULL
+   ORDER BY a.at_time ASC;
+
+ALTER VIEW show_restores_in_progress OWNER TO pgbackman_role_rw;
+
+
 INSERT INTO pgbackman_version (version,tag) VALUES ('2','v_1_1_0');
 
 COMMIT;

@@ -3171,7 +3171,7 @@ class pgbackman_cli(cmd.Cmd):
 
 
     # ############################################
-    # Method do_show_snapshot_definitions
+    # Method do_show_snapshot_in_progress
     # ############################################
 
     def do_show_snapshots_in_progress(self,args):
@@ -3212,6 +3212,50 @@ class pgbackman_cli(cmd.Cmd):
         else:
             print '\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n'
         
+
+    # ############################################
+    # Method do_show_restores_in_progress
+    # ############################################
+
+    def do_show_restores_in_progress(self,args):
+        '''
+        DESCRIPTION:
+
+        This command shows all restore jobs in progress.
+
+        COMMAND:
+        show_restores_in_progress
+
+        '''
+
+        try: 
+            arg_list = shlex.split(args)
+            
+        except ValueError as e:
+            print '\n[ERROR]: ',e,'\n'
+            return False
+
+        #
+        # Command without parameters
+        #
+        
+        if len(arg_list) == 0:
+                 
+            try:
+                self.db.show_restores_in_progress()
+                                                    
+            except Exception as e:
+                print '\n[ERROR]: ',e
+
+                
+        #
+        # Command with the wrong number of parameters
+        #
+
+        else:
+            print '\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n'
+        
+
 
     # ############################################
     # Method do_update_backup_server

@@ -563,24 +563,25 @@ programa ``/usr/bin/pgbackman``
 
    Documented commands (type help <topic>):
    ========================================
-   EOF                              show_backup_servers        
-   clear                            show_empty_backup_catalogs 
-   delete_backup_definition_dbname  show_history               
-   delete_backup_definition_id      show_jobs_queue            
-   delete_backup_server             show_pgbackman_config      
-   delete_pgsql_node                show_pgbackman_stats       
-   quit                             show_pgsql_node_config     
-   register_backup_definition       show_pgsql_node_stats      
-   register_backup_server           show_pgsql_nodes           
-   register_pgsql_node              show_restore_catalog       
-   register_restore_definition      show_restore_definitions   
-   register_snapshot_definition     show_restore_details       
+   EOF                              show_empty_backup_catalogs 
+   clear                            show_history               
+   delete_backup_definition_dbname  show_jobs_queue            
+   delete_backup_definition_id      show_pgbackman_config      
+   delete_backup_server             show_pgbackman_stats       
+   delete_pgsql_node                show_pgsql_node_config     
+   quit                             show_pgsql_node_stats      
+   register_backup_definition       show_pgsql_nodes           
+   register_backup_server           show_restore_catalog       
+   register_pgsql_node              show_restore_definitions   
+   register_restore_definition      show_restore_details       
+   register_snapshot_definition     show_restores_in_progress  
    shell                            show_snapshot_definitions  
-   show_backup_catalog              update_backup_definition   
-   show_backup_definitions          update_backup_server       
-   show_backup_details              update_backup_server_config
-   show_backup_server_config        update_pgsql_node          
-   show_backup_server_stats         update_pgsql_node_config   
+   show_backup_catalog              show_snapshots_in_progress 
+   show_backup_definitions          update_backup_definition   
+   show_backup_details              update_backup_server       
+   show_backup_server_config        update_backup_server_config
+   show_backup_server_stats         update_pgsql_node          
+   show_backup_servers              update_pgsql_node_config   
 
    Miscellaneous help topics:
    ==========================
@@ -2076,6 +2077,26 @@ Este comando se puede ejecutar con o sin parámetros, e.g.:
    +------------------------------+---------------------------------------------------------------------------------------------+
 
 
+show_restores_in_progress
+--------------------------
+
+Este comando muestra todos los procesos de restauración de datos que
+están en curso y que no se han completado todavia. ::
+
+   show_restores_in_progress
+        
+Este comando se puede ejecutar solamente sin parámetros, e.g.:
+	 
+::
+
+   [pgbackman]$ show_restores_in_progress
+   +-------------+---------------------------+-------+-----+-------------------------+----+-------------------------+----------------+---------------------+--------------+
+   |  RestoreDef |         Registered        | BckID | ID. | Backup server           | ID | Target PgSQL node       | Target DBname  | AT time             | Elapsed time |
+   +-------------+---------------------------+-------+-----+-------------------------+----+-------------------------+----------------+---------------------+--------------+
+   | 00000000001 | 2014-09-24 07:37:21+00:00 |   6   |  2  | pg-backup01.example.net | 2  | pgbackmandb.example.net | pgbackman_test | 2014-09-24 07:37:49 |   00:07:28   |
+   +-------------+---------------------------+-------+-----+-------------------------+----+-------------------------+----------------+---------------------+--------------+
+
+
 show_snapshot_definitions
 -------------------------
 
@@ -2141,7 +2162,7 @@ show_snapshots_in_progress
 --------------------------
 
 Este comando muestra todas las copias de seguridad de tipo snapshot
-que están en curso y no se han completado todavia. ::
+que están en curso y que no se han completado todavia. ::
 
    show_snapshots_in_progress
         
