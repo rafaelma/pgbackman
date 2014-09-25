@@ -3,7 +3,7 @@ PgBackMan - PostgreSQL Backup Manager
 =====================================
 
 |
-| Version-1.0.0
+| Version-1.1.0
 |
 | Author: Rafael Martinez Guerrero (University of Oslo)
 | E-mail: rafael@postgresql.org.es
@@ -139,8 +139,8 @@ System requirements
 * Python 2.6 or 2.7
 * Python modules:
   
-  * psycopg2
-  * argparse
+  * psycopg2 >= 2.4.0
+  * argparse >= 1.2.1
     
 * PostgreSQL >= 9.2 for the ``pgbackman`` database
 * PostgreSQL >= 9.0 in all PgSQL nodes that are going to use PgBackMan
@@ -248,6 +248,134 @@ to use in your PgBackMan installation::
 These values are only the default suggestion one will get when a new
 backup server or PgSQL node is registered in the system. They can be
 changed or updated via the PgBackMan shell at any time.
+
+
+Upgrading PgBackMan
+===================
+
+This section has information about how to upgrade to a newer version
+of PgBackMan when you already are using PgBackMan.
+
+To things has to be done to run an upgrade og PgBackMan:
+
+* Upgrade the PgBackMan software to the new version
+* Upgrade the ``pgbackman`` database to the new version  
+
+There are a few things one has to take care of when these two steps
+are done to avoid problems:
+
+* All backup servers have to run the same version of PgBackMan.
+* No new backups should be started during the upgrade.
+* No backups should be running during the upgrade
+
+The recommended procedure to upgrade to a new version will be as
+follow:
+
+#. Be sure no backups will be started during the upgrade. We recommend
+   to have e.g. a 30 min. maintenance time window everyday or week
+   where you do not have any backup definitions running backup
+   jobs. This way you can run your upgrades in this maintenance time
+   window without having to think that a backup will be startet when
+   you are upgrading PgBackMan.
+
+   If you run backups 24H a day, set the status of all PgSQL nodes in
+   your system to ``STOPPED`` and wait a short time until all
+   ``crontab`` files used by PgBackMan get updated.
+
+   If you are running PgBackMan version 1.1.0 or later, you could run
+   this command in the OS shell to change the status of all the PgSQL
+   nodes to ``RUNNING``::
+
+     [pgbackman@pg-backup01]# pgbackman --use-csv-format show_pgsql_nodes \
+                              | grep -v "STOPPED" \
+			      | awk -F',' '{print "pgbackman update_pgsql_node", $1, $3, $4, "STOPPED", "\\\"" $6 "\\\""}' \
+			      | sh
+
+   Version 1.0.0 does not support the parameter ``--use-csv-format``,
+   so one has to run the ``update_pgsql_node`` command for one node at
+   the time.
+
+#. Check that no backups or restores are running::
+     
+      [pgbackman@pg-backup01]# ps ax | egrep "pgbackman_control|pgbackman_maintenance"
+
+   If you have PgBackMan backup or restore jobs running, wait until the finish. 
+
+#. Stop ``pgbackman_control`` and ``pgbackman_maintenance``::
+
+     [pgbackman@pg-backup01]# /etc/init.d/pgbackman stop
+
+#. Upgrade the PgBackMan software via your favorite method, source, rpm
+   packages or deb packages. Check the *"Installation section"* for more
+   information.
+
+#. Start ``pgbackman`` and follow the instructions to upgrade the
+   ``pgbackman`` database::
+
+     [pgbackman@pg-backup01]# pgbackman
+
+     #################
+     A T T E N T I O N
+     #################
+     
+     The PgBackMan software version [2:v_1_1_0] is different from
+     the PgBackMan database version [1:v_1_0_0].
+     
+     # Do you want to upgrade the PgBackMan database to version: [2:v_1_1_0] (yes/no): yes
+     
+     ############################
+     Upgrading PgBackMan database
+     ############################
+     
+     [OK]: File: /usr/share/pgbackman/pgbackman_2.sql exists.
+     [OK]: File /usr/share/pgbackman/pgbackman_2.sql installed.
+     
+     ####################################################################
+     Welcome to the PostgreSQL Backup Manager shell ver.1.1.0
+     ####################################################################
+     Type help or \? to list commands.
+     
+     [pgbackman]$ show_pgbackman_config
+     +----------------------------+----------------------------------+
+     |          Software version: | [2]:1_1_0                        |
+     |   Configuration file used: | /etc/pgbackman/pgbackman.conf    |
+     |                            |                                  |
+     |         PGBACKMAN DATABASE |                                  |
+     |                    DBhost: | pgbackmandb.example.net          |
+     |                DBhostaddr: |                                  |
+     |                    DBport: | 5432                             |
+     |                    DBname: | pgbackman                        |
+     |                    DBuser: | pgbackman_role_rw                |
+     | Connection retry interval: | 10 sec.                          |
+     |                            |                                  |
+     |       Database source dir: | /usr/share/pgbackman             |
+     |      DB version installed: | 2014-09-25 10:46:52.078875+00:00 |
+     |                DB version: | [2]:1_1_0                        |
+     |                            |                                  |
+     |             PGBACKMAN_DUMP |                                  |
+     |            Temp directory: | /tmp                             |
+     |                            |                                  |
+     |      PGBACKMAN_MAINTENANCE |                                  |
+     |      Maintenance interval: | 70 sec.                          |
+     |                            |                                  |
+     |                    LOGGING |                                  |
+     |                 Log level: | DEBUG                            |
+     |                  Log file: | /var/log/pgbackman/pgbackman.log |
+     +----------------------------+----------------------------------+
+
+#. After the ``pgbackman`` database has been upgraded, start
+   ``pgbackman_control`` and ``pgbackman_maintenance``::
+
+     [pgbackman@pg-backup01]# /etc/init.d/pgbackman start
+
+#. Update the status of all your PgSQL nodes to ``RUNNING`` if you
+   changed this to ``STOPPED``::
+
+      [pgbackman@pg-backup01]# pgbackman --use-csv-format show_pgsql_nodes \
+			      | awk -F',' '{print "pgbackman update_pgsql_node", $1, $3, $4, "RUNNING", "\\\"" $6 "\\\""}' \
+			      | sh
+
+#. Use PgBackMan as usual.
 
 
 Configuration
