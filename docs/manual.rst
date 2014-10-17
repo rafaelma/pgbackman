@@ -284,7 +284,7 @@ follow:
 
    If you are running PgBackMan version 1.1.0 or later, you could run
    this command in the OS shell to change the status of all the PgSQL
-   nodes to ``RUNNING``::
+   nodes to ``STOPPED``::
 
      [pgbackman@pg-backup01]# pgbackman --use-csv-format show_pgsql_nodes \
                               | grep -v "STOPPED" \
