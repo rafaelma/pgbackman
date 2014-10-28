@@ -79,6 +79,7 @@ Las características principales de PgBackMan son:
 * Copia de seguridad completa de los datos asociados a los usuarios necesarios en el proceso de recuperacion de un backup.
 * Copia de seguridad completa de los datos de configuración asociados a una base de datos y necesarios en el proceso de recuperación de un backup.
 * Definiciones automáticas de copias de seguridad de todas las bases de datos disponibles en un servidor PostgreSQL.
+* Borrado automático despues de un período de cuarentena de las definiciones de backup de bases de datos que han sido borradas en un nodo PgSQL.
 * Restauración automática de backups.
 * Programa pgbackman_dump autónomo que funciona incluso si la base de datos central con información de metadatos no está disponible.
 * Manejo de situaciones de error.
@@ -666,6 +667,13 @@ Este programa ejecuta estas tareas de mantenimiento:
 * Borra archivos de respaldo y registro asociados a entradas del
   catálogo pertenecientes a definiciones de copias de seguridad que
   hayan sido borradas con la opción ``force-deletion``.
+
+* Actualiza el estatus de definiciones de copias de seguridad a
+  ``DELETED`` para bases de datos que han sido borradas en un nodo
+  PgSQL. Las definiciones con estatus ``DELETED`` y todos los archivos
+  asociados a las mismas son borrados automáticamente despues de un
+  período de cuarentena definido por el parámetro de configuración
+  ``automatic_deletion_retention`` para nodos PgSQL.
 
 * Borra archivos de registros de trabajos de restauración cuando las
   definiciones y catálogos usados por el trabajo de restauracón son
@@ -2576,7 +2584,8 @@ Parámetros:
 * **[automatic deletion retention]:** Intervalo de tiempo que una
   copia de seguridad estará disponible en el catálogo después de que
   la base de datos a la que pertenece haya sido borrada en el nodo
-  PgSQL.
+  PgSQL. Este parámetro anula [retention period] y [retention redundancy] si la 
+  base de datos ha sido borrada en el nodo PgSQL.
 * **[extra backup parameters]:** Parámetros extras que se pueden usar con pg_dump/pg_dumpall.
 * **[extra restore parameters]:** Parámetros extrasque se pueden usar con pg_restore.
 * **[backup job status]:** Estatus de las copias de seguridad.

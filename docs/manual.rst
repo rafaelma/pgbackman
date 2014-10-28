@@ -72,6 +72,9 @@ The main features of PgBackMan are:
 * Full backup of role information for a database.
 * Full backup of database configuration for a database.
 * Automatic definitions of backups for all databases running in a PgSQL node.
+* Automatic deletion after a quarantine period of backup definitions
+  and associated files for databases than have been deleted in a PgSQL
+  node.
 * Automatic restore procedures
 * Autonomous pgbackman_dump program that functions even if the central database with metadata is not available.
 * Handling of error situations.
@@ -606,6 +609,12 @@ It runs these maintenance tasks:
 * Delete backup and log files from catalog entries associated to a
   backup definition after this definition has been deleted with the
   ``force-deletion`` parameter.
+
+* Update the status of backup definitions to ``DELETED`` for databases
+  than have been deleted in a PgSQL node. The ``DELETED`` definitions
+  and all files associated to them will be deleted after a quarantine
+  period defined by the PgSQL node configuration parameter
+  ``automatic_deletion_retention``.
 
 * Delete restore logs files when definitions/catalogs used by the
   restore are deleted.
@@ -2430,8 +2439,10 @@ Parameters:
 * **[retention period]:** Retention period for a backup job
 * **[retention redundancy]:** Retention redundancy for a backup job
 * **[automatic deletion retention]:** Retention period that backups
-  for a dbname will be keep in the catalog after the dbname has been
-  deleted in a PgSQL node
+  for a dbname will be kept in the catalog after the dbname has been
+  deleted in the PgSQL node. This parameter overrides [retention period]
+  and [retention redundancy] if the database has been deleted in the
+  PgSQL node.
 * **[extra backup parameters]:** Extra backup parameters
 * **[extra restore parameters]:** Extra restore parameters
 * **[backup job status]:** Backup job status
