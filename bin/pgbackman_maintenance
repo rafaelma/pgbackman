@@ -414,6 +414,94 @@ def process_pending_restore_catalog_log_file(db,backup_server_id):
         logs.logger.error('Problems processing pending restore files - %s',e)
 
 
+
+# ############################################################
+# Function process_backup_definitions_from_deleted_databases()
+# ############################################################
+    
+def process_backup_definitions_from_deleted_databases(db,backup_server_id):
+    '''
+    This function stops backup definitions for databases that have been deleted
+    in the PgSQL nodes running them.     
+    '''
+
+    logs.logger.debug('## Processing backup definitions for deleted databases  ##')
+    
+    #
+    # Processing data for all PgSQL nodes with status "RUNNING"
+    #
+
+    try:
+        for record in db.get_pgsql_nodes_list():
+
+            backup_def_full_list = []
+            backup_def_database_list = []
+            backup_def_list_to_process = []
+            database_list = []
+            db_node = None
+
+            pgsql_node_id = record[0]
+            pgsql_node_fqdn = record[1]
+
+            logs.logger.debug('Proccesing backup definitions for deleted databases on: %s',pgsql_node_fqdn)
+
+            dsn_value = db.get_pgsql_node_dsn(pgsql_node_id)
+            db_node = pgbackman_db(dsn_value,'pgbackman_maintenance')
+            
+            #
+            # Get all backup definitions for this Backup server - PgSQL node
+            #
+            for backup_def_id in db.get_all_backup_definitions(backup_server_id,pgsql_node_id):
+                backup_def_full_list.append(backup_def_id[0])
+
+            #
+            # Get backup definitions for databases that exist in the PgSQL_node
+            #
+            
+            for database in db_node.get_pgsql_node_database_list():
+
+                for backup_def_id in db.get_database_backup_definitions(backup_server_id,pgsql_node_id,database[0]):
+                    backup_def_database_list.append(backup_def_id[0])
+
+            #
+            # List of backup definitions to process
+            #
+            
+            backup_def_list_to_process =  set(backup_def_full_list) - set(backup_def_database_list)
+            
+            #
+            # Update the backup def status to "DELETED"
+            #
+
+            for backup_def_id in backup_def_list_to_process:
+
+                logs.logger.info('Updating status of bck_def: %s to DELETED',backup_def_id)
+                db.update_backup_definition_status_to_delete(int(backup_def_id))
+
+            #
+            # Update catalog_entries_to_delete and delete def_id from backup_definition
+            #
+            # The files associated to the backup definition and the
+            # backup definition entry will we deleted if the backup
+            # definition got the DELETED status for more than the
+            # period of time defined by the parameter
+            # automatic_deletion_retention for the PgSQL node that was
+            # running the deleted database.
+            #
+            
+            for backup_def_id in db.get_deleted_backup_definitions_to_delete_by_retention():
+                try:
+                    db.delete_force_backup_definition_id(backup_def_id[0])
+                    logs.logger.info('Updating catalog_entries_to_delete for DefID: %s with status DELETED',backup_def_id[0])
+                except Exception as e:
+                    logs.logger.error('Could not update catalog_entries_to_delete for DefID: %s with status DELETED - %s',backup_def_id[0],e)
+
+    except psycopg2.OperationalError as e:
+        raise e
+    except Exception as e:
+        logs.logger.error('Could not process backup definitions for deleted databases - %s',e)
+
+
 # ############################################
 # Function signal_handler()
 # ############################################
@@ -496,7 +584,8 @@ def main():
             delete_restore_logs(db,backup_server_id)
             process_pending_backup_catalog_log_file(db,backup_server_id)
             process_pending_restore_catalog_log_file(db,backup_server_id)
-
+            process_backup_definitions_from_deleted_databases(db,backup_server_id)
+    
         except psycopg2.OperationalError as e:
 
             #

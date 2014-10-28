@@ -1074,6 +1074,30 @@ CREATE TRIGGER update_pgsql_node_configuration AFTER INSERT
     EXECUTE PROCEDURE update_pgsql_node_configuration();
 
 
+-- ------------------------------------------------------------
+-- Function: update_backup_definition_registration()
+--
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION update_backup_definition_registration() RETURNS TRIGGER
+ LANGUAGE plpgsql 
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ BEGIN
+  NEW.registered := now();
+  RETURN NEW;
+END;
+$$;
+
+ALTER FUNCTION update_backup_definition_registration() OWNER TO pgbackman_role_rw;
+
+CREATE TRIGGER update_backup_definition_registration BEFORE UPDATE
+    ON backup_definition FOR EACH ROW
+    EXECUTE PROCEDURE update_backup_definition_registration();
+
+
+
 
 -- ------------------------------------------------------------
 -- Function: update_job_queue()
@@ -2487,6 +2511,38 @@ CREATE OR REPLACE FUNCTION update_restore_status(INTEGER,TEXT) RETURNS VOID
 $$;
 
 ALTER FUNCTION update_restore_status(INTEGER,TEXT) OWNER TO pgbackman_role_rw;
+
+
+-- ------------------------------------------------------------
+-- Function: update_backup_definition_status_to_delete()
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION update_backup_definition_status_to_delete(INTEGER) RETURNS VOID
+ LANGUAGE plpgsql 
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ DECLARE
+  def_id_ ALIAS FOR $1;
+
+  v_msg     TEXT;
+  v_detail  TEXT;
+  v_context TEXT;
+ BEGIN
+
+     EXECUTE 'UPDATE backup_definition SET job_status = ''DELETED'' WHERE def_id = $1'
+     USING def_id_;
+   	   
+   EXCEPTION WHEN others THEN
+   	GET STACKED DIAGNOSTICS	
+            v_msg     = MESSAGE_TEXT,
+            v_detail  = PG_EXCEPTION_DETAIL,
+            v_context = PG_EXCEPTION_CONTEXT;
+        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \n----------------------------------------------\n', v_msg, v_detail;
+  END;
+$$;
+
+ALTER FUNCTION update_backup_definition_status_to_delete(INTEGER) OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------------
@@ -4361,5 +4417,15 @@ CREATE OR REPLACE VIEW show_restores_in_progress AS
 
 ALTER VIEW show_restores_in_progress OWNER TO pgbackman_role_rw;
 
+CREATE OR REPLACE VIEW get_deleted_backup_definitions_to_delete_by_retention AS
+   SELECT a.def_id 
+   FROM backup_definition a 
+   INNER JOIN pgsql_node_config b 
+   ON a.pgsql_node_id = b.node_id 
+   WHERE a.job_status = 'DELETED' 
+   AND b.parameter = 'automatic_deletion_retention' 
+   AND a.registered < now()-b.value::interval;
+
+ALTER VIEW get_deleted_backup_definitions_to_delete_by_retention OWNER TO pgbackman_role_rw;
 
 COMMIT;

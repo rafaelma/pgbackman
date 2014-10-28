@@ -199,7 +199,7 @@ class pgbackman_db():
     # ############################################
 
     def show_pgsql_nodes(self):
-        """A function to get a list of all PgSQL nodes"""
+        """A function to generate the output of the show_pgsql_nodes command"""
 
         try:
             self.pg_connect()
@@ -220,7 +220,7 @@ class pgbackman_db():
         except psycopg2.Error as e:
             raise e
     
-                
+            
     # ############################################
     # Method 
     # ############################################
@@ -2899,3 +2899,148 @@ class pgbackman_db():
     
         except psycopg2.Error as e:
             raise e
+    
+        
+    # ############################################
+    # Method 
+    # ############################################
+
+    def get_pgsql_nodes_list(self):
+        """A function to get a list of all PgSQL nodes"""
+
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT "NodeID"::int,"FQDN" FROM show_pgsql_nodes WHERE "Status" = \'RUNNING\'');
+                    self.conn.commit()
+
+                    return self.cur
+                     
+                except psycopg2.Error as e:
+                    raise e
+
+            self.pg_close()
+    
+        except psycopg2.Error as e:
+            raise e
+
+
+    
+    # ############################################
+    # Method 
+    # ############################################
+
+    def get_deleted_backup_definitions_to_delete_by_retention(self):
+        """
+        A function to get a list of all backup definitions with status
+        DELETED and registered < now() - automatic_deletion_retention
+
+        """
+
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT def_id FROM get_deleted_backup_definitions_to_delete_by_retention');
+                    self.conn.commit()
+
+                    return self.cur
+                     
+                except psycopg2.Error as e:
+                    raise e
+
+            self.pg_close()
+    
+        except psycopg2.Error as e:
+            raise e
+    
+    
+
+    # ############################################
+    # Method 
+    # ############################################
+
+    def get_all_backup_definitions(self,backup_server_id,pgsql_node_id):
+        """
+        A function to get all backup definitions registered in PgBackMan
+        for a PgSQL node in a backup server
+        """
+
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT "DefID" FROM show_backup_definitions WHERE "Status" <> %s AND backup_server_id = %s AND pgsql_node_id = %s',('DELETED',
+                                                                                                                                                          backup_server_id,
+                                                                                                                                                          pgsql_node_id))
+                    self.conn.commit()
+
+                    return self.cur
+                                        
+                except psycopg2.Error as e:
+                    raise e
+
+            self.pg_close()
+    
+        except psycopg2.Error as e:
+            raise e
+
+    # ############################################
+    # Method 
+    # ############################################
+
+    def get_database_backup_definitions(self,backup_server_id,pgsql_node_id,dbname):
+        """
+        A function to get all backup definitions registered in PgBackMan
+        for a database in a PgSQL node
+        """
+
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT "DefID" FROM show_backup_definitions WHERE "Status" <> %s AND backup_server_id = %s AND pgsql_node_id = %s AND "DBname" = %s',('DELETED',
+                                                                                                                                                                            backup_server_id,
+                                                                                                                                                                            pgsql_node_id,
+                                                                                                                                                                            dbname))
+                    self.conn.commit()
+
+                    return self.cur
+                                        
+                except psycopg2.Error as e:
+                    raise e
+
+            self.pg_close()
+    
+        except psycopg2.Error as e:
+            raise e
+
+
+    # ############################################
+    # Method 
+    # ############################################
+           
+    def update_backup_definition_status_to_delete(self,def_id):
+        """A function to update the status for a backup definition to DELETE"""
+     
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT update_backup_definition_status_to_delete(%s)',(def_id,))
+                    self.conn.commit()
+                                    
+                except psycopg2.Error as e:
+                    raise e
+
+            self.pg_close()
+
+        except psycopg2.Error as e:
+            raise e
+
