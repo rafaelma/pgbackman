@@ -55,8 +55,18 @@ class pgbackman_cli(cmd.Cmd):
     def __init__(self):
         cmd.Cmd.__init__(self)
         
-        self.software_version_tag = self.get_pgbackman_software_version_tag()
-        self.software_version_number = self.get_pgbackman_software_version_number()
+        try:
+            self.software_version_tag = self.get_pgbackman_software_version_tag()
+            self.software_version_number = self.get_pgbackman_software_version_number()
+
+        except Exception as e:
+            print '''
+            ERROR: Problems getting the version tag and number of this PgBackman installation.
+            The execution is aborted to avoid problems in case there is a mismatch between the version
+            of the software and the version of the database.
+            '''
+            
+            sys.exit(1)
 
         self.intro =  '\n####################################################################\n' + \
             'Welcome to the PostgreSQL Backup Manager shell ver.' + self.software_version_tag + '\n' + \
@@ -4708,7 +4718,7 @@ class pgbackman_cli(cmd.Cmd):
             return pgbackman.version.__version__.split(':')[1]
 
         except Exception as e:
-            return 'Unknown'
+            raise e
 
 
     # ############################################
@@ -4722,7 +4732,7 @@ class pgbackman_cli(cmd.Cmd):
             return pgbackman.version.__version__.split(':')[0]
 
         except Exception as e:
-            return 'Unknown'
+            raise e
 
 
 
@@ -4739,8 +4749,7 @@ class pgbackman_cli(cmd.Cmd):
                 return version
                 
         except Exception as e:
-            print e
-            return 'Unknown' 
+            raise e
 
 
     # ############################################
@@ -4751,11 +4760,22 @@ class pgbackman_cli(cmd.Cmd):
         '''Check pgbackman database version'''
 
         ack_input = ''
-        software_version_tag = 'v_'+ self.software_version_tag.replace('.','_')
-        software_version_number = int(self.software_version_number)
-        database_version_tag = self.get_pgbackman_database_version_info()[2]
-        database_version_number = int(self.get_pgbackman_database_version_info()[1])
+
+        try:
+            software_version_tag = 'v_'+ self.software_version_tag.replace('.','_')
+            software_version_number = int(self.software_version_number)
+            database_version_tag = self.get_pgbackman_database_version_info()[2]
+            database_version_number = int(self.get_pgbackman_database_version_info()[1])
                 
+        except Exception as e:
+            print '''
+ERROR: Problems getting the pgbackman database version used by this PgBackMan installation.
+The execution is aborted to avoid problems in case there is a mismatch between the version
+of the software and the version of the database.
+
+''',e
+            sys.exit(1)
+
         if software_version_number > database_version_number:
             
             print '#################'
@@ -4823,9 +4843,21 @@ class pgbackman_cli(cmd.Cmd):
     def update_pgbackman_database_version(self):
         '''Update pgbackman database version'''
 
-        software_version_tag = 'v_'+ self.software_version_tag.replace('.','_')
-        software_version_number = int(self.software_version_number)
-        database_version_number = int(self.get_pgbackman_database_version_info()[1])
+        try:
+        
+            software_version_tag = 'v_'+ self.software_version_tag.replace('.','_')
+            software_version_number = int(self.software_version_number)
+            database_version_number = int(self.get_pgbackman_database_version_info()[1])
+
+        except Exception as e:
+            print '''
+ERROR: Problems getting the pgbackman database version used by this PgBackMan installation.
+The execution is aborted to avoid problems in case there is a mismatch between the version
+of the software and the version of the database.
+
+''',e
+            sys.exit(1)
+
         check_file_errors = 0
 
         self.logs.logger.info('Upgrading the PgBackMan database')
