@@ -186,6 +186,8 @@ def pg_dump_users(db):
     
     global global_parameters
     roles = []
+    grant_granted_by_roles= []
+    grant_granted_by_statements= []
 
     #
     # We need a list with all the roles that own an object in the
@@ -208,6 +210,11 @@ def pg_dump_users(db):
     #
     
     try:
+
+        #
+        # Find out all roles owning something or having privileges in
+        # this database. We can get this information from the pg_dump
+        # output.
 
         pg_dump_schema_temp_file = tempfile.NamedTemporaryFile(delete=True,dir=global_parameters['tmp_dir'])
         logs.logger.debug('pg_dump schema temp file created %s',pg_dump_schema_temp_file.name)
@@ -260,8 +267,48 @@ def pg_dump_users(db):
                                 if role[1].replace(';\n','') != 'PUBLIC':
                                     roles.append(role[1].replace(';\n',''))
                              
-            unique_role_list = set(roles)
-            logs.logger.debug('The list of roles we need to restore the database %s has been generated - %s',global_parameters['dbname'],unique_role_list)
+
+        #
+        # Find out all roles that grant privileges to some of the
+        # roles owning something or having privileges in this
+        # database. We can get this information from the pg_dumpall
+        # output.
+        #
+
+        roles_unique_tmp = set(roles)
+
+        pg_dumpall_schema_temp_file = tempfile.NamedTemporaryFile(delete=True,dir=global_parameters['tmp_dir'])
+        logs.logger.debug('pg_dumpall schema temp file created %s',pg_dumpall_schema_temp_file.name)
+
+        pg_dumpall_command = global_parameters['backup_server_pgsql_bin_dir'] + '/pg_dumpall' + \
+            ' -h ' + global_parameters['pgsql_node_fqdn'] + \
+            ' -p ' + global_parameters['pgsql_node_port'] + \
+            ' -U ' + global_parameters['pgsql_node_admin_user'] + \
+            ' -r' + \
+            ' --file=' + pg_dumpall_schema_temp_file.name
+
+        with open(global_parameters['roles_log_file'],'a') as roles_log_file:
+            
+            proc = subprocess.Popen([pg_dumpall_command],stdout=roles_log_file,stderr=subprocess.STDOUT,shell=True)
+            proc.wait()
+        
+            if proc.returncode != 0:
+                logs.logger.critical('The command used to generate the tmp role dumpall of the database %s has a return value != 0',global_parameters['dbname'])
+
+                global_parameters['execution_status'] = 'ERROR'
+                global_parameters['error_message'] = 'pg_dumpall returncode: ' + str(proc.returncode) + '. Check log file.' 
+                register_backup_catalog(db)  
+                sys.exit(1)
+                
+            with open(pg_dumpall_schema_temp_file.name, 'r') as sqldump:
+                for line in sqldump:
+                    for role in roles_unique_tmp:
+                        if 'GRANT ' in line:
+                            if ' TO ' + role + ' GRANTED BY ' in line:
+                                roles.append(line.split(' TO' )[0].replace('GRANT ',''))
+                                                             
+        unique_role_list = set(roles)
+        logs.logger.debug('The list of roles we need to restore the database %s has been generated - %s',global_parameters['dbname'],unique_role_list)
                         
     except Exception as e:
         logs.logger.critical('pg_dump schema temp file could not be created in directory %s - %s',global_parameters['tmp_dir'],e)
@@ -309,10 +356,15 @@ def pg_dump_users(db):
 
             with open(global_parameters['roles_dump_file'],'w') as roles_dump_file:
 
-                roles_dump_file.write('-- \n-- PgBackMan \n-- \n-- Roles needed by the database: \n-- ' + global_parameters['dbname'] + '@' + global_parameters['pgsql_node_fqdn'] + ' \n--\n\n')
+                roles_dump_file.write('-- \n-- PgBackMan \n-- \n-- Roles statements needed by the database: \n-- ' + global_parameters['dbname'] + '@' + global_parameters['pgsql_node_fqdn'] + ' \n--\n\n')
                 roles_dump_file.write('BEGIN;\n\n')
 
                 with open(pg_dumpall_roles_temp_file.name, 'r') as sqldump_roles:
+
+                    #
+                    # Get all statements for the roles owning something or with
+                    # privileges in the database we are backing up.
+                    #
                     for line in sqldump_roles:
                         for role in unique_role_list:
                         
@@ -327,7 +379,62 @@ def pg_dump_users(db):
                             #
                             if ' ROLE ' + role + ' ' in line:
                                 roles_dump_file.write(line)
+                             
+                            #
+                            # Role memberships statements, GRANT ... TO ... GRANTED BY ..
+                            #
+                            if 'GRANT ' in line:
+                                if ' TO ' + role + ' GRANTED BY ' in line:
+                                    grant_granted_by_statements.append(line)
+
+                                    #
+                                    # GRANT roleX TO role GRANTED BY ... We need the list 
+                                    # of roleX roles. If they do not own something or have privileges in 
+                                    # the database we are backing up, this is the only place
+                                    # where we have reference to them. 
+                                    #
+                                    # We build a new role list with these roles so we can get
+                                    # the CREATE ROLE and ALTER ROLE needed by them.
+                                    #
+                                    role = line.split(' TO ')
+                                    grant_granted_by_roles.append(role[0].replace('GRANT ',''))
+
+
+                    unique_grant_granted_by_roles_list = set(grant_granted_by_roles) 
+                        
+                    #
+                    # Get all statements for the roles not owning anything or without
+                    # privileges in the database we are backing up, but needed by 
+                    # GRANT ... TO ... GRANTED BY ... statements
+                    #
+
+                    sqldump_roles.seek(0, 0)
+                    for line in sqldump_roles:
+                        for role in unique_grant_granted_by_roles_list - unique_role_list:
+                            
+                            print "#" + line
+                            print "#" + role
+
+                            #
+                            # CREATE ROLE statements
+                            #
+                            if ' ROLE ' + role + ';' in line:
+                                roles_dump_file.write(line)
+                            
+                            #
+                            # ALTER ROLE statements
+                            #
+                            if ' ROLE ' + role + ' ' in line:
+                                roles_dump_file.write(line)
                                 
+                                
+                    #
+                    # Write to disk all GRANT ... TO ... GRANTED BY ... statements
+                    #
+                    for line in set(grant_granted_by_statements):
+                        roles_dump_file.write(line)
+
+    
                     logs.logger.debug('The list of role statements we need from pg_dumpall has been generated')
 
                 roles_dump_file.write('\nCOMMIT;\n\n')
@@ -335,7 +442,10 @@ def pg_dump_users(db):
                     
             logs.logger.info('Final roles dump file created - %s',global_parameters['roles_dump_file'])
             global_parameters['execution_status'] = 'SUCCEEDED'
-            global_parameters['role_list'] = list(unique_role_list)
+
+            unique_role_list_tmp = list(unique_role_list)
+            unique_role_list_tmp.sort()
+            global_parameters['role_list'] = unique_role_list_tmp
             
     except Exception as e:
         logs.logger.critical('Could not generate the final roles dump file %s - %s',global_parameters['roles_dump_file'],e)
@@ -420,7 +530,7 @@ def pg_dump_database_config(db):
 
                         if ' ON DATABASE ' + global_parameters['dbname'] + ' ' in line:
                             dbconfig_dump_file.write(line)
-                                                      
+                                                                                      
                 logs.logger.debug('The list of dbconfig statements we need from pg_dumpall has been generated')
 
                 dbconfig_dump_file.write('\nCOMMIT;\n\n')

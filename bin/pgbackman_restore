@@ -76,6 +76,13 @@ def restore_roles(db):
                         if 'ALTER ROLE ' + role + ' ' in line:
                             sqldump_out.write(line)
 
+                        #
+                        # Role membership statements
+                        #
+                        if 'GRANT ' in line:
+                            if ' TO ' + role + ' GRANTED BY ' in line:
+                                sqldump_out.write(line)
+                                
                 sqldump_out.write('COMMIT;\n')
                 logs.logger.debug('Role restore file generated.')
                 sqldump_out.flush()
