@@ -371,31 +371,30 @@ def process_pending_restore_catalog_log_file(db,backup_server_id):
                         parameters = line.split('::')
                     
                         if len(parameters) == 17:
-                        
+
                             #
                             # Updating the database with the information in the pending file
                             #
 
-                            db.register_backup_catalog(parameters[0],
-                                                       parameters[1],
-                                                       parameters[2],
-                                                       parameters[3],
-                                                       parameters[4],
-                                                       parameters[5],
-                                                       parameters[6],
-                                                       parameters[7],
-                                                       parameters[8],
-                                                       parameters[9],
-                                                       parameters[10],
-                                                       parameters[11],
-                                                       parameters[12],
-                                                       parameters[13],
-                                                       parameters[14],
-                                                       parameters[15].split(' '),
-                                                       parameters[16],
-                                                       parameters[17].replace('\n',''))
+                            db.register_restore_catalog(parameters[0],
+                                                        parameters[1],
+                                                        parameters[2],
+                                                        parameters[3],
+                                                        parameters[4],
+                                                        parameters[5],
+                                                        parameters[6],
+                                                        parameters[7],
+                                                        parameters[8],
+                                                        parameters[9],
+                                                        parameters[10],
+                                                        parameters[11],
+                                                        parameters[12],
+                                                        parameters[13],
+                                                        parameters[14].split(' '),
+                                                        parameters[15],
+                                                        parameters[16].replace('\n',''))
 
-                            logs.logger.info('Restore job catalog for restoreDef: %s in pending file %s updated in the database',parameters,pending_log_file)
+                            logs.logger.info('Restore job catalog for restoreDef: %s in pending file %s updated in the database',parameters[0],pending_log_file)
                             
                             #
                             # Deleting the pending file if we can update the database with
