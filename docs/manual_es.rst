@@ -203,7 +203,7 @@ GitHub.
  [root@server]# git clone https://github.com/rafaelma/pgbackman.git
 
  [root@server]# cd pgbackman
- [root@server]# ./setup2.py install
+ [root@server]# ./setup2.py install --install-scripts=/usr/bin
  .....
 
 Esto instalará todos los usuarios, grupos, programas, archivos de
@@ -1374,6 +1374,7 @@ Este comando registra una copia de seguridad de tipo snapshot
                      [retention period] 
                      [extra backup parameters] 
                      [remarks] 
+		     [pg_dump/all release]
 
 Parámetros:
 
@@ -1405,6 +1406,22 @@ Parámetros:
 * **[extra backup parameters]:** Parámetros extras que se pueden usar
   con pg_dump / pg_dumpall.
 
+* **[pg_dump/all release]:** Versión de pg_dump / pg_dumpall a usar
+  cuando vayamos a realizar una copia de seguridad de tipo snapshot,
+  e.g.  9.0, 9.1, 9.2, 9.3 o 9.4. Este parámetro puede ser necesario
+  si la restauración de los datos se va a realizar en una instalación
+  postgreSQL que este ejecutando una versión más nueva que la
+  instalación con la base de datos a la que estamos realizando la
+  copia de seguridad de tipo snapshot.
+
+  Esta versión no puede ser menor que la usada en la instalación
+  PostgreSQL con la base de datos a la que estamos realizando la copia
+  de seguridad de tipo snapshot.
+
+  Si este parámetro no es definido, se utilizará por defecto la
+  versión usada en la instalación PostgreSQL con la base de datos a la
+  que estamos realizando la copia de seguridad de tipo snapshot.
+
 Los valores por defecto de un parámetro se enseñan entre
 corchetes``[]``. Si el usuario no define ningún valor, PgBackMan
 utilizará el valor por defecto.
@@ -1413,7 +1430,7 @@ Este comando se puede ejecutar con o sin parámetros, e.g.:
 
 ::
 
-   [pgbackman]$ register_snapshot_definition 1 1 test02 2014-05-31 full "7 days" "" "Test snapshot"
+   [pgbackman]$ register_snapshot_definition 1 1 test02 2014-05-31 full "7 days" "" "Test snapshot" ""
 
    [Done] Snapshot for dbname: test02 defined.
 
@@ -1429,6 +1446,7 @@ Este comando se puede ejecutar con o sin parámetros, e.g.:
    # Retention period [7 days]: 
    # Extra parameters []: 
    # Remarks []: 
+   # pg_dump/all release [Same as pgSQL node running dbname]:
    
    # Are all values correct (yes/no): yes
    --------------------------------------------------------
@@ -1653,6 +1671,7 @@ Este comando se puede ejecutar con o sin parámetros, e.g.:
    |                  DBname: | dump_test                                                                                                                      |
    | Backup server (ID/FQDN): | [1] / pg-backup01.example.net                                                                                                  |
    |    PgSQL node (ID/FQDN): | [1] / pgbackmandb.example.net                                                                                                  |
+   |      PgSQL node release: | 9.3                                                                                                                            |
    |     Pg_dump/all release: | 9.3                                                                                                                            |
    |                          |                                                                                                                                |
    |                Schedule: |  [min hour day_month month weekday]                                                                                            |

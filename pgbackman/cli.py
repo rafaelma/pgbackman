@@ -1754,8 +1754,7 @@ class pgbackman_cli(cmd.Cmd):
     # ############################################
 
     def do_register_snapshot_definition(self,args):
-        '''
-        DESCRIPTION:
+        '''DESCRIPTION:
         This command registers a one time snapshot backup of a database.
 
         COMMAND:
@@ -1767,6 +1766,7 @@ class pgbackman_cli(cmd.Cmd):
                           [retention period] 
                           [extra backup parameters] 
                           [remarks] 
+                          [pg_dump/all release]
 
         [SrvID | FQDN]:
         ---------------      
@@ -1801,6 +1801,21 @@ class pgbackman_cli(cmd.Cmd):
         --------------------------
         Extra parameters that can be used with pg_dump / pg_dumpall
         
+        [pg_dump/all release]
+        ---------------------
+        Release of pg_dump / pg_dumpall to use when taking the
+        snapshot, e.g. 9.0, 9.1, 9.2, 9.3 or 9.4. This parameter can
+        be necessary if we are going to restore the snapshot in a
+        postgreSQL installation running a newer release than the
+        source.
+
+        This release version cannot be lower than the one used in the
+        source installation running the database we are going to
+        backup.
+        
+        The release of the source installation will be used per
+        default if this parameter is not defined.
+
         '''
 
         try: 
@@ -1810,7 +1825,7 @@ class pgbackman_cli(cmd.Cmd):
             print '\n[ERROR]: ',e,'\n'
             return False
                 
-        time_default = backup_code_default = retention_period_default = extra_backup_parameters_default = ''
+        time_default = backup_code_default = retention_period_default = extra_backup_parameters_default = pg_dump_release = ''
 
         #
         # Command without parameters
@@ -1833,8 +1848,10 @@ class pgbackman_cli(cmd.Cmd):
             try:
                 if backup_server.isdigit():
                     backup_server_id = backup_server
+                    backup_server_fqdn = self.db.get_backup_server_fqdn(backup_server)
                 else:
                     backup_server_id = self.db.get_backup_server_id(backup_server)
+                    backup_server_fqdn = backup_server
 
                 if pgsql_node.isdigit():
                     pgsql_node_id = pgsql_node
@@ -1854,22 +1871,12 @@ class pgbackman_cli(cmd.Cmd):
                 extra_backup_parameters_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'extra_backup_parameters')
                 
             except Exception as e:
+                print '\n--------------------------------------------------------' 
                 print '\n[ERROR]: Problems getting default values for parameters\n',e 
                 return False
             
             try:
                 dbname = raw_input('# DBname []: ')
-                at_time = raw_input('# AT timestamp [' + str(at_time_default) + ']: ')
-                backup_code = raw_input('# Backup code [' + backup_code_default + ']: ')
-                retention_period = raw_input('# Retention period [' + retention_period_default + ']: ')
-                extra_backup_parameters = raw_input('# Extra parameters [' + extra_backup_parameters_default + ']: ')
-                remarks = raw_input('# Remarks []: ')
-                print
-
-                while ack != 'yes' and ack != 'no':
-                    ack = raw_input('# Are all values correct (yes/no): ')
-
-                print '--------------------------------------------------------'
 
             except Exception as e:
                 print '\n--------------------------------------------------------' 
@@ -1878,21 +1885,63 @@ class pgbackman_cli(cmd.Cmd):
 
             try:
                 self.db.check_pgsql_node_status(pgsql_node_id)
-
+                
                 dsn_value = self.db.get_pgsql_node_dsn(pgsql_node_id)
                 db_node = pgbackman_db(dsn_value,'pgbackman_cli')
-
+                
                 if dbname != '':
                     if not db_node.database_exists(dbname):
-                        print ('\n[ERROR]: Database %s does not exist in The PgSQL node %s' % (dbname, pgsql_node_fqdn)) 
-                        print
+                        print '\n--------------------------------------------------------' 
+                        print ('\n[ERROR]: Database %s does not exist in The PgSQL node %s\n' % (dbname, pgsql_node_fqdn)) 
+                        
                         db_node = None
                         return False
-
-                db_node = None
-
+                        
+                        db_node = None
+                        
             except Exception as e:
                 print '\n[ERROR]: ',e 
+                return False
+
+            try:
+                at_time = raw_input('# AT timestamp [' + str(at_time_default) + ']: ')
+                backup_code = raw_input('# Backup code [' + backup_code_default + ']: ')
+                retention_period = raw_input('# Retention period [' + retention_period_default + ']: ')
+                extra_backup_parameters = raw_input('# Extra parameters [' + extra_backup_parameters_default + ']: ')
+                remarks = raw_input('# Remarks []: ')
+
+            except Exception as e:
+                print '\n--------------------------------------------------------' 
+                print '\n[Aborted] Command interrupted by the user.\n'
+                return False
+
+            try:
+                pg_dump_release = raw_input('# pg_dump/all release [Same as pgSQL node running dbname]: ')
+                print
+
+            except Exception as e:
+                print '\n--------------------------------------------------------' 
+                print '\n[Aborted] Command interrupted by the user.\n'
+                return False
+            
+            if pg_dump_release not in ('','9.0','9.1','9.2','9.3','9.4'):    
+                print '\n--------------------------------------------------------' 
+                print ('\n[ERROR]: pg_dump/all release [%s] is not valid\n' % (pg_dump_release)) 
+
+                return False
+
+            elif pg_dump_release == '':
+                pg_dump_release = None
+
+            try:
+                while ack != 'yes' and ack != 'no':
+                    ack = raw_input('# Are all values correct (yes/no): ')
+
+                print '--------------------------------------------------------'
+
+            except Exception as e:
+                print '\n--------------------------------------------------------' 
+                print '\n[Aborted] Command interrupted by the user.\n'
                 return False
 
             if at_time == '':
@@ -1906,11 +1955,13 @@ class pgbackman_cli(cmd.Cmd):
 
             if extra_backup_parameters == '':
                 extra_backup_parameters = extra_backup_parameters_default
-            
+                                    
             if ack.lower() == 'yes':
                 try:
                     self.db.register_snapshot_definition(backup_server_id,pgsql_node_id,dbname.strip(),at_time,backup_code.upper().strip(), \
-                                                             retention_period.lower().strip(),extra_backup_parameters.lower().strip(),remarks.strip())
+                                                         retention_period.lower().strip(),extra_backup_parameters.lower().strip(),remarks.strip(), \
+                                                         pg_dump_release)
+
                     print '\n[Done] Snapshot for dbname: ' + dbname.strip() + ' defined.\n'
 
                 except Exception as e:
@@ -1923,7 +1974,7 @@ class pgbackman_cli(cmd.Cmd):
         # Command with parameters
         #             
 
-        elif len(arg_list) == 8:
+        elif len(arg_list) == 9:
             
             backup_server = arg_list[0]
             pgsql_node = arg_list[1]
@@ -1931,8 +1982,10 @@ class pgbackman_cli(cmd.Cmd):
             try:
                 if backup_server.isdigit():
                     backup_server_id = backup_server
+                    backup_server_fqdn = self.db.get_backup_server_fqdn(backup_server)
                 else:
                     backup_server_id = self.db.get_backup_server_id(backup_server)
+                    backup_server_fqdn = backup_server
 
                 if pgsql_node.isdigit():
                     pgsql_node_id = pgsql_node
@@ -1952,6 +2005,7 @@ class pgbackman_cli(cmd.Cmd):
                 extra_backup_parameters_default = self.db.get_pgsql_node_config_value(pgsql_node_id,'extra_backup_parameters')
                 
             except Exception as e:
+                                
                 print '\n[ERROR]: Problems getting default values for parameters\n',e 
                 return False
 
@@ -1961,7 +2015,8 @@ class pgbackman_cli(cmd.Cmd):
             retention_period = arg_list[5]
             extra_backup_parameters = arg_list[6]
             remarks = arg_list[7]
-              
+            pg_dump_release = arg_list[8]
+
             try:
                 self.db.check_pgsql_node_status(pgsql_node_id)
 
@@ -1970,8 +2025,8 @@ class pgbackman_cli(cmd.Cmd):
 
                 if dbname != '':
                     if not db_node.database_exists(dbname):
-                        print ('\n[ERROR]: Database %s does not exist in The PgSQL node %s' % (dbname, pgsql_node_fqdn)) 
-                        print
+                        print ('\n[ERROR]: Database %s does not exist in The PgSQL node %s\n' % (dbname, pgsql_node_fqdn)) 
+
                         db_node = None
                         return False
 
@@ -1992,10 +2047,18 @@ class pgbackman_cli(cmd.Cmd):
 
             if extra_backup_parameters == '':
                 extra_backup_parameters = extra_backup_parameters_default
+           
+            if pg_dump_release not in ('','9.0','9.1','9.2','9.3','9.4'):    
+                print ('\n[ERROR]: pg_dump/all release [%s] is not valid\n' % (pg_dump_release)) 
+                return False
+
+            elif pg_dump_release == '':
+                pg_dump_release = None
                 
             try:
                 self.db.register_snapshot_definition(backup_server_id,pgsql_node_id,dbname.strip(),at_time,backup_code.upper().strip(), \
-                                                  retention_period.lower().strip(),extra_backup_parameters.lower().strip(),remarks.strip())
+                                                     retention_period.lower().strip(),extra_backup_parameters.lower().strip(),remarks.strip(), \
+                                                     pg_dump_release)
                 
                 print '\n[Done] Snapshot for dbname: ' + dbname.strip() + ' defined.\n'
 

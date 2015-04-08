@@ -449,7 +449,8 @@ CREATE TABLE snapshot_definition(
   retention_period interval DEFAULT '7 days'::interval NOT NULL,
   extra_backup_parameters TEXT DEFAULT '',
   status TEXT DEFAULT 'WAITING',
-  remarks TEXT
+  remarks TEXT,
+  pg_dump_release TEXT DEFAULT NULL
 );
 
 ALTER TABLE snapshot_definition ADD PRIMARY KEY (backup_server_id,pgsql_node_id,dbname,at_time,backup_code,extra_backup_parameters);
@@ -546,6 +547,7 @@ CREATE TABLE backup_catalog(
   error_message TEXT,
   role_list TEXT[],
   pgsql_node_release TEXT,
+  pg_dump_release TEXT,
   checksum TEXT,
   dbname_size BIGINT
 );
@@ -2368,7 +2370,7 @@ ALTER FUNCTION update_backup_definition(INTEGER,TEXT,TEXT,TEXT,TEXT,TEXT,INTERVA
 -- Function: register_snapshot_definition()
 -- ------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION register_snapshot_definition(INTEGER,INTEGER,TEXT,TIMESTAMP,CHARACTER VARYING,INTERVAL,TEXT,TEXT) RETURNS VOID
+CREATE OR REPLACE FUNCTION register_snapshot_definition(INTEGER,INTEGER,TEXT,TIMESTAMP,CHARACTER VARYING,INTERVAL,TEXT,TEXT,TEXT) RETURNS VOID
  LANGUAGE plpgsql 
  SECURITY INVOKER 
  SET search_path = public, pg_temp
@@ -2382,7 +2384,8 @@ CREATE OR REPLACE FUNCTION register_snapshot_definition(INTEGER,INTEGER,TEXT,TIM
   backup_code_ ALIAS FOR $5;
   retention_period_ ALIAS FOR $6;
   extra_backup_parameters_ ALIAS FOR $7;
-  remarks_ ALIAS FOR $7;
+  remarks_ ALIAS FOR $8;
+  pg_dump_release_ ALIAS FOR $9;	 
 
   server_cnt INTEGER;
   node_cnt INTEGER;  
@@ -2422,8 +2425,9 @@ CREATE OR REPLACE FUNCTION register_snapshot_definition(INTEGER,INTEGER,TEXT,TIM
 						backup_code,
 						retention_period,
 						extra_backup_parameters,
-						remarks)
-	     VALUES ($1,$2,$3,$4,$5,$6,$7,$8)'
+						remarks,
+						pg_dump_release)
+	     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)'
     USING backup_server_id_,
 	  pgsql_node_id_,
 	  dbname_,
@@ -2431,7 +2435,8 @@ CREATE OR REPLACE FUNCTION register_snapshot_definition(INTEGER,INTEGER,TEXT,TIM
 	  backup_code_,
 	  retention_period_,
 	  extra_backup_parameters_,
-	  remarks_;         
+	  remarks_,
+	  pg_dump_release_;         
 
  EXCEPTION WHEN others THEN
    	GET STACKED DIAGNOSTICS	
@@ -2443,7 +2448,7 @@ CREATE OR REPLACE FUNCTION register_snapshot_definition(INTEGER,INTEGER,TEXT,TIM
 END;
 $$;
 
-ALTER FUNCTION register_snapshot_definition(INTEGER,INTEGER,TEXT,TIMESTAMP,CHARACTER VARYING,INTERVAL,TEXT,TEXT) OWNER TO pgbackman_role_rw;
+ALTER FUNCTION register_snapshot_definition(INTEGER,INTEGER,TEXT,TIMESTAMP,CHARACTER VARYING,INTERVAL,TEXT,TEXT,TEXT) OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------------
@@ -3262,7 +3267,11 @@ BEGIN
 		   ' --node-user ' || admin_user || 
 		   ' --snapshot-id ' || snapshot_row.snapshot_id::TEXT;
 
-  IF SNAPSHOT_row.backup_code != 'CLUSTER' THEN
+  IF snapshot_row.pg_dump_release != '' AND snapshot_row.pg_dump_release IS NOT NULL THEN
+     output := output || ' --pg-dump-release ' || snapshot_row.pg_dump_release;
+  END IF;
+
+  IF snapshot_row.backup_code != 'CLUSTER' THEN
      output := output || ' --dbname ' || snapshot_row.dbname;
   END IF;
 
@@ -3330,7 +3339,7 @@ BEGIN
 	 b.pg_dump_file,
 	 b.pg_dump_roles_file,
 	 b.pg_dump_dbconfig_file,
-	 b.pgsql_node_release 
+	 b.pg_dump_release 
   FROM restore_definition a 
   JOIN backup_catalog b ON a.bck_id = b.bck_id 
   WHERE restore_def = restore_def_
@@ -3361,7 +3370,7 @@ BEGIN
          output := output || ' --role-list ' || restore_row.role_list;
    END IF;
 
-   output := output || ' --pg-release ' || restore_row.pgsql_node_release ||
+   output := output || ' --pg-release ' || restore_row.pg_dump_release ||
    	     	    ' --root-backup-dir ' || root_backup_dir;
 		     		   
   output := output || E'" \n';
@@ -3457,7 +3466,7 @@ ALTER FUNCTION get_pgsql_node_admin_user(INTEGER) OWNER TO pgbackman_role_rw;
 -- Function: register_backup_catalog()
 -- ------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION register_backup_catalog(INTEGER,INTEGER,INTEGER,INTEGER,TEXT,TIMESTAMP WITH TIME ZONE,TIMESTAMP WITH TIME ZONE,INTERVAL,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,TEXT,TEXT,TEXT,INTEGER,TEXT[],TEXT) RETURNS VOID
+CREATE OR REPLACE FUNCTION register_backup_catalog(INTEGER,INTEGER,INTEGER,INTEGER,TEXT,TIMESTAMP WITH TIME ZONE,TIMESTAMP WITH TIME ZONE,INTERVAL,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,TEXT,TEXT,TEXT,INTEGER,TEXT[],TEXT,TEXT) RETURNS VOID
  LANGUAGE plpgsql 
  SECURITY INVOKER 
  SET search_path = public, pg_temp
@@ -3488,6 +3497,7 @@ CREATE OR REPLACE FUNCTION register_backup_catalog(INTEGER,INTEGER,INTEGER,INTEG
   snapshot_id_ ALIAS FOR $22;
   role_list_ ALIAS FOR $23;
   pgsql_node_release_ ALIAS FOR $24;
+  pg_dump_release_ ALIAS FOR $25;
 
   v_msg     TEXT;
   v_detail  TEXT;
@@ -3517,8 +3527,9 @@ CREATE OR REPLACE FUNCTION register_backup_catalog(INTEGER,INTEGER,INTEGER,INTEG
 					     error_message,
 					     snapshot_id,
 					     role_list,
-					     pgsql_node_release) 
-	     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24)'
+					     pgsql_node_release,
+					     pg_dump_release) 
+	     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25)'
     USING  def_id_,
     	   procpid_,
     	   backup_server_id_,
@@ -3542,7 +3553,8 @@ CREATE OR REPLACE FUNCTION register_backup_catalog(INTEGER,INTEGER,INTEGER,INTEG
 	   error_message_,
 	   snapshot_id_,
 	   role_list_,
-	   pgsql_node_release_;
+	   pgsql_node_release_,
+	   pg_dump_release_;
 
  EXCEPTION WHEN others THEN
    	GET STACKED DIAGNOSTICS	
@@ -3554,7 +3566,7 @@ CREATE OR REPLACE FUNCTION register_backup_catalog(INTEGER,INTEGER,INTEGER,INTEG
  END;
 $$;
 
-ALTER FUNCTION register_backup_catalog(INTEGER,INTEGER,INTEGER,INTEGER,TEXT,TIMESTAMP WITH TIME ZONE,TIMESTAMP WITH TIME ZONE,INTERVAL,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,TEXT,TEXT,TEXT,INTEGER,TEXT[],TEXT) OWNER TO pgbackman_role_rw;
+ALTER FUNCTION register_backup_catalog(INTEGER,INTEGER,INTEGER,INTEGER,TEXT,TIMESTAMP WITH TIME ZONE,TIMESTAMP WITH TIME ZONE,INTERVAL,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,TEXT,TEXT,TEXT,INTEGER,TEXT[],TEXT,TEXT) OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------------
@@ -4107,7 +4119,8 @@ CREATE OR REPLACE VIEW show_backup_details AS
        a.execution_method AS "Execution",
        left(a.error_message,60) AS "Error message",
        array_to_string(a.role_list,',') AS "Role list",
-       pgsql_node_release AS "PgSQL release" 
+       a.pgsql_node_release AS "PgSQL node release",
+       a.pg_dump_release AS "pg_dump release" 
    FROM backup_catalog a 
    JOIN backup_definition b ON a.def_id = b.def_id) 
    UNION
@@ -4146,7 +4159,8 @@ CREATE OR REPLACE VIEW show_backup_details AS
        a.execution_method AS "Execution",
        left(a.error_message,60) AS "Error message",
        array_to_string(a.role_list,',') AS "Role list",
-       pgsql_node_release AS "PgSQL release" 
+       a.pgsql_node_release AS "PgSQL node release",
+       a.pg_dump_release AS "pg_dump release" 
    FROM backup_catalog a 
    JOIN snapshot_definition b ON a.snapshot_id = b.snapshot_id)
  ORDER BY "Finished" DESC,backup_server_id,pgsql_node_id,"DBname","Code","Status";
@@ -4296,7 +4310,7 @@ SELECT lpad(snapshot_id::text,11,'0') AS "SnapshotID",
        get_pgsql_node_fqdn(pgsql_node_id) AS "PgSQL node",
        dbname AS "DBname",
        to_char(at_time, 'YYYYMMDDHH24MI'::text) AS "AT time",
-       backup_code AS "Code",
+       backup_code || COALESCE(' [' || pg_dump_release || ']','') AS "Code",
        retention_period::text AS "Retention",
        extra_backup_parameters AS "Parameters",
        status AS "Status"

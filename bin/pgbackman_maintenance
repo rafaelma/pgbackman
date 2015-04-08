@@ -280,7 +280,7 @@ def process_pending_backup_catalog_log_file(db,backup_server_id):
                     for line in pending_file:
                         parameters = line.split('::')
                     
-                        if len(parameters) == 24:
+                        if len(parameters) == 25:
 
                             #
                             # Fix when def_id and snapshot_id are like ''. This is not a valid
@@ -326,7 +326,8 @@ def process_pending_backup_catalog_log_file(db,backup_server_id):
                                                        parameters[20],
                                                        snapshot_id,
                                                        role_list,
-                                                       parameters[23].replace('\n',''))
+                                                       parameters[23],
+                                                       parameters[24].replace('\n',''))
 
                             logs.logger.info('Backup job catalog for DefID: %s or snapshotID: %s in pending file %s updated in the database',def_id,snapshot_id,pending_log_file)
                             

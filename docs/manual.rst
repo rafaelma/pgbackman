@@ -185,7 +185,7 @@ version from the master branch at the GitHub repository.
  [root@server]# git clone https://github.com/rafaelma/pgbackman.git
 
  [root@server]# cd pgbackman
- [root@server]# ./setup2.py install
+ [root@server]# ./setup2.py install --install-scripts=/usr/bin
  .....
 
 This will install all users, groups, programs, configuration files, logfiles and the
@@ -1285,6 +1285,8 @@ This command registers a one time snapshot backup of a database.
                      [retention period] 
                      [extra backup parameters] 
                      [remarks] 
+		     [pg_dump/all release]
+
 
 Parameters:
 
@@ -1309,13 +1311,25 @@ Parameters:
 * **[extra backup parameters]:** Extra parameters that can be used
   with pg_dump / pg_dumpall
 
+* **[pg_dump/all release]:** Release of pg_dump / pg_dumpall to use
+  when taking the snapshot, e.g. 9.0, 9.1, 9.2, 9.3 or 9.4. This
+  parameter can be necessary if we are going to restore the snapshot
+  in a postgreSQL installation running a newer release than the
+  source.
+
+  This release version cannot be lower than the one used in the source
+  installation running the database we are going to backup.
+        
+  The release of the source installation will be used per default if
+  this parameter is not defined.
+
 The default value for a parameter is shown between brackets ``[]``. If the
 user does not define any value, the default value will be used. This
 command can be run with or without parameters. e.g.:
 
 ::
 
-   [pgbackman]$ register_snapshot_definition 1 1 test02 2014-05-31 full "7 days" "" "Test snapshot"
+   [pgbackman]$ register_snapshot_definition 1 1 test02 2014-05-31 full "7 days" "" "Test snapshot" ""
 
    [Done] Snapshot for dbname: test02 defined.
 
@@ -1331,6 +1345,7 @@ command can be run with or without parameters. e.g.:
    # Retention period [7 days]: 
    # Extra parameters []: 
    # Remarks []: 
+   # pg_dump/all release [Same as pgSQL node running dbname]:
    
    # Are all values correct (yes/no): yes
    --------------------------------------------------------
@@ -1546,6 +1561,7 @@ This command can be run with or without parameters. e.g.:
    |                  DBname: | dump_test                                                                                                                      |
    | Backup server (ID/FQDN): | [1] / pg-backup01.example.net                                                                                                  |
    |    PgSQL node (ID/FQDN): | [1] / pgbackmandb.example.net                                                                                                  |
+   |      PgSQL node release: | 9.3                                                                                                                            |
    |     Pg_dump/all release: | 9.3                                                                                                                            |
    |                          |                                                                                                                                |
    |                Schedule: |  [min hour day_month month weekday]                                                                                            |
