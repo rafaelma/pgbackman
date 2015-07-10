@@ -111,7 +111,7 @@ def pg_dump(db):
             ' -p ' + global_parameters['pgsql_node_port'] + \
             ' -U ' + global_parameters['pgsql_node_admin_user'] + \
             ' --file=' + global_parameters['database_dump_file'] + \
-            ' --format=c' + \
+            ' --format=d' + \
             ' --blobs' + \
             ' --verbose' + \
             ' ' + global_parameters['extra_backup_parameters'] + \
@@ -125,7 +125,7 @@ def pg_dump(db):
             ' -U ' + global_parameters['pgsql_node_admin_user'] + \
             ' --schema-only' + \
             ' --file=' + global_parameters['database_dump_file'] + \
-            ' --format=c' + \
+            ' --format=d' + \
             ' --verbose' + \
             ' ' + global_parameters['extra_backup_parameters'] + \
             ' ' + global_parameters['dbname']
@@ -138,7 +138,7 @@ def pg_dump(db):
             ' -U ' + global_parameters['pgsql_node_admin_user'] + \
             ' --data-only' + \
             ' --file=' + global_parameters['database_dump_file'] + \
-            ' --format=c' + \
+            ' --format=d' + \
             ' --blobs' + \
             ' --verbose' + \
             ' ' + global_parameters['extra_backup_parameters'] + \
