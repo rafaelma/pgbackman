@@ -193,7 +193,7 @@ class pgbackman_cli(cmd.Cmd):
                     print '\n[ERROR]: Could not register this backup server\n',e  
 
             elif ack.lower() == 'no':
-                print '\n[Aborted]\n'
+                print '\n[Aborted] Command interrupted by the user.\n'
 
         #
         # Command with parameters
@@ -291,7 +291,7 @@ class pgbackman_cli(cmd.Cmd):
                     print '\n[ERROR]: Could not delete this backup server\n',e
 
             elif ack.lower() == 'no':
-                print '\n[Aborted]\n'
+                print '\n[Aborted] Command interrupted by the user.\n'
               
         #
         # Command with parameters
@@ -464,7 +464,7 @@ class pgbackman_cli(cmd.Cmd):
                         print '\n[ERROR]: Could not register this PgSQL node\n',e
 
             elif ack.lower() == 'no':
-                print '\n[Aborted]\n'
+                print '\n[Aborted] Command interrupted by the user.\n'
 
         #
         # Command with parameters
@@ -573,7 +573,7 @@ class pgbackman_cli(cmd.Cmd):
                     print '\n[ERROR]: Could not delete this PgSQL node\n',e
 
             elif ack.lower() == 'no':
-                print '\n[Aborted]\n'
+                print '\n[Aborted] Command interrupted by the user.\n'
 
         #
         # Command with parameters
@@ -862,7 +862,7 @@ class pgbackman_cli(cmd.Cmd):
                 return False
 
             #
-            # Getting some default values
+            # Getting some default values for the PgSQL node defined
             #
 
             try:
@@ -886,7 +886,6 @@ class pgbackman_cli(cmd.Cmd):
                 dbname = raw_input('# DBname []: ')
 
                 if dbname != '#all_databases#':
-
                     minutes_cron = raw_input('# Minutes cron [' + str(minutes_cron_default) + ']: ')
                     hours_cron = raw_input('# Hours cron [' + str(hours_cron_default) + ']: ')
             
@@ -915,7 +914,6 @@ class pgbackman_cli(cmd.Cmd):
             if ack.lower() == 'yes':
 
                 try:
-                   
                     dsn_value = self.db.get_pgsql_node_dsn(pgsql_node_id)
                     db_node = pgbackman_db(dsn_value,'pgbackman_cli')
 
@@ -1034,7 +1032,7 @@ class pgbackman_cli(cmd.Cmd):
                         print '\n[ERROR]: Could not register this backup definition\n',e
 
             elif ack.lower() == 'no':
-                print '\n[Aborted]\n'
+                print '\n[Aborted] Command interrupted by the user.\n'
 
             db_node = None
 
@@ -1287,7 +1285,7 @@ class pgbackman_cli(cmd.Cmd):
                     print '\n[ERROR]: %s is not a legal value for a backup job definition\n' % def_id
 
             elif ack.lower() == 'no':
-                print '\n[Aborted]\n'
+                print '\n[Aborted] Command interrupted by the user.\n'
 
         #
         # Command with parameters
@@ -1420,7 +1418,7 @@ class pgbackman_cli(cmd.Cmd):
                     print '\n[ERROR]: Could not delete this backup job definition\n',e
 
             elif ack.lower() == 'no':
-                print '\n[Aborted]\n'
+                print '\n[Aborted] Command interrupted by the user.\n'
 
         #
         # Command with parameters
@@ -1877,63 +1875,14 @@ class pgbackman_cli(cmd.Cmd):
             
             try:
                 dbname = raw_input('# DBname []: ')
-
-            except Exception as e:
-                print '\n--------------------------------------------------------' 
-                print '\n[Aborted] Command interrupted by the user.\n'
-                return False
-
-            try:
-                self.db.check_pgsql_node_status(pgsql_node_id)
-                
-                dsn_value = self.db.get_pgsql_node_dsn(pgsql_node_id)
-                db_node = pgbackman_db(dsn_value,'pgbackman_cli')
-                
-                if dbname != '':
-                    if not db_node.database_exists(dbname):
-                        print '\n--------------------------------------------------------' 
-                        print ('\n[ERROR]: Database %s does not exist in The PgSQL node %s\n' % (dbname, pgsql_node_fqdn)) 
-                        
-                        db_node = None
-                        return False
-                        
-                        db_node = None
-                        
-            except Exception as e:
-                print '\n[ERROR]: ',e 
-                return False
-
-            try:
                 at_time = raw_input('# AT timestamp [' + str(at_time_default) + ']: ')
                 backup_code = raw_input('# Backup code [' + backup_code_default + ']: ')
                 retention_period = raw_input('# Retention period [' + retention_period_default + ']: ')
                 extra_backup_parameters = raw_input('# Extra parameters [' + extra_backup_parameters_default + ']: ')
                 remarks = raw_input('# Remarks []: ')
-
-            except Exception as e:
-                print '\n--------------------------------------------------------' 
-                print '\n[Aborted] Command interrupted by the user.\n'
-                return False
-
-            try:
                 pg_dump_release = raw_input('# pg_dump/all release [Same as pgSQL node running dbname]: ')
                 print
 
-            except Exception as e:
-                print '\n--------------------------------------------------------' 
-                print '\n[Aborted] Command interrupted by the user.\n'
-                return False
-            
-            if pg_dump_release not in ('','9.0','9.1','9.2','9.3','9.4'):    
-                print '\n--------------------------------------------------------' 
-                print ('\n[ERROR]: pg_dump/all release [%s] is not valid\n' % (pg_dump_release)) 
-
-                return False
-
-            elif pg_dump_release == '':
-                pg_dump_release = None
-
-            try:
                 while ack != 'yes' and ack != 'no':
                     ack = raw_input('# Are all values correct (yes/no): ')
 
@@ -1944,19 +1893,53 @@ class pgbackman_cli(cmd.Cmd):
                 print '\n[Aborted] Command interrupted by the user.\n'
                 return False
 
-            if at_time == '':
-                at_time = at_time_default
-
-            if backup_code == '':
-                backup_code = backup_code_default
-
-            if retention_period == '':
-                retention_period = retention_period_default
-
-            if extra_backup_parameters == '':
-                extra_backup_parameters = extra_backup_parameters_default
-                                    
             if ack.lower() == 'yes':
+
+                try:
+                    self.db.check_pgsql_node_status(pgsql_node_id)
+                
+                    dsn_value = self.db.get_pgsql_node_dsn(pgsql_node_id)
+                    db_node = pgbackman_db(dsn_value,'pgbackman_cli')
+                
+                    if dbname != '':
+                        if not db_node.database_exists(dbname):
+                            print '\n--------------------------------------------------------' 
+                            print ('\n[ERROR]: Database [%s] does not exist in The PgSQL node %s\n' % (dbname, pgsql_node_fqdn)) 
+                        
+                            db_node = None
+                            return False
+                
+                    elif dbname == '':
+                        print ('\n[ERROR]: Database [%s] does not exist in The PgSQL node %s\n' % (dbname, pgsql_node_fqdn)) 
+                        db_node = None
+                        return False
+                        
+                    db_node = None
+                        
+                except Exception as e:
+                    print '\n[ERROR]: ',e 
+                    return False
+
+                if at_time == '':
+                    at_time = at_time_default
+
+                if backup_code == '':
+                    backup_code = backup_code_default
+
+                if retention_period == '':
+                    retention_period = retention_period_default
+
+                if extra_backup_parameters == '':
+                    extra_backup_parameters = extra_backup_parameters_default
+
+                if pg_dump_release == '':
+                    pg_dump_release = None
+            
+                elif pg_dump_release not in ('9.0','9.1','9.2','9.3','9.4'):    
+                    print ('\n[ERROR]: pg_dump/all release [%s] is not valid\n' % (pg_dump_release)) 
+
+                    return False
+
                 try:
                     self.db.register_snapshot_definition(backup_server_id,pgsql_node_id,dbname.strip(),at_time,backup_code.upper().strip(), \
                                                          retention_period.lower().strip(),extra_backup_parameters.lower().strip(),remarks.strip(), \
@@ -1968,7 +1951,7 @@ class pgbackman_cli(cmd.Cmd):
                     print '\n[ERROR]: Could not register this snapshot\n',e
 
             elif ack.lower() == 'no':
-                print '\n[Aborted]\n'
+                print '\n[Aborted] Command interrupted by the user.\n'
 
         #
         # Command with parameters
@@ -2025,10 +2008,15 @@ class pgbackman_cli(cmd.Cmd):
 
                 if dbname != '':
                     if not db_node.database_exists(dbname):
-                        print ('\n[ERROR]: Database %s does not exist in The PgSQL node %s\n' % (dbname, pgsql_node_fqdn)) 
+                        print ('\n[ERROR]: Database [%s] does not exist in The PgSQL node %s\n' % (dbname, pgsql_node_fqdn)) 
 
                         db_node = None
                         return False
+                
+                elif dbname == '':
+                    print ('\n[ERROR]: Database [%s] does not exist in The PgSQL node %s\n' % (dbname, pgsql_node_fqdn)) 
+                    db_node = None
+                    return False
 
                 db_node = None
                     
@@ -2047,14 +2035,15 @@ class pgbackman_cli(cmd.Cmd):
 
             if extra_backup_parameters == '':
                 extra_backup_parameters = extra_backup_parameters_default
-           
-            if pg_dump_release not in ('','9.0','9.1','9.2','9.3','9.4'):    
+
+            if pg_dump_release == '':
+                pg_dump_release = None
+            
+            elif pg_dump_release not in ('9.0','9.1','9.2','9.3','9.4'):    
                 print ('\n[ERROR]: pg_dump/all release [%s] is not valid\n' % (pg_dump_release)) 
+
                 return False
 
-            elif pg_dump_release == '':
-                pg_dump_release = None
-                
             try:
                 self.db.register_snapshot_definition(backup_server_id,pgsql_node_id,dbname.strip(),at_time,backup_code.upper().strip(), \
                                                      retention_period.lower().strip(),extra_backup_parameters.lower().strip(),remarks.strip(), \
@@ -2472,10 +2461,10 @@ class pgbackman_cli(cmd.Cmd):
                         print '\n[ERROR]: Could not register this restore definition\n',e
 
                 elif ack_confirm.lower() == 'no':
-                    print '\n[Aborted]\n'
+                    print '\n[Aborted] Command interrupted by the user.\n'
 
             elif ack_input.lower() == 'no':
-                print '\n[Aborted]\n'
+                print '\n[Aborted] Command interrupted by the user.\n'
 
         else:
             print '\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n'
@@ -3412,7 +3401,7 @@ class pgbackman_cli(cmd.Cmd):
                     print '\n[ERROR]: Could not update this backup server\n',e
 
             elif ack.lower() == 'no':
-                print '\n[Aborted]\n'
+                print '\n[Aborted] Command interrupted by the user.\n'
 
         #
         # Command with parameters
@@ -3577,7 +3566,7 @@ class pgbackman_cli(cmd.Cmd):
                         print '\n[ERROR]: Could not update this PgSQL node\n',e
 
             elif ack.lower() == 'no':
-                print '\n[Aborted]\n'
+                print '\n[Aborted] Command interrupted by the user.\n'
 
         #
         # Command with parameters
@@ -3860,7 +3849,7 @@ class pgbackman_cli(cmd.Cmd):
                     print '\n[ERROR]: Could not update the configuration for this PgSQL node \n',e
 
             elif ack.lower() == 'no':
-                print '\n[Aborted]\n'
+                print '\n[Aborted] Command interrupted by the user.\n'
             
         #
         # Command with parameters
@@ -4138,7 +4127,7 @@ class pgbackman_cli(cmd.Cmd):
                     print '\n[ERROR]: Could not update the configuration for this Backup server \n',e
 
             elif ack.lower() == 'no':
-                print '\n[Aborted]\n'
+                print '\n[Aborted] Command interrupted by the user.\n'
             
         #
         # Command with parameters
@@ -4371,7 +4360,7 @@ class pgbackman_cli(cmd.Cmd):
                     print '\n[ERROR]: Could not update this Backup definition\n',e
                     
             elif ack.lower() == 'no':
-                print '\n[Aborted]\n'
+                print '\n[Aborted] Command interrupted by the user.\n'
 
         #
         # Command with parameters
