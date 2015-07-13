@@ -553,11 +553,9 @@ $$;
 ALTER FUNCTION generate_restore_at_file(INTEGER) OWNER TO pgbackman_role_rw;
 
 
--- ------------------------------------------------------------
--- Function: delete_force_backup_definition_database()
--- ------------------------------------------------------------
-
--- Update function delete_force_backup_definition_dbname - We have to delete data only from backup definitions and not snapshot definitions
+-- Update function delete_force_backup_definition_dbname - We have to
+-- delete data only from backup definitions and not snapshot
+-- definitions
 
 DROP FUNCTION delete_force_backup_definition_dbname(INTEGER,TEXT);
 
