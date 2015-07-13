@@ -553,6 +553,82 @@ $$;
 ALTER FUNCTION generate_restore_at_file(INTEGER) OWNER TO pgbackman_role_rw;
 
 
+-- ------------------------------------------------------------
+-- Function: delete_force_backup_definition_database()
+-- ------------------------------------------------------------
+
+-- Update function delete_force_backup_definition_dbname - We have to delete data only from backup definitions and not snapshot definitions
+
+DROP FUNCTION delete_force_backup_definition_dbname(INTEGER,TEXT);
+
+CREATE OR REPLACE FUNCTION delete_force_backup_definition_dbname(INTEGER,TEXT) RETURNS VOID
+ LANGUAGE plpgsql 
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ DECLARE
+  pgsql_node_id_ ALIAS FOR $1;
+  dbname_ ALIAS FOR $2;
+  def_cnt INTEGER;
+
+  v_msg     TEXT;
+  v_detail  TEXT;
+  v_context TEXT;
+ BEGIN
+
+   SELECT count(*) FROM backup_definition WHERE pgsql_node_id = pgsql_node_id_ AND dbname = dbname_ INTO def_cnt;
+
+    IF def_cnt != 0 THEN
+
+    EXECUTE 'WITH del_catid AS (
+               DELETE FROM backup_catalog 
+               WHERE pgsql_node_id = $1
+	       AND dbname = $2
+               AND snapshot_id IS NULL
+               RETURNING def_id,
+			   bck_id,
+			   backup_server_id,
+			   pg_dump_file,
+			   pg_dump_log_file,
+			   pg_dump_roles_file,
+			   pg_dump_roles_log_file,
+			   pg_dump_dbconfig_file,
+			   pg_dump_dbconfig_log_file
+             ),save_catinfo AS (
+	       INSERT INTO catalog_entries_to_delete(
+	       	      	   def_id,
+			   bck_id,
+			   backup_server_id,
+			   pg_dump_file,
+			   pg_dump_log_file,
+			   pg_dump_roles_file,
+			   pg_dump_roles_log_file,
+			   pg_dump_dbconfig_file,
+			   pg_dump_dbconfig_log_file)
+		SELECT * FROM del_catid	
+             )
+             DELETE FROM backup_definition
+	     WHERE pgsql_node_id = $1
+	     AND dbname = $2;'
+    USING pgsql_node_id_,
+    	  dbname_;
+
+    ELSE
+      RAISE EXCEPTION 'No backup job definition for dbname: %s and PgSQL node: %s',dbname_,pgsql_node_id_; 
+    END IF;
+	   
+   EXCEPTION WHEN others THEN
+   	GET STACKED DIAGNOSTICS	
+            v_msg     = MESSAGE_TEXT,
+            v_detail  = PG_EXCEPTION_DETAIL,
+            v_context = PG_EXCEPTION_CONTEXT;
+        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \n----------------------------------------------\n', v_msg, v_detail;
+  END;
+$$;
+
+ALTER FUNCTION delete_force_backup_definition_dbname(INTEGER,TEXT) OWNER TO pgbackman_role_rw;
+
+
 -- Add VIEW show_snapshots_in_progress
 
 CREATE OR REPLACE VIEW show_snapshots_in_progress AS

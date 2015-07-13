@@ -2215,6 +2215,7 @@ CREATE OR REPLACE FUNCTION delete_force_backup_definition_dbname(INTEGER,TEXT) R
                DELETE FROM backup_catalog 
                WHERE pgsql_node_id = $1
 	       AND dbname = $2
+               AND snapshot_id IS NULL
                RETURNING def_id,
 			   bck_id,
 			   backup_server_id,
