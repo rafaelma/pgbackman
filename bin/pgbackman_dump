@@ -759,27 +759,37 @@ def register_backup_catalog(db):
     # pg_dump_file information
     #
     
+    pg_dump_file_size = 0
+
     if os.path.exists(global_parameters['cluster_dump_file']):
         pg_dump_file = global_parameters['cluster_dump_file']
         pg_dump_log_file = global_parameters['cluster_log_file']
 
         try:
-            pg_dump_file_size = os.path.getsize(global_parameters['cluster_dump_file'])
+            pg_dump_file_size = os.path.getsize(pg_dump_file)
         except OSError as e:
-            logs.logger.error('Could not get size of pg_dump_file: %s - %s',global_parameters['cluster_dump_file'],e)
+            logs.logger.error('Could not get size of pg_dump_file: %s - %s',pg_dump_file,e)
 
     elif os.path.exists(global_parameters['database_dump_file']):
         pg_dump_file = global_parameters['database_dump_file']
         pg_dump_log_file = global_parameters['database_log_file']
 
         try:
-            pg_dump_file_size = os.path.getsize(global_parameters['database_dump_file'])
+            #
+            # We use pg_dump custom format 'directory' with pgbackman
+            # >= 1.1.0. We have to find out all files in the directory
+            # to get the total size of the database dump.
+            #
+                        
+            if os.path.isdir(pg_dump_file):
+                for files in os.listdir(pg_dump_file):
+                    pg_dump_file_size += os.path.getsize(pg_dump_file + '/' + files)
+
         except OSError as e:
-            logs.logger.error('Could not get size of pg_dump_file: %s - %s',global_parameters['database_dump_file'],e)
+            logs.logger.error('Could not get size of pg_dump_file: %s - %s',pg_dump_file,e)
 
     else:
         pg_dump_file = 'None'
-        pg_dump_file_size = 0
     
         if os.path.exists(global_parameters['cluster_log_file']):
             pg_dump_log_file = global_parameters['cluster_log_file']
@@ -792,17 +802,18 @@ def register_backup_catalog(db):
     # pg_dump_roles_file information
     #
 
+    pg_dump_roles_file_size = 0
+
     if os.path.exists(global_parameters['roles_dump_file']):
         pg_dump_roles_file = global_parameters['roles_dump_file']
         pg_dump_roles_log_file = global_parameters['roles_log_file']
 
         try:
-            pg_dump_roles_file_size = os.path.getsize(global_parameters['roles_dump_file'])
+            pg_dump_roles_file_size = os.path.getsize(pg_dump_roles_file)
         except OSError as e:
-            logs.logger.error('Could not get size of pg_dump roles file: %s - %s',global_parameters['roles_dump_file'],e)
+            logs.logger.error('Could not get size of pg_dump roles file: %s - %s',pg_dump_roles_file,e)
     else:
         pg_dump_roles_file = 'None'
-        pg_dump_roles_file_size = 0
         
         if os.path.exists(global_parameters['roles_log_file']):
             pg_dump_roles_log_file = global_parameters['roles_log_file']
@@ -813,17 +824,18 @@ def register_backup_catalog(db):
     # pg_dump_dbconfig_file information
     #
 
+    pg_dump_dbconfig_file_size = 0
+
     if os.path.exists(global_parameters['dbconfig_dump_file']):
         pg_dump_dbconfig_file = global_parameters['dbconfig_dump_file']
         pg_dump_dbconfig_log_file = global_parameters['dbconfig_log_file']
 
         try:
-            pg_dump_dbconfig_file_size = os.path.getsize(global_parameters['dbconfig_dump_file'])
+            pg_dump_dbconfig_file_size = os.path.getsize(pg_dump_dbconfig_file)
         except OSError as e:
-            logs.logger.error('Could not get size of pg_dump dbconfig file: %s - %s',global_parameters['dbconfig_dump_file'],e)
+            logs.logger.error('Could not get size of pg_dump dbconfig file: %s - %s',pg_dump_dbconfig_file,e)
     else:
         pg_dump_dbconfig_file = 'None'
-        pg_dump_dbconfig_file_size = 0
         
         if os.path.exists(global_parameters['dbconfig_log_file']):
             pg_dump_dbconfig_log_file = global_parameters['dbconfig_log_file']
