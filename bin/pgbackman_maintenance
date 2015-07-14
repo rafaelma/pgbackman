@@ -31,6 +31,7 @@ import socket
 import signal
 import argparse
 import errno
+import shutil
 
 from pgbackman.logs import *
 from pgbackman.database import *
@@ -122,15 +123,22 @@ def delete_files_from_force_deletes(db,backup_server_id):
             for index in range(5,11):
 
                 try:
-                    os.unlink(record[index])
-                    logs.logger.debug('File: %s deleted',record[index])
-            
+
+                    if os.path.isfile(record[index]):
+                        os.unlink(record[index])
+                        logs.logger.debug('File: %s deleted',record[index])
+
+                    elif os.path.isdir(record[index]):
+                        shutil.rmtree(record[index])
+                        logs.logger.debug('Directory: %s deleted',record[index])
+                                                
                 except OSError as e:
                     if e.errno != errno.ENOENT:
                         logs.logger.error('Problems deleting files from force deletions of DefIDs: %s',e)
                         error_cnt = error_cnt + 1
                     else:
                         pass
+
 
             #
             # We can delete the delID entry from the database only if we can 
@@ -174,8 +182,14 @@ def enforce_backup_retentions(db,backup_server_id):
             for index in range(9,15):
 
                  try:
-                    os.unlink(record[index])
-                    logs.logger.debug('File: %s deleted',record[index])
+
+                     if os.path.isfile(record[index]):
+                         os.unlink(record[index])
+                         logs.logger.debug('File: %s deleted',record[index])
+
+                     elif os.path.isdir(record[index]):
+                         shutil.rmtree(record[index])
+                         logs.logger.debug('Directory: %s deleted',record[index])
     
                  except OSError as e:
                     if e.errno != errno.ENOENT:
@@ -226,8 +240,14 @@ def enforce_snapshot_retentions(db,backup_server_id):
             for index in range(7,13):
 
                  try:
-                    os.unlink(record[index])
-                    logs.logger.debug('File: %s deleted',record[index])
+                     
+                     if os.path.isfile(record[index]):
+                         os.unlink(record[index])
+                         logs.logger.debug('File: %s deleted',record[index])
+
+                     elif os.path.isdir(record[index]):
+                         shutil.rmtree(record[index])
+                         logs.logger.debug('Directory: %s deleted',record[index])
     
                  except OSError as e:
                     if e.errno != errno.ENOENT:
