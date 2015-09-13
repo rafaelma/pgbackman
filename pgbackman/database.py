@@ -3023,6 +3023,8 @@ class pgbackman_db():
             raise e
 
 
+
+
     # ############################################
     # Method 
     # ############################################
@@ -3046,3 +3048,33 @@ class pgbackman_db():
         except psycopg2.Error as e:
             raise e
 
+
+    # ############################################
+    # Method 
+    # ############################################
+
+    def get_pgsql_node_database_with_bckdef_list(self,pgsql_node_id):
+
+        """
+        A function to get all databases in a PgSQL node with a backup
+        definition registered in PgBackMan
+        """
+
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT "DBname" FROM show_backup_definitions WHERE "Status" <> %s AND pgsql_node_id = %s',('DELETED',
+                                                                                                                                 pgsql_node_id))
+                    self.conn.commit()
+
+                    return self.cur
+                                        
+                except psycopg2.Error as e:
+                    raise e
+
+            self.pg_close()
+    
+        except psycopg2.Error as e:
+            raise e

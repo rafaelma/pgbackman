@@ -1034,10 +1034,16 @@ Parameters:
 * **[NodeID | FQDN]:** NodeID in PgBackMan or FQDN of the PgSQL node
   running the database to backup.
 
-* **[DBname]:** Database name. You can use the special value
-  ``#all_databases#`` if you want to register the backup definition
-  for all databases in the cluster except 'template0', 'template1' and
-  'postgres'.
+* **[DBname]:** Database name. One can use two special values insteed
+  of a database name:
+
+  * ``#all_databases#``: if you want to register the backup definition
+  for *all databases* in the cluster (Except 'template0', 'template1' and
+  'postgres').
+
+  * ``#databases_without_backups#``: if you want to register the backup
+    definition for all databases in the cluster *without a backup
+    definition* (Except 'template0','template1' and 'postgres').
 
 * **[\*_cron]:** Schedule definition using the cron expression.
 

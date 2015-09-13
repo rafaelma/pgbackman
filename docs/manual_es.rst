@@ -1106,11 +1106,18 @@ Parámetros:
   ejecutando la base de datos a la que se la va a realizar una copia
   de seguridad.
 
-* **[DBname]:** Nombre de la base de datos. Se puede utilizar el valor
-  especial ``#all_databases#`` si se quiere definir una definición de
-  copia de seguridad para todas las bases de datos existentes en el
-  nodo PgSQL (excepto 'template0', 'template1' y 'postgres')
+* **[DBname]:** Nombre de la base de datos. Se pueden utilizar dos valores
+  especiales en vez del nombre de la base de datos:
+
+  * ``#all_databases#``: si se quiere definir una definición de copia
+    de seguridad para *todas las bases de datos existentes* en el nodo
+    PgSQL (excepto 'template0', 'template1' y 'postgres')
  
+  * ``#databases_without_backups#``: si se quiere definir una
+    definición de copia de seguridad para las bases de datos
+    existentes en el nodo PgSQL *sin una definicion de copia de
+    seguridad* (excepto 'template0', 'template1' y 'postgres')
+
 * **[\*_cron]:** Definición del momento de ejecución de la copia de
   seguridad usando una expresión cron.
 
