@@ -3065,8 +3065,7 @@ class pgbackman_db():
 
             if self.cur:
                 try:
-                    self.cur.execute('SELECT "DBname" FROM show_backup_definitions WHERE "Status" <> %s AND pgsql_node_id = %s',('DELETED',
-                                                                                                                                 pgsql_node_id))
+                    self.cur.execute('SELECT "DBname" FROM show_backup_definitions WHERE "Status" <> %s AND pgsql_node_id = %s',('DELETED',pgsql_node_id))
                     self.conn.commit()
 
                     return self.cur
@@ -3076,5 +3075,116 @@ class pgbackman_db():
 
             self.pg_close()
     
+        except psycopg2.Error as e:
+            raise e
+
+
+    # ############################################
+    # Method 
+    # ############################################
+           
+    def get_pgbackman_dump_count(self):
+        """A function to get the number of pgbackman_dump processes running in
+        a PgSQL node"""
+     
+        try:
+            if self.cur:
+                
+                self.cur.execute('SELECT count(*) FROM pg_stat_activity WHERE application_name = \'pgbackman_dump\'')
+                self.conn.commit()
+
+                data = self.cur.fetchone()[0]
+                return data
+                                    
+        except psycopg2.Error as e:
+            raise e
+
+
+    # ############################################
+    # Method 
+    # ############################################
+           
+    def pg_recovery_in_progress(self):
+        """A function to find out if a PgSQL node is in recovery modus. This
+        means that the PgSQL node is a slave/standby node in a
+        replication system.
+        """
+     
+        try:
+            if self.cur:
+            
+                self.cur.execute('SELECT pg_is_in_recovery()')
+                self.conn.commit()
+
+                data = self.cur.fetchone()[0]
+                    
+                if data == True:
+                    return True
+                elif data == False:
+                    return False
+                else:
+                    return False
+                                    
+        except psycopg2.Error as e:
+            raise e
+
+
+    # ############################################
+    # Method 
+    # ############################################
+           
+    def pg_recovery_paused(self):
+        """A function to find out if a PgSQL node in recovery modus has the
+        recovery process paused"""
+
+        try:
+            if self.cur:
+            
+                self.cur.execute('SELECT pg_is_xlog_replay_paused()')
+                self.conn.commit()
+
+                data = self.cur.fetchone()[0]
+                
+                if data == True:
+                    return True
+                elif data == False:
+                    return False
+                else:
+                    return False
+                    
+        except psycopg2.Error as e:
+            raise e
+
+
+    # ############################################
+    # Method 
+    # ############################################
+           
+    def pause_pg_recovery(self):
+        """A function to pause a postgres recovery process"""
+
+        try:
+            if self.cur:
+                
+                self.cur.execute('SELECT pg_xlog_replay_pause()')
+                self.conn.commit()
+                                    
+        except psycopg2.Error as e:
+            raise e
+
+
+    # ############################################
+    # Method 
+    # ############################################
+           
+    def resume_pg_recovery(self):
+        """A function to resume a postgres recovery process"""
+
+        try:
+            if self.cur:
+                
+                self.cur.execute('SELECT pg_xlog_replay_resume()')
+                self.conn.commit()
+                                    
         except psycopg2.Error as e:
             raise e

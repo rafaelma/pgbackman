@@ -997,6 +997,8 @@ def check_pgbackman_database_connection(db):
 
     try:
         db.pg_connect()
+        db.pg_close()
+
         return True
     except Exception as e: 
         logs.logger.error('The pgbackman database is not available - %s',e)
@@ -1011,10 +1013,70 @@ def check_pgsql_node_database_connection(db_pgnode):
 
     try:
         db_pgnode.pg_connect()
+        db_pgnode.pg_close()
         return True
     except Exception as e: 
         logs.logger.critical('The %s database is not available - %s',global_parameters['dbname'],e)
         return False
+
+
+# ##############################################
+# Function pause_pg_recovery()
+# ##############################################
+  
+def pause_pg_recovery(db_pgnode):
+    '''Pause the postgres recovery in the PgSQL node'''
+
+    try:
+        
+        #
+        # Check if the PgSQL node is in recovery modus
+        #
+        if db_pgnode.pg_recovery_in_progress() == True:
+            
+            #
+            # Check if the postgres recovery is paused in this PgSQL
+            # node. If it is running, pause it.
+            #
+            if db_pgnode.pg_recovery_paused() == False:
+                db_pgnode.pause_pg_recovery()
+
+    except Exception as e: 
+        logs.logger.error('Problems pausing the postgres recovery - %s',e)
+
+
+# ##############################################
+# Function resume_pg_recovery()
+# ##############################################
+  
+def resume_pg_recovery(db_pgnode):
+    '''Resume the postgres recovery in the PgSQL node'''
+
+    try:
+        
+        #
+        # Check if the PgSQL node is in recovery modus
+        #
+        if db_pgnode.pg_recovery_in_progress() == True:
+            
+            #
+            # Check if the postgres recovery is paused in this PgSQL
+            # node. If it is paused and no other pgbackman_dump
+            # processes are running, resume it.
+            #
+            # get_pgbackman_dump_count() will return the number og
+            # pgbackman_dump processes running against this PgSQL
+            # node. A value = 1 means that only the process checking
+            # is active. A value > 1 means that several pgbackman_dump
+            # processes are running.
+            #
+
+            if db_pgnode.pg_recovery_paused() == True and db_pgnode.get_pgbackman_dump_count() == 1:                
+                db_pgnode.resume_pg_recovery()
+
+    except Exception as e: 
+        logs.logger.error('Problems resuming the postgres recovery - %s',e)
+
 
 
 # ############################################
@@ -1141,6 +1203,34 @@ def main():
  
     global_parameters['dbconfig_dump_file'] = get_filename_id('DBCONFIG','dump') + '.sql'
     global_parameters['dbconfig_log_file'] = get_filename_id('DBCONFIG','log') + '.log'
+
+    #
+    # We open a persistant connection to the PgSQL node to register a
+    # row in pg_stat_activity with application_name = pgbackman_dump.
+    #
+    # This information will be used to find out if a pgbackman_dump
+    # process is running a backup in this PgSQL node. This is needed
+    # if the PgSQL node is a slave node in a replication configuration
+    # and we want to stop the recovery process.
+    #
+    # By default postgreSQL will kill any backup running against a
+    # slave node if the recovery process is running and the backup is
+    # taking too long to finish because the database is large.
+    # 
+
+    db_pgnode.pg_connect()
+
+    #
+    # If the PgSQL node is a slave node in a replication system, we
+    # will stop the recovery process if necessary while pgbackman_dump
+    # is running.
+    #
+
+    pause_pg_recovery(db_pgnode)
+
+    #
+    # Running the backups
+    #
        
     if global_parameters['backup_code'] == 'CLUSTER':
         pg_dumpall(db)
@@ -1148,6 +1238,25 @@ def main():
         pg_dump(db)
         pg_dump_users(db)
         pg_dump_database_config(db)
+
+    #
+    # If the PgSQL node is a slave node in a replication system, we
+    # will resume the recovery process if no other pgbackman_dump
+    # processes are running.
+    #
+
+    resume_pg_recovery(db_pgnode)
+
+    #
+    # We close the open connection used to register a row in
+    # pg_stat_activity with application_name = pgbackman_dump.
+    #
+
+    db_pgnode.pg_connect()
+
+    #
+    # Register the status info of the backup in the pgbackman database
+    #
 
     register_backup_catalog(db)
 
@@ -1176,7 +1285,6 @@ if __name__ == '__main__':
     parser.add_argument('--root-backup-dir', metavar='ROOT-BACKUP-DIR', default=True, required=True, help='Root backup dir', dest='root_backup_dir')
     parser.add_argument('--extra-backup-parameters', metavar='EXTRA-PARAMETERS', required=False, help='extra pg_dump parameters', dest='extra_backup_parameters')
     parser.add_argument('--pg-dump-release', metavar='PG-DUMP-RELEASE', required=False, help='pg_dump release', dest='pg_dump_release')
-
     
     args = parser.parse_args()    
     
