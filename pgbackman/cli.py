@@ -793,7 +793,7 @@ class pgbackman_cli(cmd.Cmd):
         definition for *all databases* in the cluster (except
         'template0','template1' and 'postgres').
 
-        * '#databases_without_backups#' if you want to register the backup
+        * '#databases_without_backup_definitions#' if you want to register the backup
         definition for all databases in the cluster *without* a backup
         definition (except 'template0','template1' and 'postgres').
                                            
@@ -915,7 +915,7 @@ class pgbackman_cli(cmd.Cmd):
             try:
                 dbname = raw_input('# DBname []: ')
 
-                if dbname != '#all_databases#' and dbname != '#databases_without_backups#':
+                if dbname != '#all_databases#' and dbname != '#databases_without_backup_definitions#':
                     minutes_cron = raw_input('# Minutes cron [' + str(minutes_cron_default) + ']: ')
                     hours_cron = raw_input('# Hours cron [' + str(hours_cron_default) + ']: ')
             
@@ -956,7 +956,7 @@ class pgbackman_cli(cmd.Cmd):
                         for database in db_node.get_pgsql_node_database_list():
                             database_list.append(database[0])
                     
-                    elif dbname == '#databases_without_backups#':
+                    elif dbname == '#databases_without_backup_definitions#':
 
                         all_databases = []
                         databases_with_bckdef = []
@@ -988,7 +988,7 @@ class pgbackman_cli(cmd.Cmd):
                     # Check if the database exists in the PgSQL node
                     #
 
-                    if database != '' and database != '#all_databases#' and database != '#databases_without_backups#':
+                    if database != '' and database != '#all_databases#' and database != '#databases_without_backup_definitions#':
 
                         try:
                             if not db_node.database_exists(database):
@@ -1006,7 +1006,7 @@ class pgbackman_cli(cmd.Cmd):
                     # If we have defined more than one database, generate a random value for cron minutes and cron hours. 
                     #
 
-                    if database == '#all_databases#' or database == '#databases_without_backups#' or len(database_list) > 1:
+                    if database == '#all_databases#' or database == '#databases_without_backup_definitions#' or len(database_list) > 1:
 
                         try:
                             minutes_cron = self.db.get_minute_from_interval(self.db.get_pgsql_node_config_value(pgsql_node_id,'backup_minutes_interval'))
@@ -3336,6 +3336,178 @@ class pgbackman_cli(cmd.Cmd):
 
         print
 
+
+    # ###################################################
+    # Method do_show_databases_without_backup_definitions
+    # ###################################################
+
+    def do_show_databases_without_backup_definitions(self,args):
+        '''
+        DESCRIPTION:
+
+        This command shows all databases in a PgSQL node without a
+        backup definition.
+        
+        COMMAND:
+        show_databases_without_backup_definitions [Node ID | FQDN]
+
+        [Node ID | FQDN]
+        ----------------
+        NodeID in PgBackMan or FQDN of the PgSQL node
+
+        '''
+
+        try: 
+            arg_list = shlex.split(args)
+            
+        except ValueError as e:
+            print '--------------------------------------------------------'            
+            print '[ERROR]: ',e,'\n'
+            return False
+
+        #
+        # Command without parameters
+        #             
+                
+        if len(arg_list) == 0:
+            
+            try:
+                print '--------------------------------------------------------'
+                pgsql_node = raw_input('# NodeID / FQDN: ').lower()
+                print '--------------------------------------------------------'
+                
+            except Exception as e:
+                print '\n--------------------------------------------------------' 
+                print '[ABORTED] Command interrupted by the user.\n'
+                return False
+
+            try:
+
+                columns = ['PgSQL node','DBname']
+                x = PrettyTable(columns)
+                
+                for column in columns:
+                    x.align[column] = "l"
+                    
+                x.padding_width = 1
+                
+                pgsql_node_list = []
+
+                if pgsql_node == 'all' or pgsql_node == '*':
+                    for id,fqdn in self.db.get_pgsql_nodes_list():
+                        pgsql_node_list.append(str(id))
+
+                else:
+                    pgsql_node_list.append(pgsql_node)
+
+                for pgsql_node in pgsql_node_list:
+
+                    if pgsql_node.isdigit():
+                        pgsql_node_id = pgsql_node
+                        pgsql_node_fqdn = self.db.get_pgsql_node_fqdn(pgsql_node)
+                    else:
+                        pgsql_node_id = self.db.get_pgsql_node_id(pgsql_node)
+                        pgsql_node_fqdn = pgsql_node
+
+                    dsn_value = self.db.get_pgsql_node_dsn(pgsql_node_id)
+                    db_node = pgbackman_db(dsn_value,'pgbackman_cli')
+
+                    database_list = []
+                    all_databases = []
+                    databases_with_bckdef = []
+
+                    for database in db_node.get_pgsql_node_database_list():
+                        all_databases.append(database[0])
+                        
+                    for database in self.db.get_pgsql_node_database_with_bckdef_list(pgsql_node_id):
+                        databases_with_bckdef.append(database[0])
+
+                    database_list = set(all_databases) - set(databases_with_bckdef)
+
+                    for database in sorted(database_list):
+                        x.add_row([pgsql_node_fqdn,database])
+
+                print x.get_string()
+                print
+                                    
+            except Exception as e:
+                print '--------------------------------------------------------' 
+                print '[ERROR]: ',e,'\n' 
+                return False
+
+        #
+        # Command with parameters
+        #             
+
+        elif len(arg_list) == 1:
+
+            pgsql_node = arg_list[0]
+            
+            if self.output_format == 'table':
+
+                print '--------------------------------------------------------'
+                print '# NodeID / FQDN: ' + str(pgsql_node)
+                print '--------------------------------------------------------'
+
+            try:
+
+                columns = ['PgSQL node','DBname']
+                x = PrettyTable(columns)
+                
+                for column in columns:
+                    x.align[column] = "l"
+                    
+                x.padding_width = 1
+                
+                pgsql_node_list = []
+
+                if pgsql_node == 'all' or pgsql_node == '*':
+                    for id,fqdn in self.db.get_pgsql_nodes_list():
+                        pgsql_node_list.append(str(id))
+
+                else:
+                    pgsql_node_list.append(pgsql_node)
+
+                for pgsql_node in pgsql_node_list:
+                
+                    if pgsql_node.isdigit():
+                        pgsql_node_id = pgsql_node
+                        pgsql_node_fqdn = self.db.get_pgsql_node_fqdn(pgsql_node)
+                    else:
+                        pgsql_node_id = self.db.get_pgsql_node_id(pgsql_node)
+                        pgsql_node_fqdn = pgsql_node
+
+                    dsn_value = self.db.get_pgsql_node_dsn(pgsql_node_id)
+                    db_node = pgbackman_db(dsn_value,'pgbackman_cli')
+
+                    database_list = []
+                    all_databases = []
+                    databases_with_bckdef = []
+
+                    for database in db_node.get_pgsql_node_database_list():
+                        all_databases.append(database[0])
+                        
+                    for database in self.db.get_pgsql_node_database_with_bckdef_list(pgsql_node_id):
+                        databases_with_bckdef.append(database[0])
+
+                    database_list = set(all_databases) - set(databases_with_bckdef)
+
+                    for database in sorted(database_list):
+                        x.add_row([pgsql_node_fqdn,database])
+
+                print x.get_string()
+                print
+                    
+            except Exception as e:
+                print '--------------------------------------------------------' 
+                print '[ERROR]: ',e,'\n' 
+                return False
+
+        else:
+            print '\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n'
+        
+        print
+               
 
     # ############################################
     # Method do_show_snapshot_in_progress

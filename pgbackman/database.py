@@ -2157,7 +2157,7 @@ class pgbackman_db():
     
         except psycopg2.Error as e:
             raise e
-    
+
 
     # ############################################
     # Method 
