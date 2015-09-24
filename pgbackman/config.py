@@ -52,6 +52,7 @@ class configuration():
 
         # pgbackman_dump section
         self.tmp_dir = '/tmp'
+        self.pause_recovery_process_on_slave = 'OFF'
 
         # pgbackman_maintenance section
         self.maintenance_interval = 70
@@ -126,13 +127,16 @@ class configuration():
             if config.has_option('pgbackman_dump','tmp_dir'):
                 self.tmp_dir = config.get('pgbackman_dump','tmp_dir')
 
+            if config.has_option('pgbackman_dump','pause_recovery_process_on_slave'):
+                self.pause_recovery_process_on_slave = config.get('pgbackman_dump','pause_recovery_process_on_slave').upper()
+
             # pgbackman_maintenance section
             if config.has_option('pgbackman_maintenance','maintenance_interval'):
                 self.maintenance_interval = int(config.get('pgbackman_maintenance','maintenance_interval'))    
                    
             # Logging section
             if config.has_option('logging','log_level'):
-                self.log_level = config.get('logging','log_level')
+                self.log_level = config.get('logging','log_level').upper()
 
             if config.has_option('logging','log_file'):
                 self.log_file = config.get('logging','log_file')

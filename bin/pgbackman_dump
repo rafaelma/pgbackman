@@ -1033,16 +1033,29 @@ def pause_pg_recovery(db_pgnode):
         # Check if the PgSQL node is in recovery modus
         #
         if db_pgnode.pg_recovery_in_progress() == True:
+            logs.logger.info('PgSQL node: [%s] is a slave node in recovery modus.',global_parameters['pgsql_node_fqdn'])
             
             #
             # Check if the postgres recovery is paused in this PgSQL
             # node. If it is running, pause it.
             #
             if db_pgnode.pg_recovery_paused() == False:
-                db_pgnode.pause_pg_recovery()
+                
+                try:
+                    db_pgnode.pause_pg_recovery()
+                    logs.logger.info('Recovery process paused on PgSQL node: [%s]',global_parameters['pgsql_node_fqdn'])
+
+                except Exception as e: 
+                    logs.logger.error('Problems pausing the recovery process on PgSQL node: [%s] - %s',global_parameters['pgsql_node_fqdn'],e)
+            
+            else:
+                logs.logger.info('The recovery process is already paused on PgSQL node: [%s]',global_parameters['pgsql_node_fqdn'])
+            
+        else:
+            logs.logger.debug('PgSQL node: [%s] is not a slave node in recovery modus (pause).',global_parameters['pgsql_node_fqdn'])
 
     except Exception as e: 
-        logs.logger.error('Problems pausing the postgres recovery - %s',e)
+        logs.logger.error('Problems getting recovery modus information on PgSQL node [%s]- %s',global_parameters['pgsql_node_fqdn'],e)
 
 
 # ##############################################
@@ -1058,6 +1071,7 @@ def resume_pg_recovery(db_pgnode):
         # Check if the PgSQL node is in recovery modus
         #
         if db_pgnode.pg_recovery_in_progress() == True:
+            logs.logger.info('PgSQL node: [%s] is a slave node in recovery modus.',global_parameters['pgsql_node_fqdn'])
             
             #
             # Check if the postgres recovery is paused in this PgSQL
@@ -1067,16 +1081,32 @@ def resume_pg_recovery(db_pgnode):
             # get_pgbackman_dump_count() will return the number og
             # pgbackman_dump processes running against this PgSQL
             # node. A value = 1 means that only the process checking
-            # is active. A value > 1 means that several pgbackman_dump
-            # processes are running.
+            # is active and is the last one running a backup dump. A
+            # value > 1 means that several pgbackman_dump processes
+            # are running.
             #
 
-            if db_pgnode.pg_recovery_paused() == True and db_pgnode.get_pgbackman_dump_count() == 1:                
-                db_pgnode.resume_pg_recovery()
+            pgbackman_dump_process_count = db_pgnode.get_pgbackman_dump_count()
+
+            if db_pgnode.pg_recovery_paused() == True and pgbackman_dump_process_count == 1:                
+
+                try:
+                    db_pgnode.resume_pg_recovery()
+                    logs.logger.info('Recovery process resumed on PgSQL node: [%s]',global_parameters['pgsql_node_fqdn'])
+
+                except Exception as e: 
+                    logs.logger.error('Problems resuming the recovery process on PgSQL node: [%s] - %s',global_parameters['pgsql_node_fqdn'],e)
+
+            else:
+                logs.logger.info('The recovery process is not paused on PgSQL node: [%s] or number of pgbackup_dump processes on node > 1 [%s]',
+                                 global_parameters['pgsql_node_fqdn'],
+                                 pgbackman_dump_process_count)
+
+        else:
+            logs.logger.debug('PgSQL node: [%s] is not a slave node in recovery modus (resume).',global_parameters['pgsql_node_fqdn'])
 
     except Exception as e: 
-        logs.logger.error('Problems resuming the postgres recovery - %s',e)
-
+        logs.logger.error('Problems getting recovery modus information on PgSQL node [%s]- %s',global_parameters['pgsql_node_fqdn'],e)
 
 
 # ############################################
@@ -1218,16 +1248,24 @@ def main():
     # taking too long to finish because the database is large.
     # 
 
-    db_pgnode.pg_connect()
+    if conf.pause_recovery_process_on_slave == 'ON':
+        
+        try:
+            db_pgnode.pg_connect()
+            logs.logger.info('Opening a persistant connection to the PgSQL node: [%s] ',global_parameters['pgsql_node_fqdn'])
+
+        except Exception as e: 
+            logs.logger.error('Problems opening a persistant connection to the PgSQL node: [%s] ',global_parameters['pgsql_node_fqdn'])
 
     #
     # If the PgSQL node is a slave node in a replication system, we
     # will stop the recovery process if necessary while pgbackman_dump
     # is running.
     #
-
-    pause_pg_recovery(db_pgnode)
-
+    
+    if conf.pause_recovery_process_on_slave == 'ON':
+        pause_pg_recovery(db_pgnode)
+        
     #
     # Running the backups
     #
@@ -1242,17 +1280,25 @@ def main():
     #
     # If the PgSQL node is a slave node in a replication system, we
     # will resume the recovery process if no other pgbackman_dump
-    # processes are running.
+    # processes are running. 
     #
-
-    resume_pg_recovery(db_pgnode)
+    
+    if conf.pause_recovery_process_on_slave == 'ON':
+        resume_pg_recovery(db_pgnode)
 
     #
     # We close the open connection used to register a row in
     # pg_stat_activity with application_name = pgbackman_dump.
     #
 
-    db_pgnode.pg_connect()
+    if conf.pause_recovery_process_on_slave == 'ON':
+
+        try:
+            db_pgnode.pg_connect()
+            logs.logger.info('Closing a persistant connection to the PgSQL node: [%s] ',global_parameters['pgsql_node_fqdn'])
+
+        except Exception as e: 
+            logs.logger.error('Problems closing a persistant connection to the PgSQL node: [%s] ',global_parameters['pgsql_node_fqdn'])
 
     #
     # Register the status info of the backup in the pgbackman database
