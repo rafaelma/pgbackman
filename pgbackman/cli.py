@@ -79,7 +79,7 @@ class pgbackman_cli(cmd.Cmd):
         self.conf = configuration() 
         self.dsn = self.conf.dsn
         
-        self.logs = logs('pgbackman_cli')
+        self.logs = logs('pgbackman_cli','','')
 
         self.db = pgbackman_db(self.dsn,'pgbackman_cli')
         self.output_format = 'table'

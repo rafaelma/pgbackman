@@ -33,22 +33,25 @@ class logs(logging.Logger):
     # Constructor    
     # ############################################
 
-    def __init__(self, logger_name):
+    def __init__(self, logger_name,pgsql_node,dbname):
         """ The Constructor."""
      
         self.logger_name = logger_name
+        self.pgsql_node = pgsql_node
+        self.dbname = dbname
+
         self.conf = configuration()
         
         self.logger = logging.getLogger(logger_name)
-        level = logging.getLevelName(self.conf.log_level.upper())
+        self.level = logging.getLevelName(self.conf.log_level.upper())
         
-        self.logger.setLevel(level)
-    
+        self.logger.setLevel(self.level)
+        
         try:
             self.fh = logging.FileHandler(self.conf.log_file)
-            self.fh.setLevel(level)
+            self.fh.setLevel(self.level)
             
-            self.formatter = logging.Formatter("%(asctime)s [%(name)s][%(process)d][%(levelname)s]: %(message)s")
+            self.formatter = logging.Formatter("%(asctime)s [%(name)s]" + self.pgsql_node + self. dbname + "[%(process)d][%(levelname)s]: %(message)s")
             self.fh.setFormatter(self.formatter)
             self.logger.addHandler(self.fh)
             

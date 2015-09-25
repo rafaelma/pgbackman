@@ -638,7 +638,7 @@ def main():
 
 if __name__ == '__main__':
 
-    logs = logs("pgbackman_maintenance")
+    logs = logs("pgbackman_maintenance","","")
 
     signal.signal(signal.SIGINT,signal_handler)
     signal.signal(signal.SIGTERM,signal_handler)

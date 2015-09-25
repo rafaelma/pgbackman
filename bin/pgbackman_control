@@ -875,7 +875,7 @@ def signal_handler(signum, frame):
 
 if __name__ == '__main__':
 
-    logs = logs("pgbackman_control")
+    logs = logs("pgbackman_control","","")
     logs.logger.info('**** pgbackman_control started. ****')
 
     signal.signal(signal.SIGINT,signal_handler)
