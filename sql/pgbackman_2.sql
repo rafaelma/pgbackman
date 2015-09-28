@@ -12,6 +12,26 @@
 
 BEGIN;
 
+-- Alter table snapshot_definition and add a new column
+-- (pg_dump_release). This column will be used to define the release
+-- of pg_dump that we want to use when taking a snapshot backup. If
+-- not defined, the release running the database we are backing up
+-- will be used. This can be used to use the snapshot when moving a
+-- database (upgrading) to a newer postgreSQL installation. Check:
+-- http://www.postgresql.org/docs/current/static/upgrading.html for
+-- details and recommendations.
+
+ALTER TABLE snapshot_definition ADD COLUMN pg_dump_release TEXT DEFAULT NULL;
+
+
+-- Alter table backup_catalog and add a new column
+-- (pg_dump_release). This column will be used to register the pg_dump
+-- release used to take a backup or snapshot.
+
+ALTER TABLE backup_catalog ADD COLUMN pg_dump_release TEXT;
+
+
+
 -- Define a new trigger to update the registered column in bakup_definition when a row is updated
 
 CREATE OR REPLACE FUNCTION update_backup_definition_registration() RETURNS TRIGGER
@@ -805,25 +825,6 @@ SELECT node_id,
 'Retention after automatic deletion of a backup definition'::text 
 FROM pgsql_node
 ORDER BY node_id;
-
-
--- Alter table snapshot_definition and add a new column
--- (pg_dump_release). This column will be used to define the release
--- of pg_dump that we want to use when taking a snapshot backup. If
--- not defined, the release running the database we are backing up
--- will be used. This can be used to use the snapshot when moving a
--- database (upgrading) to a newer postgreSQL installation. Check:
--- http://www.postgresql.org/docs/current/static/upgrading.html for
--- details and recommendations.
-
-ALTER TABLE snapshot_definition ADD COLUMN pg_dump_release TEXT DEFAULT NULL;
-
-
--- Alter table backup_catalog and add a new column
--- (pg_dump_release). This column will be used to register the pg_dump
--- release used to take a backup or snapshot.
-
-ALTER TABLE backup_catalog ADD COLUMN pg_dump_release TEXT;
 
 
 -- Update pgsql_node_default_config with a new parameter (automatic_deletion_retention). This parameter is used
