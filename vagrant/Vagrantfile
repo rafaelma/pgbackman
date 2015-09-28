@@ -48,6 +48,18 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     end
    end
 
+   config.vm.define "pg-node02" do |pgnode2|
+    pgnode2.vm.box = "chef/centos-6.6"
+    pgnode2.vm.network "private_network", ip: "10.10.10.108"
+    pgnode2.vm.hostname = "pg-node02.example.net"
+    pgnode2.vm.provision :shell, :path => "bootstrap3.sh"
+
+    pgnode2.vm.provider "virtualbox" do |vb3|
+     # Use VBoxManage to customize the VM. For example to change memory:  
+     vb3.customize ["modifyvm", :id, "--memory", "512"]
+    end
+   end
+
    config.vm.define "pgbackmandb" do |pgbackmandb|
     pgbackmandb.vm.box = "chef/centos-6.6"
     pgbackmandb.vm.network "private_network", ip: "10.10.10.104"
