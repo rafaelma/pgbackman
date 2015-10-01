@@ -1513,11 +1513,16 @@ combinan con el operador lógico AND.
    
 Parámetros:
 
-* **[SrvID|FQDN]:** SrvID en PgBackMan o FQDN del servidor de backups.
-* **[NodeID|FQDN]:** NodeID en PgBackMan o FQDN del nodo PgSQL.
-* **[DBname]:** Nombre de la base de datos.
-* **[DefID]:** ID de la definición de copia de seguridad.
-* **[Status]:** Estatus de la ejecución de la copia de seguridad.
+* **[SrvID|FQDN]:** SrvID en PgBackMan o FQDN del servidor de
+  backups. Este parámetro puede definirse con los valores 'all' o '*'.
+* **[NodeID|FQDN]:** NodeID en PgBackMan o FQDN del nodo PgSQL. Este
+  parámetro puede definirse con los valores 'all' o '*'.
+* **[DBname]:** Nombre de la base de datos. Este parámetro puede
+  definirse con los valores 'all' o '*'.
+* **[DefID]:** ID de la definición de copia de seguridad. Este
+  parámetro puede definirse con los valores 'all' o '*'.
+* **[Status]:** Estatus de la ejecución de la copia de seguridad. Este
+  parámetro puede definirse con los valores 'all' o '*'.
 
   * SUCCEEDED: Ejecución terminada sin problemas.
   * ERROR: Ejecución terminada con problemas.
@@ -1592,9 +1597,12 @@ condiciones de busqueda se combinan con el operador lógico AND.
 
 Parámetros:
 
-* **[SrvID|FQDN]:** SrvID en PgBackMan o FQDN del servidor de backups.
-* **[NodeID|FQDN]:** NodeID en PgBackMan o FQDN del nodo PgSQL.
-* **[DBname]:** Nombre de la base de datos.
+* **[SrvID|FQDN]:** SrvID en PgBackMan o FQDN del servidor de
+  backups. Este parámetro puede definirse con los valores 'all' o '*'.
+* **[NodeID|FQDN]:** NodeID en PgBackMan o FQDN del nodo PgSQL. Este
+  parámetro puede definirse con los valores 'all' o '*'.
+* **[DBname]:** Nombre de la base de datos. Este parámetro puede
+  definirse con los valores 'all' o '*'.
 
 Los valores por defecto de un parámetro se enseñan entre
 corchetes``[]``. Si el usuario no define ningún valor, PgBackMan
@@ -1819,7 +1827,7 @@ show_empty_backup_catalogs
 --------------------------
 
 Este comando muestra una lista con todas las definiciones de copias de
-seguridad que no tengan ninguna entrada en el catálogo.
+seguridad que no tienen ninguna entrada en el catálogo.
 
 ::
 
@@ -2115,9 +2123,12 @@ lógico AND.
 
 Parámetros:
 
-* **[SrvID|FQDN]:** SrvID en PgBackMan o FQDN del servidor de backups.
-* **[NodeID|FQDN]:** NodeID en PgBackMan o FQDN del nodo PgSQL.
-* **[DBname]:** Nombre de la base de datos.
+* **[SrvID|FQDN]:** SrvID en PgBackMan o FQDN del servidor de
+  backups. Este parámetro puede definirse con los valores 'all' o '*'.
+* **[NodeID|FQDN]:** NodeID en PgBackMan o FQDN del nodo PgSQL. Este
+  parámetro puede definirse con los valores 'all' o '*'.
+* **[DBname]:** Nombre de la base de datos. Este parámetro puede
+  definirse con los valores 'all' o '*'.
 
 Los valores por defecto de un parámetro se enseñan entre
 corchetes``[]``. Si el usuario no define ningún valor, PgBackMan
@@ -2160,9 +2171,12 @@ busqueda se combinan con el operador lógico AND.
 			
 Parámetros:
 
-* **[SrvID|FQDN]:** SrvID en PgBackMan o FQDN del servidor de backups.
-* **[NodeID|FQDN]:** NodeID en PgBackMan o FQDN del nodo PgSQL.
-* **[DBname]:** Nombre de la base de datos.
+* **[SrvID|FQDN]:** SrvID en PgBackMan o FQDN del servidor de
+  backups. Este parámetro puede definirse con los valores 'all' o '*'.
+* **[NodeID|FQDN]:** NodeID en PgBackMan o FQDN del nodo PgSQL. Este
+  parámetro puede definirse con los valores 'all' o '*'.
+* **[DBname]:** Nombre de la base de datos. Este parámetro puede
+  definirse con los valores 'all' o '*'.
 
 Los valores por defecto de un parámetro se enseñan entre
 corchetes``[]``. Si el usuario no define ningún valor, PgBackMan
@@ -2287,9 +2301,12 @@ busqueda se combinan con el operador lógico AND.
         
 Parámetros:
 
-* **[SrvID|FQDN]:** SrvID en PgBackMan o FQDN del servidor de backups.
-* **[NodeID|FQDN]:** NodeID en PgBackMan o FQDN del nodo PgSQL.
-* **[DBname]:** Nombre de la base de datos.
+* **[SrvID|FQDN]:** SrvID en PgBackMan o FQDN del servidor de
+  backups. Este parámetro puede definirse con los valores 'all' o '*'.
+* **[NodeID|FQDN]:** NodeID en PgBackMan o FQDN del nodo PgSQL. Este
+  parámetro puede definirse con los valores 'all' o '*'.
+* **[DBname]:** Nombre de la base de datos. Este parámetro puede
+  definirse con los valores 'all' o '*'.
 
 Los valores por defecto de un parámetro se enseñan entre
 corchetes``[]``. Si el usuario no define ningún valor, PgBackMan

@@ -1408,11 +1408,16 @@ combination of parameter values. These values are combined with AND.
    
 Parameters:
 
-* **[SrvID|FQDN]:** SrvID in PgBackMan or FQDN of the backup server
-* **[NodeID|FQDN]:** NodeID in PgBackMan or FQDN of the PgSQL node
-* **[DBname]:** Database name
-* **[DefID]:** Backup definition ID
-* **[Status]:** Execution status of the backup. 
+* **[SrvID|FQDN]:** SrvID in PgBackMan or FQDN of the backup
+  server. One can use 'all' or '*' with this parameter.
+* **[NodeID|FQDN]:** NodeID in PgBackMan or FQDN of the PgSQL
+  node. One can use 'all' or '*' with this parameter.
+* **[DBname]:** Database name. One can use 'all' or '*' with this
+  parameter.
+* **[DefID]:** Backup definition ID. One can use 'all' or '*' with
+  this parameter.
+* **[Status]:** Execution status of the backup. One can use 'all' or
+  '*' with this parameter.
 
   * SUCCEEDED: Execution finished without error. 
   * ERROR: Execution finished with errors.
@@ -1484,15 +1489,18 @@ of parameter values. These values are combined with AND.
 
 Parameters:
 
-* **[SrvID|FQDN]:** SrvID in PgBackMan or FQDN of the backup server
-* **[NodeID|FQDN]:** NodeID in PgBackMan or FQDN of the PgSQL node
-* **[DBname]:** Database name
+* **[SrvID|FQDN]:** SrvID in PgBackMan or FQDN of the backup
+  server. One can use 'all' or '*' with this parameter.
+* **[NodeID|FQDN]:** NodeID in PgBackMan or FQDN of the PgSQL
+  node. One can use 'all' or '*' with this parameter.
+* **[DBname]:** Database name. One can use 'all' or '*' with this
+  parameter.
 
 The default value for a parameter is shown between brackets ``[]``. If the
 user does not define any value, the default value will be used. 
 
 One can define multiple values for each parameter separated by a
-comma. These values are combined using OR.
+comma. These values are combined using OR. 
 
 This command can be run with or without parameters. e.g.:
 
@@ -1993,9 +2001,12 @@ combination of parameters values. These values are combined with AND.
 
 Parameters:
 
-* **[SrvID|FQDN]:** SrvID in PgBackMan or FQDN of the backup server
-* **[NodeID|FQDN]:** NodeID in PgBackMan or FQDN of the PgSQL node
-* **[DBname]:** Database name
+* **[SrvID|FQDN]:** SrvID in PgBackMan or FQDN of the backup
+  server. One can use 'all' or '*' with this parameter.
+* **[NodeID|FQDN]:** NodeID in PgBackMan or FQDN of the PgSQL
+  node. One can use 'all' or '*' with this parameter.
+* **[DBname]:** Database name. One can use 'all' or '*' with this
+  parameter.
 
 The default value for a parameter is shown between brackets ``[]``. If the
 user does not define any value, the default value will be used.
@@ -2035,9 +2046,12 @@ combination of parameter values. These values are combined with AND.
 			
 Parameters:
 
-* **[SrvID|FQDN]:** SrvID in PgBackMan or FQDN of the backup server
-* **[NodeID|FQDN]:** NodeID in PgBackMan or FQDN of the PgSQL node
-* **[DBname]:** Database name
+* **[SrvID|FQDN]:** SrvID in PgBackMan or FQDN of the backup
+  server. One can use 'all' or '*' with this parameter.
+* **[NodeID|FQDN]:** NodeID in PgBackMan or FQDN of the PgSQL
+  node. One can use 'all' or '*' with this parameter.
+* **[DBname]:** Database name. One can use 'all' or '*' with this
+  parameter.
 
 The default value for a parameter is shown between brackets ``[]``. If the
 user does not define any value, the default value will be used.
@@ -2156,9 +2170,12 @@ combination of parameter values. These values are combined with AND.
         
 Parameters:
 
-* **[SrvID|FQDN]:** SrvID in PgBackMan or FQDN of the backup server
-* **[NodeID|FQDN]:** NodeID in PgBackMan or FQDN of the PgSQL node
-* **[DBname]:** Database name
+* **[SrvID|FQDN]:** SrvID in PgBackMan or FQDN of the backup
+  server. One can use 'all' or '*' with this parameter.
+* **[NodeID|FQDN]:** NodeID in PgBackMan or FQDN of the PgSQL
+  node. One can use 'all' or '*' with this parameter.
+* **[DBname]:** Database name. One can use 'all' or '*' with this
+  parameter.
 
 The default value for a parameter is shown between brackets ``[]``. If the
 user does not define any value, the default value will be used.

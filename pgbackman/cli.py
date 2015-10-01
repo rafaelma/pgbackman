@@ -627,8 +627,7 @@ class pgbackman_cli(cmd.Cmd):
     # ############################################
 
     def do_show_backup_definitions(self,args):
-        '''
-        DESCRIPTION:
+        '''DESCRIPTION:
         This command shows all backup definitions 
         for a particular combination of parameter values.
 
@@ -639,15 +638,17 @@ class pgbackman_cli(cmd.Cmd):
         
         [SrvID|FQDN]: 
         -------------
-        SrvID in PgBackMan or FQDN of the backup server
+        SrvID in PgBackMan or FQDN of the backup server. One can use
+        'all' or '*' with this parameter.
     
         [NodeID|FQDN]: 
         --------------
-        NodeID in PgBackMan or FQDN of the PgSQL node
+        NodeID in PgBackMan or FQDN of the PgSQL node. One can use
+        'all' or '*' with this parameter.
 
         [DBname]: 
         ---------
-        Database name                                      
+        Database name. One can use 'all' or '*' with this parameter.
 
         '''
 
@@ -677,17 +678,17 @@ class pgbackman_cli(cmd.Cmd):
                 print '[ABORTED] Command interrupted by the user.\n'
                 return False
 
-            if server_id == '' or server_id == 'all':
+            if server_id.lower() in ['all','*','']:
                 server_list = None
             else:
                 server_list = server_id.strip().replace(' ','').split(',')
 
-            if node_id == '' or node_id == 'all':
+            if node_id.lower() in ['all','*','']:
                 node_list = None
             else:
                 node_list = node_id.strip().replace(' ','').split(',')
 
-            if dbname == '' or dbname == 'all':
+            if dbname.lower() in ['all','*','']:
                 dbname_list = None
             else:
                 dbname_list = dbname.strip().replace(' ','').split(',')
@@ -708,17 +709,17 @@ class pgbackman_cli(cmd.Cmd):
             node_id = arg_list[1]
             dbname = arg_list[2]
 
-            if server_id == '' or server_id == 'all':
+            if server_id.lower() in ['all','*','']:
                 server_list = None
             else:
                 server_list = server_id.strip().replace(' ','').split(',')
 
-            if node_id == '' or node_id == 'all':
+            if node_id.lower() in ['all','*','']:
                 node_list = None
             else:
                 node_list = node_id.strip().replace(' ','').split(',')
 
-            if dbname == '' or dbname == 'all':
+            if dbname.lower() in ['all','*','']:
                 dbname_list = None
             else:
                 dbname_list = dbname.strip().replace(' ','').split(',')
@@ -1530,8 +1531,7 @@ class pgbackman_cli(cmd.Cmd):
     # ############################################
 
     def do_show_backup_catalog(self,args):
-        '''
-        DESCRIPTION:
+        '''DESCRIPTION:
         This command shows all backup catalog entries for a particular 
         combination of search values.
 
@@ -1544,27 +1544,30 @@ class pgbackman_cli(cmd.Cmd):
 
         [SrvID | FQDN]:
         ---------------
-        SrvID in PgBackMan or FQDN of the backup server that run
-        the backup job.
+        SrvID in PgBackMan or FQDN of the backup server that run the
+        backup job. One can use 'all' or '*' with this parameter.
 
         [NodeID | FQDN]:
         ----------------
         NodeID in PgBackMan or FQDN of the PgSQL node running the
-        database.
+        database. One can use 'all' or '*' with this parameter.
                                    
         [Dbname]:
         ---------
-        Database name.
+        Database name. One can use 'all' or '*' with this parameter.
                     
         [DefID]:
         --------
-        Backup definition ID.
+        Backup definition ID. One can use 'all' or '*' with this
+        parameter.
 
         [Status]:
         --------- 
         SUCCEEDED: Execution finished without error. 
-        ERROR: Execution finished with errors.                 
-        
+        ERROR: Execution finished with errors.
+
+        One can use 'all' or '*' with this parameter.
+
         '''
 
         try: 
@@ -1595,27 +1598,27 @@ class pgbackman_cli(cmd.Cmd):
                 print '[ABORTED] Command interrupted by the user.\n'
                 return False
 
-            if server_id == '' or server_id == 'all':
+            if server_id.lower() in ['all','*','']:
                 server_list = None
             else:
                 server_list = server_id.strip().replace(' ','').split(',')
 
-            if node_id == '' or node_id == 'all':
+            if node_id.lower() in ['all','*','']:
                 node_list = None
             else:
                 node_list = node_id.strip().replace(' ','').split(',')
 
-            if dbname == '' or dbname == 'all':
+            if dbname.lower() in ['all','*','']:
                 dbname_list = None
             else:
                 dbname_list = dbname.strip().replace(' ','').split(',')
                 
-            if def_id == '' or def_id == 'all':
+            if def_id.lower() in ['all','*','']:
                 def_id_list = None
             else:
                 def_id_list = def_id.strip().replace(' ','').split(',')
               
-            if status == '' or status == 'all':
+            if status.lower() in ['all','*','']:
                 status_list = None
             else:
                 status_list = status.strip().replace(' ','').upper().split(',')
@@ -1638,27 +1641,27 @@ class pgbackman_cli(cmd.Cmd):
             def_id = arg_list[3]
             status = arg_list[4]
 
-            if server_id == '' or server_id == 'all':
+            if server_id.lower() in ['all','*','']:
                 server_list = None
             else:
                 server_list = server_id.strip().replace(' ','').split(',')
 
-            if node_id == '' or node_id == 'all':
+            if node_id.lower() in ['all','*','']:
                 node_list = None
             else:
                 node_list = node_id.strip().replace(' ','').split(',')
 
-            if dbname == '' or dbname == 'all':
+            if dbname.lower() in ['all','*','']:
                 dbname_list = None
             else:
                 dbname_list = dbname.strip().replace(' ','').split(',')
 
-            if def_id == '' or def_id == 'all':
+            if def_id.lower() in ['all','*','']:
                 def_id_list = None
             else:
                 def_id_list = def_id.strip().replace(' ','').split(',')
 
-            if status == '' or status == 'all':
+            if status.lower() in ['all','*','']:
                 status_list = None
             else:
                 status_list = status.strip().replace(' ','').upper().split(',')
@@ -1690,8 +1693,7 @@ class pgbackman_cli(cmd.Cmd):
     # ############################################
 
     def do_show_restore_catalog(self,args):
-        '''
-        DESCRIPTION:
+        '''DESCRIPTION:
         This command shows all restore catalog entries for a particular 
         combination of parameters values.
 
@@ -1703,16 +1705,18 @@ class pgbackman_cli(cmd.Cmd):
 
         [SrvID|FQDN]: 
         -------------
-        SrvID in PgBackMan or FQDN of the backup server
+        SrvID in PgBackMan or FQDN of the backup server. One can use
+        'all' or '*' with this parameter.
     
         [Target NodeID|FQDN]: 
         ---------------------
-        NodeID in PgBackMan or FQDN of the PgSQL node
+        NodeID in PgBackMan or FQDN of the PgSQL node. One can use
+        'all' or '*' with this parameter.
 
         [Target DBname]: 
         ----------------
-        Database name
-        
+        Database name. One can use 'all' or '*' with this parameter.
+
         '''
 
         try: 
@@ -1741,17 +1745,17 @@ class pgbackman_cli(cmd.Cmd):
                 print '[ABORTED] Command interrupted by the user.\n'
                 return False
 
-            if server_id == '' or server_id == 'all':
+            if server_id.lower() in ['all','*','']:
                 server_list = None
             else:
                 server_list = server_id.strip().replace(' ','').split(',')
 
-            if node_id == '' or node_id == 'all':
+            if node_id.lower() in ['all','*','']:
                 node_list = None
             else:
                 node_list = node_id.strip().replace(' ','').split(',')
 
-            if dbname == '' or dbname == 'all':
+            if dbname.lower() in ['all','*','']:
                 dbname_list = None
             else:
                 dbname_list = dbname.strip().replace(' ','').split(',')
@@ -1772,17 +1776,17 @@ class pgbackman_cli(cmd.Cmd):
             node_id = arg_list[1]
             dbname = arg_list[2]
 
-            if server_id == '' or server_id == 'all':
+            if server_id.lower() in ['all','*','']:
                 server_list = None
             else:
                 server_list = server_id.strip().replace(' ','').split(',')
 
-            if node_id == '' or node_id == 'all':
+            if node_id.lower() in ['all','*','']:
                 node_list = None
             else:
                 node_list = node_id.strip().replace(' ','').split(',')
 
-            if dbname == '' or dbname == 'all':
+            if dbname.lower() in ['all','*','']:
                 dbname_list = None
             else:
                 dbname_list = dbname.strip().replace(' ','').split(',')
@@ -2130,8 +2134,7 @@ class pgbackman_cli(cmd.Cmd):
     # ############################################
 
     def do_show_snapshot_definitions(self,args):
-        '''
-        DESCRIPTION:
+        '''DESCRIPTION:
 
         This command shows all snapshot definitions for a particular
         combination of parameter values.
@@ -2149,15 +2152,17 @@ class pgbackman_cli(cmd.Cmd):
         
         [SrvID|FQDN]: 
         -------------
-        SrvID in PgBackMan or FQDN of the backup server
+        SrvID in PgBackMan or FQDN of the backup server. One can use
+        'all' or '*' with this parameter.
     
         [NodeID|FQDN]: 
         --------------
-        NodeID in PgBackMan or FQDN of the PgSQL node
+        NodeID in PgBackMan or FQDN of the PgSQL node. One can use
+        'all' or '*' with this parameter.
 
         [DBname]: 
         ---------
-        Database name                       
+        Database name. One can use 'all' or '*' with this parameter.
 
         '''
 
@@ -2187,17 +2192,17 @@ class pgbackman_cli(cmd.Cmd):
                 print '[ABORTED] Command interrupted by the user.\n'
                 return False
 
-            if server_id == '' or server_id == 'all':
+            if server_id.lower() in ['all','*','']:
                 server_list = None
             else:
                 server_list = server_id.strip().replace(' ','').split(',')
 
-            if node_id == '' or node_id == 'all':
+            if node_id.lower() in ['all','*','']:
                 node_list = None
             else:
                 node_list = node_id.strip().replace(' ','').split(',')
 
-            if dbname == '' or dbname == 'all':
+            if dbname.lower() in ['all','*','']:
                 dbname_list = None
             else:
                 dbname_list = dbname.strip().replace(' ','').split(',')
@@ -2218,17 +2223,17 @@ class pgbackman_cli(cmd.Cmd):
             node_id = arg_list[1]
             dbname = arg_list[2]
 
-            if server_id == '' or server_id == 'all':
+            if server_id.lower() in ['all','*','']:
                 server_list = None
             else:
                 server_list = server_id.strip().replace(' ','').split(',')
 
-            if node_id == '' or node_id == 'all':
+            if node_id.lower() in ['all','*','']:
                 node_list = None
             else:
                 node_list = node_id.strip().replace(' ','').split(',')
 
-            if dbname == '' or dbname == 'all':
+            if dbname.lower() in ['all','*','']:
                 dbname_list = None
             else:
                 dbname_list = dbname.strip().replace(' ','').split(',')
@@ -2548,8 +2553,7 @@ class pgbackman_cli(cmd.Cmd):
     # ############################################
 
     def do_show_restore_definitions(self,args):
-        '''
-        DESCRIPTION:
+        '''DESCRIPTION:
         This command shows all restore definitions for a particular
         combination of parameter values.
 
@@ -2566,15 +2570,17 @@ class pgbackman_cli(cmd.Cmd):
                                  
         [SrvID|FQDN]: 
         -------------
-        SrvID in PgBackMan or FQDN of the backup server
+        SrvID in PgBackMan or FQDN of the backup server. One can use
+        'all' or '*' with this parameter.
     
         [NodeID|FQDN]: 
         --------------
-        NodeID in PgBackMan or FQDN of the PgSQL node
+        NodeID in PgBackMan or FQDN of the PgSQL node. One can use
+        'all' or '*' with this parameter.
 
         [DBname]: 
         ---------
-        Database name                       
+        Database name. One can use 'all' or '*' with this parameter.
 
         '''
 
@@ -2604,17 +2610,17 @@ class pgbackman_cli(cmd.Cmd):
                 print '[ABORTED] Command interrupted by the user.\n'
                 return False
             
-            if server_id == '' or server_id == 'all':
+            if server_id.lower() in ['all','*','']:
                 server_list = None
             else:
                 server_list = server_id.strip().replace(' ','').split(',')
 
-            if node_id == '' or node_id == 'all':
+            if node_id.lower() in ['all','*','']:
                 node_list = None
             else:
                 node_list = node_id.strip().replace(' ','').split(',')
 
-            if dbname == '' or dbname == 'all':
+            if dbname.lower() in ['all','*','']:
                 dbname_list = None
             else:
                 dbname_list = dbname.strip().replace(' ','').split(',')
@@ -2635,17 +2641,17 @@ class pgbackman_cli(cmd.Cmd):
             node_id = arg_list[1]
             dbname = arg_list[2]
 
-            if server_id == '' or server_id == 'all':
+            if server_id.lower() in ['all','*','']:
                 server_list = None
             else:
                 server_list = server_id.strip().replace(' ','').split(',')
 
-            if node_id == '' or node_id == 'all':
+            if node_id.lower() in ['all','*','']:
                 node_list = None
             else:
                 node_list = node_id.strip().replace(' ','').split(',')
 
-            if dbname == '' or dbname == 'all':
+            if dbname.lower() in ['all','*','']:
                 dbname_list = None
             else:
                 dbname_list = dbname.strip().replace(' ','').split(',')
@@ -3342,8 +3348,7 @@ class pgbackman_cli(cmd.Cmd):
     # ###################################################
 
     def do_show_databases_without_backup_definitions(self,args):
-        '''
-        DESCRIPTION:
+        '''DESCRIPTION:
 
         This command shows all databases in a PgSQL node without a
         backup definition.
@@ -3353,7 +3358,8 @@ class pgbackman_cli(cmd.Cmd):
 
         [Node ID | FQDN]
         ----------------
-        NodeID in PgBackMan or FQDN of the PgSQL node
+        NodeID in PgBackMan or FQDN of the PgSQL node. One can use
+        'all' or '*' with this parameter.
 
         '''
 
@@ -3393,7 +3399,7 @@ class pgbackman_cli(cmd.Cmd):
                 
                 pgsql_node_list = []
 
-                if pgsql_node == 'all' or pgsql_node == '*':
+                if pgsql_node.lower() in ['all','*']:
                     for id,fqdn in self.db.get_pgsql_nodes_list():
                         pgsql_node_list.append(str(id))
 
@@ -3461,7 +3467,7 @@ class pgbackman_cli(cmd.Cmd):
                 
                 pgsql_node_list = []
 
-                if pgsql_node == 'all' or pgsql_node == '*':
+                if pgsql_node.lower() in ['all','*']:
                     for id,fqdn in self.db.get_pgsql_nodes_list():
                         pgsql_node_list.append(str(id))
 
