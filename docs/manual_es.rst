@@ -1823,6 +1823,52 @@ Este comando puede ser ejecutado solamente sin parámetros, e.g.:
    +-------+-------------------------+-------------+
 
 
+show_databases_without_backup_definitions
+-----------------------------------------
+
+Este comando muestra una lista con todas las bases de datos en un nodo
+PgSQL sin una definición de copia de seguridad en PgBackMan.
+        
+::
+  
+   show_databases_without_backup_definitions [Node ID | FQDN]
+
+Parametros:
+
+* **[NodeID | FQDN]**: NodeID en PgBackMan o FQDN del nodo
+  PgSQL. Este parámetro puede definirse con los valores 'all' o '*'.
+
+Este comando puede ejecutarse con o sin parametros. e.g.:
+
+::
+
+   [pgbackman]$ show_databases_without_backup_definitions pg-node01.example.net
+   --------------------------------------------------------
+   # NodeID / FQDN: pg-node01.example.net
+   --------------------------------------------------------
+   +-----------------------+---------+
+   | PgSQL node            | DBname  |
+   +-----------------------+---------+
+   | pg-node01.example.net | example |
+   | pg-node01.example.net | test    |
+   | pg-node01.example.net | test02  |
+   +-----------------------+---------+
+
+::
+
+   [pgbackman]$ show_databases_without_backup_definitions
+   --------------------------------------------------------
+   # NodeID / FQDN: pg-node01.example.net
+   --------------------------------------------------------
+   +-----------------------+---------+
+   | PgSQL node            | DBname  |
+   +-----------------------+---------+
+   | pg-node01.example.net | example |
+   | pg-node01.example.net | test    |
+   | pg-node01.example.net | test02  |
+   +-----------------------+---------+
+
+
 show_empty_backup_catalogs
 --------------------------
 

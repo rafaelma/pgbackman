@@ -1709,6 +1709,52 @@ This command can be run only without parameters. e.g.:
    +-------+-------------------------+-------------+
 
 
+show_databases_without_backup_definitions
+-----------------------------------------
+
+This command shows all databases in a PgSQL node without a backup
+definition in PgBackMan.
+        
+::
+  
+   show_databases_without_backup_definitions [Node ID | FQDN]
+
+Parameters:
+
+* **[Node ID | FQDN]**: NodeID in PgBackMan or FQDN of the PgSQL
+  node. One can use 'all' or '*' with this parameter.
+
+This command can be run with or without parameters. e.g.:
+
+::
+
+   [pgbackman]$ show_databases_without_backup_definitions pg-node01.example.net
+   --------------------------------------------------------
+   # NodeID / FQDN: pg-node01.example.net
+   --------------------------------------------------------
+   +-----------------------+---------+
+   | PgSQL node            | DBname  |
+   +-----------------------+---------+
+   | pg-node01.example.net | example |
+   | pg-node01.example.net | test    |
+   | pg-node01.example.net | test02  |
+   +-----------------------+---------+
+
+::
+
+   [pgbackman]$ show_databases_without_backup_definitions
+   --------------------------------------------------------
+   # NodeID / FQDN: pg-node01.example.net
+   --------------------------------------------------------
+   +-----------------------+---------+
+   | PgSQL node            | DBname  |
+   +-----------------------+---------+
+   | pg-node01.example.net | example |
+   | pg-node01.example.net | test    |
+   | pg-node01.example.net | test02  |
+   +-----------------------+---------+
+
+
 show_empty_backup_catalogs
 --------------------------
 
