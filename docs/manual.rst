@@ -265,12 +265,12 @@ Upgrading PgBackMan
 This section has information about how to upgrade to a newer version
 of PgBackMan when you already are using PgBackMan.
 
-To things has to be done to run an upgrade of PgBackMan:
+Two things has to be done to run an upgrade of PgBackMan:
 
 * Upgrade the PgBackMan software to the new version
 * Upgrade the ``pgbackman`` database to the new version  
 
-There are a few things one has to take care of when these two steps
+There are a few things we have to take care of when these two steps
 are done to avoid problems:
 
 * All backup servers have to run the same version of PgBackMan.
@@ -515,6 +515,21 @@ between the database server and the backup server.
 
 One can also use ``cert`` autentication so we do not need to save
 passwords values.
+
+
+Configuration file
+------------------
+
+By default PgBackMan will look for a configuration file in these two
+locations and in this order ``$HOME/.pgbackman/pgbackman.conf``,
+``/etc/pgbackman/pgbackman.conf``. 
+
+Several parameters can be configurated in this file. The most
+important ones are ``host`` or ``hostaddr``, ``port``, ``dbname``,
+``user`` under the section ``[pgbackman_database]``.
+
+Check ``/etc/pgbackman/pgbackman.conf`` in your system for a list of
+parameters, what they are used for and default values.
 
 
 System administration and maintenance

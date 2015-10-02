@@ -561,6 +561,23 @@ Tambien se puede usar la autentificación ``cert`` para evitar el tener
 que grabar los valores de las claves en texto plano.
 
 
+Fichero de configuración
+------------------------
+
+Por defecto PgBackMan buscará un fichero de configuración válido en
+estas localizaciones y en este orden,
+``$HOME/.pgbackman/pgbackman.conf``,
+``/etc/pgbackman/pgbackman.conf``.
+
+Varios parámetros se pueden configurar en este fichero. Los más
+importantes son ``host`` o ``hostaddr``, ``port``, ``dbname``,
+``user`` en la sección ``[pgbackman_database]``.
+
+Podeis consultar el fichero ``/etc/pgbackman/pgbackman.conf`` en
+vuestro sistema para obtener una lista de parametros, para que se usan
+y sus valores por defecto.
+
+
 Administración del sistema y mantenimiento
 ==========================================
 
