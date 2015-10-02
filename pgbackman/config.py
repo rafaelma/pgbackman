@@ -72,7 +72,7 @@ class configuration():
     def set_configuration_file(self):
         """Set the pgbackman configuration file"""
         
-        config_file_list = (os.getenv('HOME') + '/.pgbackman/pgbackman.conf','/etc/pgbackman/pgbackman.conf','/etc/pgbackman.conf')
+        config_file_list = (os.getenv('HOME') + '/.pgbackman/pgbackman.conf','/etc/pgbackman/pgbackman.conf')
         
         for file in config_file_list:
             if os.path.isfile(file):
