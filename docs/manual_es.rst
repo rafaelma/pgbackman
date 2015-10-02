@@ -72,15 +72,17 @@ Las características principales de PgBackMan son:
 * Gestión de múltiples servidores de backups.
 * Gestión de múltiples servidores PostgreSQL.
 * Gestión de miles de copias de seguridad a través de un catálogo de copias.
+* Copia de seguridad completa de los datos asociados a los usuarios necesarios en el proceso de recuperacion de un backup.
+* Copia de seguridad completa de los datos de configuración asociados a una base de datos y necesarios en el proceso de recuperación de un backup.
 * Copias de seguridad inmediatas y programadas.
 * Gestión de políticas de retención para las copias de seguridad.
 * Informes detallados de las copias de seguridad.
 * Múltiples tipos de copias de seguridad predefinidos, CLUSTER,FULL,SCHEMA,DATA.
-* Copia de seguridad completa de los datos asociados a los usuarios necesarios en el proceso de recuperacion de un backup.
-* Copia de seguridad completa de los datos de configuración asociados a una base de datos y necesarios en el proceso de recuperación de un backup.
 * Definiciones automáticas de copias de seguridad de todas las bases de datos disponibles en un servidor PostgreSQL.
+* Definiciones automáticas de copias de seguridad de todas las bases de datos sin definiciones en un servidor PostgreSQL.
 * Borrado automático despues de un período de cuarentena de las definiciones de backup de bases de datos que han sido borradas en un nodo PgSQL.
 * Restauración automática de backups.
+* Posibilidad det pausar/reanudar el proceso de replicación en nodos esclavos/standby cuando se estén realizando copias de seguridad grandes.  
 * Programa pgbackman_dump autónomo que funciona incluso si la base de datos central con información de metadatos no está disponible.
 * Manejo de situaciones de error.
 * Programado en Python y PL/pgSQL.
@@ -127,10 +129,12 @@ continuación:
   necesarios para que PgBackMan funcione. Gestiona las políticas de
   retención de las copias de seguridad. Borra los archivos de copias y
   registros asociados a definiciones de copias de seguridad que sean
-  borradas del catálogo con la opcion 'force'. Procesa todos los
-  archivos de registro pendientes creados si la base de datos
-  ``pgbackman`` no ha estado disponible cuando ``pgbackman_dump`` y
-  ``pgbackman_restore`` se han estado ejecutando.
+  borradas del catálogo con la opcion 'force'. Para automáticamente
+  todas las definiciones de copias de seguridad de bases de datos que
+  han sido borradas en los nodos PgSQL con el comando DROP
+  DATABASE. Procesa todos los archivos de registro pendientes creados
+  si la base de datos ``pgbackman`` no ha estado disponible cuando
+  ``pgbackman_dump`` y ``pgbackman_restore`` se han estado ejecutando.
 
 * **pgbackman_dump:** Este programa se ejecuta en los servidores de
   backup cuando se crea una copia de seguridad programada o snapshot.
@@ -158,8 +162,8 @@ Requerimientos del sistema
 * Python 2.6 or 2.7
 * Módulos Python:
   
-  * psycopg2
-  * argparse
+  * psycopg2 >= 2.4.0
+  * argparse >= 1.2.1
     
 * PostgreSQL >= 9.2 para la base de datos ``pgbackman``
 * PostgreSQL >= 9.0 en todos los servidores PgSQL que vayan a utilizar
@@ -251,7 +255,8 @@ El código de esta base de datos se puede obtener del directorio
 ``/usr/share/pgbackman`` si has instalado PgBackMan desde las
 ``fuentes`` o paquetes ``rpm`` o ``deb``.
 
-Para instalar la base de datos ``pgbackman`` podeis usar este comando:
+Para instalar la base de datos ``pgbackman`` por primera vez podeis
+usar este comando:
 
 ::
 
@@ -301,49 +306,39 @@ esta tarea.
 El procedimiento recomendado de actualización a una nueva versión
 seria el siguiente:
 
-#. Asegurarse que ninguna copia de seguridad será empezada durante la
-   actualización. Recomendamos tener por ejemplo una ventana de
+#. Asegurarse que ninguna copia de seguridad sea ejecutada durante la
+   actualización. Recomendamos tener, por ejemplo, una ventana de
    mantenimiento de 30 minutos al dia, a la semana o al mes en donde
    no existan definiciones de backup para el periodo elegido. De esta
    manera podreis ejecutar el proceso de actualización durante esta
    ventana de mantenimiento sin necesidad de tener en cuenta si alguna
    copia de seguridad se empezará a ejecutar durante la actualización.
 
-   Si ejecutais copias de seguridad 24H al dia, tendreis que cambiar
-   el estado de todos los nodos PgSQL en vuestro sistema a ``STOPPED``
-   y esperar un corto periodo de tiempo hasta que todos los ficheros
-   ``crontab`` usados por PgBackMan sean actualizados.
+   Para estar seguros, parar ``crond``, ``pgbackman_control`` y
+   ``pgbackman_maintenance`` con estos comandos::
 
-   Si estais usando PgBackMan version 1.1.0 o posterior, podeis
-   ejecutar este comando en el shell del sistema oprativo para cambiar
-   el estado de todos vuestros nodos PgSQL a ``STOPPED``::
+     [root@pg-backup01]# /etc/init.d/pgbackman stop
+     [root@pg-backup01]# /etc/init.d/crond stop
 
-     [pgbackman@pg-backup01]# pgbackman --use-csv-format show_pgsql_nodes \
-                              | grep -v "STOPPED" \
-			      | awk -F',' '{print "pgbackman update_pgsql_node", $1, $3, $4, "STOPPED", "\\\"" $6 "\\\""}' \
-			      | sh
-
-   La versión 1.0.0 no soporta el parametro ``--use-csv-format`` por
-   lo que los usuarios que estén usando esta versión tendrán que
-   ejecutar manualmente el comando ``update_pgsql_node`` para cada
-   nodo PgSQL.
+   Esto habra que realizarlo en todos los servidores de backup que
+   tengan PgBackMan instalado.
 
 #. Comprobar que no estais ejecutando ninguna copia de seguridad o
    restauración de datos::
      
-      [pgbackman@pg-backup01]# ps ax | egrep "pgbackman_control|pgbackman_maintenance"
+      [root@pg-backup01]# ps ax | egrep "pgbackman_dump|pgbackman_restore"
 
    Si estais ejecutando procesos PgBackMan de copias o restauración
    tendreis que esperar a que terminen o pararlos si no os importa
    perderlos.
 
-#. Parar ``pgbackman_control`` y ``pgbackman_maintenance``::
-
-     [pgbackman@pg-backup01]# /etc/init.d/pgbackman stop
-
 #. Actualizar el software PgBackMan con vuestro metodo favorito, desde
    las fuentes o desde paquetes rpm o deb. Consultar la sección sobre
    instalación de este manual para más información.
+
+#. Comprobar que el nuevo fichero de configuración
+   (``/etc/pgbackman/pgbackman.conf``) tiene la información sobre la
+   base de datos ``pgbackman``.
 
 #. Arrancar ``pgbackman`` y seguir las instrucciones para actualizar
    la base de datos ``pgbackman``::
@@ -400,17 +395,11 @@ seria el siguiente:
      +----------------------------+----------------------------------+
 
 #. Después de haber actualizado la base de datos ``pgbackman``,
-   arrancar ``pgbackman_control`` y ``pgbackman_maintenance``::
+   arrancar ``crond``, ``pgbackman_control`` y
+   ``pgbackman_maintenance``::
 
-     [pgbackman@pg-backup01]# /etc/init.d/pgbackman start
-
-#. Actualizar el estado de todos los nodos PgSQL a ``RUNNING`` si el
-   estado fue cambiado a ``STOPPED`` al principio de la
-   actualización::
-
-      [pgbackman@pg-backup01]# pgbackman --use-csv-format show_pgsql_nodes \
-			      | awk -F',' '{print "pgbackman update_pgsql_node", $1, $3, $4, "RUNNING", "\\\"" $6 "\\\""}' \
-			      | sh
+     [root@pg-backup01]# /etc/init.d/pgbackman start
+     [root@pg-backup01]# /etc/init.d/crond stop
 
 #. Usar PgBackMan con normalidad.
 

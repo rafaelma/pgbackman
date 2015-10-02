@@ -62,24 +62,24 @@ The main features of PgBackMan are:
 
 * Central database with metadata information.
 * PgBackMan shell for interaction with the system.
-* Management of multiple backup servers
-* Management of multiple PostgreSQL servers
-* Management of thousands of backups dumps through a catalogue
-* Manual and scheduled backups 
+* Management of multiple backup servers.
+* Management of multiple PostgreSQL servers.
+* Management of thousands of backups dumps through a catalogue.
+* Full backup of role information for a database.
+* Full backup of database configuration for a database.
+* Manual and scheduled backups.
 * Management of retention policies for backups dumps.
 * Fully detailed backup reports.
 * Multiple predefined database backup types, CLUSTER, FULL, SCHEMA, DATA.
-* Full backup of role information for a database.
-* Full backup of database configuration for a database.
 * Automatic definitions of backups for all databases running in a PgSQL node.
-* Automatic deletion after a quarantine period of backup definitions
-  and associated files for databases than have been deleted in a PgSQL
-  node.
-* Automatic restore procedures
+* Automatic definitions of backups for all databases without definitions running in a PgSQL node.
+* Automatic deletion after a quarantine period of backup definitions and associated files for databases than have been deleted in a PgSQL node.
+* Automatic restore procedures.
+* Possibility of pausing / resuming replication on slaves/standby nodes when taking large backups.
 * Autonomous pgbackman_dump program that functions even if the central database with metadata is not available.
-* Handling of error situations.
-* Written in Python and PL/PgSQL 
-* Distributed under the GNU General Public License 3
+* Handling of error situations. 
+* Written in Python and PL/PgSQL. 
+* Distributed under the GNU General Public License 3.
 
 
 Architecture and components
@@ -111,10 +111,13 @@ The components forming part of PgBackMan could be listed as follows:
   and runs some maintenance jobs needed by PgBackMan. It enforces
   retentions for backup and snapshot definitions. It deletes backup
   and log files from catalog entries associated to a backup definition
-  after this definition has been deleted with the force parameter. And
-  it processes all pending backup/restore catalog log files created in
-  the server if the pgbackman database has been down when
-  ``pgbackman_dump`` and ``pgbackman_restore`` have been running.
+  after this definition has been deleted with the force
+  parameter. It stops automatically all backup definitions for databases
+  that have been deleted with DROP DATABASE or renamed in the PgSQL
+  nodes running them. And it processes all pending backup/restore
+  catalog log files created in the server if the pgbackman database
+  has been down when ``pgbackman_dump`` and ``pgbackman_restore`` have
+  been running.
 
 * **pgbackman_dump:** This program runs in the backup servers when a backup
   or snapshot has to be taken.
@@ -232,6 +235,9 @@ You can get this database from the directory ``sql/`` in the source
 code or under the directory ``/usr/share/pgbackman`` if you have
 installed PgBackMan via ``source``, ``rpm`` or ``deb`` packages.
 
+You can install the ``pgbackman`` database for the first time with
+this command: 
+
 ::
 
    psql -h <dbhost.domain> -f /usr/share/pgbackman/pgbackman.sql
@@ -259,7 +265,7 @@ Upgrading PgBackMan
 This section has information about how to upgrade to a newer version
 of PgBackMan when you already are using PgBackMan.
 
-To things has to be done to run an upgrade og PgBackMan:
+To things has to be done to run an upgrade of PgBackMan:
 
 * Upgrade the PgBackMan software to the new version
 * Upgrade the ``pgbackman`` database to the new version  
@@ -281,36 +287,29 @@ follow:
    window without having to think that a backup will be startet when
    you are upgrading PgBackMan.
 
-   If you run backups 24H a day, set the status of all PgSQL nodes in
-   your system to ``STOPPED`` and wait a short time until all
-   ``crontab`` files used by PgBackMan get updated.
+   To be safe, stop ``crond``, ``pgbackman_control`` and
+   ``pgbackman_maintenance`` with these commands::
 
-   If you are running PgBackMan version 1.1.0 or later, you could run
-   this command in the OS shell to change the status of all the PgSQL
-   nodes to ``STOPPED``::
+     [root@pg-backup01]# /etc/init.d/pgbackman stop
+     [root@pg-backup01]# /etc/init.d/crond stop
 
-     [pgbackman@pg-backup01]# pgbackman --use-csv-format show_pgsql_nodes \
-                              | grep -v "STOPPED" \
-			      | awk -F',' '{print "pgbackman update_pgsql_node", $1, $3, $4, "STOPPED", "\\\"" $6 "\\\""}' \
-			      | sh
-
-   Version 1.0.0 does not support the parameter ``--use-csv-format``,
-   so one has to run the ``update_pgsql_node`` command for one node at
-   the time.
+   This has to be done in all backup servers running PgBackMan.
 
 #. Check that no backups or restores are running::
      
-      [pgbackman@pg-backup01]# ps ax | egrep "pgbackman_control|pgbackman_maintenance"
+      [pgbackman@pg-backup01]# ps ax | egrep "pgbackman_dump|pgbackman_restore"
 
-   If you have PgBackMan backup or restore jobs running, wait until the finish. 
-
-#. Stop ``pgbackman_control`` and ``pgbackman_maintenance``::
-
-     [pgbackman@pg-backup01]# /etc/init.d/pgbackman stop
+   If you have PgBackMan backup or restore jobs running, wait until
+   they finish or kill them if you do not want to wait for them to
+   finish.
 
 #. Upgrade the PgBackMan software via your favorite method, source, rpm
    packages or deb packages. Check the *"Installation section"* for more
    information.
+
+#. Check that the new PgBackMan configuration file
+   (``/etc/pgbackman/pgbackman.conf``) has the information about the
+   ``pgbackman`` database.
 
 #. Start ``pgbackman`` and follow the instructions to upgrade the
    ``pgbackman`` database::
@@ -367,16 +366,10 @@ follow:
      +----------------------------+----------------------------------+
 
 #. After the ``pgbackman`` database has been upgraded, start
-   ``pgbackman_control`` and ``pgbackman_maintenance``::
+   ``crond``, ``pgbackman_control`` and ``pgbackman_maintenance``::
 
-     [pgbackman@pg-backup01]# /etc/init.d/pgbackman start
-
-#. Update the status of all your PgSQL nodes to ``RUNNING`` if you
-   changed this to ``STOPPED``::
-
-      [pgbackman@pg-backup01]# pgbackman --use-csv-format show_pgsql_nodes \
-			      | awk -F',' '{print "pgbackman update_pgsql_node", $1, $3, $4, "RUNNING", "\\\"" $6 "\\\""}' \
-			      | sh
+     [root@pg-backup01]# /etc/init.d/pgbackman start
+     [root@pg-backup01]# /etc/init.d/crond stop
 
 #. Use PgBackMan as usual.
 
