@@ -3078,6 +3078,34 @@ class pgbackman_db():
         except psycopg2.Error as e:
             raise e
 
+    # ############################################
+    # Method 
+    # ############################################
+
+    def get_backup_server_bckdef_list(self,backup_server_id):
+
+        """
+        A function to get all databases with a backup definition registered in a backup server
+        """
+
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT "PgSQL node","DBname" FROM show_backup_definitions WHERE "Status" = \'ACTIVE\' AND backup_server_id = %s ORDER BY "PgSQL node","DBname"',(backup_server_id,))
+                    self.conn.commit()
+
+                    return self.cur
+                                        
+                except psycopg2.Error as e:
+                    raise e
+
+            self.pg_close()
+    
+        except psycopg2.Error as e:
+            raise e
+
 
     # ############################################
     # Method 

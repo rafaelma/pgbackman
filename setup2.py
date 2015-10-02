@@ -101,7 +101,7 @@ try:
           author_email='rafael@postgresql.org.es',
           url='http://www.pgbackman.org/',
           packages=['pgbackman',],
-          scripts=['bin/pgbackman','bin/pgbackman_control','bin/pgbackman_maintenance','bin/pgbackman_dump','bin/pgbackman_restore'],
+          scripts=['bin/pgbackman','bin/pgbackman_control','bin/pgbackman_maintenance','bin/pgbackman_dump','bin/pgbackman_restore','bin/pgbackman_zabbix_autodiscovery'],
           data_files=[('/etc/init.d', ['/tmp/pgbackman']),
                       ('/etc/pgbackman', ['etc/pgbackman.conf']),
                       ('/etc/logrotate.d', ['etc/pgbackman.logrotate']),
