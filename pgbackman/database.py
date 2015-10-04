@@ -3085,7 +3085,7 @@ class pgbackman_db():
     def get_backup_server_bckdef_list(self,backup_server_id):
 
         """
-        A function to get all databases with a backup definition registered in a backup server
+        A function to get all backup definitions registered in a backup server
         """
 
         try:
@@ -3093,7 +3093,7 @@ class pgbackman_db():
 
             if self.cur:
                 try:
-                    self.cur.execute('SELECT "PgSQL node","DBname" FROM show_backup_definitions WHERE "Status" = \'ACTIVE\' AND backup_server_id = %s ORDER BY "PgSQL node","DBname"',(backup_server_id,))
+                    self.cur.execute('SELECT "DefID"::bigint,"PgSQL node","DBname" FROM show_backup_definitions WHERE "Status" = \'ACTIVE\' AND backup_server_id = %s ORDER BY "PgSQL node","DBname"',(backup_server_id,))
                     self.conn.commit()
 
                     return self.cur
@@ -3214,5 +3214,76 @@ class pgbackman_db():
                 self.cur.execute('SELECT pg_xlog_replay_resume()')
                 self.conn.commit()
                                     
+        except psycopg2.Error as e:
+            raise e
+
+
+    # ############################################
+    # Method 
+    # ############################################
+
+    def get_status_info(self,parameter_status,backup_server,def_id):
+
+        """
+        A function to get status information from different parts of the system.
+        """
+
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+
+                    #
+                    # Parameter: job_queue
+
+                    # Returns the number of entries in job_queue waiting
+                    # to be processed by pgbackman_control.
+                    #
+                    # The number of entries in job_queue will not
+                    # decrease if pgbackman_crontrol is down, not
+                    # receiving NOTIFY data from the 'pgbackman'
+                    # database, or if we have a 'huge' number of PgSQL
+                    # nodes updating backup definitions all the time
+                    # and pgbackman_control cannot process this fast
+                    # enough.
+                    #
+
+                    if parameter_status in ['job_queue']:
+
+                        self.cur.execute('SELECT count(*) AS cnt FROM job_queue')
+                        self.conn.commit()
+
+                        return self.cur.fetchone()[0]
+
+                    #
+                    # Parameter: backup_last_status
+                    #
+                    # Returns the status of the last entry in the
+                    # catalog for a backup definition.
+                    #
+                    # This value can be: succeeded, error, warning.
+                    #
+                    
+                    elif parameter_status in ['backup_last_status']:
+
+                        self.cur.execute('SELECT lower("Status") FROM show_backup_catalog WHERE def_id = %s ORDER BY "Finished" DESC LIMIT 1',(def_id,))
+                        self.conn.commit()
+
+                        data = self.cur.fetchone()
+
+                        if data != None:
+                            return data[0]
+                        else:
+                            return 'unknown'
+
+                    else:
+                        raise Exception("Invalid parameter status [%s]" % parameter_status)
+                    
+                except psycopg2.Error as e:
+                    raise e
+
+            self.pg_close()
+    
         except psycopg2.Error as e:
             raise e

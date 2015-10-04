@@ -67,9 +67,9 @@ def get_pgbackman_zabbix_autodiscovery(backup_server_fqdn):
 
         backup_server_id = db.get_backup_server_id(backup_server_fqdn)
         
-        for pgsql_node,dbname in db.get_backup_server_bckdef_list(backup_server_id):
+        for def_id,pgsql_node,dbname in db.get_backup_server_bckdef_list(backup_server_id):
             backup_definition = {}
-            backup_definition = {"{#PGSQL_NODE}":pgsql_node,"{#DBNAME}":dbname}
+            backup_definition = {"{#DEFID}":def_id,"{#PGSQL_NODE}":pgsql_node,"{#DBNAME}":dbname}
 
             backup_definitions_list.append(backup_definition)
     

@@ -1,0 +1,120 @@
+#!/usr/bin/env python
+#
+# Copyright (c) 2013-2015 Rafael Martinez Guerrero / PostgreSQL-es
+# rafael@postgresql.org.es / http://www.postgresql.org.es/
+#
+# Copyright (c) 2014-2015 USIT-University of Oslo
+#
+# This file is part of PgBackMan
+# https://github.com/rafaelma/pgbackman
+#
+# PgBackMan is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by 
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# PgBackMan is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with PgBck.  If not, see <http://www.gnu.org/licenses/>.
+
+import sys
+import os
+import signal
+import argparse
+import json
+
+from pgbackman.database import * 
+from pgbackman.config import *
+from pgbackman.logs import *
+
+
+'''
+This program is used to get some status information from
+pgbackman.
+
+This can be used e.g. by Zabbix to define new Items
+
+'''
+
+# ############################################
+# Function signal_handler()
+# ############################################
+    
+def signal_handler(signum, frame):
+    sys.exit(0)
+
+
+# ############################################
+# Function Main()
+# ############################################
+    
+def get_status_info(parameter_status,backup_server_fqdn,backup_def_id):
+
+    try:
+
+        conf = configuration()
+        pgbackman_dsn = conf.dsn
+        
+        db = pgbackman_db(pgbackman_dsn,'pgbackman_status_info')
+        
+        if backup_server_fqdn != '':
+            backup_server_id = db.get_backup_server_id(backup_server_fqdn)
+        else:
+            backup_server_id = ''
+
+        return_value = db.get_status_info(parameter_status,backup_server_id,backup_def_id)
+        print return_value
+        
+        logs.logger.debug('Getting status information for parameter [%s]',parameter_status)
+    
+    except Exception as e:
+        logs.logger.error('Problems getting status information for parameter [%s] - %s',parameter_status,e)
+        sys.exit(1)
+
+    
+# ############################################
+# 
+# ############################################
+
+if __name__ == '__main__':
+
+    signal.signal(signal.SIGINT,signal_handler)
+    signal.signal(signal.SIGTERM,signal_handler)
+
+    #
+    # Initializing logging
+    #
+
+    logs = logs("pgbackman_status_info","","")
+    logs.logger.debug('**** pgbackman_status_info started. ****')
+
+    parser = argparse.ArgumentParser(prog=sys.argv[0])
+
+    parser.add_argument('--backup-server','-b', metavar='BACKUP-SERVER-FQDN', required=False, help='Backup server FQDN', dest='backup_server_fqdn')
+    parser.add_argument('--backup-definition-id','-d', metavar='BACKUP-DEFINITION-ID', required=False, help='Backup definition ID', dest='backup_def_id')
+    parser.add_argument('--parameter-status','-p', metavar='PARAMETER-STATUS', required=False, help='Parameter status', dest='parameter_status')
+    
+    args = parser.parse_args()    
+    
+    if args.backup_server_fqdn:
+        backup_server = args.backup_server_fqdn
+    else:
+        backup_server = ''
+
+    if args.backup_def_id:
+        backup_def_id = args.backup_def_id
+    else:
+        backup_def_id = '0'
+
+    if args.parameter_status:
+        parameter_status = args.parameter_status
+    else:
+        parameter_status = ''
+
+    get_status_info(parameter_status,backup_server,backup_def_id)        
+    
+    logs.logger.debug('**** pgbackman_status_info finished. ****')
