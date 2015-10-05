@@ -31,6 +31,181 @@ ALTER TABLE snapshot_definition ADD COLUMN pg_dump_release TEXT DEFAULT NULL;
 ALTER TABLE backup_catalog ADD COLUMN pg_dump_release TEXT;
 
 
+-- Create table alerts and alert_type to save information about alerts that should be sent after 
+-- a backup-def or snapshot-def finish with an error status
+
+CREATE TABLE alerts(
+
+  alert_id BIGSERIAL,
+  registered TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  alert_type TEXT NOT NULL,
+  ref_id BIGINT DEFAULT NULL,
+  backup_server_id INTEGER NOT NULL,
+  pgsql_node_id INTEGER NOT NULL,
+  dbname TEXT NOT NULL,
+  execution_status TEXT,
+  error_message TEXT,
+  sendto TEXT NOT NULL,
+  alert_sent BOOLEAN DEFAULT 'FALSE'
+);
+
+ALTER TABLE alerts ADD PRIMARY KEY (alert_id);
+CREATE INDEX ON alerts(registered);
+CREATE INDEX ON alerts(alert_sent);
+ALTER TABLE alerts OWNER TO pgbackman_role_rw;
+
+CREATE TABLE alert_type(
+
+  code CHARACTER VARYING(20) NOT NULL,
+  description TEXT
+);
+
+ALTER TABLE alert_type ADD PRIMARY KEY (code);
+ALTER TABLE alert_type OWNER TO pgbackman_role_rw;
+
+ALTER TABLE ONLY alerts
+    ADD FOREIGN KEY (backup_server_id) REFERENCES  backup_server (server_id) MATCH FULL ON DELETE RESTRICT;
+
+ALTER TABLE ONLY alerts
+    ADD FOREIGN KEY (pgsql_node_id) REFERENCES pgsql_node (node_id) MATCH FULL ON DELETE RESTRICT;
+
+ALTER TABLE ONLY alerts
+    ADD FOREIGN KEY (execution_status) REFERENCES job_execution_status (code) MATCH FULL ON DELETE RESTRICT;
+
+ALTER TABLE ONLY alerts
+    ADD FOREIGN KEY (alert_type) REFERENCES alert_type (code) MATCH FULL ON DELETE RESTRICT;
+
+INSERT INTO alert_type (code,description) VALUES ('Backup-def','Alerts from failed backup definitions');
+INSERT INTO alert_type (code,description) VALUES ('Snapshot-def','Alerts from failed snapshot definitions');
+INSERT INTO alert_type (code,description) VALUES ('Restore-def','Alerts from failed restore definitions');
+
+
+-- Define a new trigger to update the alerts table when an error job is registered in backup_catalog
+
+CREATE OR REPLACE FUNCTION generate_backup_catalog_alert() RETURNS TRIGGER
+ LANGUAGE plpgsql 
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ DECLARE
+  sendto_ TEXT;
+ BEGIN
+
+  SELECT value FROM pgsql_node_config WHERE node_id = NEW.pgsql_node_id AND parameter = 'logs_email' INTO sendto_;
+
+  IF NEW.execution_status = 'ERROR' AND NEW.snapshot_id IS NULL THEN
+
+     EXECUTE 'INSERT INTO alerts (alert_type,ref_id,backup_server_id,pgsql_node_id,dbname,execution_status,error_message,sendto,alert_sent) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)'
+     USING 'Backup-def',
+     	   NEW.def_id,
+	   NEW.backup_server_id,
+	   NEW.pgsql_node_id,
+	   NEW.dbname,
+	   NEW.execution_status,
+	   NEW.error_message,
+	   sendto_,
+	   FALSE; 
+
+  ELSEIF NEW.execution_status = 'ERROR' AND NEW.def_id IS NULL THEN
+
+     EXECUTE 'INSERT INTO alerts (alert_type,ref_id,backup_server_id,pgsql_node_id,dbname,execution_status,error_message,sendto,alert_sent) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)'
+     USING 'Snapshot-def',
+     	   NEW.snapshot_id,
+	   NEW.backup_server_id,
+	   NEW.pgsql_node_id,
+	   NEW.dbname,
+	   NEW.execution_status,
+	   NEW.error_message,
+	   sendto_,
+	   FALSE; 
+   END IF;    
+
+  RETURN NULL;
+END;
+$$;
+
+ALTER FUNCTION generate_backup_catalog_alert() OWNER TO pgbackman_role_rw;
+
+CREATE TRIGGER generate_backup_catalog_alert AFTER INSERT OR UPDATE
+    ON backup_catalog FOR EACH ROW
+    EXECUTE PROCEDURE generate_backup_catalog_alert();
+
+
+-- Define a new function to update alert_sent values
+
+CREATE OR REPLACE FUNCTION update_alert_sent(INTEGER,BOOLEAN) RETURNS VOID
+ LANGUAGE plpgsql 
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ DECLARE
+  alert_id_ ALIAS FOR $1;
+  alert_sent_ ALIAS FOR $2;
+  alert_id_cnt INTEGER;
+
+  v_msg     TEXT;
+  v_detail  TEXT;
+  v_context TEXT;
+ BEGIN
+
+    SELECT count(*) FROM alerts WHERE alert_id = alert_id_ INTO alert_id_cnt;
+
+    IF alert_id_cnt = 0 THEN
+      RAISE EXCEPTION 'AlertID: % does not exist in the system',alert_id_;
+    END IF;
+
+     EXECUTE 'UPDATE alerts SET alert_sent = $2 WHERE alert_id = $1'
+     USING alert_id_,
+     	   alert_sent_;
+   	   
+   EXCEPTION WHEN others THEN
+   	GET STACKED DIAGNOSTICS	
+            v_msg     = MESSAGE_TEXT,
+            v_detail  = PG_EXCEPTION_DETAIL,
+            v_context = PG_EXCEPTION_CONTEXT;
+        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \n----------------------------------------------\n', v_msg, v_detail;
+  END;
+$$;
+
+ALTER FUNCTION update_alert_sent(INTEGER,BOOLEAN) OWNER TO pgbackman_role_rw;
+
+
+-- Define a new function to delete alerts
+
+CREATE OR REPLACE FUNCTION delete_alert(INTEGER) RETURNS VOID
+ LANGUAGE plpgsql 
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ DECLARE
+  alert_id_ ALIAS FOR $1;
+  alert_id_cnt INTEGER;
+ 
+  v_msg     TEXT;
+  v_detail  TEXT;
+  v_context TEXT;
+ BEGIN
+
+    SELECT count(*) FROM alerts WHERE alert_id = alert_id_ INTO alert_id_cnt;
+
+    IF alert_id_cnt = 0 THEN
+      RAISE EXCEPTION 'AlertID: % does not exist in the system',alert_id_;
+    END IF;
+
+     EXECUTE 'DELETE FROM alerts WHERE alert_id = $1'
+     USING alert_id_;
+   	   
+   EXCEPTION WHEN others THEN
+   	GET STACKED DIAGNOSTICS	
+            v_msg     = MESSAGE_TEXT,
+            v_detail  = PG_EXCEPTION_DETAIL,
+            v_context = PG_EXCEPTION_CONTEXT;
+        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \n----------------------------------------------\n', v_msg, v_detail;
+  END;
+$$;
+
+ALTER FUNCTION delete_alert(INTEGER) OWNER TO pgbackman_role_rw;
+
 
 -- Define a new trigger to update the registered column in bakup_definition when a row is updated
 

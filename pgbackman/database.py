@@ -3287,3 +3287,80 @@ class pgbackman_db():
     
         except psycopg2.Error as e:
             raise e
+
+
+    # ############################################
+    # Method 
+    # ############################################
+                      
+    def delete_alert(self,alert_id):
+        """A function to delete an alert"""
+
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT delete_alert(%s)',(alert_id,))
+                    self.conn.commit()                        
+              
+                except psycopg2.Error as e:
+                    raise e
+                    
+            self.pg_close()
+   
+        except psycopg2.Error as e:
+            raise e
+
+
+    # ############################################
+    # Method 
+    # ############################################
+                      
+    def update_alert_sent(self,alert_id,status):
+        """A function to update an alert sent status"""
+
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT update_alert_sent(%s)',(alert_id,status))
+                    self.conn.commit()                        
+              
+                except psycopg2.Error as e:
+                    raise e
+                    
+            self.pg_close()
+   
+        except psycopg2.Error as e:
+            raise e
+
+
+    # ############################################
+    # Method 
+    # ############################################
+
+    def get_alerts(self,backup_server_id):
+
+        """
+        A function to get the alerts in a backup server that have not been sent by email
+        """
+
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT * FROM alerts WHERE backup_server_id = %s AND alert_sent = FALSE ORDER BY registered ASC',(backup_server_id,))
+                    self.conn.commit()
+
+                    return self.cur
+                                        
+                except psycopg2.Error as e:
+                    raise e
+
+            self.pg_close()
+    
+        except psycopg2.Error as e:
+            raise e
