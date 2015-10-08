@@ -4,7 +4,7 @@
 # Autor: Rafael Martinez <rafael@postgreslq.org.es>
 #  
 
-%define majorversion 1.0
+%define majorversion 1.1
 %define minorversion 0
 %define pbm_owner pgbackman
 %define pbm_group pgbackman
@@ -61,6 +61,7 @@ rm -rf %{buildroot}
 %{_datadir}/%{name}/*
 /var/log/%{name}/*
 %config(noreplace) %{_sysconfdir}/%{name}/%{name}.conf
+%config(noreplace) %{_sysconfdir}/%{name}/%{name}_alerts.template
 %attr(700,%{pbm_owner},%{pbm_group}) %dir /var/lib/%{name}
 %attr(755,%{pbm_owner},%{pbm_group}) %dir /var/log/%{name}
 %attr(600,%{pbm_owner},%{pbm_group}) %ghost /var/log/%{name}/%{name}.log

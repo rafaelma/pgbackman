@@ -24,9 +24,13 @@ PIDFILE_CONTROL="/var/run/pgbackman_control.pid"
 LOCKFILE_MAINTENANCE="/var/lock/subsys/pgbackman_maintenance"
 PIDFILE_MAINTENANCE="/var/run/pgbackman_maintenance.pid"
 
+LOCKFILE_ALERTS="/var/lock/subsys/pgbackman_alerts"
+PIDFILE_ALERTS="/var/run/pgbackman_alerts.pid"
+
 # Exit if the scripts are not installed
 [ -f "$BINDIR/pgbackman_control" ] || exit 1
 [ -f "$BINDIR/pgbackman_maintenance" ] || exit 1
+[ -f "$BINDIR/pgbackman_alerts" ] || exit 1
 
 # Create logfile if it does not exist
 if [ ! -f "$PGBACKMAN_LOG" ] 
@@ -40,6 +44,7 @@ fi
 start(){
     PGBACKMAN_CONTROL_START="Starting pgbackman_control service: "
     PGBACKMAN_MAINTENANCE_START="Starting pgbackman_maintenance service: "
+    PGBACKMAN_ALERTS_START="Starting pgbackman_alerts service: "
 
     if [ ! -e "$PGBACKMAN_STARTUP_LOG" ]
     then
@@ -103,6 +108,34 @@ start(){
 	failure
 	echo	
     fi
+
+    echo -n "$PGBACKMAN_ALERTS_START"
+
+    if [ ! -e "$LOCKFILE_ALERTS" ]
+    then
+	$BINDIR/pgbackman_alerts >> "$PGBACKMAN_STARTUP_LOG" 2>&1 &
+	RETVAL=$?
+	PID=$!
+	sleep 2
+	
+	if [ "x$PID" != "x" ]
+	then
+            success
+	    echo
+	    
+            touch "$LOCKFILE_ALERTS"
+            echo $PID > "$PIDFILE_ALERTS"
+	else
+            failure
+	    echo
+	    
+	    return $RETVAL
+	fi
+	
+    else
+	failure
+	echo	
+    fi
 	
 }
 
@@ -110,6 +143,7 @@ stop(){
     
     PGBACKMAN_CONTROL_STOP="Stopping pgbackman_control service: "
     PGBACKMAN_MAINTENANCE_STOP="Stopping pgbackman_maintenance service: "
+    PGBACKMAN_ALERTS_STOP="Stopping pgbackman_alerts service: "
 
     echo -n $PGBACKMAN_CONTROL_STOP
 
@@ -165,6 +199,35 @@ stop(){
         success
 	echo
     fi
+
+    echo -n $PGBACKMAN_ALERTS_STOP
+    
+    if [ -e "$LOCKFILE_ALERTS" ]
+    then
+	killproc -p "$PIDFILE_ALERTS" pgbackman_alerts
+        RETVAL=$?
+        
+	if [ $RETVAL -eq 0 ] 
+	then
+	    success 
+	    echo
+
+	    rm -f $LOCKFILE_ALERTS
+            rm -f $PIDFILE_ALERTS
+	    
+	else
+	    failure
+	    echo
+
+	    return $RETVAL
+	fi
+	
+    else
+        # not running; per LSB standards this is "ok"  
+        success
+	echo
+    fi
+
     
 }
 
@@ -184,6 +247,7 @@ case "$1" in
   status)
         status -p $PIDFILE_CONTROL pgbackman_control
 	status -p $PIDFILE_MAINTENANCE pgbackman_maintenance
+	status -p $PIDFILE_ALERTS pgbackman_alerts
         ;;
   restart)
 	restart
