@@ -86,7 +86,7 @@ class pgbackman_cli(cmd.Cmd):
         self.db = pgbackman_db(self.dsn,'pgbackman_cli')
         self.output_format = 'table'
 
-        self.backup_server_id = self.get_backup_server_running_pgbackman()
+        self.backup_server_id = ''
 
 
     # ############################################
