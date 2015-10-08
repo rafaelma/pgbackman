@@ -57,6 +57,17 @@ class configuration():
         # pgbackman_maintenance section
         self.maintenance_interval = 70
 
+        # pgbackman_alerts section
+        self.smtp_alerts = 'OFF'
+        self.alerts_check_interval = 300
+        self.smtp_server = 'localhost'
+        self.smtp_port = '25'
+        self.smtp_ssl = 'ON'
+        self.smtp_user = ''
+        self.smtp_password = ''
+        self.smtp_from_address = ''
+        self.alerts_template = '/etc/pgbackman/pgbackman_alerts.template'
+        
         # Logging section
         self.log_level = 'ERROR'
         self.log_file = '/var/log/pgbackman/pgbackman.log'
@@ -133,6 +144,34 @@ class configuration():
             # pgbackman_maintenance section
             if config.has_option('pgbackman_maintenance','maintenance_interval'):
                 self.maintenance_interval = int(config.get('pgbackman_maintenance','maintenance_interval'))    
+
+            # pgbackman_alerts section
+            if config.has_option('pgbackman_alerts','smtp_alerts'):
+                self.smtp_alerts = config.get('pgbackman_alerts','smtp_alerts').upper()    
+
+            if config.has_option('pgbackman_alerts','alerts_check_interval'):
+                self.alerts_check_interval = int(config.get('pgbackman_alerts','alerts_check_interval'))    
+
+            if config.has_option('pgbackman_alerts','smtp_server'):
+                self.smtp_server = config.get('pgbackman_alerts','smtp_server')    
+
+            if config.has_option('pgbackman_alerts','smtp_port'):
+                self.smtp_port = config.get('pgbackman_alerts','smtp_port')    
+
+            if config.has_option('pgbackman_alerts','smtp_ssl'):
+                self.smtp_ssl = config.get('pgbackman_alerts','smtp_ssl').upper()    
+
+            if config.has_option('pgbackman_alerts','smtp_user'):
+                self.smtp_user = config.get('pgbackman_alerts','smtp_user')    
+
+            if config.has_option('pgbackman_alerts','smtp_password'):
+                self.smtp_password = config.get('pgbackman_alerts','smtp_password')    
+
+            if config.has_option('pgbackman_alerts','smtp_from_address'):
+                self.smtp_from_address = config.get('pgbackman_alerts','smtp_from_address')    
+
+            if config.has_option('pgbackman_alerts','alerts_template'):
+                self.alerts_template = config.get('pgbackman_alerts','alerts_template')    
                    
             # Logging section
             if config.has_option('logging','log_level'):

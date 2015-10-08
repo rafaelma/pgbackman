@@ -39,7 +39,8 @@ CREATE TABLE alerts(
   alert_id BIGSERIAL,
   registered TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   alert_type TEXT NOT NULL,
-  ref_id BIGINT DEFAULT NULL,
+  ref_id BIGINT NOT NULL,
+  bck_id BIGINT NOT NULL,
   backup_server_id INTEGER NOT NULL,
   pgsql_node_id INTEGER NOT NULL,
   dbname TEXT NOT NULL,
@@ -75,6 +76,9 @@ ALTER TABLE ONLY alerts
 ALTER TABLE ONLY alerts
     ADD FOREIGN KEY (alert_type) REFERENCES alert_type (code) MATCH FULL ON DELETE RESTRICT;
 
+ALTER TABLE ONLY alerts
+    ADD FOREIGN KEY (bck_id) REFERENCES backup_catalog (bck_id) MATCH FULL ON DELETE RESTRICT;
+
 INSERT INTO alert_type (code,description) VALUES ('Backup-def','Alerts from failed backup definitions');
 INSERT INTO alert_type (code,description) VALUES ('Snapshot-def','Alerts from failed snapshot definitions');
 INSERT INTO alert_type (code,description) VALUES ('Restore-def','Alerts from failed restore definitions');
@@ -95,9 +99,10 @@ CREATE OR REPLACE FUNCTION generate_backup_catalog_alert() RETURNS TRIGGER
 
   IF NEW.execution_status = 'ERROR' AND NEW.snapshot_id IS NULL THEN
 
-     EXECUTE 'INSERT INTO alerts (alert_type,ref_id,backup_server_id,pgsql_node_id,dbname,execution_status,error_message,sendto,alert_sent) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)'
+     EXECUTE 'INSERT INTO alerts (alert_type,ref_id,bck_id,backup_server_id,pgsql_node_id,dbname,execution_status,error_message,sendto,alert_sent) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)'
      USING 'Backup-def',
      	   NEW.def_id,
+	   NEW.bck_id,
 	   NEW.backup_server_id,
 	   NEW.pgsql_node_id,
 	   NEW.dbname,
@@ -108,9 +113,10 @@ CREATE OR REPLACE FUNCTION generate_backup_catalog_alert() RETURNS TRIGGER
 
   ELSEIF NEW.execution_status = 'ERROR' AND NEW.def_id IS NULL THEN
 
-     EXECUTE 'INSERT INTO alerts (alert_type,ref_id,backup_server_id,pgsql_node_id,dbname,execution_status,error_message,sendto,alert_sent) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)'
+     EXECUTE 'INSERT INTO alerts (alert_type,ref_id,bck_id,backup_server_id,pgsql_node_id,dbname,execution_status,error_message,sendto,alert_sent) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)'
      USING 'Snapshot-def',
      	   NEW.snapshot_id,
+	   NEW.bck_id,
 	   NEW.backup_server_id,
 	   NEW.pgsql_node_id,
 	   NEW.dbname,

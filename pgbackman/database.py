@@ -1271,6 +1271,59 @@ class pgbackman_db():
     # Method 
     # ############################################
            
+    def register_backup_catalog_1_0_0(self,def_id,procpid,backup_server_id,pgsql_node_id,dbname,started,finished,duration,pg_dump_file,
+                                    pg_dump_file_size,pg_dump_log_file,pg_dump_roles_file,pg_dump_roles_file_size,pg_dump_roles_log_file,
+                                    pg_dump_dbconfig_file,pg_dump_dbconfig_file_size,pg_dump_dbconfig_log_file,global_log_file,execution_status,
+                                    execution_method,error_message,snapshot_id,role_list,pgsql_node_release):
+        
+        """A function to update the backup job catalog in a 1.0.0 version"""
+
+
+        try:
+            self.pg_connect()
+ 
+            if self.cur:
+                try:
+
+                    self.cur.execute('SELECT register_backup_catalog(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',(def_id,
+                                                                                                                                                    procpid,
+                                                                                                                                                    backup_server_id,
+                                                                                                                                                    pgsql_node_id,
+                                                                                                                                                    dbname,
+                                                                                                                                                    started,
+                                                                                                                                                    finished,
+                                                                                                                                                    duration,
+                                                                                                                                                    pg_dump_file,
+                                                                                                                                                    pg_dump_file_size,
+                                                                                                                                                    pg_dump_log_file,
+                                                                                                                                                    pg_dump_roles_file,
+                                                                                                                                                    pg_dump_roles_file_size,
+                                                                                                                                                    pg_dump_roles_log_file,
+                                                                                                                                                    pg_dump_dbconfig_file,
+                                                                                                                                                    pg_dump_dbconfig_file_size,
+                                                                                                                                                    pg_dump_dbconfig_log_file,
+                                                                                                                                                    global_log_file,
+                                                                                                                                                    execution_status,
+                                                                                                                                                    execution_method,
+                                                                                                                                                    error_message,
+                                                                                                                                                    snapshot_id,
+                                                                                                                                                    role_list,
+                                                                                                                                                    pgsql_node_release))
+                    self.conn.commit()                        
+                    
+                except psycopg2.Error as e:
+                    raise e
+
+            self.pg_close() 
+
+        except psycopg2.Error as e:
+            raise e
+
+
+    # ############################################
+    # Method 
+    # ############################################
+           
     def register_backup_catalog(self,def_id,procpid,backup_server_id,pgsql_node_id,dbname,started,finished,duration,pg_dump_file,
                                     pg_dump_file_size,pg_dump_log_file,pg_dump_roles_file,pg_dump_roles_file_size,pg_dump_roles_log_file,
                                     pg_dump_dbconfig_file,pg_dump_dbconfig_file_size,pg_dump_dbconfig_log_file,global_log_file,execution_status,
@@ -3325,7 +3378,7 @@ class pgbackman_db():
 
             if self.cur:
                 try:
-                    self.cur.execute('SELECT update_alert_sent(%s)',(alert_id,status))
+                    self.cur.execute('SELECT update_alert_sent(%s,%s)',(alert_id,status))
                     self.conn.commit()                        
               
                 except psycopg2.Error as e:
@@ -3352,7 +3405,7 @@ class pgbackman_db():
 
             if self.cur:
                 try:
-                    self.cur.execute('SELECT * FROM alerts WHERE backup_server_id = %s AND alert_sent = FALSE ORDER BY registered ASC',(backup_server_id,))
+                    self.cur.execute('SELECT alert_id,registered,alert_type,ref_id,bck_id,backup_server_id,pgsql_node_id,dbname,execution_status,error_message,sendto,alert_sent FROM alerts WHERE backup_server_id = %s AND alert_sent = FALSE ORDER BY registered ASC',(backup_server_id,))
                     self.conn.commit()
 
                     return self.cur

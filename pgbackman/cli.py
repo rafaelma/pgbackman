@@ -30,6 +30,8 @@ import signal
 import shlex
 import datetime
 import subprocess
+import readline
+import socket
 
 from pgbackman.database import * 
 from pgbackman.config import *
@@ -83,6 +85,8 @@ class pgbackman_cli(cmd.Cmd):
 
         self.db = pgbackman_db(self.dsn,'pgbackman_cli')
         self.output_format = 'table'
+
+        self.backup_server_id = self.get_backup_server_running_pgbackman()
 
 
     # ############################################
@@ -5100,7 +5104,6 @@ class pgbackman_cli(cmd.Cmd):
             raise e
 
 
-
     # ############################################
     # Method get_pgbackman_database_version
     # ############################################
@@ -5115,6 +5118,121 @@ class pgbackman_cli(cmd.Cmd):
                 
         except Exception as e:
             raise e
+
+    # ############################################
+    # Method get_backup_server_running_pgbackman()
+    # ############################################
+
+    def get_backup_server_running_pgbackman(self):
+
+        #
+        # Checking if this backup server is registered in pgbackman
+        #
+
+        if self.conf.backup_server != '':
+            backup_server_fqdn = self.conf.backup_server
+        else:
+            backup_server_fqdn = socket.getfqdn()
+            
+        try:
+            self.backup_server_id = self.db.get_backup_server_id(backup_server_fqdn)
+            self.logs.logger.info('Backup server: %s is registered in pgbackman',backup_server_fqdn)
+            
+        except psycopg2.Error as e:
+            self.logs.logger.critical('Cannot find backup server %s in pgbackman. Stopping the upgrade of pgbackman.',backup_server_fqdn)
+            sys.exit(1)     
+
+
+    # ##################################################
+    # Function process_pending_backup_catalog_log_file()
+    # ##################################################
+
+    def process_pending_backup_catalog_log_file_from_1_0_0(self,db,backup_server_id):
+        '''Process all pending backup catalog log files in the server '''
+
+        role_list = []
+
+        self.logs.logger.info('Processing pending backup catalog log files from version 1.0.0 before upgrading to a new version')
+    
+        try:
+            db.pg_connect()
+        
+            root_backup_partition = db.get_backup_server_config_value(backup_server_id,'root_backup_partition')
+            pending_catalog = root_backup_partition + '/pending_updates'
+        
+            for pending_log_file in os.listdir(pending_catalog):
+                if pending_log_file.find('backup_jobs_pending_log_updates_nodeid') != -1:
+                    with open(pending_catalog + '/' + pending_log_file,'r') as pending_file:
+                        for line in pending_file:
+                            parameters = line.split('::')
+                    
+                            if len(parameters) == 24:
+
+                                #
+                                # Fix when def_id and snapshot_id are like ''. This is not a valid
+                                # integer value
+                                #
+
+                                def_id = parameters[0]
+                                snapshot_id = parameters[21]
+                        
+                                if def_id == '':
+                                    def_id = None
+                                elif snapshot_id == '':
+                                    snapshot_id = None
+                        
+                                # Generate role list    
+
+                                role_list = parameters[22].split(' ')
+
+                                #
+                                # Updating the database with the information in the pending file
+                                #
+
+                                db.register_backup_catalog_1_0_0(def_id,
+                                                           parameters[1],
+                                                           parameters[2],
+                                                           parameters[3],
+                                                           parameters[4],
+                                                           parameters[5],
+                                                           parameters[6],
+                                                           parameters[7],
+                                                           parameters[8],
+                                                           parameters[9],
+                                                           parameters[10],
+                                                           parameters[11],
+                                                           parameters[12],
+                                                           parameters[13],
+                                                           parameters[14],
+                                                           parameters[15],
+                                                           parameters[16],
+                                                           parameters[17],
+                                                           parameters[18],
+                                                           parameters[19],
+                                                           parameters[20],
+                                                           snapshot_id,
+                                                           role_list,
+                                                           parameters[23].replace('\n',''))
+                                
+                                self.logs.logger.info('Backup job catalog for DefID: %s or snapshotID: %s in pending file %s updated in the database',def_id,snapshot_id,pending_log_file)
+                            
+                                #
+                                # Deleting the pending file if we can update the database with
+                                # the information in the file
+                                #
+
+                                print '[OK] File: ' + pending_catalog + '/' + pending_log_file + ' processed.'
+
+                                os.unlink(pending_catalog + '/' + pending_log_file)
+                                self.logs.logger.info('Pending backup file: %s deleted before upgrading to a new version',pending_log_file)
+                                                        
+                            else:
+                                self.logs.logger.error('Wrong format in pending backup file: %s',pending_log_file)
+
+        except psycopg2.OperationalError as e:
+            raise e
+        except Exception as e:
+            self.logs.logger.error('Problems processing pending backup files - %s',e)
 
 
     # ############################################
@@ -5165,6 +5283,19 @@ of the software and the version of the database.
                 sys.exit(1)
             
             if ack_input.lower() == 'yes':
+
+                self.get_backup_server_running_pgbackman()
+
+                root_backup_partition = self.db.get_backup_server_config_value(self.backup_server_id,'root_backup_partition')
+                pending_catalog = root_backup_partition + '/pending_updates'
+
+                print
+                print '###################################################################'
+                print 'Processing old pending files under ' + pending_catalog
+                print '###################################################################'
+                print 
+
+                self.process_pending_backup_catalog_log_file_from_1_0_0(self.db,self.backup_server_id)
                 self.update_pgbackman_database_version()
                 
             elif ack_input.lower() == 'no':
