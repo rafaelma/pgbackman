@@ -871,10 +871,10 @@ ALTER TABLE ONLY restore_catalog
     ADD FOREIGN KEY (restore_def) REFERENCES restore_definition (restore_def) MATCH FULL ON DELETE CASCADE;
 
 ALTER TABLE ONLY alerts
-    ADD FOREIGN KEY (backup_server_id) REFERENCES  backup_server (server_id) MATCH FULL ON DELETE RESTRICT;
+    ADD FOREIGN KEY (backup_server_id) REFERENCES  backup_server (server_id) MATCH FULL ON DELETE CASCADE;
 
 ALTER TABLE ONLY alerts
-    ADD FOREIGN KEY (pgsql_node_id) REFERENCES pgsql_node (node_id) MATCH FULL ON DELETE RESTRICT;
+    ADD FOREIGN KEY (pgsql_node_id) REFERENCES pgsql_node (node_id) MATCH FULL ON DELETE CASCADE;
 
 ALTER TABLE ONLY alerts
     ADD FOREIGN KEY (execution_status) REFERENCES job_execution_status (code) MATCH FULL ON DELETE RESTRICT;
@@ -883,7 +883,7 @@ ALTER TABLE ONLY alerts
     ADD FOREIGN KEY (alert_type) REFERENCES alert_type (code) MATCH FULL ON DELETE RESTRICT;
 
 ALTER TABLE ONLY alerts
-    ADD FOREIGN KEY (bck_id) REFERENCES backup_catalog (bck_id) MATCH FULL ON DELETE RESTRICT;
+    ADD FOREIGN KEY (bck_id) REFERENCES backup_catalog (bck_id) MATCH FULL ON DELETE CASCADE;
 
 
 -- ------------------------------------------------------

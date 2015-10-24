@@ -65,10 +65,10 @@ ALTER TABLE alert_type ADD PRIMARY KEY (code);
 ALTER TABLE alert_type OWNER TO pgbackman_role_rw;
 
 ALTER TABLE ONLY alerts
-    ADD FOREIGN KEY (backup_server_id) REFERENCES  backup_server (server_id) MATCH FULL ON DELETE RESTRICT;
+    ADD FOREIGN KEY (backup_server_id) REFERENCES  backup_server (server_id) MATCH FULL ON DELETE CASCADE;
 
 ALTER TABLE ONLY alerts
-    ADD FOREIGN KEY (pgsql_node_id) REFERENCES pgsql_node (node_id) MATCH FULL ON DELETE RESTRICT;
+    ADD FOREIGN KEY (pgsql_node_id) REFERENCES pgsql_node (node_id) MATCH FULL ON DELETE CASCADE;
 
 ALTER TABLE ONLY alerts
     ADD FOREIGN KEY (execution_status) REFERENCES job_execution_status (code) MATCH FULL ON DELETE RESTRICT;
@@ -77,7 +77,7 @@ ALTER TABLE ONLY alerts
     ADD FOREIGN KEY (alert_type) REFERENCES alert_type (code) MATCH FULL ON DELETE RESTRICT;
 
 ALTER TABLE ONLY alerts
-    ADD FOREIGN KEY (bck_id) REFERENCES backup_catalog (bck_id) MATCH FULL ON DELETE RESTRICT;
+    ADD FOREIGN KEY (bck_id) REFERENCES backup_catalog (bck_id) MATCH FULL ON DELETE CASCADE;
 
 INSERT INTO alert_type (code,description) VALUES ('Backup-def','Alerts from failed backup definitions');
 INSERT INTO alert_type (code,description) VALUES ('Snapshot-def','Alerts from failed snapshot definitions');
