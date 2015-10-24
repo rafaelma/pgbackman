@@ -142,6 +142,10 @@ continuación:
 * **pgbackman_restore:** Este programa se ejecuta en los servidores de
   backup cuando ejecutamos una restauración de datos.
 
+* **pgbackman_alerts:** Este programa manda alertas via SMTP cuando
+  una copia de seguridad falla. Esta funcionalidad tiene que activarse
+  en el fichero de configuración.
+
 La siguiente figura mustra todos lo componentes que forman parte de
 PgBackMan y como interaccionan entre ellos.
 
@@ -166,8 +170,8 @@ Requerimientos del sistema
   * argparse >= 1.2.1
     
 * PostgreSQL >= 9.2 para la base de datos ``pgbackman``
-* PostgreSQL >= 9.0 en todos los servidores PgSQL que vayan a utilizar
-  PgBackMan para administrar sus copias de seguridad lógicas.
+* PostgreSQL >= 9.0 y <= 9.4 en todos los servidores PgSQL que vayan a
+  utilizar PgBackMan para administrar sus copias de seguridad lógicas.
 * AT y CRON instalados y ejecutandose.
 
 Antes de instalar PgBackMan hay que instalar los programas requeridos
@@ -217,7 +221,7 @@ configuración y el módulo de python pgbackman en tu sistema.
 Instalando desde paquetes RPM
 -----------------------------
 
-Paquetes RPM para CentOS 6 y RHEL6 están disponibles en:
+Paquetes RPM para CentOS 6/7 y RHEL6/7 están disponibles en:
 http://www.pgbackman.org/download.html
 
 Instalar el paquete RPM con::
@@ -307,18 +311,21 @@ El procedimiento recomendado de actualización a una nueva versión
 seria el siguiente:
 
 #. Asegurarse que ninguna copia de seguridad sea ejecutada durante la
-   actualización. Recomendamos tener, por ejemplo, una ventana de
-   mantenimiento de 30 minutos al dia, a la semana o al mes en donde
-   no existan definiciones de backup para el periodo elegido. De esta
-   manera podreis ejecutar el proceso de actualización durante esta
-   ventana de mantenimiento sin necesidad de tener en cuenta si alguna
-   copia de seguridad se empezará a ejecutar durante la actualización.
+   actualización. 
 
-   Para estar seguros, parar ``crond``, ``pgbackman_control`` y
-   ``pgbackman_maintenance`` con estos comandos::
+   Recomendamos tener, por ejemplo, una ventana de mantenimiento de 30
+   minutos al dia, a la semana o al mes en donde no existan
+   definiciones de backup para el periodo elegido. De esta manera
+   podreis ejecutar el proceso de actualización durante esta ventana
+   de mantenimiento sin necesidad de tener en cuenta si alguna copia
+   de seguridad se empezará a ejecutar durante la actualización.
+
+   Para estar seguros, parar ``crond``, ``atd``, ``pgbackman_control``
+   y ``pgbackman_maintenance`` con estos comandos::
 
      [root@pg-backup01]# /etc/init.d/pgbackman stop
      [root@pg-backup01]# /etc/init.d/crond stop
+     [root@pg-backup01]# /etc/init.d/atd stop    
 
    Esto habra que realizarlo en todos los servidores de backup que
    tengan PgBackMan instalado.
@@ -336,11 +343,11 @@ seria el siguiente:
    las fuentes o desde paquetes rpm o deb. Consultar la sección sobre
    instalación de este manual para más información.
 
-#. Comprobar que el nuevo fichero de configuración
-   (``/etc/pgbackman/pgbackman.conf``) tiene la información sobre la
-   base de datos ``pgbackman``.
+#. Comprobar que teneis la nueva versión del fichero de configuración
+   grabada como ``/etc/pgbackman/pgbackman.conf`` y que tenga definida
+   la información sobre la base de datos ``pgbackman``.
 
-#. Arrancar ``pgbackman`` y seguir las instrucciones para actualizar
+#. Arrancar el shell ``pgbackman`` y seguir las instrucciones para actualizar
    la base de datos ``pgbackman``::
 
      [pgbackman@pg-backup01]# pgbackman
@@ -395,11 +402,12 @@ seria el siguiente:
      +----------------------------+----------------------------------+
 
 #. Después de haber actualizado la base de datos ``pgbackman``,
-   arrancar ``crond``, ``pgbackman_control`` y
+   arrancar ``crond``, ``atd``, ``pgbackman_control`` y
    ``pgbackman_maintenance``::
 
      [root@pg-backup01]# /etc/init.d/pgbackman start
      [root@pg-backup01]# /etc/init.d/crond stop
+     [root@pg-backup01]# /etc/init.d/atd stop
 
 #. Usar PgBackMan con normalidad.
 
@@ -420,7 +428,7 @@ de backups en PgBackMan:
 #. Actualizar ``/etc/pgbackman/pgbackman.conf`` con los parámetros
    necesarios por PgBackMan para acceder la base de metadatos
    ``pgbackman``. Hay que definir ``host`` o ``hostaddr``, ``port``,
-   ``dbname``, ``database`` en la seción ``[pgbackman_database]``.
+   ``dbname``, ``user`` en la seción ``[pgbackman_database]``.
 
    También se puede definir ``password`` en esta sección, pero
    desaconsejamos el uso de este parámetro en este archivo y
@@ -458,7 +466,7 @@ de backups en PgBackMan:
      [pgbackman@pg-backup01 ~]# pgbackman
 
      ########################################################
-     Welcome to the PostgreSQL Backup Manager shell (v.1.0.0)
+     Welcome to the PostgreSQL Backup Manager shell (v.1.1.0)
      ########################################################
      Type help or \? to list commands.
 
@@ -581,10 +589,10 @@ y sus valores por defecto.
 Administración del sistema y mantenimiento
 ==========================================
 
-PgBackMan tiene dos componentes que son usados para administar y
+PgBackMan tiene tres componentes que son usados para administar y
 mantener las copias de seguridad, los snapshots, los trabajos de
-restauración y la información asociada a los nodos PgSQL registrados
-en el sistema.
+restauración, las alertas y la información asociada a los nodos PgSQL
+registrados en el sistema.
 
 Estos componentes se arrancan con el script ``/etc/init.d/pgbackman``
 y se deben de ejecutar en todos los servidores de backups que estén
@@ -697,6 +705,29 @@ Este programa ejecuta estas tareas de mantenimiento:
   para actualizar el catálogo con los metadatos generados despues de
   ejecutar un trabajo de restauración.
 
+pgbackman_alerts
+----------------
+
+Este programa se ejecuta en modo continuo esperando por alertas que
+tienen que ser mandadas via SMTP.
+
+Cuando una copia de seguridad, snapshot o trabajo de restauración de
+datos termine con un error, se mandará un correo electrónico a la
+dirección de correo definida en la configuración (``logs_email``) del
+node PgSQL donde ha ocurrido el fallo.
+
+Usar los comandos ``show_pgsql_node_config`` y
+``update_pgsql_node_config`` si necesitais comprobar o definir el
+valor del parámetro ``logs_email``
+
+``pgbackman_alerts`` no mandará ningún mensaje si no está activado en
+el fichero de configuración
+``/etc/pgbackman/pgbackman.conf``. Comprobar la sección
+``[pgbackman_alerts]`` para activar y configurar SMTP.
+
+El fichero ``/etc/pgbackman/pgbackman_alerts.template`` puede
+modificarse para definir el contenido del correo electrónico que se
+mandará con la alerta.
 
 
 Shell PgBackMan
@@ -710,7 +741,7 @@ programa ``/usr/bin/pgbackman``
    [pgbackman@pg-backup01]# pgbackman
 
    #############################################################
-   Welcome to the PostgreSQL Backup Manager shell (v.1.0.0)
+   Welcome to the PostgreSQL Backup Manager shell (v.1.1.0)
    #############################################################
    Type help or \? to list commands.
 
@@ -789,7 +820,7 @@ Este comando puede ser ejecutado solamente sin parámetros, e.g.:
    [pgbackman]$ clear
 
    #############################################################
-   Welcome to the PostgreSQL Backup Manager shell (v.1.0.0)
+   Welcome to the PostgreSQL Backup Manager shell (v.1.1.0)
    #############################################################
    Type help or \? to list commands.
    
