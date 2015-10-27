@@ -77,6 +77,7 @@ The main features of PgBackMan are:
 * Automatic restore procedures.
 * Possibility of pausing / resuming replication on slaves/standby nodes when taking large backups.
 * Autonomous pgbackman_dump program that functions even if the central database with metadata is not available.
+* Possibility of sending alerts via SMTP when an error happens.
 * Handling of error situations. 
 * Written in Python and PL/PgSQL. 
 * Distributed under the GNU General Public License 3.

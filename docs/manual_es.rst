@@ -84,6 +84,7 @@ Las características principales de PgBackMan son:
 * Restauración automática de backups.
 * Posibilidad det pausar/reanudar el proceso de replicación en nodos esclavos/standby cuando se estén realizando copias de seguridad grandes.  
 * Programa pgbackman_dump autónomo que funciona incluso si la base de datos central con información de metadatos no está disponible.
+* Posibilidad de mandar alertas via SMTP cuando ocurre un error.
 * Manejo de situaciones de error.
 * Programado en Python y PL/pgSQL.
 * Distribuido bajo la GNU General Public License 3. 
