@@ -1,0 +1,300 @@
+#!/usr/bin/env python
+#
+# Copyright (c) 2013-2015 Rafael Martinez Guerrero / PostgreSQL-es
+# rafael@postgresql.org.es / http://www.postgresql.org.es/
+#
+# Copyright (c) 2014-2015 USIT-University of Oslo
+#
+# This file is part of PgBackMan
+# https://github.com/rafaelma/pgbackman
+#
+# PgBackMan is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# PgBackMan is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Pgbackman.  If not, see <http://www.gnu.org/licenses/>.
+
+import datetime
+import sys
+import os
+import time
+import socket
+import signal
+import errno
+import smtplib
+
+from string import Template
+from pgbackman.logs import *
+from pgbackman.database import *
+from pgbackman.config import *
+import pgbackman.version
+
+
+# ############################################
+# Function get_alerts()
+# ############################################
+
+def get_alerts(conf,db,backup_server_id):
+    """
+    Getting alerts from this backup server
+    """
+
+    try:
+        for alert in db.get_alerts(backup_server_id):
+            send_alert(conf,db,alert)
+
+    except psycopg2.OperationalError as e:
+        raise e            
+    except Exception as e:    
+        logs.logger.error('Could not get alerts for this backup server - %s.',e)
+
+
+# ############################################
+# Function send_alert()
+# ############################################
+
+def send_alert(conf,db,alert_data):
+    """
+    Sending alert from this backup server
+    """
+
+    try:
+
+        variables = {}
+
+        variables['alert_id'] = alert_data[0]
+        variables['registered'] =  alert_data[1]
+        variables['alert_type'] = alert_data[2]
+        variables['ref_id'] = alert_data[3]
+        variables['bck_id'] = alert_data[4]
+        variables['backup_server_id'] = alert_data[5]
+        variables['backup_server_fqdn'] = db.get_backup_server_fqdn(variables['backup_server_id'])
+        variables['pgsql_node_id'] = alert_data[6]
+        variables['pgsql_node_fqdn'] = db.get_pgsql_node_fqdn(variables['pgsql_node_id'])
+        variables['dbname'] = alert_data[7]
+        variables['execution_status'] = alert_data[8]
+        variables['error_message'] = alert_data[9]
+        variables['sendto'] = alert_data[10]
+        variables['alert_sent'] = alert_data[11]
+        variables['date'] = datetime.datetime.now()
+        variables['pgbackman_version'] = pgbackman.version.__version__.split(':')[1]
+
+        msg = ''
+
+        #
+        # If SMTP alert is not active we will not send the emails
+        # alerts but we will update alert_sent = TRUE.
+        #
+        # This is done to avoid a storm of old alerts if we activate
+        # this functionality after a period of time.
+        #
+
+        if conf.smtp_alerts == 'OFF':
+
+            db.update_alert_sent(variables['alert_id'],'true')
+            logs.logger.info('AlertID [%s] for BckID [%s] registered as sent with smtp_alerts=OFF',variables['alert_id'],variables['bck_id'])
+
+        elif conf.smtp_alerts == 'ON':
+ 
+            #
+            # Add the From, To and user-agent headers
+            #
+            headers = ("From: %s\r\nTo: %s\r\nUser-agent: pgbackman_alerts (v.%s)\r\n"
+                       % (conf.smtp_from_address, variables['sendto'],variables['pgbackman_version']))
+
+            #
+            # Get the email body
+            #
+            body = parse_alert_template(conf,variables) 
+
+            #
+            # Connect to SNMP. 
+            #
+            # We will not use SSL when connecting via localhost, even if
+            # smtp_ssl = ON
+            # 
+
+            server = conf.smtp_server + ':' + conf.smtp_port
+
+            if conf.smtp_server == 'localhost':
+                smtp = smtplib.SMTP(server)
+            else:
+                server = conf.smtp_server + ':' + conf.smtp_port
+
+                if conf.smtp_ssl == 'ON': 
+                    smtp = smtplib.SMTP_SSL(server)
+            
+                elif conf.smtp_ssl == 'OFF':
+                    smtp = smtplib.SMTP(server)
+            
+                smtp.login(conf.smtp_user,conf.smtp_password)
+        
+            #
+            # Send email
+            #
+
+            smtp.sendmail(conf.smtp_from_address, variables['sendto'], headers + body)
+            logs.logger.info('Email alert for BckID [%s] sent to [%s]',variables['bck_id'],variables['sendto'])
+
+            smtp.quit()
+
+            db.update_alert_sent(variables['alert_id'],'true')
+            logs.logger.info('AlertID [%s] for BckID [%s] registered in the database as sent with smtp_alerts=ON',variables['alert_id'],variables['bck_id'])
+        
+    except psycopg2.OperationalError as e:
+        raise e
+    except Exception as e:    
+        logs.logger.error('Problems sending alertID [%s] via SMTP - %s.',variables['alert_id'],e)
+        
+
+# ############################################
+# Function parse_alert_template()
+# ############################################
+
+def parse_alert_template(conf,variables):
+
+    try:
+
+        f = open(conf.alerts_template, 'r')
+        template = f.read()
+        
+        t = Template(template)
+        body = t.safe_substitute(variables)
+
+        return body
+
+    except Exception as e:    
+        raise Exception("Problems parsing alert template [%s] for alarmID [%s]- %s." % (conf.alerts_template,variables['alert_id'],e))
+
+
+# ############################################
+# Function signal_handler()
+# ############################################
+    
+def signal_handler(signum, frame):
+    logs.logger.info('**** pgbackman_maintenance stopped. ****')
+    sys.exit(0)
+
+
+# ############################################
+# Function check_database_connection()
+# ############################################
+  
+def check_database_connection(db):
+    '''Check if we can connect to the database server and the pgbackman database'''
+
+    try:
+        db.pg_connect()
+        return True
+    except Exception as e:    
+        return False
+
+
+# ############################################
+# Function main()
+# ############################################
+
+def main():
+
+    conf = configuration()
+    dsn = conf.dsn
+
+    if conf.smtp_alerts == 'OFF':
+        logs.logger.info('SMTP Alerts is not active. Check your configuration file and define smtp_alerts=ON to activate this and restart pgbackman.')
+
+    #
+    # We exit pgbackman_alerts if sending of alerts via SMTP is not
+    # activated
+    #
+
+    logs.logger.debug('Backup server ID from config file: %s',conf.backup_server)
+    logs.logger.debug('Backup server FQDN: %s',socket.getfqdn())
+    logs.logger.debug('DSN: host=%s hostaddr=%s port=%s database=%s user=%s ',conf.dbhost,conf.dbhostaddr,conf.dbport,conf.dbname,conf.dbuser)
+
+    db = pgbackman_db(dsn,'pgbackman_alerts')
+
+    #
+    # We check before starting if the database is available. 
+    # If it is not available we will wait conf.pg_connect_retry_interval 
+    # and try again 
+
+    check_db = check_database_connection(db)
+
+    while not check_db:
+        logs.logger.critical('The pgbackman database is not available. Waiting %s seconds before trying again',conf.pg_connect_retry_interval)
+        
+        time.sleep(conf.pg_connect_retry_interval)
+        check_db = check_database_connection(db)
+        
+    logs.logger.debug('Database server is up and running and pgbackman database is available')
+
+    #
+    # Check backup server information
+    #
+
+    if conf.backup_server != '':
+        backup_server_fqdn = conf.backup_server
+    else:
+        backup_server_fqdn = socket.getfqdn()
+
+    try:
+        backup_server_id = db.get_backup_server_id(backup_server_fqdn)
+        logs.logger.info('Backup server [%s] is registered in pgbackman',backup_server_fqdn)
+            
+    except psycopg2.Error as e:
+        logs.logger.critical('Cannot find backup server [%s] in pgbackman. Stopping pgbackman_alerts.',backup_server_fqdn)
+        logs.logger.info('**** pgbackman_alerts stopped. ****')
+        sys.exit(1)     
+    
+    loop = 0
+
+    while loop == 0:
+        try:
+            get_alerts(conf,db,backup_server_id)
+    
+        except psycopg2.OperationalError as e:
+
+            #
+            # If we lose the connection to the database, we will wait conf.pg_connect_retry_interval
+            # before trying to connect again. 
+            #
+
+            logs.logger.critical('Operational error: %s',e)
+
+            check_db = check_database_connection(db)
+            
+            while not check_db:
+                logs.logger.critical('We have lost the connection to the database. Waiting %s seconds before trying again',conf.pg_connect_retry_interval)
+                
+                time.sleep(conf.pg_connect_retry_interval)
+                check_db = check_database_connection(db)
+
+        # Wait for next maintenance run if in loop mode
+        time.sleep(conf.alerts_check_interval)
+    
+    db.pg_close()
+
+
+# ############################################
+# 
+# ############################################
+
+if __name__ == '__main__':
+
+    logs = logs("pgbackman_alerts","","")
+
+    signal.signal(signal.SIGINT,signal_handler)
+    signal.signal(signal.SIGTERM,signal_handler)
+
+    logs.logger.info('**** pgbackman_alerts started. ****')
+    
+    main()
+
+    logs.logger.info('**** pgbackman_alerts finished. ****')

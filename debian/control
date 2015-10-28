@@ -17,7 +17,7 @@ Architecture: all
 Depends: ${shlibs:Depends}, 
 	 ${misc:Depends}, 
 	 ${python:Depends},
-	 python-psycopg2, 
+	 python-psycopg2 (>= 2.4.0), 
 	 python-argparse, 
 	 at, 
 	 cron,

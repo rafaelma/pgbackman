@@ -1,0 +1,22 @@
+Subject: [pgbackman_alerts] Last backup [BckID: $bck_id] for [DBname: $dbname] failed. 
+
+-------------------------------------------------
+AlertID: $alert_id
+Registered: $registered
+-------------------------------------------------
+This backup job has been terminated with an error
+
+Backup server: $backup_server_fqdn
+PgSQL node: $pgsql_node_fqdn
+DBname: $dbname
+
+$alert_type ID: $ref_id
+BckID: $bck_id
+
+Execution status: $execution_status
+Error message: $error_message
+
+Run 'pgbackman show_backup_details $bck_id' for details.
+-------------------------------------------------
+Date: $date
+-------------------------------------------------

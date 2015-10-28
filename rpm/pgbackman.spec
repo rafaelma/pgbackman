@@ -4,7 +4,7 @@
 # Autor: Rafael Martinez <rafael@postgreslq.org.es>
 #  
 
-%define majorversion 1.0
+%define majorversion 1.1
 %define minorversion 0
 %define pbm_owner pgbackman
 %define pbm_group pgbackman
@@ -21,7 +21,7 @@ Url:            http://www.pgbackman.org/
 Source0:        %{name}-%{version}.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-buildroot-%(%{__id_u} -n)
 BuildArch:      noarch
-Requires:       python-psycopg2 python-argparse at cronie python-setuptools shadow-utils logrotate
+Requires:       python-psycopg2 >= 2.4.0, python-argparse, at, cronie, python-setuptools, shadow-utils, logrotate
 
 %description 
 PgBackMan is a tool for managing PostgreSQL logical backups created
@@ -61,6 +61,7 @@ rm -rf %{buildroot}
 %{_datadir}/%{name}/*
 /var/log/%{name}/*
 %config(noreplace) %{_sysconfdir}/%{name}/%{name}.conf
+%config(noreplace) %{_sysconfdir}/%{name}/%{name}_alerts.template
 %attr(700,%{pbm_owner},%{pbm_group}) %dir /var/lib/%{name}
 %attr(755,%{pbm_owner},%{pbm_group}) %dir /var/log/%{name}
 %attr(600,%{pbm_owner},%{pbm_group}) %ghost /var/log/%{name}/%{name}.log

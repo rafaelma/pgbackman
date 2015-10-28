@@ -10,10 +10,10 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # please see the online documentation at vagrantup.com.
 
   # Every Vagrant virtual environment requires a box to build off of.
-  #config.vm.box = "chef/centos-6.5"
+  #config.vm.box = "chef/centos-6.6"
 
   config.vm.define "pg-backup01" do |pgbackup1|
-    pgbackup1.vm.box = "chef/centos-6.5"
+    pgbackup1.vm.box = "chef/centos-6.6"
     pgbackup1.vm.network "private_network", ip: "10.10.10.101"
     pgbackup1.vm.hostname = "pg-backup01.example.net"
     pgbackup1.vm.provision :shell, :path => "bootstrap.sh"
@@ -37,7 +37,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
    end
 
    config.vm.define "pg-node01" do |pgnode1|
-    pgnode1.vm.box = "chef/centos-6.5"
+    pgnode1.vm.box = "chef/centos-6.6"
     pgnode1.vm.network "private_network", ip: "10.10.10.103"
     pgnode1.vm.hostname = "pg-node01.example.net"
     pgnode1.vm.provision :shell, :path => "bootstrap3.sh"
@@ -48,8 +48,20 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     end
    end
 
+   config.vm.define "pg-node02" do |pgnode2|
+    pgnode2.vm.box = "chef/centos-6.6"
+    pgnode2.vm.network "private_network", ip: "10.10.10.108"
+    pgnode2.vm.hostname = "pg-node02.example.net"
+    pgnode2.vm.provision :shell, :path => "bootstrap3.sh"
+
+    pgnode2.vm.provider "virtualbox" do |vb3|
+     # Use VBoxManage to customize the VM. For example to change memory:  
+     vb3.customize ["modifyvm", :id, "--memory", "512"]
+    end
+   end
+
    config.vm.define "pgbackmandb" do |pgbackmandb|
-    pgbackmandb.vm.box = "chef/centos-6.5"
+    pgbackmandb.vm.box = "chef/centos-6.6"
     pgbackmandb.vm.network "private_network", ip: "10.10.10.104"
     pgbackmandb.vm.hostname = "pgbackmandb.example.net"
     pgbackmandb.vm.provision :shell, :path => "bootstrap2.sh"
@@ -61,7 +73,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
    end
 
    config.vm.define "centos6" do |centos6|
-    centos6.vm.box = "chef/centos-6.5"
+    centos6.vm.box = "chef/centos-6.6"
     centos6.vm.network "private_network", ip: "10.10.10.105"
     centos6.vm.hostname = "centos6.example.net"
     centos6.vm.provision :shell, :path => "bootstrap_centos.sh"
@@ -95,6 +107,19 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
      vb7.customize ["modifyvm", :id, "--memory", "512"]
     end
    end
+
+   config.vm.define "centos7" do |centos7|
+    centos7.vm.box = "centos7"
+    centos7.vm.network "private_network", ip: "10.10.10.108"
+    centos7.vm.hostname = "centos7.example.net"
+    centos7.vm.provision :shell, :path => "bootstrap_centos.sh"
+
+    centos7.vm.provider "virtualbox" do |vb8|
+     # Use VBoxManage to customize the VM. For example to change memory:  
+     vb8.customize ["modifyvm", :id, "--memory", "1024"]
+    end
+   end
+
 
   # The url from where the 'config.vm.box' box will be fetched if it
   # doesn't already exist on the user's system.
@@ -143,7 +168,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # Enable provisioning with Puppet stand alone.  Puppet manifests
   # are contained in a directory path relative to this Vagrantfile.
   # You will need to create the manifests directory and a manifest in
-  # the file chef/centos-6.5.pp in the manifests_path directory.
+  # the file chef/centos-6.6.pp in the manifests_path directory.
   #
   # An example Puppet manifest to provision the message of the day:
   #

@@ -24,7 +24,7 @@
 import sys
 import psycopg2
 import psycopg2.extensions
-from psycopg2.extras import wait_select
+import psycopg2.extras
 
 from pgbackman.prettytable import *
 
@@ -51,6 +51,9 @@ class pgbackman_db():
         self.conn = None
         self.server_version = None
         self.cur = None
+
+        self.output_format = 'table'
+
        
     # ############################################
     # Method pg_connect()
@@ -64,7 +67,7 @@ class pgbackman_db():
         
             if self.conn:
                 self.conn.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
-                wait_select(self.conn)
+                psycopg2.extras.wait_select(self.conn)
 
                 self.cur = self.conn.cursor()
 
@@ -196,7 +199,7 @@ class pgbackman_db():
     # ############################################
 
     def show_pgsql_nodes(self):
-        """A function to get a list of all PgSQL nodes"""
+        """A function to generate the output of the show_pgsql_nodes command"""
 
         try:
             self.pg_connect()
@@ -217,7 +220,7 @@ class pgbackman_db():
         except psycopg2.Error as e:
             raise e
     
-                
+            
     # ############################################
     # Method 
     # ############################################
@@ -461,7 +464,7 @@ class pgbackman_db():
     # Method 
     # ############################################
 
-    def register_snapshot_definition(self,backup_server,pgsql_node,dbname,at_time,backup_code,retention_period,extra_backup_parameters,remarks):
+    def register_snapshot_definition(self,backup_server,pgsql_node,dbname,at_time,backup_code,retention_period,extra_backup_parameters,remarks,pg_dump_release):
         """A function to register a snapshot"""
 
         try:
@@ -469,8 +472,8 @@ class pgbackman_db():
 
             if self.cur:
                 try:
-                    self.cur.execute('SELECT register_snapshot_definition(%s,%s,%s,%s,%s,%s,%s,%s)',(backup_server,pgsql_node,dbname,at_time,backup_code, \
-                                                                                                         retention_period,extra_backup_parameters,remarks))
+                    self.cur.execute('SELECT register_snapshot_definition(%s,%s,%s,%s,%s,%s,%s,%s,%s)',(backup_server,pgsql_node,dbname,at_time,backup_code, \
+                                                                                                     retention_period,extra_backup_parameters,remarks,pg_dump_release))
                     self.conn.commit()                        
                                     
                 except psycopg2.Error as e:
@@ -538,7 +541,7 @@ class pgbackman_db():
                     self.cur.execute('SELECT \"SnapshotID\",\"Registered\",backup_server_id AS \"ID.\",\"Backup server\",pgsql_node_id AS \"ID\",\"PgSQL node\",\"DBname\",\"AT time\",\"Code\",\"Retention\",\"Parameters\",\"Status\" FROM show_snapshot_definitions WHERE TRUE ' + server_sql + node_sql + dbname_sql)
                                      
                     colnames = [desc[0] for desc in self.cur.description]
-                    self.print_results_table(self.cur,colnames,["Backup server","PgSQL node","DBname","AT time","Code","Parameters"])
+                    self.print_results_table(self.cur,colnames,["Backup server","PgSQL node","DBname","AT time","Parameters"])
             
                 except psycopg2.Error as e:
                     raise e
@@ -806,7 +809,8 @@ class pgbackman_db():
                         x.add_row(["DBname:",record[19]])
                         x.add_row(["Backup server (ID/FQDN):","[" + str(record[15]) + "] / " + record[16]])
                         x.add_row(["PgSQL node (ID/FQDN):","[" + str(record[17]) + "] / " + record[18]])
-                        x.add_row(["Pg_dump/all release:",record[35]])
+                        x.add_row(["PgSQL node release:",record[35]])
+                        x.add_row(["Pg_dump/all release:",record[36]])
                         x.add_row(["",""])
                         x.add_row(["Schedule:",record[11] + " [min hour day_month month weekday]"])
                         x.add_row(["AT time:",record[12]])
@@ -896,6 +900,60 @@ class pgbackman_db():
       
         except psycopg2.Error as e:
             raise e    
+
+
+    # ############################################
+    # Method 
+    # ############################################
+
+    def show_snapshots_in_progress(self):
+        """A function to get a list with snapshot jobs in progress"""
+
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+    
+                    self.cur.execute('SELECT \"SnapshotID\",\"Registered\",backup_server_id AS \"ID.\",\"Backup server\",pgsql_node_id AS \"ID\",\"PgSQL node\",\"DBname\",\"AT time\",\"Code\",\"Elapsed time\" FROM show_snapshots_in_progress')
+                                     
+                    colnames = [desc[0] for desc in self.cur.description]
+                    self.print_results_table(self.cur,colnames,["Backup server","PgSQL node","DBname","AT time","Code"])
+            
+                except psycopg2.Error as e:
+                    raise e
+                
+            self.pg_close()
+    
+        except psycopg2.Error as e:
+            raise e
+      
+
+    # ############################################
+    # Method 
+    # ############################################
+
+    def show_restores_in_progress(self):
+        """A function to get a list with restores jobs in progress"""
+
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+    
+                    self.cur.execute('SELECT \"RestoreDef\",\"Registered\",\"BckID\",backup_server_id AS \"ID.\",\"Backup server\",target_pgsql_node_id AS \"ID\",\"Target PgSQL node\",\"Target DBname\",\"AT time\",\"Elapsed time\" FROM show_restores_in_progress')
+                                     
+                    colnames = [desc[0] for desc in self.cur.description]
+                    self.print_results_table(self.cur,colnames,["Backup server","Target PgSQL node","Target DBname","AT time"])
+            
+                except psycopg2.Error as e:
+                    raise e
+                
+            self.pg_close()
+    
+        except psycopg2.Error as e:
+            raise e
       
 
     # ############################################
@@ -1213,12 +1271,12 @@ class pgbackman_db():
     # Method 
     # ############################################
            
-    def register_backup_catalog(self,def_id,procpid,backup_server_id,pgsql_node_id,dbname,started,finished,duration,pg_dump_file,
+    def register_backup_catalog_1_0_0(self,def_id,procpid,backup_server_id,pgsql_node_id,dbname,started,finished,duration,pg_dump_file,
                                     pg_dump_file_size,pg_dump_log_file,pg_dump_roles_file,pg_dump_roles_file_size,pg_dump_roles_log_file,
                                     pg_dump_dbconfig_file,pg_dump_dbconfig_file_size,pg_dump_dbconfig_log_file,global_log_file,execution_status,
                                     execution_method,error_message,snapshot_id,role_list,pgsql_node_release):
         
-        """A function to update the backup job catalog"""
+        """A function to update the backup job catalog in a 1.0.0 version"""
 
 
         try:
@@ -1251,6 +1309,60 @@ class pgbackman_db():
                                                                                                                                                     snapshot_id,
                                                                                                                                                     role_list,
                                                                                                                                                     pgsql_node_release))
+                    self.conn.commit()                        
+                    
+                except psycopg2.Error as e:
+                    raise e
+
+            self.pg_close() 
+
+        except psycopg2.Error as e:
+            raise e
+
+
+    # ############################################
+    # Method 
+    # ############################################
+           
+    def register_backup_catalog(self,def_id,procpid,backup_server_id,pgsql_node_id,dbname,started,finished,duration,pg_dump_file,
+                                    pg_dump_file_size,pg_dump_log_file,pg_dump_roles_file,pg_dump_roles_file_size,pg_dump_roles_log_file,
+                                    pg_dump_dbconfig_file,pg_dump_dbconfig_file_size,pg_dump_dbconfig_log_file,global_log_file,execution_status,
+                                    execution_method,error_message,snapshot_id,role_list,pgsql_node_release,pg_dump_release):
+        
+        """A function to update the backup job catalog"""
+
+
+        try:
+            self.pg_connect()
+ 
+            if self.cur:
+                try:
+
+                    self.cur.execute('SELECT register_backup_catalog(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',(def_id,
+                                                                                                                                                   procpid,
+                                                                                                                                                   backup_server_id,
+                                                                                                                                                   pgsql_node_id,
+                                                                                                                                                   dbname,
+                                                                                                                                                   started,
+                                                                                                                                                   finished,
+                                                                                                                                                   duration,
+                                                                                                                                                   pg_dump_file,
+                                                                                                                                                   pg_dump_file_size,
+                                                                                                                                                   pg_dump_log_file,
+                                                                                                                                                   pg_dump_roles_file,
+                                                                                                                                                   pg_dump_roles_file_size,
+                                                                                                                                                   pg_dump_roles_log_file,
+                                                                                                                                                   pg_dump_dbconfig_file,
+                                                                                                                                                   pg_dump_dbconfig_file_size,
+                                                                                                                                                   pg_dump_dbconfig_log_file,
+                                                                                                                                                   global_log_file,
+                                                                                                                                                   execution_status,
+                                                                                                                                                   execution_method,
+                                                                                                                                                   error_message,
+                                                                                                                                                   snapshot_id,
+                                                                                                                                                   role_list,
+                                                                                                                                                   pgsql_node_release,
+                                                                                                                                                   pg_dump_release))
                     self.conn.commit()                        
                     
                 except psycopg2.Error as e:
@@ -1313,23 +1425,36 @@ class pgbackman_db():
             
     def print_results_table(self,cur,colnames,left_columns):
         '''A function to print a table with sql results'''
-
-        x = PrettyTable(colnames)
-        x.padding_width = 1
         
-        for column in left_columns:
-            x.align[column] = "l"
+        if self.output_format == 'table':
         
-        for records in cur:
-            columns = []
-
-            for index in range(len(colnames)):
-                columns.append(records[index])
-
-            x.add_row(columns)
+            x = PrettyTable(colnames)
+            x.padding_width = 1
             
-        print x.get_string()
-        print
+            for column in left_columns:
+                x.align[column] = "l"
+        
+            for records in cur:
+                columns = []
+
+                for index in range(len(colnames)):
+                    columns.append(records[index])
+
+                x.add_row(columns)
+            
+            print x.get_string()
+            print
+
+        elif self.output_format == 'csv':
+            
+            for records in cur:
+                columns = []
+                
+                for index in range(len(colnames)):
+                    columns.append(str(records[index]))
+                    
+                print ','.join(columns)
+
 
     # ############################################
     # Method 
@@ -2085,7 +2210,7 @@ class pgbackman_db():
     
         except psycopg2.Error as e:
             raise e
-    
+
 
     # ############################################
     # Method 
@@ -2162,7 +2287,7 @@ class pgbackman_db():
 
             if self.cur:
                 try:
-                    self.cur.execute('SELECT datname FROM pg_database WHERE datname NOT IN (\'template0\',\'template1\') ORDER BY datname')
+                    self.cur.execute('SELECT datname FROM pg_database WHERE datname NOT IN (\'template0\',\'template1\',\'postgres\') ORDER BY datname')
                     self.conn.commit()
 
                     return self.cur
@@ -2229,7 +2354,7 @@ class pgbackman_db():
     # ############################################
                       
     def update_pgsql_node_config(self,pgsql_node_id,backup_minutes_interval,backup_hours_interval,backup_weekday_cron,
-                                 backup_month_cron,backup_day_month_cron,backup_code,retention_period,retention_redundancy,
+                                 backup_month_cron,backup_day_month_cron,backup_code,retention_period,retention_redundancy,automatic_deletion_retention,
                                  extra_backup_parameters,extra_restore_parameters,backup_job_status,domain,logs_email,admin_user,pgport,pgnode_backup_partition,
                                  pgnode_crontab_file,pgsql_node_status):
         """A function to update the configuration of a pgsql node"""
@@ -2239,25 +2364,26 @@ class pgbackman_db():
 
             if self.cur:
                 try:
-                    self.cur.execute('SELECT update_pgsql_node_config(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',(pgsql_node_id,
-                                                                                                                                  backup_minutes_interval,
-                                                                                                                                  backup_hours_interval,
-                                                                                                                                  backup_weekday_cron,
-                                                                                                                                  backup_month_cron,
-                                                                                                                                  backup_day_month_cron,
-                                                                                                                                  backup_code,
-                                                                                                                                  retention_period,
-                                                                                                                                  retention_redundancy,
-                                                                                                                                  extra_backup_parameters,
-                                                                                                                                  extra_restore_parameters,
-                                                                                                                                  backup_job_status,
-                                                                                                                                  domain,
-                                                                                                                                  logs_email,
-                                                                                                                                  admin_user,
-                                                                                                                                  pgport,
-                                                                                                                                  pgnode_backup_partition,
-                                                                                                                                  pgnode_crontab_file,
-                                                                                                                                  pgsql_node_status))
+                    self.cur.execute('SELECT update_pgsql_node_config(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',(pgsql_node_id,
+                                                                                                                                     backup_minutes_interval,
+                                                                                                                                     backup_hours_interval,
+                                                                                                                                     backup_weekday_cron,
+                                                                                                                                     backup_month_cron,
+                                                                                                                                     backup_day_month_cron,
+                                                                                                                                     backup_code,
+                                                                                                                                     retention_period,
+                                                                                                                                     retention_redundancy,
+                                                                                                                                     automatic_deletion_retention,
+                                                                                                                                     extra_backup_parameters,
+                                                                                                                                     extra_restore_parameters,
+                                                                                                                                     backup_job_status,
+                                                                                                                                     domain,
+                                                                                                                                     logs_email,
+                                                                                                                                     admin_user,
+                                                                                                                                     pgport,
+                                                                                                                                     pgnode_backup_partition,
+                                                                                                                                     pgnode_crontab_file,
+                                                                                                                                     pgsql_node_status))
                     
                     self.conn.commit()                        
               
@@ -2775,5 +2901,519 @@ class pgbackman_db():
 
             self.pg_close()
 
+        except psycopg2.Error as e:
+            raise e
+
+
+    # ############################################
+    # Method 
+    # ############################################
+
+    def get_pgbackman_database_version(self):
+        """A function to get information of the pgbackman version installed in the database"""
+
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT registered,version,tag FROM pgbackman_version ORDER BY version DESC LIMIT 1')
+                    self.conn.commit()
+
+                    return self.cur
+                                        
+                except psycopg2.Error as e:
+                    raise e
+
+            self.pg_close()
+    
+        except psycopg2.Error as e:
+            raise e
+
+
+    # ############################################
+    # Method 
+    # ############################################
+
+    def run_sql_file(self,sqlfile):
+        """A function to run a sql file"""
+
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+                    self.cur.execute(open(sqlfile,'r').read())
+
+                    return 
+                                        
+                except psycopg2.Error as e:
+                    raise e
+
+            self.pg_close()
+    
+        except psycopg2.Error as e:
+            raise e
+    
+        
+    # ############################################
+    # Method 
+    # ############################################
+
+    def get_pgsql_nodes_list(self):
+        """A function to get a list of all PgSQL nodes"""
+
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT "NodeID"::int,"FQDN" FROM show_pgsql_nodes WHERE "Status" = \'RUNNING\'');
+                    self.conn.commit()
+
+                    return self.cur
+                     
+                except psycopg2.Error as e:
+                    raise e
+
+            self.pg_close()
+    
+        except psycopg2.Error as e:
+            raise e
+
+
+    
+    # ############################################
+    # Method 
+    # ############################################
+
+    def get_deleted_backup_definitions_to_delete_by_retention(self):
+        """
+        A function to get a list of all backup definitions with status
+        DELETED and registered < now() - automatic_deletion_retention
+
+        """
+
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT def_id FROM get_deleted_backup_definitions_to_delete_by_retention');
+                    self.conn.commit()
+
+                    return self.cur
+                     
+                except psycopg2.Error as e:
+                    raise e
+
+            self.pg_close()
+    
+        except psycopg2.Error as e:
+            raise e
+    
+    
+
+    # ############################################
+    # Method 
+    # ############################################
+
+    def get_all_backup_definitions(self,backup_server_id,pgsql_node_id):
+        """
+        A function to get all backup definitions registered in PgBackMan
+        for a PgSQL node in a backup server
+        """
+
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT "DefID" FROM show_backup_definitions WHERE "Status" <> %s AND backup_server_id = %s AND pgsql_node_id = %s',('DELETED',
+                                                                                                                                                          backup_server_id,
+                                                                                                                                                          pgsql_node_id))
+                    self.conn.commit()
+
+                    return self.cur
+                                        
+                except psycopg2.Error as e:
+                    raise e
+
+            self.pg_close()
+    
+        except psycopg2.Error as e:
+            raise e
+
+    # ############################################
+    # Method 
+    # ############################################
+
+    def get_database_backup_definitions(self,backup_server_id,pgsql_node_id,dbname):
+        """
+        A function to get all backup definitions registered in PgBackMan
+        for a database in a PgSQL node
+        """
+
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT "DefID" FROM show_backup_definitions WHERE "Status" <> %s AND backup_server_id = %s AND pgsql_node_id = %s AND "DBname" = %s',('DELETED',
+                                                                                                                                                                            backup_server_id,
+                                                                                                                                                                            pgsql_node_id,
+                                                                                                                                                                            dbname))
+                    self.conn.commit()
+
+                    return self.cur
+                                        
+                except psycopg2.Error as e:
+                    raise e
+
+            self.pg_close()
+    
+        except psycopg2.Error as e:
+            raise e
+
+
+
+
+    # ############################################
+    # Method 
+    # ############################################
+           
+    def update_backup_definition_status_to_delete(self,def_id):
+        """A function to update the status for a backup definition to DELETE"""
+     
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT update_backup_definition_status_to_delete(%s)',(def_id,))
+                    self.conn.commit()
+                                    
+                except psycopg2.Error as e:
+                    raise e
+
+            self.pg_close()
+
+        except psycopg2.Error as e:
+            raise e
+
+
+    # ############################################
+    # Method 
+    # ############################################
+
+    def get_pgsql_node_database_with_bckdef_list(self,pgsql_node_id):
+
+        """
+        A function to get all databases in a PgSQL node with a backup
+        definition registered in PgBackMan
+        """
+
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT "DBname" FROM show_backup_definitions WHERE "Status" <> %s AND pgsql_node_id = %s',('DELETED',pgsql_node_id))
+                    self.conn.commit()
+
+                    return self.cur
+                                        
+                except psycopg2.Error as e:
+                    raise e
+
+            self.pg_close()
+    
+        except psycopg2.Error as e:
+            raise e
+
+    # ############################################
+    # Method 
+    # ############################################
+
+    def get_backup_server_bckdef_list(self,backup_server_id):
+
+        """
+        A function to get all backup definitions registered in a backup server
+        """
+
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT "DefID"::bigint,"PgSQL node","DBname" FROM show_backup_definitions WHERE "Status" = \'ACTIVE\' AND backup_server_id = %s ORDER BY "PgSQL node","DBname"',(backup_server_id,))
+                    self.conn.commit()
+
+                    return self.cur
+                                        
+                except psycopg2.Error as e:
+                    raise e
+
+            self.pg_close()
+    
+        except psycopg2.Error as e:
+            raise e
+
+
+    # ############################################
+    # Method 
+    # ############################################
+           
+    def get_pgbackman_dump_count(self):
+        """A function to get the number of pgbackman_dump processes running in
+        a PgSQL node"""
+     
+        try:
+            if self.cur:
+                
+                self.cur.execute('SELECT count(*) FROM pg_stat_activity WHERE application_name = \'pgbackman_dump\'')
+                self.conn.commit()
+
+                data = self.cur.fetchone()[0]
+                return data
+                                    
+        except psycopg2.Error as e:
+            raise e
+
+
+    # ############################################
+    # Method 
+    # ############################################
+           
+    def pg_recovery_in_progress(self):
+        """A function to find out if a PgSQL node is in recovery modus. This
+        means that the PgSQL node is a slave/standby node in a
+        replication system.
+        """
+     
+        try:
+            if self.cur:
+            
+                self.cur.execute('SELECT pg_is_in_recovery()')
+                self.conn.commit()
+
+                data = self.cur.fetchone()[0]
+                    
+                if data == True:
+                    return True
+                elif data == False:
+                    return False
+                else:
+                    return False
+                                    
+        except psycopg2.Error as e:
+            raise e
+
+
+    # ############################################
+    # Method 
+    # ############################################
+           
+    def pg_recovery_paused(self):
+        """A function to find out if a PgSQL node in recovery modus has the
+        recovery process paused"""
+
+        try:
+            if self.cur:
+            
+                self.cur.execute('SELECT pg_is_xlog_replay_paused()')
+                self.conn.commit()
+
+                data = self.cur.fetchone()[0]
+                
+                if data == True:
+                    return True
+                elif data == False:
+                    return False
+                else:
+                    return False
+                    
+        except psycopg2.Error as e:
+            raise e
+
+
+    # ############################################
+    # Method 
+    # ############################################
+           
+    def pause_pg_recovery(self):
+        """A function to pause a postgres recovery process"""
+
+        try:
+            if self.cur:
+                
+                self.cur.execute('SELECT pg_xlog_replay_pause()')
+                self.conn.commit()
+                                    
+        except psycopg2.Error as e:
+            raise e
+
+
+    # ############################################
+    # Method 
+    # ############################################
+           
+    def resume_pg_recovery(self):
+        """A function to resume a postgres recovery process"""
+
+        try:
+            if self.cur:
+                
+                self.cur.execute('SELECT pg_xlog_replay_resume()')
+                self.conn.commit()
+                                    
+        except psycopg2.Error as e:
+            raise e
+
+
+    # ############################################
+    # Method 
+    # ############################################
+
+    def get_status_info(self,parameter_status,backup_server,def_id):
+
+        """
+        A function to get status information from different parts of the system.
+        """
+
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+
+                    #
+                    # Parameter: job_queue
+
+                    # Returns the number of entries in job_queue waiting
+                    # to be processed by pgbackman_control.
+                    #
+                    # The number of entries in job_queue will not
+                    # decrease if pgbackman_crontrol is down, not
+                    # receiving NOTIFY data from the 'pgbackman'
+                    # database, or if we have a 'huge' number of PgSQL
+                    # nodes updating backup definitions all the time
+                    # and pgbackman_control cannot process this fast
+                    # enough.
+                    #
+
+                    if parameter_status in ['job_queue']:
+
+                        self.cur.execute('SELECT count(*) AS cnt FROM job_queue')
+                        self.conn.commit()
+
+                        return self.cur.fetchone()[0]
+
+                    #
+                    # Parameter: backup_last_status
+                    #
+                    # Returns the status of the last entry in the
+                    # catalog for a backup definition.
+                    #
+                    # This value can be: succeeded, error, warning.
+                    #
+                    
+                    elif parameter_status in ['backup_last_status']:
+
+                        self.cur.execute('SELECT lower("Status") FROM show_backup_catalog WHERE def_id = %s ORDER BY "Finished" DESC LIMIT 1',(def_id,))
+                        self.conn.commit()
+
+                        data = self.cur.fetchone()
+
+                        if data != None:
+                            return data[0]
+                        else:
+                            return 'unknown'
+
+                    else:
+                        raise Exception("Invalid parameter status [%s]" % parameter_status)
+                    
+                except psycopg2.Error as e:
+                    raise e
+
+            self.pg_close()
+    
+        except psycopg2.Error as e:
+            raise e
+
+
+    # ############################################
+    # Method 
+    # ############################################
+                      
+    def delete_alert(self,alert_id):
+        """A function to delete an alert"""
+
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT delete_alert(%s)',(alert_id,))
+                    self.conn.commit()                        
+              
+                except psycopg2.Error as e:
+                    raise e
+                    
+            self.pg_close()
+   
+        except psycopg2.Error as e:
+            raise e
+
+
+    # ############################################
+    # Method 
+    # ############################################
+                      
+    def update_alert_sent(self,alert_id,status):
+        """A function to update an alert sent status"""
+
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT update_alert_sent(%s,%s)',(alert_id,status))
+                    self.conn.commit()                        
+              
+                except psycopg2.Error as e:
+                    raise e
+                    
+            self.pg_close()
+   
+        except psycopg2.Error as e:
+            raise e
+
+
+    # ############################################
+    # Method 
+    # ############################################
+
+    def get_alerts(self,backup_server_id):
+
+        """
+        A function to get the alerts in a backup server that have not been sent by email
+        """
+
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+                    self.cur.execute('SELECT alert_id,registered,alert_type,ref_id,bck_id,backup_server_id,pgsql_node_id,dbname,execution_status,error_message,sendto,alert_sent FROM alerts WHERE backup_server_id = %s AND alert_sent = FALSE ORDER BY registered ASC',(backup_server_id,))
+                    self.conn.commit()
+
+                    return self.cur
+                                        
+                except psycopg2.Error as e:
+                    raise e
+
+            self.pg_close()
+    
         except psycopg2.Error as e:
             raise e

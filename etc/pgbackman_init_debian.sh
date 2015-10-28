@@ -16,13 +16,16 @@ DESC=pgbackman                    # Introduce a short description here
 NAME=pgbackman                    # Introduce the short server's name here
 DAEMON_CONTROL=/usr/bin/pgbackman_control
 DAEMON_MAINTENANCE=/usr/bin/pgbackman_maintenance
+DAEMON_ALERTS=/usr/bin/pgbackman_alerts
 PIDFILE_CONTROL=/var/run/pgbackman_control.pid
 PIDFILE_MAINTENANCE=/var/run/pgbackman_maintenance.pid
+PIDFILE_ALERTS=/var/run/pgbackman_alerts.pid
 SCRIPTNAME=/etc/init.d/$NAME
 
 # Exit if the package is not installed
 [ -x $DAEMON_CONTROL ] || exit 0
 [ -x $DAEMON_MAINTENANCE ] || exit 0
+[ -x $DAEMON_ALERTS ] || exit 0
 
 # Read configuration variable file if it is present
 [ -r /etc/default/$NAME ] && . /etc/default/$NAME
@@ -84,6 +87,30 @@ do_start_maintenance()
     esac
 }
 
+do_start_alerts()
+{
+	# Return
+	#   0 if daemon has been started
+	#   1 if daemon was already running
+	#   2 if daemon could not be started
+
+    start-stop-daemon --start --quiet --background --make-pidfile --pidfile $PIDFILE_ALERTS --startas $DAEMON_ALERTS
+    RETVAL="$?"
+
+    case $RETVAL in
+        0)
+	    return 0
+	    ;;
+	1)
+	    return 1
+	    ;;
+	2)
+	    return 2
+	    ;;
+    esac
+}
+
+
 #
 # Function that stops the daemon/service
 #
@@ -136,6 +163,30 @@ do_stop_maintenance()
     esac
 }
 
+do_stop_alerts()
+{
+    # Return
+    #   0 if daemon has been stopped
+    #   1 if daemon was already stopped
+    #   2 if daemon could not be stopped
+
+    start-stop-daemon --stop --quiet --retry=10 --pidfile $PIDFILE_ALERTS
+    RETVAL="$?"
+
+    case $RETVAL in
+        0)
+	    rm -f $PIDFILE_ALERTS
+	    return 0
+	    ;;
+	1)
+	    return 1
+	    ;;
+	2)
+	    return 2
+	    ;;
+    esac
+}
+
 
 case "$1" in
     start)
@@ -150,6 +201,14 @@ case "$1" in
       
 	log_daemon_msg "Starting pgbackman maintenance"
 	do_start_maintenance
+	
+	case "$?" in
+	    0|1) log_end_msg 0 ;;
+	    2) log_end_msg 1 ;;
+	esac
+
+	log_daemon_msg "Starting pgbackman alerts"
+	do_start_alerts
 	
 	case "$?" in
 	    0|1) log_end_msg 0 ;;
@@ -172,11 +231,19 @@ case "$1" in
 	    0|1) log_end_msg 0 ;;
 	    2) log_end_msg 1 ;;
 	esac
+
+	log_daemon_msg "Stopping pgbackman alerts"
+	do_stop_alerts
+	case "$?" in
+	    0|1) log_end_msg 0 ;;
+	    2) log_end_msg 1 ;;
+	esac
 	;;
 
     status)
 	status_of_proc -p "$PIDFILE_CONTROL" "$DAEMON_CONTROL" "pgbackman control"
 	status_of_proc -p "$PIDFILE_MAINTENANCE" "$DAEMON_MAINTENANCE" "pgbackman maintenance"
+	status_of_proc -p "$PIDFILE_ALERTS" "$DAEMON_ALERTS" "pgbackman alerts"
         exit 0
 	;;
 
@@ -204,6 +271,23 @@ case "$1" in
 	case "$?" in
 	    0|1)
 		do_start_maintenance
+		case "$?" in
+		    0) log_end_msg 0 ;;
+		    1) log_end_msg 1 ;; # Old process is still running
+		    *) log_end_msg 1 ;; # Failed to start
+		esac
+		;;
+	    *)
+	  	# Failed to stop
+		log_end_msg 1
+		;;
+	esac
+
+	log_daemon_msg "Restarting pgbackman alerts"
+	do_stop_alerts
+	case "$?" in
+	    0|1)
+		do_start_alerts
 		case "$?" in
 		    0) log_end_msg 0 ;;
 		    1) log_end_msg 1 ;; # Old process is still running

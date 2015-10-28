@@ -1,7 +1,8 @@
 /var/log/pgbackman/pgbackman.log {
+    copytruncate
     missingok
     notifempty
     create 0600 pgbackman pgbackman
     weekly
-    rotate 4
+    rotate 6
 }

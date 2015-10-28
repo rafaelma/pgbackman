@@ -1,5 +1,5 @@
 --
--- PgBackMan database
+-- PgBackMan database - Version 2:1_1_0
 --
 -- Copyright (c) 2013-2014 Rafael Martinez Guerrero / PostgreSQL-es
 -- rafael@postgresql.org.es / http://www.postgresql.org.es/
@@ -449,7 +449,8 @@ CREATE TABLE snapshot_definition(
   retention_period interval DEFAULT '7 days'::interval NOT NULL,
   extra_backup_parameters TEXT DEFAULT '',
   status TEXT DEFAULT 'WAITING',
-  remarks TEXT
+  remarks TEXT,
+  pg_dump_release TEXT DEFAULT NULL
 );
 
 ALTER TABLE snapshot_definition ADD PRIMARY KEY (backup_server_id,pgsql_node_id,dbname,at_time,backup_code,extra_backup_parameters);
@@ -546,6 +547,7 @@ CREATE TABLE backup_catalog(
   error_message TEXT,
   role_list TEXT[],
   pgsql_node_release TEXT,
+  pg_dump_release TEXT,
   checksum TEXT,
   dbname_size BIGINT
 );
@@ -603,6 +605,61 @@ CREATE INDEX ON restore_catalog(source_dbname);
 CREATE INDEX ON restore_catalog(target_dbname);
 
 ALTER TABLE restore_catalog OWNER TO pgbackman_role_rw;
+
+
+-- ------------------------------------------------------
+-- Table: alerts
+--
+-- @Description: Alerts generated when a backup fails
+--               
+--
+-- ------------------------------------------------------
+
+\echo '# [Creating table: alerts]\n'
+
+CREATE TABLE alerts(
+
+  alert_id BIGSERIAL,
+  registered TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  alert_type TEXT NOT NULL,
+  ref_id BIGINT NOT NULL,
+  bck_id BIGINT NOT NULL,
+  backup_server_id INTEGER NOT NULL,
+  pgsql_node_id INTEGER NOT NULL,
+  dbname TEXT NOT NULL,
+  execution_status TEXT,
+  error_message TEXT,
+  sendto TEXT NOT NULL,
+  alert_sent BOOLEAN DEFAULT 'FALSE'
+);
+
+ALTER TABLE alerts ADD PRIMARY KEY (alert_id);
+
+CREATE INDEX ON alerts(registered);
+CREATE INDEX ON alerts(alert_sent);
+
+ALTER TABLE alerts OWNER TO pgbackman_role_rw;
+
+
+-- ------------------------------------------------------
+-- Table: alert_type
+--
+-- @Description: Type of alert
+--               
+--
+-- ------------------------------------------------------
+
+\echo '# [Creating table: alert_type]\n'
+
+CREATE TABLE alert_type(
+
+  code CHARACTER VARYING(20) NOT NULL,
+  description TEXT
+);
+
+ALTER TABLE alert_type ADD PRIMARY KEY (code);
+
+ALTER TABLE alert_type OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------
@@ -813,6 +870,21 @@ ALTER TABLE ONLY restore_catalog
 ALTER TABLE ONLY restore_catalog
     ADD FOREIGN KEY (restore_def) REFERENCES restore_definition (restore_def) MATCH FULL ON DELETE CASCADE;
 
+ALTER TABLE ONLY alerts
+    ADD FOREIGN KEY (backup_server_id) REFERENCES  backup_server (server_id) MATCH FULL ON DELETE CASCADE;
+
+ALTER TABLE ONLY alerts
+    ADD FOREIGN KEY (pgsql_node_id) REFERENCES pgsql_node (node_id) MATCH FULL ON DELETE CASCADE;
+
+ALTER TABLE ONLY alerts
+    ADD FOREIGN KEY (execution_status) REFERENCES job_execution_status (code) MATCH FULL ON DELETE RESTRICT;
+
+ALTER TABLE ONLY alerts
+    ADD FOREIGN KEY (alert_type) REFERENCES alert_type (code) MATCH FULL ON DELETE RESTRICT;
+
+ALTER TABLE ONLY alerts
+    ADD FOREIGN KEY (bck_id) REFERENCES backup_catalog (bck_id) MATCH FULL ON DELETE CASCADE;
+
 
 -- ------------------------------------------------------
 -- Init
@@ -835,6 +907,7 @@ INSERT INTO backup_code (code,description) VALUES ('CONFIG','Backup of the confi
 
 INSERT INTO job_definition_status (code,description) VALUES ('ACTIVE','Backup job activated and in production');
 INSERT INTO job_definition_status (code,description) VALUES ('STOPPED','Backup job stopped');
+INSERT INTO job_definition_status (code,description) VALUES ('DELETED','Backup job automatically deleted after dbname has been deleted in a PgSQL node ');
 
 \echo '# [Init: at_definition_status]\n'
 
@@ -891,10 +964,18 @@ INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('bac
 INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('extra_backup_parameters','','Extra backup parameters');
 INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('extra_restore_parameters','','Extra restore parameters');
 INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('logs_email','example@example.org','E-mail to send logs');
+INSERT INTO pgsql_node_default_config (parameter,value,description) VALUES ('automatic_deletion_retention','14 days','Retention after automatic deletion of a backup definition');
+
+
+\echo '# [Init: alert_type]\n'
+
+INSERT INTO alert_type (code,description) VALUES ('Backup-def','Alerts from failed backup definitions');
+INSERT INTO alert_type (code,description) VALUES ('Snapshot-def','Alerts from failed snapshot definitions');
+INSERT INTO alert_type (code,description) VALUES ('Restore-def','Alerts from failed restore definitions');
 
 \echo '# [Update: pgbackman_version]\n'
 
-INSERT INTO pgbackman_version (version,tag) VALUES ('1','v_1_0_0');
+INSERT INTO pgbackman_version (version,tag) VALUES ('2','v_1_1_0');
 
 
 -- ------------------------------------------------------------
@@ -1069,6 +1150,30 @@ ALTER FUNCTION update_backup_server_configuration() OWNER TO pgbackman_role_rw;
 CREATE TRIGGER update_pgsql_node_configuration AFTER INSERT
     ON pgsql_node FOR EACH ROW
     EXECUTE PROCEDURE update_pgsql_node_configuration();
+
+
+-- ------------------------------------------------------------
+-- Function: update_backup_definition_registration()
+--
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION update_backup_definition_registration() RETURNS TRIGGER
+ LANGUAGE plpgsql 
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ BEGIN
+  NEW.registered := now();
+  RETURN NEW;
+END;
+$$;
+
+ALTER FUNCTION update_backup_definition_registration() OWNER TO pgbackman_role_rw;
+
+CREATE TRIGGER update_backup_definition_registration BEFORE UPDATE
+    ON backup_definition FOR EACH ROW
+    EXECUTE PROCEDURE update_backup_definition_registration();
+
 
 
 
@@ -1309,6 +1414,63 @@ ALTER FUNCTION update_restore_logs_to_delete() OWNER TO pgbackman_role_rw;
 CREATE TRIGGER update_restore_logs_to_delete AFTER DELETE
     ON restore_catalog FOR EACH ROW
     EXECUTE PROCEDURE update_restore_logs_to_delete();
+
+
+
+-- ------------------------------------------------------------
+-- Function: generate_backup_catalog_alert()
+--
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION generate_backup_catalog_alert() RETURNS TRIGGER
+ LANGUAGE plpgsql 
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ DECLARE
+  sendto_ TEXT;
+ BEGIN
+
+  SELECT value FROM pgsql_node_config WHERE node_id = NEW.pgsql_node_id AND parameter = 'logs_email' INTO sendto_;
+
+  IF NEW.execution_status = 'ERROR' AND NEW.snapshot_id IS NULL THEN
+
+     EXECUTE 'INSERT INTO alerts (alert_type,ref_id,bck_id,backup_server_id,pgsql_node_id,dbname,execution_status,error_message,sendto,alert_sent) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)'
+     USING 'Backup-def',
+     	   NEW.def_id,
+	   NEW.bck_id,
+	   NEW.backup_server_id,
+	   NEW.pgsql_node_id,
+	   NEW.dbname,
+	   NEW.execution_status,
+	   NEW.error_message,
+	   sendto_,
+	   FALSE; 
+
+  ELSEIF NEW.execution_status = 'ERROR' AND NEW.def_id IS NULL THEN
+
+     EXECUTE 'INSERT INTO alerts (alert_type,ref_id,bck_id,backup_server_id,pgsql_node_id,dbname,execution_status,error_message,sendto,alert_sent) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)'
+     USING 'Snapshot-def',
+     	   NEW.snapshot_id,
+	   NEW.bck_id,
+	   NEW.backup_server_id,
+	   NEW.pgsql_node_id,
+	   NEW.dbname,
+	   NEW.execution_status,
+	   NEW.error_message,
+	   sendto_,
+	   FALSE; 
+   END IF;    
+
+  RETURN NULL;
+END;
+$$;
+
+ALTER FUNCTION generate_backup_catalog_alert() OWNER TO pgbackman_role_rw;
+
+CREATE TRIGGER generate_backup_catalog_alert AFTER INSERT OR UPDATE
+    ON backup_catalog FOR EACH ROW
+    EXECUTE PROCEDURE generate_backup_catalog_alert();
 
 
 -- ------------------------------------------------------------
@@ -1671,7 +1833,7 @@ ALTER FUNCTION update_pgsql_node(INTEGER,INTEGER,TEXT,TEXT,TEXT) OWNER TO pgback
 --
 -- ------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION update_pgsql_node_config(INTEGER,TEXT,TEXT,TEXT,TEXT,TEXT,TEXT,INTERVAL,INTEGER,TEXT,TEXT,TEXT,TEXT,TEXT,TEXT,INTEGER,TEXT,TEXT,TEXT) RETURNS VOID
+CREATE OR REPLACE FUNCTION update_pgsql_node_config(INTEGER,TEXT,TEXT,TEXT,TEXT,TEXT,TEXT,INTERVAL,INTEGER,INTERVAL,TEXT,TEXT,TEXT,TEXT,TEXT,TEXT,INTEGER,TEXT,TEXT,TEXT) RETURNS VOID
  LANGUAGE plpgsql 
  SECURITY INVOKER 
  SET search_path = public, pg_temp
@@ -1686,16 +1848,17 @@ CREATE OR REPLACE FUNCTION update_pgsql_node_config(INTEGER,TEXT,TEXT,TEXT,TEXT,
   backup_code_ ALIAS FOR $7;
   retention_period_ ALIAS FOR $8;
   retention_redundancy_ ALIAS FOR $9;
-  extra_backup_parameters_ ALIAS FOR $10;
-  extra_restore_parameters_ ALIAS FOR $11;
-  backup_job_status_ ALIAS FOR $12;
-  domain_ ALIAS FOR $13;
-  logs_email_ ALIAS FOR $14;
-  admin_user_ ALIAS FOR $15;
-  pgport_ ALIAS FOR $16;
-  pgnode_backup_partition_ ALIAS FOR $17;
-  pgnode_crontab_file_ ALIAS FOR $18;
-  pgsql_node_status_ ALIAS FOR $19;
+  automatic_deletion_retention_ ALIAS FOR $10;
+  extra_backup_parameters_ ALIAS FOR $11;
+  extra_restore_parameters_ ALIAS FOR $12;
+  backup_job_status_ ALIAS FOR $13;
+  domain_ ALIAS FOR $14;
+  logs_email_ ALIAS FOR $15;
+  admin_user_ ALIAS FOR $16;
+  pgport_ ALIAS FOR $17;
+  pgnode_backup_partition_ ALIAS FOR $18;
+  pgnode_crontab_file_ ALIAS FOR $19;
+  pgsql_node_status_ ALIAS FOR $20;
 
   node_cnt INTEGER;
   v_msg     TEXT;
@@ -1738,6 +1901,10 @@ CREATE OR REPLACE FUNCTION update_pgsql_node_config(INTEGER,TEXT,TEXT,TEXT,TEXT,
     EXECUTE 'UPDATE pgsql_node_config SET value = $2 WHERE node_id = $1 AND parameter = ''retention_redundancy'''
      USING pgsql_node_id_,
      	   retention_redundancy_;
+
+    EXECUTE 'UPDATE pgsql_node_config SET value = $2 WHERE node_id = $1 AND parameter = ''automatic_deletion_retention'''
+     USING pgsql_node_id_,
+     	   automatic_deletion_retention_;				
 
     EXECUTE 'UPDATE pgsql_node_config SET value = $2 WHERE node_id = $1 AND parameter = ''extra_backup_parameters'''
      USING pgsql_node_id_,
@@ -1792,7 +1959,7 @@ CREATE OR REPLACE FUNCTION update_pgsql_node_config(INTEGER,TEXT,TEXT,TEXT,TEXT,
   END;
 $$;
 
-ALTER FUNCTION update_pgsql_node_config(INTEGER,TEXT,TEXT,TEXT,TEXT,TEXT,TEXT,INTERVAL,INTEGER,TEXT,TEXT,TEXT,TEXT,TEXT,TEXT,INTEGER,TEXT,TEXT,TEXT) OWNER TO pgbackman_role_rw;
+ALTER FUNCTION update_pgsql_node_config(INTEGER,TEXT,TEXT,TEXT,TEXT,TEXT,TEXT,INTERVAL,INTEGER,INTERVAL,TEXT,TEXT,TEXT,TEXT,TEXT,TEXT,INTEGER,TEXT,TEXT,TEXT) OWNER TO pgbackman_role_rw;
 
 -- ------------------------------------------------------------
 -- Function: update_backup_server_config()
@@ -2181,6 +2348,7 @@ CREATE OR REPLACE FUNCTION delete_force_backup_definition_dbname(INTEGER,TEXT) R
                DELETE FROM backup_catalog 
                WHERE pgsql_node_id = $1
 	       AND dbname = $2
+               AND snapshot_id IS NULL
                RETURNING def_id,
 			   bck_id,
 			   backup_server_id,
@@ -2336,7 +2504,7 @@ ALTER FUNCTION update_backup_definition(INTEGER,TEXT,TEXT,TEXT,TEXT,TEXT,INTERVA
 -- Function: register_snapshot_definition()
 -- ------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION register_snapshot_definition(INTEGER,INTEGER,TEXT,TIMESTAMP,CHARACTER VARYING,INTERVAL,TEXT,TEXT) RETURNS VOID
+CREATE OR REPLACE FUNCTION register_snapshot_definition(INTEGER,INTEGER,TEXT,TIMESTAMP,CHARACTER VARYING,INTERVAL,TEXT,TEXT,TEXT) RETURNS VOID
  LANGUAGE plpgsql 
  SECURITY INVOKER 
  SET search_path = public, pg_temp
@@ -2350,7 +2518,8 @@ CREATE OR REPLACE FUNCTION register_snapshot_definition(INTEGER,INTEGER,TEXT,TIM
   backup_code_ ALIAS FOR $5;
   retention_period_ ALIAS FOR $6;
   extra_backup_parameters_ ALIAS FOR $7;
-  remarks_ ALIAS FOR $7;
+  remarks_ ALIAS FOR $8;
+  pg_dump_release_ ALIAS FOR $9;	 
 
   server_cnt INTEGER;
   node_cnt INTEGER;  
@@ -2390,8 +2559,9 @@ CREATE OR REPLACE FUNCTION register_snapshot_definition(INTEGER,INTEGER,TEXT,TIM
 						backup_code,
 						retention_period,
 						extra_backup_parameters,
-						remarks)
-	     VALUES ($1,$2,$3,$4,$5,$6,$7,$8)'
+						remarks,
+						pg_dump_release)
+	     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)'
     USING backup_server_id_,
 	  pgsql_node_id_,
 	  dbname_,
@@ -2399,7 +2569,8 @@ CREATE OR REPLACE FUNCTION register_snapshot_definition(INTEGER,INTEGER,TEXT,TIM
 	  backup_code_,
 	  retention_period_,
 	  extra_backup_parameters_,
-	  remarks_;         
+	  remarks_,
+	  pg_dump_release_;         
 
  EXCEPTION WHEN others THEN
    	GET STACKED DIAGNOSTICS	
@@ -2411,7 +2582,7 @@ CREATE OR REPLACE FUNCTION register_snapshot_definition(INTEGER,INTEGER,TEXT,TIM
 END;
 $$;
 
-ALTER FUNCTION register_snapshot_definition(INTEGER,INTEGER,TEXT,TIMESTAMP,CHARACTER VARYING,INTERVAL,TEXT,TEXT) OWNER TO pgbackman_role_rw;
+ALTER FUNCTION register_snapshot_definition(INTEGER,INTEGER,TEXT,TIMESTAMP,CHARACTER VARYING,INTERVAL,TEXT,TEXT,TEXT) OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------------
@@ -2479,6 +2650,119 @@ CREATE OR REPLACE FUNCTION update_restore_status(INTEGER,TEXT) RETURNS VOID
 $$;
 
 ALTER FUNCTION update_restore_status(INTEGER,TEXT) OWNER TO pgbackman_role_rw;
+
+
+-- ------------------------------------------------------------
+-- Function: update_alert_sent()
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION update_alert_sent(INTEGER,BOOLEAN) RETURNS VOID
+ LANGUAGE plpgsql 
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ DECLARE
+  alert_id_ ALIAS FOR $1;
+  alert_sent_ ALIAS FOR $2;
+  alert_id_cnt INTEGER;
+
+  v_msg     TEXT;
+  v_detail  TEXT;
+  v_context TEXT;
+ BEGIN
+
+    SELECT count(*) FROM alerts WHERE alert_id = alert_id_ INTO alert_id_cnt;
+
+    IF alert_id_cnt = 0 THEN
+      RAISE EXCEPTION 'AlertID: % does not exist in the system',alert_id_;
+    END IF;
+
+     EXECUTE 'UPDATE alerts SET alert_sent = $2 WHERE alert_id = $1'
+     USING alert_id_,
+     	   alert_sent_;
+   	   
+   EXCEPTION WHEN others THEN
+   	GET STACKED DIAGNOSTICS	
+            v_msg     = MESSAGE_TEXT,
+            v_detail  = PG_EXCEPTION_DETAIL,
+            v_context = PG_EXCEPTION_CONTEXT;
+        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \n----------------------------------------------\n', v_msg, v_detail;
+  END;
+$$;
+
+ALTER FUNCTION update_alert_sent(INTEGER,BOOLEAN) OWNER TO pgbackman_role_rw;
+
+
+-- ------------------------------------------------------------
+-- Function: delete_alert()
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION delete_alert(INTEGER) RETURNS VOID
+ LANGUAGE plpgsql 
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ DECLARE
+  alert_id_ ALIAS FOR $1;
+  alert_id_cnt INTEGER;
+ 
+  v_msg     TEXT;
+  v_detail  TEXT;
+  v_context TEXT;
+ BEGIN
+
+    SELECT count(*) FROM alerts WHERE alert_id = alert_id_ INTO alert_id_cnt;
+
+    IF alert_id_cnt = 0 THEN
+      RAISE EXCEPTION 'AlertID: % does not exist in the system',alert_id_;
+    END IF;
+
+
+     EXECUTE 'DELETE FROM alerts WHERE alert_id = $1'
+     USING alert_id_;
+   	   
+   EXCEPTION WHEN others THEN
+   	GET STACKED DIAGNOSTICS	
+            v_msg     = MESSAGE_TEXT,
+            v_detail  = PG_EXCEPTION_DETAIL,
+            v_context = PG_EXCEPTION_CONTEXT;
+        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \n----------------------------------------------\n', v_msg, v_detail;
+  END;
+$$;
+
+ALTER FUNCTION delete_alert(INTEGER) OWNER TO pgbackman_role_rw;
+
+
+-- ------------------------------------------------------------
+-- Function: update_backup_definition_status_to_delete()
+-- ------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION update_backup_definition_status_to_delete(INTEGER) RETURNS VOID
+ LANGUAGE plpgsql 
+ SECURITY INVOKER 
+ SET search_path = public, pg_temp
+ AS $$
+ DECLARE
+  def_id_ ALIAS FOR $1;
+
+  v_msg     TEXT;
+  v_detail  TEXT;
+  v_context TEXT;
+ BEGIN
+
+     EXECUTE 'UPDATE backup_definition SET job_status = ''DELETED'' WHERE def_id = $1'
+     USING def_id_;
+   	   
+   EXCEPTION WHEN others THEN
+   	GET STACKED DIAGNOSTICS	
+            v_msg     = MESSAGE_TEXT,
+            v_detail  = PG_EXCEPTION_DETAIL,
+            v_context = PG_EXCEPTION_CONTEXT;
+        RAISE EXCEPTION E'\n----------------------------------------------\nEXCEPTION:\n----------------------------------------------\nMESSAGE: % \nDETAIL : % \n----------------------------------------------\n', v_msg, v_detail;
+  END;
+$$;
+
+ALTER FUNCTION update_backup_definition_status_to_delete(INTEGER) OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------------
@@ -3198,7 +3482,11 @@ BEGIN
 		   ' --node-user ' || admin_user || 
 		   ' --snapshot-id ' || snapshot_row.snapshot_id::TEXT;
 
-  IF SNAPSHOT_row.backup_code != 'CLUSTER' THEN
+  IF snapshot_row.pg_dump_release != '' AND snapshot_row.pg_dump_release IS NOT NULL THEN
+     output := output || ' --pg-dump-release ' || snapshot_row.pg_dump_release;
+  END IF;
+
+  IF snapshot_row.backup_code != 'CLUSTER' THEN
      output := output || ' --dbname ' || snapshot_row.dbname;
   END IF;
 
@@ -3266,7 +3554,7 @@ BEGIN
 	 b.pg_dump_file,
 	 b.pg_dump_roles_file,
 	 b.pg_dump_dbconfig_file,
-	 b.pgsql_node_release 
+	 b.pg_dump_release 
   FROM restore_definition a 
   JOIN backup_catalog b ON a.bck_id = b.bck_id 
   WHERE restore_def = restore_def_
@@ -3297,7 +3585,7 @@ BEGIN
          output := output || ' --role-list ' || restore_row.role_list;
    END IF;
 
-   output := output || ' --pg-release ' || restore_row.pgsql_node_release ||
+   output := output || ' --pg-release ' || restore_row.pg_dump_release ||
    	     	    ' --root-backup-dir ' || root_backup_dir;
 		     		   
   output := output || E'" \n';
@@ -3393,7 +3681,7 @@ ALTER FUNCTION get_pgsql_node_admin_user(INTEGER) OWNER TO pgbackman_role_rw;
 -- Function: register_backup_catalog()
 -- ------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION register_backup_catalog(INTEGER,INTEGER,INTEGER,INTEGER,TEXT,TIMESTAMP WITH TIME ZONE,TIMESTAMP WITH TIME ZONE,INTERVAL,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,TEXT,TEXT,TEXT,INTEGER,TEXT[],TEXT) RETURNS VOID
+CREATE OR REPLACE FUNCTION register_backup_catalog(INTEGER,INTEGER,INTEGER,INTEGER,TEXT,TIMESTAMP WITH TIME ZONE,TIMESTAMP WITH TIME ZONE,INTERVAL,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,TEXT,TEXT,TEXT,INTEGER,TEXT[],TEXT,TEXT) RETURNS VOID
  LANGUAGE plpgsql 
  SECURITY INVOKER 
  SET search_path = public, pg_temp
@@ -3424,6 +3712,7 @@ CREATE OR REPLACE FUNCTION register_backup_catalog(INTEGER,INTEGER,INTEGER,INTEG
   snapshot_id_ ALIAS FOR $22;
   role_list_ ALIAS FOR $23;
   pgsql_node_release_ ALIAS FOR $24;
+  pg_dump_release_ ALIAS FOR $25;
 
   v_msg     TEXT;
   v_detail  TEXT;
@@ -3453,8 +3742,9 @@ CREATE OR REPLACE FUNCTION register_backup_catalog(INTEGER,INTEGER,INTEGER,INTEG
 					     error_message,
 					     snapshot_id,
 					     role_list,
-					     pgsql_node_release) 
-	     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24)'
+					     pgsql_node_release,
+					     pg_dump_release) 
+	     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25)'
     USING  def_id_,
     	   procpid_,
     	   backup_server_id_,
@@ -3478,7 +3768,8 @@ CREATE OR REPLACE FUNCTION register_backup_catalog(INTEGER,INTEGER,INTEGER,INTEG
 	   error_message_,
 	   snapshot_id_,
 	   role_list_,
-	   pgsql_node_release_;
+	   pgsql_node_release_,
+	   pg_dump_release_;
 
  EXCEPTION WHEN others THEN
    	GET STACKED DIAGNOSTICS	
@@ -3490,7 +3781,7 @@ CREATE OR REPLACE FUNCTION register_backup_catalog(INTEGER,INTEGER,INTEGER,INTEG
  END;
 $$;
 
-ALTER FUNCTION register_backup_catalog(INTEGER,INTEGER,INTEGER,INTEGER,TEXT,TIMESTAMP WITH TIME ZONE,TIMESTAMP WITH TIME ZONE,INTERVAL,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,TEXT,TEXT,TEXT,INTEGER,TEXT[],TEXT) OWNER TO pgbackman_role_rw;
+ALTER FUNCTION register_backup_catalog(INTEGER,INTEGER,INTEGER,INTEGER,TEXT,TIMESTAMP WITH TIME ZONE,TIMESTAMP WITH TIME ZONE,INTERVAL,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,BIGINT,TEXT,TEXT,TEXT,TEXT,TEXT,INTEGER,TEXT[],TEXT,TEXT) OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------------
@@ -4043,7 +4334,8 @@ CREATE OR REPLACE VIEW show_backup_details AS
        a.execution_method AS "Execution",
        left(a.error_message,60) AS "Error message",
        array_to_string(a.role_list,',') AS "Role list",
-       pgsql_node_release AS "PgSQL release" 
+       a.pgsql_node_release AS "PgSQL node release",
+       a.pg_dump_release AS "pg_dump release" 
    FROM backup_catalog a 
    JOIN backup_definition b ON a.def_id = b.def_id) 
    UNION
@@ -4082,7 +4374,8 @@ CREATE OR REPLACE VIEW show_backup_details AS
        a.execution_method AS "Execution",
        left(a.error_message,60) AS "Error message",
        array_to_string(a.role_list,',') AS "Role list",
-       pgsql_node_release AS "PgSQL release" 
+       a.pgsql_node_release AS "PgSQL node release",
+       a.pg_dump_release AS "pg_dump release" 
    FROM backup_catalog a 
    JOIN snapshot_definition b ON a.snapshot_id = b.snapshot_id)
  ORDER BY "Finished" DESC,backup_server_id,pgsql_node_id,"DBname","Code","Status";
@@ -4232,7 +4525,7 @@ SELECT lpad(snapshot_id::text,11,'0') AS "SnapshotID",
        get_pgsql_node_fqdn(pgsql_node_id) AS "PgSQL node",
        dbname AS "DBname",
        to_char(at_time, 'YYYYMMDDHH24MI'::text) AS "AT time",
-       backup_code AS "Code",
+       backup_code || COALESCE(' [' || pg_dump_release || ']','') AS "Code",
        retention_period::text AS "Retention",
        extra_backup_parameters AS "Parameters",
        status AS "Status"
@@ -4315,7 +4608,53 @@ CREATE OR REPLACE VIEW show_restore_details AS
 
 ALTER VIEW show_restore_details OWNER TO pgbackman_role_rw;
 
+CREATE OR REPLACE VIEW show_snapshots_in_progress AS
+   SELECT lpad(a.snapshot_id::text, 11, '0'::text) AS "SnapshotID",
+   	  date_trunc('seconds'::text, a.registered) AS "Registered",
+       	  a.backup_server_id,
+       	  get_backup_server_fqdn(a.backup_server_id) AS "Backup server",
+       	  a.pgsql_node_id,
+       	  get_pgsql_node_fqdn(a.pgsql_node_id) AS "PgSQL node",
+       	  a.dbname AS "DBname",
+       	  to_char(a.at_time, 'YYYY-MM-DD HH24:MI:SS'::text) AS "AT time",
+       	  a.backup_code AS "Code",
+       	  date_trunc('second',now()-a.at_time)::text AS "Elapsed time"
+   FROM snapshot_definition a
+   LEFT JOIN backup_catalog b
+   ON a.snapshot_id = b.snapshot_id 
+   WHERE b.snapshot_id IS NULL
+   ORDER BY a.at_time ASC;
 
+ALTER VIEW show_snapshots_in_progress OWNER TO pgbackman_role_rw;
 
+CREATE OR REPLACE VIEW show_restores_in_progress AS
+   SELECT lpad(a.restore_def::text, 11, '0'::text) AS "RestoreDef",
+   	  date_trunc('seconds'::text, a.registered) AS "Registered",
+	  a.bck_id AS "BckID",
+       	  a.backup_server_id,
+       	  get_backup_server_fqdn(a.backup_server_id) AS "Backup server",
+       	  a.target_pgsql_node_id,
+       	  get_pgsql_node_fqdn(a.target_pgsql_node_id) AS "Target PgSQL node",
+       	  a.target_dbname AS "Target DBname",
+       	  to_char(a.at_time, 'YYYY-MM-DD HH24:MI:SS'::text) AS "AT time",
+       	  date_trunc('second',now()-a.at_time)::text AS "Elapsed time"
+   FROM restore_definition a
+   LEFT JOIN restore_catalog b
+   ON a.restore_def = b.restore_def 
+   WHERE b.restore_def IS NULL
+   ORDER BY a.at_time ASC;
+
+ALTER VIEW show_restores_in_progress OWNER TO pgbackman_role_rw;
+
+CREATE OR REPLACE VIEW get_deleted_backup_definitions_to_delete_by_retention AS
+   SELECT a.def_id 
+   FROM backup_definition a 
+   INNER JOIN pgsql_node_config b 
+   ON a.pgsql_node_id = b.node_id 
+   WHERE a.job_status = 'DELETED' 
+   AND b.parameter = 'automatic_deletion_retention' 
+   AND a.registered < now()-b.value::interval;
+
+ALTER VIEW get_deleted_backup_definitions_to_delete_by_retention OWNER TO pgbackman_role_rw;
 
 COMMIT;
