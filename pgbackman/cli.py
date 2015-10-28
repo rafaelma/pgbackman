@@ -4805,13 +4805,13 @@ class pgbackman_cli(cmd.Cmd):
 
     def precmd(self, line_in):
 
-        if line_in != '':
-            split_line = line_in.split()
+        if line_in.strip() != '':
+            split_line = line_in.strip().split()
             
             if split_line[0] not in ['EOF','shell','SHELL','\!']:
-                line_out = line_in.lower()
+                line_out = line_in.strip().lower()
             else:
-                line_out = line_in
+                line_out = line_in.strip()
 
             if split_line[0] == '\h':
                 line_out = line_out.replace('\h','help')
@@ -4824,7 +4824,7 @@ class pgbackman_cli(cmd.Cmd):
             elif line_out == '\q':
                 line_out = 'quit' 
                 
-            self._hist += [ line_out.strip() ]
+            self._hist += [ line_out ]
           
         else:
             line_out = ''
