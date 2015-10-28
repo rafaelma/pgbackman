@@ -108,6 +108,19 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     end
    end
 
+   config.vm.define "centos7" do |centos7|
+    centos7.vm.box = "centos7"
+    centos7.vm.network "private_network", ip: "10.10.10.108"
+    centos7.vm.hostname = "centos7.example.net"
+    centos7.vm.provision :shell, :path => "bootstrap_centos.sh"
+
+    centos7.vm.provider "virtualbox" do |vb8|
+     # Use VBoxManage to customize the VM. For example to change memory:  
+     vb8.customize ["modifyvm", :id, "--memory", "1024"]
+    end
+   end
+
+
   # The url from where the 'config.vm.box' box will be fetched if it
   # doesn't already exist on the user's system.
   # config.vm.box_url = "http://domain.com/path/to/above.box"
