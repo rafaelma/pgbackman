@@ -50,7 +50,7 @@ New features
 * Use PgSQL node and database information in the central PgBackMan
   logfile.
 
-* Semi-automatic upgrade of the 'pgbackman' database to a new version
+* Automatic upgrade of the 'pgbackman' database to a new version
   via the PgBackMan shell.
 
 
@@ -116,4 +116,23 @@ Version 1.0.0
 
 Date: 2014-06-26
 
-* First version available to the public. 
+First version available to the public. 
+
+Main features
+-------------
+
+* Central database with metadata information.
+* PgBackMan shell for interaction with the system.
+* Management of multiple backup servers.
+* Management of multiple PostgreSQL servers.
+* Management of thousands of backups dumps through a catalogue.
+* Manual and scheduled backups.
+* Management of retention policies for backups.
+* Fully detailed backup reports.
+* Multiple predefined database backup types, CLUSTER,FULL,SCHEMA,DATA.
+* Full backup of role information for a database.
+* Full backup of database configuration for a database.
+* Automatic definitions of backups for all databases running in a PgSQL node.
+* Automatic restore procedures.
+* Autonomous pgbackman_dump program that functions even if the central database with metadata information is not available.
+* Handling of error situations.
