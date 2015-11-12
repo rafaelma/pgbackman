@@ -88,6 +88,8 @@ class pgbackman_cli(cmd.Cmd):
 
         self.backup_server_id = ''
 
+        self.execution_modus = 'interactive' 
+
 
     # ############################################
     # Method do_show_backup_servers
@@ -121,7 +123,10 @@ class pgbackman_cli(cmd.Cmd):
                 
         else:
             print '\n[ERROR] - This command does not accept parameters.\n          Type help or \? to list commands\n'
-            
+
+            if self.execution_modus == 'non-interactive':
+                sys.exit(1)
+
 
     # ############################################
     # Method do_register_backup_server
@@ -231,7 +236,10 @@ class pgbackman_cli(cmd.Cmd):
 
         else:
             print '\n[ERROR] - Wrong number of parameters used.\n          Type help or \? to list commands\n'
-
+            
+            if self.execution_modus == 'non-interactive':
+                sys.exit(1)
+            
         print
 
     # ############################################
@@ -329,6 +337,9 @@ class pgbackman_cli(cmd.Cmd):
 
         else:
             print '\n[ERROR] - Wrong number of parameters used.\n          Type help or \? to list commands\n'
+            
+            if self.execution_modus == 'non-interactive':
+                sys.exit(1)
 
         print
         
@@ -365,6 +376,9 @@ class pgbackman_cli(cmd.Cmd):
             
         else:
             print '\n[ERROR] - This command does not accept parameters.\n          Type help or ? to list commands\n'
+            
+            if self.execution_modus == 'non-interactive':
+                sys.exit(1)
                      
         print
             
@@ -524,6 +538,9 @@ class pgbackman_cli(cmd.Cmd):
         else:
             print '\n[ERROR] - Wrong number of parameters used.\n          Type help or \? to list commands\n'
             
+            if self.execution_modus == 'non-interactive':
+                sys.exit(1)
+            
         print
 
 
@@ -622,6 +639,9 @@ class pgbackman_cli(cmd.Cmd):
 
         else:
             print '\n[ERROR] - Wrong number of parameters used.\n          Type help or \? to list commands\n'
+            
+            if self.execution_modus == 'non-interactive':
+                sys.exit(1)
             
         print
         
@@ -748,6 +768,9 @@ class pgbackman_cli(cmd.Cmd):
 
         else:
             print '\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n'
+            
+            if self.execution_modus == 'non-interactive':
+                sys.exit(1)
         
         print
 
@@ -1260,6 +1283,9 @@ class pgbackman_cli(cmd.Cmd):
 
         else:
             print '\n[ERROR] - Wrong number of parameters used.\n          Type help or \? to list commands\n'
+            
+            if self.execution_modus == 'non-interactive':
+                sys.exit(1)
 
         print
 
@@ -1385,6 +1411,9 @@ class pgbackman_cli(cmd.Cmd):
 
         else:
             print '\n[ERROR] - Wrong number of parameters used.\n          Type help or \? to list commands\n'
+            
+            if self.execution_modus == 'non-interactive':
+                sys.exit(1)
 
         print
 
@@ -1526,6 +1555,9 @@ class pgbackman_cli(cmd.Cmd):
 
         else:
             print '\n[ERROR] - Wrong number of parameters used.\n          Type help or \? to list commands\n'
+            
+            if self.execution_modus == 'non-interactive':
+                sys.exit(1)
 
         print
 
@@ -1688,6 +1720,9 @@ class pgbackman_cli(cmd.Cmd):
 
         else:
             print '\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n'
+            
+            if self.execution_modus == 'non-interactive':
+                sys.exit(1)
 
         print
 
@@ -1811,6 +1846,9 @@ class pgbackman_cli(cmd.Cmd):
 
         else:
             print '\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n'
+            
+            if self.execution_modus == 'non-interactive':
+                sys.exit(1)
 
         print
 
@@ -2129,6 +2167,9 @@ class pgbackman_cli(cmd.Cmd):
 
         else:
             print '\n[ERROR] - Wrong number of parameters used.\n          Type help or \? to list commands\n'
+            
+            if self.execution_modus == 'non-interactive':
+                sys.exit(1)
         
         print
 
@@ -2262,6 +2303,9 @@ class pgbackman_cli(cmd.Cmd):
 
         else:
             print '\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n'
+            
+            if self.execution_modus == 'non-interactive':
+                sys.exit(1)
         
         print
 
@@ -2548,6 +2592,9 @@ class pgbackman_cli(cmd.Cmd):
 
         else:
             print '\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n'
+            
+            if self.execution_modus == 'non-interactive':
+                sys.exit(1)
                   
         print
             
@@ -2680,6 +2727,9 @@ class pgbackman_cli(cmd.Cmd):
 
         else:
             print '\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n'
+            
+            if self.execution_modus == 'non-interactive':
+                sys.exit(1)
         
         print
 
@@ -2763,6 +2813,9 @@ class pgbackman_cli(cmd.Cmd):
 
         else:
             print '\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n'
+            
+            if self.execution_modus == 'non-interactive':
+                sys.exit(1)
         
         print
 
@@ -2846,6 +2899,9 @@ class pgbackman_cli(cmd.Cmd):
 
         else:
             print '\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n'
+            
+            if self.execution_modus == 'non-interactive':
+                sys.exit(1)
         
         print
 
@@ -2915,6 +2971,9 @@ class pgbackman_cli(cmd.Cmd):
 
         else:
             print '\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n'
+            
+            if self.execution_modus == 'non-interactive':
+                sys.exit(1)
         
         print
 
@@ -2949,6 +3008,9 @@ class pgbackman_cli(cmd.Cmd):
                 print '[ERROR]: ',e,'\n'
         else:
             print '\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n'
+            
+            if self.execution_modus == 'non-interactive':
+                sys.exit(1)
           
         print
             
@@ -3029,6 +3091,9 @@ class pgbackman_cli(cmd.Cmd):
 
         else:
             print '\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n'
+            
+            if self.execution_modus == 'non-interactive':
+                sys.exit(1)
           
         print
 
@@ -3109,6 +3174,9 @@ class pgbackman_cli(cmd.Cmd):
 
         else:
             print '\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n'
+            
+            if self.execution_modus == 'non-interactive':
+                sys.exit(1)
        
         print
 
@@ -3145,6 +3213,9 @@ class pgbackman_cli(cmd.Cmd):
             
         else:
             print '\n[ERROR] - This command does not accept parameters.\n          Type help or ? to list commands\n'
+            
+            if self.execution_modus == 'non-interactive':
+                sys.exit(1)
                      
         print
 
@@ -3226,6 +3297,9 @@ class pgbackman_cli(cmd.Cmd):
 
         else:
             print '\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n'
+            
+            if self.execution_modus == 'non-interactive':
+                sys.exit(1)
         
         print
 
@@ -3307,6 +3381,9 @@ class pgbackman_cli(cmd.Cmd):
 
         else:
             print '\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n'
+            
+            if self.execution_modus == 'non-interactive':
+                sys.exit(1)
         
         print
 
@@ -3343,6 +3420,9 @@ class pgbackman_cli(cmd.Cmd):
             
         else:
             print '\n[ERROR] - This command does not accept parameters.\n          Type help or ? to list commands\n'
+            
+            if self.execution_modus == 'non-interactive':
+                sys.exit(1)
 
         print
 
@@ -3515,6 +3595,9 @@ class pgbackman_cli(cmd.Cmd):
 
         else:
             print '\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n'
+            
+            if self.execution_modus == 'non-interactive':
+                sys.exit(1)
         
         print
                
@@ -3561,6 +3644,9 @@ class pgbackman_cli(cmd.Cmd):
 
         else:
             print '\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n'
+            
+            if self.execution_modus == 'non-interactive':
+                sys.exit(1)
         
         print
 
@@ -3607,6 +3693,9 @@ class pgbackman_cli(cmd.Cmd):
 
         else:
             print '\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n'
+            
+            if self.execution_modus == 'non-interactive':
+                sys.exit(1)
         
         print
 
@@ -3737,6 +3826,9 @@ class pgbackman_cli(cmd.Cmd):
                 
         else:
             print '\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n'
+            
+            if self.execution_modus == 'non-interactive':
+                sys.exit(1)
         
         print
 
@@ -3923,6 +4015,9 @@ class pgbackman_cli(cmd.Cmd):
                 
         else:
             print '\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n'
+            
+            if self.execution_modus == 'non-interactive':
+                sys.exit(1)
 
         print
             
@@ -4314,6 +4409,9 @@ class pgbackman_cli(cmd.Cmd):
                         
         else:
             print '\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n'
+            
+            if self.execution_modus == 'non-interactive':
+                sys.exit(1)
 
         print
 
@@ -4506,6 +4604,9 @@ class pgbackman_cli(cmd.Cmd):
                         
         else:
             print '\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n'
+            
+            if self.execution_modus == 'non-interactive':
+                sys.exit(1)
 
         print
 
@@ -4760,6 +4861,9 @@ class pgbackman_cli(cmd.Cmd):
                 
         else:
             print '\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n'
+            
+            if self.execution_modus == 'non-interactive':
+                sys.exit(1)
 
         print
 
@@ -4789,6 +4893,9 @@ class pgbackman_cli(cmd.Cmd):
     def default(self,line):
         print '\n[ERROR] - Unknown command: %s.\n          Type help or \? to list commands\n' % line
         print
+
+        if self.execution_modus == 'non-interactive':
+            sys.exit(1)
 
 
     # ############################################
@@ -4858,6 +4965,9 @@ class pgbackman_cli(cmd.Cmd):
 
         except Exception as e:
             print '[ERROR]: Problems running %s\n' % line
+            
+            if self.execution_modus == 'non-interactive':
+                sys.exit(1)
 
 
     # ############################################
