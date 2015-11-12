@@ -23,31 +23,70 @@
 
 import sys
 import os
+import argparse
 
 from pgbackman.cli import * 
 
 if __name__ == '__main__':
 
     try:
+
+        #
+        # Processing command line parameters
+        #
+
+        output_format = ''
+        pgbackman_command = ''
+
+        parser = argparse.ArgumentParser(prog=sys.argv[0],description='zabbix-cli - Zabbix client')
+
+        parser.add_argument('--output','-o',  metavar='[csv|json|plain]', choices=['csv','json','table'], required=False, dest='output_format')
+        parser.add_argument('--command','-C', metavar='<PgBackMan command>',required=False,dest='pgbackman_command')
         
-        if len(sys.argv) > 1:
-            if sys.argv[1] =='--use-csv-format':
+        args = parser.parse_args()  
+        
+        if args.output_format:
+            output_format = args.output_format 
+    
+        if args.pgbackman_command:
+            pgbackman_command = args.pgbackman_command 
 
-                cli = pgbackman_cli()
-                cli.output_format = 'csv'
-                cli.db.output_format = 'csv'
-                    
-                cli.onecmd(' '.join(sys.argv[2:]))
+        #
+        # pgbackman cli initialization
+        #
 
-            else:
-                cli = pgbackman_cli()
-                cli.onecmd(' '.join(sys.argv[1:]))
+        cli = pgbackman_cli()
+        
+        #
+        # Processing output format
+        #
+    
+        if output_format == 'csv':
+            cli.output_format = 'csv'
+            
+        elif output_format == 'json':
+            cli.output_format = 'json'
+            
+        else:
+            cli.output_format = 'table'
 
-        elif len(sys.argv) == 1:
+        #
+        # PgBackMan in non-interactive modus
+        #
+
+        if pgbackman_command != '':
+            cli.onecmd(pgbackman_command)
+
+        #
+        # PgBackMan in interactive modus (pgbackman-shell)
+        #
+
+        elif pgbackman_command == '':
             os.system('clear')
 
-            pgbackman_cli().check_pgbackman_database_version()
-            pgbackman_cli().cmdloop()
+            cli.check_pgbackman_database_version()
+            cli.cmdloop()
+        
         else:
             raise NotImplementedError
         
