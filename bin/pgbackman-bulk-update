@@ -1,0 +1,149 @@
+#!/usr/bin/env python
+#
+# Copyright (c) 2013-2015 Rafael Martinez Guerrero / PostgreSQL-es
+# rafael@postgresql.org.es / http://www.postgresql.org.es/
+#
+# Copyright (c) 2015 USIT-University of Oslo
+#
+# This file is part of Pgbackman
+# https://github.com/rafaelma/pgbackman
+#
+# PgBackMan is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# PgBackMan is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Pgbackman.  If not, see <http://www.gnu.org/licenses/>.
+
+import sys
+import os
+import argparse
+import subprocess
+
+from pgbackman.config import *
+from pgbackman.logs import * 
+
+if __name__ == '__main__':
+
+    try:
+
+        intro =  '\n####################################################################\n' + \
+                 'PgBackMan bulk update \n' + \
+                 '####################################################################\n'
+
+        print intro
+
+        #
+        # Process command line parameters
+        #
+
+        input_file = ''
+
+        ok_count = 0
+        error_count = 0
+        not_supported_count = 0
+
+        parser = argparse.ArgumentParser(prog=sys.argv[0])
+        parser.add_argument('--input-file', '-f', metavar='[Filename]', required=True, help='Input file', dest='input_file')
+
+        args = parser.parse_args() 
+
+        if args.input_file:
+            input_file = args.input_file
+
+
+        logs = logs("pgbackman-bulk-update","","")
+        
+        logs.logger.debug('**** pgbackman-bulk-update startet. ****')
+
+        # Normalized absolutized version of the pathname if
+        # files does not include an absolute path
+
+        if os.path.isabs(input_file) == False:
+            input_file = os.path.abspath(input_file) 
+
+        if os.path.exists(input_file):
+            
+            logs.logger.info('File [%s] exists. Bulk execution of commands defined in this file started.',input_file)
+            print '[OK] File [' + input_file + '] exists. Bulk execution of commands defined in this file started.\n'
+
+            #
+            # Processing pgbackman commands in file
+            #
+
+            try:
+                with open(input_file,'r') as file:
+                    for line in file:
+
+                        line = line.strip()
+                        
+                        if line.find('#',0) == -1 and line != '':
+                            
+                            pgbackman_command = line
+                            command = 'pgbackman -o json -C "' + pgbackman_command + '"'
+ 
+                            if 'delete_' in line.lower() or \
+                               'register_' in line.lower() or \
+                               'update_' in line.lower():
+                        
+                                DEVNULL = open(os.devnull, 'w')
+                                proc = subprocess.Popen([command],stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=True)
+                                proc.wait()
+                
+                                stdout, stderr = proc.communicate()
+                                
+                                if proc.returncode == 0:
+                                    logs.logger.info('PgBackMan command [%s] executed',command)
+                                    print '[OK]\tPgBackMan command [' + command +  '] executed'
+
+                                    ok_count += 1
+
+                                else:
+                                    logs.logger.error('PgBackMan command [%s] could not be executed - %s',command,str(stdout))
+                                    print '[ERROR]\tPgBackMan command [' + command + '] could not be executed'
+                                    
+                                    error_count += 1
+                            else:
+
+                                logs.logger.info('PgBackMan command [%s] is not supported by pgbackman-bulk-update.',command)
+                                print '[INFO]\tPgBackMan command [' + command + '] is not supported by pgbackman-bulk-update.'
+
+                                not_supported_count += 1
+
+                footer =  '\n####################################################################\n' + \
+                          'Total ok: ' + str(ok_count) + '\n' + \
+                          'Total error: ' + str(error_count) + '\n' + \
+                          'Total not supported: ' + str(not_supported_count) + '\n' + \
+                          '####################################################################'
+
+                print footer
+            
+                if error_count > 0:
+                    print "WARNING: Check PgBackMan log file for error information"
+                    print
+                        
+            except Exception as e:
+
+                logs.logger.error('Problems using file [%s] - %s',input_file,e)
+                print '[ERROR]\tProblems using file [' + input_file + '] - ' + str(e)
+                sys.exit(1)
+
+        else:
+            logs.logger.info('File [%s] does not exist. Bulk execution of commands aborted.',input_file)
+            print '[ERROR]\tFile [' + input_file + '] does not exist. Bulk execution of commands aborted'
+
+            logs.logger.debug('**** pgbackman-bulk-update finished. ****')
+
+    except Exception as e:
+        print '\n[ERROR]: %s\n',e
+        
+        logs.logger.error('Problems running pgbackman-bulk-update - %s',e)
+        print 'Problems running pgbackman-bulk-update - ' + str(e)
+        
+        sys.exit(1)
