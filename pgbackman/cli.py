@@ -4343,6 +4343,7 @@ class pgbackman_cli(cmd.Cmd):
                                     [PgSQL_bin_9.2]
                                     [PgSQL_bin_9.3]
                                     [PgSQL_bin_9.4]
+                                    [PgSQL_bin_9.5]
                                     [root_backup_dir]
                                     
         '''    
@@ -4391,6 +4392,7 @@ class pgbackman_cli(cmd.Cmd):
                 pgsql_bin_9_2_default = self.db.get_backup_server_config_value(backup_server_id,'pgsql_bin_9_2')
                 pgsql_bin_9_3_default = self.db.get_backup_server_config_value(backup_server_id,'pgsql_bin_9_3')
                 pgsql_bin_9_4_default = self.db.get_backup_server_config_value(backup_server_id,'pgsql_bin_9_4')
+                pgsql_bin_9_5_default = self.db.get_backup_server_config_value(backup_server_id,'pgsql_bin_9_5')
                 root_backup_partition_default = self.db.get_backup_server_config_value(backup_server_id,'root_backup_partition')
                                                 
             except Exception as e:
@@ -4404,6 +4406,7 @@ class pgbackman_cli(cmd.Cmd):
                 pgsql_bin_9_2 = raw_input('# PgSQL bindir 9.2 [' + pgsql_bin_9_2_default + ']: ').strip()
                 pgsql_bin_9_3 = raw_input('# PgSQL bindir 9.3 [' + pgsql_bin_9_3_default + ']: ').strip()
                 pgsql_bin_9_4 = raw_input('# PgSQL bindir 9.4 [' + pgsql_bin_9_4_default + ']: ').strip()
+                pgsql_bin_9_5 = raw_input('# PgSQL bindir 9.5 [' + pgsql_bin_9_5_default + ']: ').strip()
                 root_backup_partition = raw_input('# Main backup dir [' + root_backup_partition_default + ']: ').strip()
                 print
 
@@ -4432,13 +4435,16 @@ class pgbackman_cli(cmd.Cmd):
             if pgsql_bin_9_4  == '': 
                 pgsql_bin_9_4 = pgsql_bin_9_4_default
 
+            if pgsql_bin_9_5  == '': 
+                pgsql_bin_9_5 = pgsql_bin_9_5_default
+
             if root_backup_partition == '':
                 root_backup_partition = root_backup_partition_default
 
 
             if ack.lower() == 'yes':
                 try:
-                    self.db.update_backup_server_config(backup_server_id,pgsql_bin_9_0,pgsql_bin_9_1,pgsql_bin_9_2,pgsql_bin_9_3,pgsql_bin_9_4,root_backup_partition)
+                    self.db.update_backup_server_config(backup_server_id,pgsql_bin_9_0,pgsql_bin_9_1,pgsql_bin_9_2,pgsql_bin_9_3,pgsql_bin_9_4,pgsql_bin_9_5,root_backup_partition)
                     
                     print '[DONE] Configuration parameters for SrvID: ' + str(backup_server_id) + ' updated.\n'
 
@@ -4452,7 +4458,7 @@ class pgbackman_cli(cmd.Cmd):
         # Command with parameters
         #
                 
-        elif len(arg_list) == 7:
+        elif len(arg_list) == 8:
             
             backup_server = arg_list[0]
 
@@ -4473,6 +4479,7 @@ class pgbackman_cli(cmd.Cmd):
                 pgsql_bin_9_2_default = self.db.get_backup_server_config_value(backup_server_id,'pgsql_bin_9_2')
                 pgsql_bin_9_3_default = self.db.get_backup_server_config_value(backup_server_id,'pgsql_bin_9_3')
                 pgsql_bin_9_4_default = self.db.get_backup_server_config_value(backup_server_id,'pgsql_bin_9_4')
+                pgsql_bin_9_5_default = self.db.get_backup_server_config_value(backup_server_id,'pgsql_bin_9_5')
                 root_backup_partition_default = self.db.get_backup_server_config_value(backup_server_id,'root_backup_partition')
                 
             except Exception as e:
@@ -4484,7 +4491,8 @@ class pgbackman_cli(cmd.Cmd):
             pgsql_bin_9_2 = arg_list[3]
             pgsql_bin_9_3 = arg_list[4]
             pgsql_bin_9_4 = arg_list[5]
-            root_backup_partition = arg_list[6]
+            pgsql_bin_9_5 = arg_list[6]
+            root_backup_partition = arg_list[7]
 
             if pgsql_bin_9_0  == '': 
                 pgsql_bin_9_0 = pgsql_bin_9_0_default
@@ -4501,11 +4509,14 @@ class pgbackman_cli(cmd.Cmd):
             if pgsql_bin_9_4  == '': 
                 pgsql_bin_9_4 = pgsql_bin_9_4_default
 
+            if pgsql_bin_9_5  == '': 
+                pgsql_bin_9_5 = pgsql_bin_9_5_default
+
             if root_backup_partition == '':
                 root_backup_partition = root_backup_partition_default
 
             try:
-                self.db.update_backup_server_config(backup_server_id,pgsql_bin_9_0,pgsql_bin_9_1,pgsql_bin_9_2,pgsql_bin_9_3,pgsql_bin_9_4,root_backup_partition)
+                self.db.update_backup_server_config(backup_server_id,pgsql_bin_9_0,pgsql_bin_9_1,pgsql_bin_9_2,pgsql_bin_9_3,pgsql_bin_9_4,pgsql_bin_9_5,root_backup_partition)
                 
                 print '[DONE] Configuration parameters for SrvID: ' + str(backup_server_id) + ' updated.\n'
 

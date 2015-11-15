@@ -936,6 +936,7 @@ INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('
 INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('pgbackman_dump','/usr/bin/pgbackman_dump','Program used to take backup dumps');
 INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('pgbackman_restore','/usr/bin/pgbackman_restore','Program used to restore backup dumps');
 INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('admin_user','postgres','postgreSQL admin user');
+INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('pgsql_bin_9_5','/usr/pgsql-9.5/bin','postgreSQL 9.5 bin directory');
 INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('pgsql_bin_9_4','/usr/pgsql-9.4/bin','postgreSQL 9.4 bin directory');
 INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('pgsql_bin_9_3','/usr/pgsql-9.3/bin','postgreSQL 9.3 bin directory');
 INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('pgsql_bin_9_2','/usr/pgsql-9.2/bin','postgreSQL 9.2 bin directory');
@@ -1966,7 +1967,7 @@ ALTER FUNCTION update_pgsql_node_config(INTEGER,TEXT,TEXT,TEXT,TEXT,TEXT,TEXT,IN
 --
 -- ------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION update_backup_server_config(INTEGER,TEXT,TEXT,TEXT,TEXT,TEXT,TEXT) RETURNS VOID
+CREATE OR REPLACE FUNCTION update_backup_server_config(INTEGER,TEXT,TEXT,TEXT,TEXT,TEXT,TEXT,TEXT) RETURNS VOID
  LANGUAGE plpgsql 
  SECURITY INVOKER 
  SET search_path = public, pg_temp
@@ -1978,7 +1979,8 @@ CREATE OR REPLACE FUNCTION update_backup_server_config(INTEGER,TEXT,TEXT,TEXT,TE
   pgsql_bin_9_2_ ALIAS FOR $4;
   pgsql_bin_9_3_ ALIAS FOR $5;
   pgsql_bin_9_4_ ALIAS FOR $6;
-  root_backup_partition_ ALIAS FOR $7;
+  pgsql_bin_9_5_ ALIAS FOR $7;
+  root_backup_partition_ ALIAS FOR $8;
 
   server_cnt INTEGER;
   v_msg     TEXT;
@@ -2010,6 +2012,10 @@ CREATE OR REPLACE FUNCTION update_backup_server_config(INTEGER,TEXT,TEXT,TEXT,TE
      USING backup_server_id_,
      	   pgsql_bin_9_4_;
 
+     EXECUTE 'UPDATE backup_server_config SET value = $2 WHERE server_id = $1 AND parameter = ''pgsql_bin_9_5'''
+     USING backup_server_id_,
+     	   pgsql_bin_9_5_;
+
    EXECUTE 'UPDATE backup_server_config SET value = $2 WHERE server_id = $1 AND parameter = ''root_backup_partition'''
      USING backup_server_id_,
      	   root_backup_partition_;
@@ -2027,7 +2033,7 @@ CREATE OR REPLACE FUNCTION update_backup_server_config(INTEGER,TEXT,TEXT,TEXT,TE
   END;
 $$;
 
-ALTER FUNCTION update_backup_server_config(INTEGER,TEXT,TEXT,TEXT,TEXT,TEXT,TEXT) OWNER TO pgbackman_role_rw;
+ALTER FUNCTION update_backup_server_config(INTEGER,TEXT,TEXT,TEXT,TEXT,TEXT,TEXT,TEXT) OWNER TO pgbackman_role_rw;
 
 
 -- ------------------------------------------------------------

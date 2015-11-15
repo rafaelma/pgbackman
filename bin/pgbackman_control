@@ -489,7 +489,7 @@ def process_pgsql_node_stopped(db,backup_server_id):
 def update_backup_server_cache_data(db,backup_server_fqdn,backup_server_id):
     '''Update the cache data for the backup server'''
 
-    root_backup_partition = pgsql_bin_9_4 = pgsql_bin_9_3 = pgsql_bin_9_2 = pgsql_bin_9_1 = pgsql_bin_9_0 = None
+    root_backup_partition = pgsql_bin_9_5 = pgsql_bin_9_4 = pgsql_bin_9_3 = pgsql_bin_9_2 = pgsql_bin_9_1 = pgsql_bin_9_0 = None
     
     try:
         uid = pwd.getpwnam('pgbackman').pw_uid
@@ -501,12 +501,12 @@ def update_backup_server_cache_data(db,backup_server_fqdn,backup_server_id):
     try:
         root_backup_partition = db.get_backup_server_config_value(backup_server_id,'root_backup_partition')
 
+        pgsql_bin_9_5 = db.get_backup_server_config_value(backup_server_id,'pgsql_bin_9_5')
         pgsql_bin_9_4 = db.get_backup_server_config_value(backup_server_id,'pgsql_bin_9_4')
         pgsql_bin_9_3 = db.get_backup_server_config_value(backup_server_id,'pgsql_bin_9_3')
         pgsql_bin_9_2 = db.get_backup_server_config_value(backup_server_id,'pgsql_bin_9_2')
         pgsql_bin_9_1 = db.get_backup_server_config_value(backup_server_id,'pgsql_bin_9_1')
         pgsql_bin_9_0 = db.get_backup_server_config_value(backup_server_id,'pgsql_bin_9_0')
-        
         
         backup_server_cache_dir = root_backup_partition +  '/cache_dir'
         backup_server_cache_file = backup_server_cache_dir + '/backup_server_' + backup_server_fqdn + '.cache'
@@ -517,6 +517,7 @@ def update_backup_server_cache_data(db,backup_server_fqdn,backup_server_id):
                 backup_server_cache.write('backup_server_id::' + str(backup_server_id) + '\n' +
                                           'backup_server_fqdn::' + backup_server_fqdn + '\n' +
                                           'root_backup_partition::' + root_backup_partition + '\n' +
+                                          'pgsql_bin_9_5::' + pgsql_bin_9_5 + '\n' +
                                           'pgsql_bin_9_4::' + pgsql_bin_9_4 + '\n' +
                                           'pgsql_bin_9_3::' + pgsql_bin_9_3 + '\n' +
                                           'pgsql_bin_9_2::' + pgsql_bin_9_2 + '\n' +

@@ -79,6 +79,7 @@ try:
                       ('/etc/logrotate.d', ['etc/pgbackman.logrotate']),
                       ('/usr/share/pgbackman/', ['sql/pgbackman.sql']),
                       ('/usr/share/pgbackman/', ['sql/pgbackman_2.sql']),
+                      ('/usr/share/pgbackman/', ['sql/pgbackman_3.sql']),
                       ('/var/log/pgbackman',['README.md'])],
           install_requires=install_requires,
           platforms=['Linux'],
