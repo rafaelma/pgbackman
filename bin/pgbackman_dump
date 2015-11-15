@@ -52,12 +52,25 @@ def pg_dumpall(db):
     
     global global_parameters
 
-    pg_dumpall_command = global_parameters['backup_server_pgsql_bin_dir'] + '/pg_dumpall' + \
-        ' -h ' + global_parameters['pgsql_node_fqdn'] + \
-        ' -p ' + global_parameters['pgsql_node_port'] + \
-        ' -U ' + global_parameters['pgsql_node_admin_user'] + \
-        ' --file=' + global_parameters['cluster_dump_file'] + \
-        ' ' + global_parameters['extra_backup_parameters']
+    #
+    # Compress the CLUSTER dump if /bin/gzip is installed
+    #
+
+    if os.path.exists('/bin/gzip') == True:
+
+        pg_dumpall_command = global_parameters['backup_server_pgsql_bin_dir'] + '/pg_dumpall' + \
+                             ' -h ' + global_parameters['pgsql_node_fqdn'] + \
+                             ' -p ' + global_parameters['pgsql_node_port'] + \
+                             ' -U ' + global_parameters['pgsql_node_admin_user'] + \
+                             ' ' + global_parameters['extra_backup_parameters'] + \
+                             ' | /bin/gzip > ' + global_parameters['cluster_dump_file'] 
+    else:
+        pg_dumpall_command = global_parameters['backup_server_pgsql_bin_dir'] + '/pg_dumpall' + \
+                             ' -h ' + global_parameters['pgsql_node_fqdn'] + \
+                             ' -p ' + global_parameters['pgsql_node_port'] + \
+                             ' -U ' + global_parameters['pgsql_node_admin_user'] + \
+                             ' --file=' + global_parameters['cluster_dump_file'] + \
+                             ' ' + global_parameters['extra_backup_parameters']
 
     try:
         with open(global_parameters['cluster_log_file'],'w') as cluster_log_file:
@@ -1224,7 +1237,11 @@ def main():
     global_parameters['pg_dump_release'] = get_pg_dump_release(db)
     global_parameters['backup_server_pgsql_bin_dir'] = get_backup_server_pgsql_bin_dir(db)
     
-    global_parameters['cluster_dump_file'] = get_filename_id('CLUSTER','dump') + '.sql'
+    if os.path.exists('/bin/gzip') == True:
+        global_parameters['cluster_dump_file'] = get_filename_id('CLUSTER','dump') + '.sql.gz'
+    else:
+        global_parameters['cluster_dump_file'] = get_filename_id('CLUSTER','dump') + '.sql'
+
     global_parameters['cluster_log_file'] = get_filename_id('CLUSTER','log') + '.log'
 
     global_parameters['database_dump_file'] = get_filename_id('DATABASE','dump') + '.sql'
