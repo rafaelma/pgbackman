@@ -968,8 +968,14 @@ class pgbackman_cli(cmd.Cmd):
                     
                     elif dbname == '#databases_without_backup_definitions#':
 
-                        all_databases = []
-                        databases_with_bckdef = []
+                        #
+                        # We need to define an empty database in these
+                        # two list because backup definitions of type
+                        # CLUSTER has a dbname value = ''
+                        #
+
+                        all_databases = ['']
+                        databases_with_bckdef = ['']
 
                         for database in db_node.get_pgsql_node_database_list():
                             all_databases.append(database[0])
@@ -1984,7 +1990,7 @@ class pgbackman_cli(cmd.Cmd):
                             db_node = None
                             return False
                 
-                    elif dbname == '':
+                    elif dbname == '' and backup_code.upper() != 'CLUSTER':
                         self.processing_error('[ERROR]: Database [' + dbname + '] does not exist in The PgSQL node [' + pgsql_node_fqdn + ']') 
               
                         db_node = None
@@ -2021,7 +2027,7 @@ class pgbackman_cli(cmd.Cmd):
                                                          retention_period.lower().strip(),extra_backup_parameters.lower().strip(),remarks.strip(), \
                                                          pg_dump_release)
 
-                    print '[DONE] Snapshot for dbname: ' + dbname.strip() + ' defined.\n'
+                    print '[DONE] Snapshot for dbname: [' + dbname.strip() + '] and backup code [' + backup_code.upper() + '] defined.\n'
 
                 except Exception as e:
                     self.processing_error('[ERROR]: Could not register this snapshot\n' + str(e) + '\n')

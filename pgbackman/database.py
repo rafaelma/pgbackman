@@ -3030,7 +3030,7 @@ class pgbackman_db():
 
             if self.cur:
                 try:
-                    self.cur.execute('SELECT "DefID" FROM show_backup_definitions WHERE "Status" <> %s AND backup_server_id = %s AND pgsql_node_id = %s',('DELETED',
+                    self.cur.execute('SELECT "DefID" FROM show_backup_definitions WHERE "Status" <> %s AND backup_server_id = %s AND pgsql_node_id = %s AND "DBname" <> \'\'',('DELETED',
                                                                                                                                                           backup_server_id,
                                                                                                                                                           pgsql_node_id))
                     self.conn.commit()
