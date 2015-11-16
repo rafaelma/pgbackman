@@ -267,7 +267,13 @@ class pgbackman_cli(cmd.Cmd):
             print '--------------------------------------------------------' 
             self.processing_error('[ERROR]: ' + str(e) + '\n')
             return False
-              
+         
+        #
+        # Default backup server
+        #
+            
+        default_backup_server = self.get_default_backup_server()
+     
         #
         # Command without parameters
         #
@@ -278,7 +284,7 @@ class pgbackman_cli(cmd.Cmd):
 
             try:
                 print '--------------------------------------------------------'
-                server_id = raw_input('# SrvID / FQDN: ')
+                server_id = raw_input('# SrvID / FQDN [' + default_backup_server + ']: ')
                 print
 
                 while ack != 'yes' and ack != 'no':
@@ -290,6 +296,9 @@ class pgbackman_cli(cmd.Cmd):
                 print '\n--------------------------------------------------------'
                 print '[ABORTED] Command interrupted by the user.\n'
                 return False
+
+            if server_id == '':
+                server_id = default_backup_server
 
             if ack.lower() == 'yes':
 
@@ -315,6 +324,9 @@ class pgbackman_cli(cmd.Cmd):
         elif len(arg_list) == 1:
 
             server_id = arg_list[0]
+
+            if server_id == '':
+                server_id = default_backup_server
 
             try:
                 if server_id.isdigit():
@@ -668,6 +680,13 @@ class pgbackman_cli(cmd.Cmd):
             print '--------------------------------------------------------' 
             self.processing_error('[ERROR]: ' + str(e) + '\n')
             return False
+
+                 
+        #
+        # Default backup server
+        #
+            
+        default_backup_server = self.get_default_backup_server()
         
         #
         # Command without parameters
@@ -677,7 +696,7 @@ class pgbackman_cli(cmd.Cmd):
 
             try:
                 print '--------------------------------------------------------'
-                server_id = raw_input('# SrvID / FQDN [all]: ')
+                server_id = raw_input('# SrvID / FQDN [' + default_backup_server + ']: ')
                 node_id = raw_input('# NodeID / FQDN [all]: ')
                 dbname = raw_input('# DBname [all]: ')
                 print '--------------------------------------------------------'
@@ -687,7 +706,10 @@ class pgbackman_cli(cmd.Cmd):
                 print '[ABORTED] Command interrupted by the user.\n'
                 return False
 
-            if server_id.lower() in ['all','*','']:
+            if server_id == '':
+                server_id = default_backup_server
+
+            if server_id.lower() in ['all','*']:
                 server_list = None
             else:
                 server_list = server_id.strip().replace(' ','').split(',')
@@ -718,7 +740,10 @@ class pgbackman_cli(cmd.Cmd):
             node_id = arg_list[1]
             dbname = arg_list[2]
 
-            if server_id.lower() in ['all','*','']:
+            if server_id == '':
+                server_id = default_backup_server
+
+            if server_id.lower() in ['all','*']:
                 server_list = None
             else:
                 server_list = server_id.strip().replace(' ','').split(',')
@@ -860,6 +885,12 @@ class pgbackman_cli(cmd.Cmd):
             extra_backup_parameters_default = backup_job_status_default = ''
         
         #
+        # Default backup server
+        #
+            
+        default_backup_server = self.get_default_backup_server()
+
+        #
         # Command without parameters
         #
 
@@ -874,7 +905,7 @@ class pgbackman_cli(cmd.Cmd):
             try:
 
                 print '--------------------------------------------------------'
-                backup_server = raw_input('# Backup server SrvID / FQDN []: ').strip()
+                backup_server = raw_input('# Backup server SrvID / FQDN [' + default_backup_server + ']: ').strip()
                 pgsql_node = raw_input('# PgSQL node NodeID / FQDN []: ').strip()
             
             except Exception as e:
@@ -883,6 +914,10 @@ class pgbackman_cli(cmd.Cmd):
                 return False
 
             try:
+                
+                if backup_server == '':
+                    backup_server = default_backup_server
+
                 if backup_server.isdigit():
                     backup_server_id = backup_server
                 else:
@@ -1097,6 +1132,10 @@ class pgbackman_cli(cmd.Cmd):
             pgsql_node = arg_list[1]
             
             try:
+
+                if backup_server == '':
+                    backup_server = default_backup_server
+
                 if backup_server.isdigit():
                     backup_server_id = backup_server
                 else:
@@ -1295,7 +1334,8 @@ class pgbackman_cli(cmd.Cmd):
         *** Use with precaution ***
 
         COMMAND:
-        delete_backup_definition_id [DefID] [force-deletion]
+        delete_backup_definition_id [DefID] 
+                                    [force-deletion]
 
         '''
 
@@ -1422,7 +1462,9 @@ class pgbackman_cli(cmd.Cmd):
         *** Use with precaution ***
         
         COMMAND:
-        delete_backup_definition_dbname [NodeID/FQDN] [DBname] [force-deletion]
+        delete_backup_definition_dbname [NodeID/FQDN] 
+                                        [DBname] 
+                                        [force-deletion]
 
         '''
 
@@ -1595,6 +1637,12 @@ class pgbackman_cli(cmd.Cmd):
             return False
 
         #
+        # Default backup server
+        #
+            
+        default_backup_server = self.get_default_backup_server()
+
+        #
         # Command without parameters
         #             
         
@@ -1602,7 +1650,7 @@ class pgbackman_cli(cmd.Cmd):
             
             try:
                 print '--------------------------------------------------------'
-                server_id = raw_input('# SrvID / FQDN [all]: ')
+                server_id = raw_input('# SrvID / FQDN [' + default_backup_server + ']: ')
                 node_id = raw_input('# NodeID / FQDN [all]: ')
                 dbname = raw_input('# DBname [all]: ')
                 def_id = raw_input('# DefID [all]: ')
@@ -1614,7 +1662,10 @@ class pgbackman_cli(cmd.Cmd):
                 print '[ABORTED] Command interrupted by the user.\n'
                 return False
 
-            if server_id.lower() in ['all','*','']:
+            if server_id == '':
+                server_id = default_backup_server
+
+            if server_id.lower() in ['all','*']:
                 server_list = None
             else:
                 server_list = server_id.strip().replace(' ','').split(',')
@@ -1657,7 +1708,10 @@ class pgbackman_cli(cmd.Cmd):
             def_id = arg_list[3]
             status = arg_list[4]
 
-            if server_id.lower() in ['all','*','']:
+            if server_id == '':
+                server_id = default_backup_server
+
+            if server_id.lower() in ['all','*']:
                 server_list = None
             else:
                 server_list = server_id.strip().replace(' ','').split(',')
@@ -1742,7 +1796,13 @@ class pgbackman_cli(cmd.Cmd):
             print '--------------------------------------------------------' 
             self.processing_error('[ERROR]: ' + str(e) + '\n')
             return False
-
+         
+        #
+        # Default backup server
+        #
+        
+        default_backup_server = self.get_default_backup_server()
+     
         #
         # Command without parameters
         #             
@@ -1751,7 +1811,7 @@ class pgbackman_cli(cmd.Cmd):
             
             try:
                 print '--------------------------------------------------------'
-                server_id = raw_input('# SrvID / FQDN [all]: ')
+                server_id = raw_input('# SrvID / FQDN [' + default_backup_server + ']: ')
                 node_id = raw_input('# Target NodeID / FQDN [all]: ')
                 dbname = raw_input('# Target DBname [all]: ')
                 print '--------------------------------------------------------'
@@ -1761,7 +1821,10 @@ class pgbackman_cli(cmd.Cmd):
                 print '[ABORTED] Command interrupted by the user.\n'
                 return False
 
-            if server_id.lower() in ['all','*','']:
+            if server_id == '':
+                server_id = default_backup_server
+
+            if server_id.lower() in ['all','*']:
                 server_list = None
             else:
                 server_list = server_id.strip().replace(' ','').split(',')
@@ -1792,7 +1855,10 @@ class pgbackman_cli(cmd.Cmd):
             node_id = arg_list[1]
             dbname = arg_list[2]
 
-            if server_id.lower() in ['all','*','']:
+            if server_id == '':
+               server_id = default_backup_server
+
+            if server_id.lower() in ['all','*']:
                 server_list = None
             else:
                 server_list = server_id.strip().replace(' ','').split(',')
@@ -1907,6 +1973,12 @@ class pgbackman_cli(cmd.Cmd):
         time_default = backup_code_default = retention_period_default = extra_backup_parameters_default = pg_dump_release = ''
 
         #
+        # Default backup server
+        #
+            
+        default_backup_server = self.get_default_backup_server()
+
+        #
         # Command without parameters
         #
 
@@ -1916,7 +1988,7 @@ class pgbackman_cli(cmd.Cmd):
 
             try:
                 print '--------------------------------------------------------'
-                backup_server = raw_input('# Backup server SrvID / FQDN []: ').strip()
+                backup_server = raw_input('# Backup server SrvID / FQDN [' + default_backup_server+ ']: ').strip()
                 pgsql_node = raw_input('# PgSQL node NodeID / FQDN []: ').strip()
 
             except Exception as e:
@@ -1925,6 +1997,10 @@ class pgbackman_cli(cmd.Cmd):
                 return False
 
             try:
+   
+                if backup_server == '':
+                    backup_server = default_backup_server
+
                 if backup_server.isdigit():
                     backup_server_id = backup_server
                     backup_server_fqdn = self.db.get_backup_server_fqdn(backup_server)
@@ -2045,6 +2121,10 @@ class pgbackman_cli(cmd.Cmd):
             pgsql_node = arg_list[1]
             
             try:
+
+                if backup_server == '':
+                    backup_server = default_backup_server
+
                 if backup_server.isdigit():
                     backup_server_id = backup_server
                     backup_server_fqdn = self.db.get_backup_server_fqdn(backup_server)
@@ -2191,7 +2271,13 @@ class pgbackman_cli(cmd.Cmd):
             print '--------------------------------------------------------' 
             self.processing_error('[ERROR]: ' + str(e) + '\n')
             return False
-
+     
+        #
+        # Default backup server
+        #
+            
+        default_backup_server = self.get_default_backup_server()
+     
         #
         # Command without parameters
         #
@@ -2200,7 +2286,7 @@ class pgbackman_cli(cmd.Cmd):
             
             try:
                 print '--------------------------------------------------------'
-                server_id = raw_input('# SrvID / FQDN [all]: ')
+                server_id = raw_input('# SrvID / FQDN [' + default_backup_server+ ']: ')
                 node_id = raw_input('# NodeID / FQDN [all]: ')
                 dbname = raw_input('# DBname [all]: ')
                 print '--------------------------------------------------------'
@@ -2210,7 +2296,10 @@ class pgbackman_cli(cmd.Cmd):
                 print '[ABORTED] Command interrupted by the user.\n'
                 return False
 
-            if server_id.lower() in ['all','*','']:
+            if server_id == '':
+                server_id = default_backup_server
+
+            if server_id.lower() in ['all','*']:
                 server_list = None
             else:
                 server_list = server_id.strip().replace(' ','').split(',')
@@ -2241,7 +2330,10 @@ class pgbackman_cli(cmd.Cmd):
             node_id = arg_list[1]
             dbname = arg_list[2]
 
-            if server_id.lower() in ['all','*','']:
+            if server_id == '':
+                server_id = default_backup_server
+
+            if server_id.lower() in ['all','*']:
                 server_list = None
             else:
                 server_list = server_id.strip().replace(' ','').split(',')
@@ -2612,6 +2704,12 @@ class pgbackman_cli(cmd.Cmd):
             return False
 
         #
+        # Default backup server
+        #
+            
+        default_backup_server = self.get_default_backup_server()
+
+        #
         # Command without parameters
         #
         
@@ -2619,7 +2717,7 @@ class pgbackman_cli(cmd.Cmd):
 
             try:
                 print '--------------------------------------------------------'
-                server_id = raw_input('# SrvID / FQDN [all]: ')
+                server_id = raw_input('# SrvID / FQDN [' + default_backup_server + ']: ')
                 node_id = raw_input('# Target NodeID / FQDN [all]: ')
                 dbname = raw_input('# Target DBname [all]: ')
                 print '--------------------------------------------------------'
@@ -2629,7 +2727,10 @@ class pgbackman_cli(cmd.Cmd):
                 print '[ABORTED] Command interrupted by the user.\n'
                 return False
             
-            if server_id.lower() in ['all','*','']:
+            if server_id == '':
+                server_id = default_backup_server
+
+            if server_id.lower() in ['all','*']:
                 server_list = None
             else:
                 server_list = server_id.strip().replace(' ','').split(',')
@@ -2660,7 +2761,10 @@ class pgbackman_cli(cmd.Cmd):
             node_id = arg_list[1]
             dbname = arg_list[2]
 
-            if server_id.lower() in ['all','*','']:
+            if server_id == '':
+                server_id = default_backup_server
+
+            if server_id.lower() in ['all','*']:
                 server_list = None
             else:
                 server_list = server_id.strip().replace(' ','').split(',')
@@ -2890,6 +2994,12 @@ class pgbackman_cli(cmd.Cmd):
             return False
 
         #
+        # Default backup server
+        #
+            
+        default_backup_server = self.get_default_backup_server()
+     
+        #
         # Command without parameters
         #             
         
@@ -2899,7 +3009,8 @@ class pgbackman_cli(cmd.Cmd):
             x.align['.'] = 'r'
             x.align['..'] = 'l'
             x.padding_width = 1
-            
+
+            x.add_row(['Backup server:',default_backup_server])
             x.add_row(['Software version:','[' + str(self.software_version_number) + ']:' + str(self.software_version_tag).replace('.','_')])
             x.add_row(['Configuration file used:',self.conf.config_file])
             x.add_row(['',''])
@@ -2995,6 +3106,12 @@ class pgbackman_cli(cmd.Cmd):
             return False
         
         #
+        # Default backup server
+        #
+            
+        default_backup_server = self.get_default_backup_server()
+
+        #
         # Command without parameters
         #             
 
@@ -3002,7 +3119,7 @@ class pgbackman_cli(cmd.Cmd):
 
             try:
                 print '--------------------------------------------------------'
-                server_id = raw_input('# SrvID / FQDN: ')
+                server_id = raw_input('# SrvID / FQDN [' + default_backup_server + ']: ')
                 print '--------------------------------------------------------'
 
             except Exception as e:
@@ -3011,11 +3128,14 @@ class pgbackman_cli(cmd.Cmd):
                 return False
 
             try:
+
+                if server_id == '':
+                    server_id = default_backup_server
+
                 if server_id.isdigit():
                     self.db.show_backup_server_stats(server_id)
                 else:
                     self.db.show_backup_server_stats(self.db.get_backup_server_id(server_id))
-
             except Exception as e:
                 self.processing_error('[ERROR]: ' + str(e) + '\n')
 
@@ -3026,6 +3146,9 @@ class pgbackman_cli(cmd.Cmd):
         elif len(arg_list) == 1:
 
             server_id = arg_list[0]
+
+            if server_id == '':
+                server_id = default_backup_server
 
             if self.output_format == 'table':
 
@@ -3192,6 +3315,12 @@ class pgbackman_cli(cmd.Cmd):
             return False
 
         #
+        # Default backup server
+        #
+            
+        default_backup_server = self.get_default_backup_server()
+     
+        #
         # Command without parameters
         #             
         
@@ -3199,7 +3328,7 @@ class pgbackman_cli(cmd.Cmd):
             
             try:
                 print '--------------------------------------------------------'
-                server_id = raw_input('# SrvID / FQDN: ')
+                server_id = raw_input('# SrvID / FQDN [' + default_backup_server + ']: ')
                 print '--------------------------------------------------------'
 
             except Exception as e:
@@ -3208,6 +3337,10 @@ class pgbackman_cli(cmd.Cmd):
                 return False
 
             try:
+                
+                if server_id == '':
+                    server_id = default_backup_server
+
                 if server_id.isdigit():
                     self.db.show_backup_server_config(server_id)
                 else:
@@ -3224,6 +3357,9 @@ class pgbackman_cli(cmd.Cmd):
 
             server_id = arg_list[0]
             
+            if server_id == '':
+                server_id = default_backup_server
+
             if self.output_format == 'table':
 
                 print '--------------------------------------------------------'
@@ -3649,6 +3785,12 @@ class pgbackman_cli(cmd.Cmd):
             return False
 
         #
+        # Default backup server
+        #
+            
+        default_backup_server = self.get_default_backup_server()
+     
+        #
         # Command without parameters
         #
         
@@ -3658,7 +3800,7 @@ class pgbackman_cli(cmd.Cmd):
             
             try:
                 print '--------------------------------------------------------'
-                backup_server = raw_input('# SrvID / FQDN []: ').strip()
+                backup_server = raw_input('# SrvID / FQDN [' + default_backup_server+ ']: ').strip()
 
             except Exception as e:
                 print '\n--------------------------------------------------------' 
@@ -3666,6 +3808,10 @@ class pgbackman_cli(cmd.Cmd):
                 return False
 
             try:
+
+                if backup_server == '':
+                    backup_server = default_backup_server
+
                 if backup_server.isdigit():
                     backup_server_id = backup_server
                 else:
@@ -3721,6 +3867,10 @@ class pgbackman_cli(cmd.Cmd):
             backup_server = arg_list[0]
 
             try:
+
+                if backup_server == '':
+                    backup_server = default_backup_server
+
                 if backup_server.isdigit():
                     backup_server_id = backup_server
                 else:
@@ -4361,7 +4511,13 @@ class pgbackman_cli(cmd.Cmd):
             print '--------------------------------------------------------'            
             self.processing_error('[ERROR]: ' + str(e) + '\n')
             return False
+
+        #
+        # Default backup server
+        #
             
+        default_backup_server = self.get_default_backup_server()
+    
         #
         # Command without parameters
         #
@@ -4372,7 +4528,7 @@ class pgbackman_cli(cmd.Cmd):
 
             try:
                 print '--------------------------------------------------------'
-                backup_server = raw_input('# SrvID / FQDN []: ').strip()
+                backup_server = raw_input('# SrvID / FQDN [' + default_backup_server + ']: ').strip()
                 print
 
             except Exception as e:
@@ -4381,6 +4537,9 @@ class pgbackman_cli(cmd.Cmd):
                 return False
 
             try:
+                if backup_server == '':
+                    backup_server = default_backup_server
+
                 if backup_server.isdigit():
                     backup_server_fqdn = self.db.get_backup_server_fqdn(backup_server)
                     backup_server_id = backup_server
@@ -4469,6 +4628,9 @@ class pgbackman_cli(cmd.Cmd):
             backup_server = arg_list[0]
 
             try:
+                if backup_server == '':
+                    backup_server = default_backup_server
+
                 if backup_server.isdigit():
                     backup_server_fqdn = self.db.get_backup_server_fqdn(backup_server)
                     backup_server_id = backup_server
@@ -5115,6 +5277,28 @@ class pgbackman_cli(cmd.Cmd):
             print '[ERROR]: Port value should be an INTEGER\n'
             return False
 
+
+    # ############################################
+    # Method get_default_backup_server
+    # ############################################
+
+    def get_default_backup_server(self):
+        '''
+        Return the backup server defined in pgbackman.conf or the server
+        running pgbackman'''
+
+        try:
+        
+            if self.conf.backup_server != '':
+                backup_server_fqdn = self.conf.backup_server
+            else:
+                backup_server_fqdn = socket.getfqdn()
+
+            return backup_server_fqdn
+
+        except Exception as e:
+            return ''
+        
 
     # ############################################
     # Method get_pgbackman_software_version_tag
