@@ -32,11 +32,14 @@ import datetime
 import subprocess
 import readline
 import socket
+import json
 
 from pgbackman.database import * 
 from pgbackman.config import *
 from pgbackman.logs import *
 from pgbackman.prettytable import *
+from pgbackman.ordereddict import OrderedDict
+
 import pgbackman.version
 
 
@@ -115,7 +118,10 @@ class pgbackman_cli(cmd.Cmd):
         
         if len(arg_list) == 0:
             try:
-                self.db.show_backup_servers()
+                result = self.db.show_backup_servers()
+            
+                colnames = [desc[0] for desc in result.description]
+                self.generate_output(result,colnames,["FQDN","Remarks"],'backup_servers')
 
             except Exception as e:
                 print '--------------------------------------------------------' 
@@ -374,8 +380,11 @@ class pgbackman_cli(cmd.Cmd):
         
         if len(arg_list) == 0:
             try:
-                self.db.show_pgsql_nodes()
+                result = self.db.show_pgsql_nodes()
                 
+                colnames = [desc[0] for desc in result.description]
+                self.generate_output(result,colnames,["FQDN","Remarks"],'pgsql_nodes')
+                 
             except Exception as e:
                 print '--------------------------------------------------------' 
                 self.processing_error('[ERROR]: ' + str(e) + '\n')
@@ -725,7 +734,10 @@ class pgbackman_cli(cmd.Cmd):
                 dbname_list = dbname.strip().replace(' ','').split(',')
                 
             try:
-                self.db.show_backup_definitions(server_list,node_list,dbname_list)
+                result = self.db.show_backup_definitions(server_list,node_list,dbname_list)
+
+                colnames = [desc[0] for desc in result.description]
+                self.generate_output(result,colnames,["Backup server","PgSQL node","DBname","Schedule","Code","Parameters"],'backup_definitions')
                                                     
             except Exception as e:
                 self.processing_error('[ERROR]: ' + str(e) + '\n')
@@ -767,7 +779,10 @@ class pgbackman_cli(cmd.Cmd):
                 print '--------------------------------------------------------'
 
             try:
-                self.db.show_backup_definitions(server_list,node_list,dbname_list)
+                result = self.db.show_backup_definitions(server_list,node_list,dbname_list)
+
+                colnames = [desc[0] for desc in result.description]
+                self.generate_output(result,colnames,["Backup server","PgSQL node","DBname","Schedule","Code","Parameters"],'backup_definitions')
                 
             except Exception as e:
                 self.processing_error('[ERROR]: ' + str(e) + '\n')
@@ -1691,8 +1706,11 @@ class pgbackman_cli(cmd.Cmd):
                 status_list = status.strip().replace(' ','').upper().split(',')
               
             try:
-                self.db.show_backup_catalog(server_list,node_list,dbname_list,def_id_list,status_list)
-                                                    
+                result = self.db.show_backup_catalog(server_list,node_list,dbname_list,def_id_list,status_list)  
+
+                colnames = [desc[0] for desc in result.description]
+                self.generate_output(result,colnames,["Finished","Backup server","PgSQL node","DBname","Size"],'backup_catalog')
+            
             except Exception as e:
                 self.processing_error('[ERROR]: ' + str(e) + '\n')
 
@@ -1747,8 +1765,11 @@ class pgbackman_cli(cmd.Cmd):
                 print '--------------------------------------------------------'
 
             try:
-                self.db.show_backup_catalog(server_list,node_list,dbname_list,def_id_list,status_list)
-                
+                result = self.db.show_backup_catalog(server_list,node_list,dbname_list,def_id_list,status_list)
+            
+                colnames = [desc[0] for desc in result.description]
+                self.generate_output(result,colnames,["Finished","Backup server","PgSQL node","DBname","Size"],'backup_catalog')
+            
             except Exception as e:
                 self.processing_error('[ERROR]: ' + str(e) + '\n')
 
@@ -1840,8 +1861,11 @@ class pgbackman_cli(cmd.Cmd):
                 dbname_list = dbname.strip().replace(' ','').split(',')
                  
             try:
-                self.db.show_restore_catalog(server_list,node_list,dbname_list)
-                                                    
+                result = self.db.show_restore_catalog(server_list,node_list,dbname_list)
+                    
+                colnames = [desc[0] for desc in result.description]
+                self.generate_output(result,colnames,["Finished","Backup server","Target PgSQL node","Target DBname"],'restore_catalog')
+                                
             except Exception as e:
                 self.processing_error('[ERROR]: ' + str(e) + '\n')
 
@@ -1882,7 +1906,10 @@ class pgbackman_cli(cmd.Cmd):
                 print '--------------------------------------------------------'
 
             try:
-                self.db.show_restore_catalog(server_list,node_list,dbname_list)
+                result = self.db.show_restore_catalog(server_list,node_list,dbname_list)
+                    
+                colnames = [desc[0] for desc in result.description]
+                self.generate_output(result,colnames,["Finished","Backup server","Target PgSQL node","Target DBname"],'restore_catalog')
                 
             except Exception as e:
                 self.processing_error('[ERROR]: ' + str(e) + '\n')
@@ -2315,8 +2342,11 @@ class pgbackman_cli(cmd.Cmd):
                 dbname_list = dbname.strip().replace(' ','').split(',')
                 
             try:
-                self.db.show_snapshot_definitions(server_list,node_list,dbname_list)
-                                                    
+                result = self.db.show_snapshot_definitions(server_list,node_list,dbname_list)
+                                                            
+                colnames = [desc[0] for desc in result.description]
+                self.generate_output(result,colnames,["Backup server","PgSQL node","DBname","AT time","Parameters"],'snapshot_definitions')
+                             
             except Exception as e:
                 self.processing_error('[ERROR]: ' + str(e) + '\n')
 
@@ -2357,7 +2387,10 @@ class pgbackman_cli(cmd.Cmd):
                 print '--------------------------------------------------------'
 
             try:
-                self.db.show_sbapshot_definitions(server_list,node_list,dbname_list)
+                result = self.db.show_snapshot_definitions(server_list,node_list,dbname_list)
+                                                            
+                colnames = [desc[0] for desc in result.description]
+                self.generate_output(result,colnames,["Backup server","PgSQL node","DBname","AT time","Parameters"],'snapshot_definitions')
                 
             except Exception as e:
                 self.processing_error('[ERROR]: ' + str(e) + '\n')
@@ -2746,8 +2779,11 @@ class pgbackman_cli(cmd.Cmd):
                 dbname_list = dbname.strip().replace(' ','').split(',')
                 
             try:
-                self.db.show_restore_definitions(server_list,node_list,dbname_list)
-                                                    
+                result = self.db.show_restore_definitions(server_list,node_list,dbname_list)
+                                                                  
+                colnames = [desc[0] for desc in result.description]
+                self.generate_output(result,colnames,["Backup server","Target PgSQL node","Target DBname","AT time"],'restore_definitions')
+
             except Exception as e:
                 self.processing_error('[ERROR]: ' + str(e) + '\n')
 
@@ -2788,7 +2824,10 @@ class pgbackman_cli(cmd.Cmd):
                 print '--------------------------------------------------------'
 
             try:
-                self.db.show_restore_definitions(server_list,node_list,dbname_list)
+                result = self.db.show_restore_definitions(server_list,node_list,dbname_list)
+                                                                  
+                colnames = [desc[0] for desc in result.description]
+                self.generate_output(result,colnames,["Backup server","Target PgSQL node","Target DBname","AT time"],'restore_definitions')
                 
             except Exception as e:
                 self.processing_error('[ERROR]: ' + str(e) + '\n')
@@ -2848,7 +2887,12 @@ class pgbackman_cli(cmd.Cmd):
 
             if bck_id.isdigit():
                 try:
-                    self.db.show_backup_details(bck_id)
+                    result = self.db.show_backup_details(bck_id)
+ 
+                    if len(result) > 0:
+                        self.generate_unique_output(result,'backup_details')
+                    else:
+                        self.processing_error('[ERROR]: BckID [' + bck_id + '] does not exist' )     
                     
                 except Exception as e:
                     self.processing_error('[ERROR]: ' + str(e) + '\n')
@@ -2872,8 +2916,13 @@ class pgbackman_cli(cmd.Cmd):
                 
             if bck_id.isdigit():
                 try:
-                    self.db.show_backup_details(bck_id)
-                    
+                    result = self.db.show_backup_details(bck_id)
+
+                    if len(result) > 0:
+                        self.generate_unique_output(result,'backup_details')
+                    else:
+                        self.processing_error('[ERROR]: BckID [' + bck_id + '] does not exist' )     
+                        
                 except Exception as e:
                     self.processing_error('[ERROR]: ' + str(e) + '\n')     
             
@@ -2931,8 +2980,13 @@ class pgbackman_cli(cmd.Cmd):
 
             if restore_id.isdigit():
                 try:
-                    self.db.show_restore_details(restore_id)
+                    result = self.db.show_restore_details(restore_id)
                     
+                    if len(result) > 0:
+                        self.generate_unique_output(result,'restore_details')
+                    else:
+                        self.processing_error('[ERROR]: RestoreID [' + restore_id + '] does not exist' )     
+
                 except Exception as e:
                     self.processing_error('[ERROR]: ' + str(e) + '\n')
             
@@ -2955,7 +3009,12 @@ class pgbackman_cli(cmd.Cmd):
             
             if restore_id.isdigit():
                 try:
-                    self.db.show_restore_details(restore_id)
+                    result = self.db.show_restore_details(restore_id)
+                    
+                    if len(result) > 0:
+                        self.generate_unique_output(result,'restore_details')
+                    else:
+                        self.processing_error('[ERROR]: RestoreID [' + restore_id + '] does not exist' )     
             
                 except Exception as e:
                     self.processing_error('[ERROR]: ' + str(e) + '\n')     
@@ -3005,39 +3064,43 @@ class pgbackman_cli(cmd.Cmd):
         
         if len(arg_list) == 0:
             
-            x = PrettyTable(['.','..'],header = False)
-            x.align['.'] = 'r'
-            x.align['..'] = 'l'
-            x.padding_width = 1
+            try:
 
-            x.add_row(['Backup server:',default_backup_server])
-            x.add_row(['Software version:','[' + str(self.software_version_number) + ']:' + str(self.software_version_tag).replace('.','_')])
-            x.add_row(['Configuration file used:',self.conf.config_file])
-            x.add_row(['',''])
-            x.add_row(['PGBACKMAN DATABASE',''])
-            x.add_row(['DBhost:',self.conf.dbhost])
-            x.add_row(['DBhostaddr:',self.conf.dbhostaddr])
-            x.add_row(['DBport:',str(self.conf.dbport)])
-            x.add_row(['DBname:',self.conf.dbname])
-            x.add_row(['DBuser:',self.conf.dbuser])
-            x.add_row(['Connection retry interval:',str(self.conf.pg_connect_retry_interval) + ' sec.'])
-            x.add_row(['',''])
-            x.add_row(['Database source dir:',str(self.conf.database_source_dir)])
-            database_version = self.get_pgbackman_database_version_info()
-            x.add_row(['DB version installed:',str(database_version[0])])
-            x.add_row(['DB version:','[' + str(database_version[1]) + ']:' + str(database_version[2]).replace('v_','')])
-            x.add_row(['',''])
-            x.add_row(['PGBACKMAN_DUMP',''])
-            x.add_row(['Temp directory:',self.conf.tmp_dir])
-            x.add_row(['',''])
-            x.add_row(['PGBACKMAN_MAINTENANCE',''])
-            x.add_row(['Maintenance interval:',str(self.conf.maintenance_interval) + ' sec.'])
-            x.add_row(['',''])
-            x.add_row(['LOGGING',''])
-            x.add_row(['Log level:',self.conf.log_level])
-            x.add_row(['Log file:',self.conf.log_file])
-         
-            print x
+                result =  OrderedDict()
+
+                result['Backup server'] = default_backup_server
+                result['Software version'] = '[' + str(self.software_version_number) + ']:' + str(self.software_version_tag).replace('.','_')
+                result['Configuration file used'] = str(self.conf.config_file)
+                result['#'] = '' 
+                result['#PGBACKMAN DATABASE'] = '' 
+                result['DBhost'] = str(self.conf.dbhost) 
+                result['DBhostaddr'] = str(self.conf.dbhostaddr)
+                result['DBport'] = str(self.conf.dbport)
+                result['DBname'] = str(self.conf.dbname)
+                result['DBuser'] = str(self.conf.dbuser)
+                result['Connection retry interval'] = str(self.conf.pg_connect_retry_interval) + ' sec.'
+                result['##'] = ''
+                result['Database source dir'] = str(self.conf.database_source_dir)
+                
+                database_version = self.get_pgbackman_database_version_info()
+                
+                result['DB version installed'] = str(database_version[0])
+                result['DB version'] = '[' + str(database_version[1]) + ']:' + str(database_version[2]).replace('v_','')
+                result['###'] = ''
+                result['#PGBACKMAN_DUMP'] ='' 
+                result['Temp directory'] = str(self.conf.tmp_dir)
+                result['####'] = ''
+                result['#PGBACKMAN_MAINTENANCE'] = '' 
+                result['Maintenance interval'] = str(self.conf.maintenance_interval) + ' sec.' 
+                result['#####'] = ''
+                result['#LOGGING'] = '' 
+                result['Log level'] = str(self.conf.log_level)
+                result['Log file'] = str(self.conf.log_file)
+
+                self.generate_unique_output(result,'pgbackman_config')
+
+            except Exception as e:
+                    self.processing_error('[ERROR]: ' + str(e) + '\n')     
 
         else:
             self.processing_error('\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n')
@@ -3069,8 +3132,10 @@ class pgbackman_cli(cmd.Cmd):
         
         if len(arg_list) == 0:
             try:
-                self.db.show_pgbackman_stats()
+                result = self.db.show_pgbackman_stats()
                 
+                self.generate_unique_output(result,'pgbackman_stats')
+
             except Exception as e:
                 self.processing_error('[ERROR]: ' + str(e) + '\n')
         else:
@@ -3133,9 +3198,17 @@ class pgbackman_cli(cmd.Cmd):
                     server_id = default_backup_server
 
                 if server_id.isdigit():
-                    self.db.show_backup_server_stats(server_id)
+                    backup_server_id = server_id
                 else:
-                    self.db.show_backup_server_stats(self.db.get_backup_server_id(server_id))
+                    backup_server_id = self.db.get_backup_server_id(server_id)
+                    
+                result = self.db.show_backup_server_stats(backup_server_id)
+
+                if len(result) > 0:
+                    self.generate_unique_output(result,'backup_server_stats')
+                else:
+                    self.processing_error('[ERROR]: SrvID [' + backup_server_id + '] does not exist' )     
+                
             except Exception as e:
                 self.processing_error('[ERROR]: ' + str(e) + '\n')
 
@@ -3158,9 +3231,16 @@ class pgbackman_cli(cmd.Cmd):
             
             try:
                 if server_id.isdigit():
-                    self.db.show_backup_server_stats(server_id)
+                    backup_server_id = server_id
                 else:
-                    self.db.show_backup_server_stats(self.db.get_backup_server_id(server_id))
+                    backup_server_id = self.db.get_backup_server_id(server_id)
+                    
+                result = self.db.show_backup_server_stats(backup_server_id)
+
+                if len(result) > 0:
+                    self.generate_unique_output(result,'backup_server_stats')
+                else:
+                    self.processing_error('[ERROR]: SrvID [' + backup_server_id + '] does not exist' )     
 
             except Exception as e:
                 self.processing_error('[ERROR]: ' + str(e) + '\n')
@@ -3214,10 +3294,18 @@ class pgbackman_cli(cmd.Cmd):
                 return False
 
             try:
+
                 if node_id.isdigit():
-                    self.db.show_pgsql_node_stats(node_id)
+                    pgsql_node_id = node_id
                 else:
-                    self.db.show_pgsql_node_stats(self.db.get_pgsql_node_id(node_id))
+                    pgsql_node_id = self.db.get_pgsql_node_id(node_id)
+                    
+                result = self.db.show_backup_server_stats(pgsql_node_id)
+
+                if len(result) > 0:
+                    self.generate_unique_output(result,'pgsql_node_stats')
+                else:
+                    self.processing_error('[ERROR]: NodeID [' + pgsql_node_id + '] does not exist' )     
 
             except Exception as e:
                 self.processing_error('[ERROR]: ' + str(e) + '\n')
@@ -3238,9 +3326,16 @@ class pgbackman_cli(cmd.Cmd):
             
             try:
                 if node_id.isdigit():
-                    self.db.show_pgsql_node_stats(node_id)
+                    pgsql_node_id = node_id
                 else:
-                    self.db.show_pgsql_node_stats(self.db.get_pgsql_node_id(node_id))
+                    pgsql_node_id = self.db.get_pgsql_node_id(node_id)
+                    
+                result = self.db.show_backup_server_stats(pgsql_node_id)
+
+                if len(result) > 0:
+                    self.generate_unique_output(result,'pgsql_node_stats')
+                else:
+                    self.processing_error('[ERROR]: NodeID [' + pgsql_node_id + '] does not exist' )     
 
             except Exception as e:
                 self.processing_error('[ERROR]: ' + str(e) + '\n')
@@ -3276,8 +3371,11 @@ class pgbackman_cli(cmd.Cmd):
         
         if len(arg_list) == 0:
             try:
-                self.db.show_jobs_queue()
+                result = self.db.show_jobs_queue()
                 
+                colnames = [desc[0] for desc in result.description]
+                self.generate_output(result,colnames,["JobID","Registered","Backup server","PgSQL node"],'jobs_queue')
+
             except Exception as e:
                 self.processing_error('[ERROR]: ' + str(e) + '\n')
             
@@ -3342,10 +3440,15 @@ class pgbackman_cli(cmd.Cmd):
                     server_id = default_backup_server
 
                 if server_id.isdigit():
-                    self.db.show_backup_server_config(server_id)
+                    backup_server_id = server_id
                 else:
-                    self.db.show_backup_server_config(self.db.get_backup_server_id(server_id))
-                                    
+                    backup_server_id = self.db.get_backup_server_id(server_id)
+
+                result = self.db.show_backup_server_config(backup_server_id)
+                
+                colnames = [desc[0] for desc in result.description]
+                self.generate_output(result,colnames,["Parameter","Value","Description"],'backup_server_config')         
+          
             except Exception as e:
                 self.processing_error('[ERROR]: ' + str(e) + '\n')
 
@@ -3367,11 +3470,17 @@ class pgbackman_cli(cmd.Cmd):
                 print '--------------------------------------------------------'
 
             try:
+
                 if server_id.isdigit():
-                    self.db.show_backup_server_config(server_id)
+                    backup_server_id = server_id
                 else:
-                    self.db.show_backup_server_config(self.db.get_backup_server_id(server_id))
-                    
+                    backup_server_id = self.db.get_backup_server_id(server_id)
+
+                result = self.db.show_backup_server_config(backup_server_id)
+                
+                colnames = [desc[0] for desc in result.description]
+                self.generate_output(result,colnames,["Parameter","Value","Description"],'backup_server_config')         
+
             except Exception as e:
                 self.processing_error('[ERROR]: ' + str(e) + '\n')
 
@@ -3416,7 +3525,7 @@ class pgbackman_cli(cmd.Cmd):
             
             try:
                 print '--------------------------------------------------------'
-                pgsql_node_id = raw_input('# NodeID / FQDN: ')
+                node_id = raw_input('# NodeID / FQDN: ')
                 print '--------------------------------------------------------'
                 
             except Exception as e:
@@ -3425,11 +3534,17 @@ class pgbackman_cli(cmd.Cmd):
                 return False
 
             try:
-                if pgsql_node_id.isdigit():
-                    self.db.show_pgsql_node_config(pgsql_node_id)
+
+                if node_id.isdigit():
+                    pgsql_node_id = node_id
                 else:
-                    self.db.show_pgsql_node_config(self.db.get_pgsql_node_id(pgsql_node_id))
-                                    
+                    pgsql_node_id = self.db.get_pgsql_node_id(node_id)
+
+                result = self.db.show_pgsql_node_config(pgsql_node_id)
+
+                colnames = [desc[0] for desc in result.description]
+                self.generate_output(result,colnames,["Parameter","Value","Description"],'pgsql_node_config')
+                                                        
             except Exception as e:
                 self.processing_error('[ERROR]: ' + str(e) + '\n')
 
@@ -3439,19 +3554,25 @@ class pgbackman_cli(cmd.Cmd):
 
         elif len(arg_list) == 1:
 
-            pgsql_node_id = arg_list[0]
+            node_id = arg_list[0]
             
             if self.output_format == 'table':
 
                 print '--------------------------------------------------------'
-                print '# NodeID / FQDN: ' + str(pgsql_node_id)
+                print '# NodeID / FQDN: ' + str(node_id)
                 print '--------------------------------------------------------'
 
             try:
-                if pgsql_node_id.isdigit():
-                    self.db.show_pgsql_node_config(pgsql_node_id)
+
+                if node_id.isdigit():
+                    pgsql_node_id = node_id
                 else:
-                    self.db.show_pgsql_node_config(self.db.get_pgsql_node_id(pgsql_node_id))
+                    pgsql_node_id = self.db.get_pgsql_node_id(node_id)
+
+                result = self.db.show_pgsql_node_config(pgsql_node_id)
+
+                colnames = [desc[0] for desc in result.description]
+                self.generate_output(result,colnames,["Parameter","Value","Description"],'pgsql_node_config')
                     
             except Exception as e:
                 self.processing_error('[ERROR]: ' + str(e) + '\n')
@@ -3487,8 +3608,11 @@ class pgbackman_cli(cmd.Cmd):
         
         if len(arg_list) == 0:
             try:
-                self.db.show_empty_backup_catalogs()
+                result = self.db.show_empty_backup_catalogs()
                 
+                colnames = [desc[0] for desc in result.description]
+                self.generate_output(result,colnames,["Backup server","PgSQL node","Schedule","Retention","Parameters"],'empty_backup_catalogs')
+
             except Exception as e:
                 self.processing_error('[ERROR]: ' + str(e) + '\n')
             
@@ -3544,53 +3668,11 @@ class pgbackman_cli(cmd.Cmd):
 
             try:
 
-                columns = ['PgSQL node','DBname']
-                x = PrettyTable(columns)
-                
-                for column in columns:
-                    x.align[column] = "l"
-                    
-                x.padding_width = 1
-                
-                pgsql_node_list = []
+                result = self.db.show_databases_without_backup_definitions(pgsql_node)
 
-                if pgsql_node.lower() in ['all','*']:
-                    for id,fqdn in self.db.get_pgsql_nodes_list():
-                        pgsql_node_list.append(str(id))
+                colnames = ['PgSQL node','DBname']
+                self.generate_output(result,colnames,["PgSQL node","DBname"],'databases_without_backup_definitions')
 
-                else:
-                    pgsql_node_list.append(pgsql_node)
-
-                for pgsql_node in pgsql_node_list:
-
-                    if pgsql_node.isdigit():
-                        pgsql_node_id = pgsql_node
-                        pgsql_node_fqdn = self.db.get_pgsql_node_fqdn(pgsql_node)
-                    else:
-                        pgsql_node_id = self.db.get_pgsql_node_id(pgsql_node)
-                        pgsql_node_fqdn = pgsql_node
-
-                    dsn_value = self.db.get_pgsql_node_dsn(pgsql_node_id)
-                    db_node = pgbackman_db(dsn_value,'pgbackman_cli')
-
-                    database_list = []
-                    all_databases = []
-                    databases_with_bckdef = []
-
-                    for database in db_node.get_pgsql_node_database_list():
-                        all_databases.append(database[0])
-                        
-                    for database in self.db.get_pgsql_node_database_with_bckdef_list(pgsql_node_id):
-                        databases_with_bckdef.append(database[0])
-
-                    database_list = set(all_databases) - set(databases_with_bckdef)
-
-                    for database in sorted(database_list):
-                        x.add_row([pgsql_node_fqdn,database])
-
-                print x.get_string()
-                print
-                                    
             except Exception as e:
                 print '--------------------------------------------------------' 
                 self.processing_error('[ERROR]: ' + str(e) + '\n') 
@@ -3612,53 +3694,11 @@ class pgbackman_cli(cmd.Cmd):
 
             try:
 
-                columns = ['PgSQL node','DBname']
-                x = PrettyTable(columns)
-                
-                for column in columns:
-                    x.align[column] = "l"
-                    
-                x.padding_width = 1
-                
-                pgsql_node_list = []
+                result = self.db.show_databases_without_backup_definitions(pgsql_node)
 
-                if pgsql_node.lower() in ['all','*']:
-                    for id,fqdn in self.db.get_pgsql_nodes_list():
-                        pgsql_node_list.append(str(id))
+                colnames = ['PgSQL node','DBname']
+                self.generate_output(result,colnames,["PgSQL node","DBname"],'databases_without_backup_definitions')
 
-                else:
-                    pgsql_node_list.append(pgsql_node)
-
-                for pgsql_node in pgsql_node_list:
-                
-                    if pgsql_node.isdigit():
-                        pgsql_node_id = pgsql_node
-                        pgsql_node_fqdn = self.db.get_pgsql_node_fqdn(pgsql_node)
-                    else:
-                        pgsql_node_id = self.db.get_pgsql_node_id(pgsql_node)
-                        pgsql_node_fqdn = pgsql_node
-
-                    dsn_value = self.db.get_pgsql_node_dsn(pgsql_node_id)
-                    db_node = pgbackman_db(dsn_value,'pgbackman_cli')
-
-                    database_list = []
-                    all_databases = []
-                    databases_with_bckdef = []
-
-                    for database in db_node.get_pgsql_node_database_list():
-                        all_databases.append(database[0])
-                        
-                    for database in self.db.get_pgsql_node_database_with_bckdef_list(pgsql_node_id):
-                        databases_with_bckdef.append(database[0])
-
-                    database_list = set(all_databases) - set(databases_with_bckdef)
-
-                    for database in sorted(database_list):
-                        x.add_row([pgsql_node_fqdn,database])
-
-                print x.get_string()
-                print
-                    
             except Exception as e:
                 print '--------------------------------------------------------' 
                 self.processing_error('[ERROR]: ' + str(e) + '\n') 
@@ -3700,8 +3740,11 @@ class pgbackman_cli(cmd.Cmd):
         if len(arg_list) == 0:
                  
             try:
-                self.db.show_snapshots_in_progress()
-                                                    
+                result = self.db.show_snapshots_in_progress()
+                 
+                colnames = [desc[0] for desc in result.description]
+                self.generate_output(result,colnames,["Backup server","PgSQL node","DBname","AT time","Code"],'snapshots_in_progress')
+                                   
             except Exception as e:
                 self.processing_error('[ERROR]: ' + str(e) + '\n')
                 
@@ -3745,8 +3788,12 @@ class pgbackman_cli(cmd.Cmd):
         if len(arg_list) == 0:
                  
             try:
-                self.db.show_restores_in_progress()
-                                                    
+                result = self.db.show_restores_in_progress()
+                       
+                colnames = [desc[0] for desc in result.description]
+                self.generate_output(result,colnames,["Backup server","Target PgSQL node","Target DBname","AT time"],'restores_in_progress')
+
+                             
             except Exception as e:
                 self.processing_error('[ERROR]: ' + str(e) + '\n')
 
@@ -4950,6 +4997,91 @@ class pgbackman_cli(cmd.Cmd):
 
         print
 
+    # ############################################
+    # Method do_set_output_format
+    # ############################################
+
+    def do_set_output_format(self,args):
+        '''
+        DESCRIPTION: 
+
+        This command sets the output format of show_* commands. The
+        default format is 'table'
+        
+        COMMAND:
+        set_output_format [format]
+
+        [format]
+        --------
+        * TABLE
+        * JSON
+        * CSV
+
+        '''
+               
+        try: 
+            arg_list = shlex.split(args)
+            
+        except ValueError as e:
+            print '--------------------------------------------------------' 
+            self.processing_error('[ERROR]: ' + str(e) + '\n')
+            return False
+        
+        if len(arg_list) == 0:
+
+            print '--------------------------------------------------------'
+
+            try:
+                format_type = raw_input('# Format [table]: ')
+                
+            except Exception as e:
+                print '\n--------------------------------------------------------' 
+                print '[ABORTED] Command interrupted by the user.\n',e,'\n' 
+                return False
+
+            if format_type == '':
+                format_type = 'table'
+
+            if format_type.lower() not in ['table','csv','json']:
+                self.processing_error('[ERROR]: Format [' + format_type + '] is not a valid option\n') 
+                return False
+                
+            try:
+                self.output_format = format_type.lower()
+                
+                print '[DONE] Output format changed to [' + self.output_format + ']'
+
+            except Exception as e:
+                print '--------------------------------------------------------' 
+                self.processing_error('[ERROR]: ' + str(e) + '\n')
+
+        elif len(arg_list) == 1:
+
+            format_type = arg_list[0]
+
+            if format_type == '':
+                format_type = 'table'
+
+            if format_type.lower() not in ['table','csv','json']:
+                self.processing_error('[ERROR]: Format [' + format_type + '] is not a valid option\n') 
+                
+                return False
+
+            try:
+                self.output_format = format_type.lower()
+                
+                print '[DONE] Output format changed to [' + self.output_format + ']'
+
+            except Exception as e:
+                print '--------------------------------------------------------' 
+                self.processing_error('[ERROR]: ' + str(e) + '\n')
+
+            
+        else:
+            self.processing_error('\n[ERROR] - Wrong number of parameters used.\n          Type help or \? to list commands\n')
+                                 
+        print
+
 
     # ############################################
     # Method do_clear
@@ -5187,6 +5319,133 @@ class pgbackman_cli(cmd.Cmd):
     def signal_handler_sigint(self,signum, frame):
         cmd.Cmd.onecmd(self,'quit')
         sys.exit(0)
+
+
+    # ############################################
+    # Method 
+    # ############################################
+            
+    def generate_output(self,cur,colnames,left_columns,result_type):
+        '''A function to print the output from show_* commands'''
+        
+        if self.output_format == 'table':
+        
+            x = PrettyTable(colnames)
+            x.padding_width = 1
+            
+            for column in left_columns:
+                x.align[column] = "l"
+        
+            for records in cur:
+                columns = []
+
+                for index in range(len(colnames)):
+                    columns.append(records[index])
+
+                x.add_row(columns)
+            
+            print x.get_string()
+            print
+
+        elif self.output_format == 'csv':
+
+            print ','.join(colnames).lower().replace(' ','_').replace(',id.,',',backup_server_id,').replace(',id,',',pgsql_node_id,')
+
+            
+            for records in cur:
+                columns = []
+                
+                for index in range(len(colnames)):
+                    columns.append(str(records[index]))
+                    
+                print ','.join(columns)
+
+        elif self.output_format == 'json':
+
+            output = dict()
+            entries = []
+
+            for records in cur:
+                attributes = OrderedDict()
+                
+                for index in range(len(colnames)):
+                    
+                    #
+                    # id. and id attributtes do not say anything in a
+                    # json output. Change these values so it is easier
+                    # to understand the meaning of them.
+                    #
+                    
+                    if colnames[index].lower() == 'id.':
+                        attr = 'backup_server_id'
+                    elif colnames[index].lower() == 'id':
+                        attr = 'pgsql_node_id'
+                    else:
+                        attr = colnames[index].lower().replace(' ','_')
+                    
+                    attributes[attr]=str(records[index])
+
+                entries.append(attributes)
+
+            output = {result_type:entries}
+
+            print json.dumps(output,sort_keys=False,indent=2)
+
+
+    # ############################################
+    # Method 
+    # ############################################
+            
+    def generate_unique_output(self,result,result_type):
+        ''''''
+        
+        if self.output_format == 'table':
+        
+            x = PrettyTable([".",".."],header = False)
+            x.align["."] = "r"
+            x.align[".."] = "l"
+            x.padding_width = 1
+                        
+            for key,value in result.iteritems():
+                columns = []
+                            
+                columns.append((key + ':').replace('#:','').replace('#',''))
+                columns.append(str(value))
+                    
+                x.add_row(columns)
+            
+            print x.get_string()
+            print
+
+        elif self.output_format == 'csv':
+
+            colnames = []
+            values = []
+
+            for key,value in result.iteritems():
+                
+                if key.find('#') == -1:
+                    colnames.append(str(key.lower().replace(' ','_')))
+                    values.append(str(value))
+
+            print ','.join(colnames)
+            print ','.join(values)
+
+        elif self.output_format == 'json':
+
+            output = dict()
+            entries = []
+            attributes = OrderedDict()
+
+            for key,value in result.iteritems():
+
+                if key.find('#') == -1:
+                    attributes[key.lower().replace(' ','_')]=str(value)
+                    
+            entries.append(attributes)
+            output = {result_type:entries}
+
+            print json.dumps(output,sort_keys=False,indent=2)
 
 
     # ############################################
