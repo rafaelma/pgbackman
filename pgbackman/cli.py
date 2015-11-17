@@ -3068,6 +3068,7 @@ class pgbackman_cli(cmd.Cmd):
 
                 result =  OrderedDict()
 
+                result['Running modus'] = str(self.execution_modus)
                 result['Backup server'] = default_backup_server
                 result['Software version'] = '[' + str(self.software_version_number) + ']:' + str(self.software_version_tag).replace('.','_')
                 result['Configuration file used'] = str(self.conf.config_file)
@@ -3089,14 +3090,28 @@ class pgbackman_cli(cmd.Cmd):
                 result['###'] = ''
                 result['#PGBACKMAN_DUMP'] ='' 
                 result['Temp directory'] = str(self.conf.tmp_dir)
+                result['Pause recovery on slave node'] = str(self.conf.pause_recovery_process_on_slave)
                 result['####'] = ''
                 result['#PGBACKMAN_MAINTENANCE'] = '' 
                 result['Maintenance interval'] = str(self.conf.maintenance_interval) + ' sec.' 
                 result['#####'] = ''
+                result['#PGBACKMAN_ALERTS'] = ''
+                result['SMTP alerts activated'] = str(self.conf.smtp_alerts)
+                result['Alerts check interval'] = str(self.conf.alerts_check_interval) + ' sec.'
+                result['SMTP server'] = str(self.conf.smtp_server)
+                result['SMTP port'] = str(self.conf.smtp_port)
+                result['Use SMTP SSL'] = str(self.conf.smtp_ssl)
+                result['SMTP user'] = str(self.conf.smtp_user)
+                result['Default From address'] = str(self.conf.smtp_from_address)
+                result['Alerts e-mail template'] = str(self.conf.alerts_template)
+                result['######'] = ''
                 result['#LOGGING'] = '' 
                 result['Log level'] = str(self.conf.log_level)
                 result['Log file'] = str(self.conf.log_file)
-
+                result['#######'] = ''
+                result['#OUTPUT'] = '' 
+                result['Default output format'] = str(self.output_format)
+                
                 self.generate_unique_output(result,'pgbackman_config')
 
             except Exception as e:
