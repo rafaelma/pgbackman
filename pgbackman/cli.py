@@ -809,7 +809,8 @@ class pgbackman_cli(cmd.Cmd):
         COMMAND:
         register_backup_definition [SrvID | FQDN] 
                                    [NodeID | FQDN] 
-                                   [DBname] 
+                                   [DBname]
+                                   [DBname exceptions]
                                    [min_cron] 
                                    [hour_cron] 
                                    [day-month_cron]
@@ -846,7 +847,15 @@ class pgbackman_cli(cmd.Cmd):
         * '#databases_without_backup_definitions#' if you want to register the backup
         definition for all databases in the cluster *without* a backup
         definition (except 'template0','template1' and 'postgres').
-                                           
+            
+        [DBname exceptions]
+        -------------------
+        Databases that will not be considered when using
+        '#all_databases#' and '#databases_without_backup_definitions#'
+        in [DBname]. 
+
+        One can define several DBnames in a comma separated list.
+
         [*cron]:
         --------
         Schedule definition using the cron expression. Check
@@ -974,6 +983,7 @@ class pgbackman_cli(cmd.Cmd):
             
             try:
                 dbname = raw_input('# DBname []: ')
+                dbname_exceptions = raw_input('# DBname exceptions []: ')
 
                 if dbname != '#all_databases#' and dbname != '#databases_without_backup_definitions#':
                     minutes_cron = raw_input('# Minutes cron [' + str(minutes_cron_default) + ']: ')
@@ -1007,6 +1017,8 @@ class pgbackman_cli(cmd.Cmd):
                     dsn_value = self.db.get_pgsql_node_dsn(pgsql_node_id)
                     db_node = pgbackman_db(dsn_value,'pgbackman_cli')
 
+                    dbname_exceptions_list = dbname_exceptions.replace(' ','').split(',')
+
                     #
                     # Generating a list of databases that will get a backup definition
                     #
@@ -1014,7 +1026,9 @@ class pgbackman_cli(cmd.Cmd):
                     if dbname == '#all_databases#':
 
                         for database in db_node.get_pgsql_node_database_list():
-                            database_list.append(database[0])
+
+                            if database[0] not in dbname_exceptions_list:
+                                database_list.append(database[0])
                     
                     elif dbname == '#databases_without_backup_definitions#':
 
@@ -1028,10 +1042,14 @@ class pgbackman_cli(cmd.Cmd):
                         databases_with_bckdef = ['']
 
                         for database in db_node.get_pgsql_node_database_list():
-                            all_databases.append(database[0])
+                            
+                            if database[0] not in dbname_exceptions_list:
+                                all_databases.append(database[0])
                         
                         for database in self.db.get_pgsql_node_database_with_bckdef_list(pgsql_node_id):
-                            databases_with_bckdef.append(database[0])
+                            
+                            if database[0] not in dbname_exceptions_list:
+                                databases_with_bckdef.append(database[0])
 
                         database_list = set(all_databases) - set(databases_with_bckdef)
 
@@ -1072,7 +1090,7 @@ class pgbackman_cli(cmd.Cmd):
                     # If we have defined more than one database, generate a random value for cron minutes and cron hours. 
                     #
 
-                    if database == '#all_databases#' or database == '#databases_without_backup_definitions#' or len(database_list) > 1:
+                    if dbname == '#all_databases#' or dbname == '#databases_without_backup_definitions#' or len(database_list) > 1:
 
                         try:
                             minutes_cron = self.db.get_minute_from_interval(self.db.get_pgsql_node_config_value(pgsql_node_id,'backup_minutes_interval'))
@@ -1141,7 +1159,7 @@ class pgbackman_cli(cmd.Cmd):
         # Command with parameters
         #             
 
-        elif len(arg_list) == 15:
+        elif len(arg_list) == 16:
             
             backup_server = arg_list[0]
             pgsql_node = arg_list[1]
@@ -1190,27 +1208,32 @@ class pgbackman_cli(cmd.Cmd):
                 return False
             
             dbname = arg_list[2]
-            minutes_cron = arg_list[3]
-            hours_cron = arg_list[4]
-            day_month_cron = arg_list[5]
-            month_cron = arg_list[6]
-            weekday_cron = arg_list[7]
-            backup_code = arg_list[8]
-            encryption = arg_list[9]
-            retention_period = arg_list[10]
-            retention_redundancy = arg_list[11]
-            extra_backup_parameters = arg_list[12]
-            backup_job_status = arg_list[13]
-            remarks = arg_list[14]
+            dbname_exceptions = arg_list[3]
+            minutes_cron = arg_list[4]
+            hours_cron = arg_list[5]
+            day_month_cron = arg_list[6]
+            month_cron = arg_list[7]
+            weekday_cron = arg_list[8]
+            backup_code = arg_list[9]
+            encryption = arg_list[10]
+            retention_period = arg_list[11]
+            retention_redundancy = arg_list[12]
+            extra_backup_parameters = arg_list[13]
+            backup_job_status = arg_list[14]
+            remarks = arg_list[15]
               
             try:
                 dsn_value = self.db.get_pgsql_node_dsn(pgsql_node_id)
                 db_node = pgbackman_db(dsn_value,'pgbackman_cli')
+                
+                dbname_exceptions_list = dbname_exceptions.replace(' ','').split(',')
 
                 if dbname == '#all_databases#':
 
                     for database in db_node.get_pgsql_node_database_list():
-                        database_list.append(database[0])
+
+                        if database[0] not in dbname_exceptions_list:
+                            database_list.append(database[0])
                         
                 elif dbname == '#databases_without_backups#':
 
@@ -1218,10 +1241,14 @@ class pgbackman_cli(cmd.Cmd):
                     databases_with_bckdef = []
                     
                     for database in db_node.get_pgsql_node_database_list():
-                        all_databases.append(database[0])
+
+                        if database[0] not in dbname_exceptions_list:
+                            all_databases.append(database[0])
                         
                     for database in self.db.get_pgsql_node_database_with_bckdef_list(pgsql_node_id):
-                        databases_with_bckdef.append(database[0])
+                        
+                        if database[0] not in dbname_exceptions_list:
+                            databases_with_bckdef.append(database[0])
 
                     database_list = set(all_databases) - set(databases_with_bckdef)
 
@@ -1256,7 +1283,7 @@ class pgbackman_cli(cmd.Cmd):
                         if index == len(database_list) - 1:
                             return False
 
-                if database == '#all_databases#' or database == '#databases_without_backups#' or len(database_list) > 1:
+                if dbname == '#all_databases#' or dbname == '#databases_without_backups#' or len(database_list) > 1:
 
                     try:
                         minutes_cron = self.db.get_minute_from_interval(self.db.get_pgsql_node_config_value(pgsql_node_id,'backup_minutes_interval'))
