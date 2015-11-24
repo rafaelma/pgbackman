@@ -33,11 +33,11 @@ psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
 
 # #####################
-# Class: pg_database
+# Class: PgbackmanDB
 # ######################
 
 
-class pgbackman_db():
+class PgbackmanDB():
     """This class is used by PgBackman to interact with a postgreSQL database"""
 
     # ############################################

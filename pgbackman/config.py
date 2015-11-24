@@ -25,15 +25,15 @@ import socket
 import os
 import ConfigParser
 
-class configuration():
 
+class PgbackmanConfiguration():
     # ############################################
     # Constructor
     # ############################################
-    
+
     def __init__(self):
         """ The Constructor."""
-        
+
         self.config_file = ''
 
         # Backup server section
@@ -67,7 +67,7 @@ class configuration():
         self.smtp_password = ''
         self.smtp_from_address = ''
         self.alerts_template = '/etc/pgbackman/pgbackman_alerts.template'
-        
+
         # Logging section
         self.log_level = 'ERROR'
         self.log_file = '/var/log/pgbackman/pgbackman.log'
@@ -75,26 +75,24 @@ class configuration():
         self.set_configuration_file()
         self.set_configuration_parameters()
 
-
     # ############################################
     # Method
     # ############################################
-    
+
     def set_configuration_file(self):
         """Set the pgbackman configuration file"""
-        
-        config_file_list = (os.getenv('HOME') + '/.pgbackman/pgbackman.conf','/etc/pgbackman/pgbackman.conf')
-        
+
+        config_file_list = (os.getenv('HOME') + '/.pgbackman/pgbackman.conf', '/etc/pgbackman/pgbackman.conf')
+
         for file in config_file_list:
             if os.path.isfile(file):
-                self.config_file = file 
+                self.config_file = file
                 break
-
 
     # ############################################
     # Method
     # ############################################
-    
+
     def set_configuration_parameters(self):
         """Set configuration parameters"""
 
@@ -104,82 +102,82 @@ class configuration():
 
             config = ConfigParser.RawConfigParser()
             config.read(self.config_file)
-            
+
             # Backup server section
-            if config.has_option('backup_server','backup_server'):
-                self.backup_server = config.get('backup_server','backup_server')
-    
+            if config.has_option('backup_server', 'backup_server'):
+                self.backup_server = config.get('backup_server', 'backup_server')
+
             # pgbackman database section
-            if config.has_option('pgbackman_database','host'):
-                self.dbhost = config.get('pgbackman_database','host')
+            if config.has_option('pgbackman_database', 'host'):
+                self.dbhost = config.get('pgbackman_database', 'host')
 
-            if config.has_option('pgbackman_database','hostaddr'):
-                self.dbhostaddr = config.get('pgbackman_database','hostaddr')
+            if config.has_option('pgbackman_database', 'hostaddr'):
+                self.dbhostaddr = config.get('pgbackman_database', 'hostaddr')
 
-            if config.has_option('pgbackman_database','port'):
-                self.dbport = config.get('pgbackman_database','port')
+            if config.has_option('pgbackman_database', 'port'):
+                self.dbport = config.get('pgbackman_database', 'port')
 
-            if config.has_option('pgbackman_database','dbname'):
-                self.dbname = config.get('pgbackman_database','dbname')
+            if config.has_option('pgbackman_database', 'dbname'):
+                self.dbname = config.get('pgbackman_database', 'dbname')
 
-            if config.has_option('pgbackman_database','user'):
-                self.dbuser = config.get('pgbackman_database','user')
+            if config.has_option('pgbackman_database', 'user'):
+                self.dbuser = config.get('pgbackman_database', 'user')
 
-            if config.has_option('pgbackman_database','password'):
-                self.dbpassword = config.get('pgbackman_database','password')
+            if config.has_option('pgbackman_database', 'password'):
+                self.dbpassword = config.get('pgbackman_database', 'password')
 
-            if config.has_option('pgbackman_database','pg_connect_retry_interval'):
-                self.pg_connect_retry_interval = int(config.get('pgbackman_database','pg_connect_retry_interval'))
-              
-            if config.has_option('pgbackman_database','database_source_dir'):
-                self.database_source_dir = config.get('pgbackman_database','database_source_dir')
+            if config.has_option('pgbackman_database', 'pg_connect_retry_interval'):
+                self.pg_connect_retry_interval = int(config.get('pgbackman_database', 'pg_connect_retry_interval'))
+
+            if config.has_option('pgbackman_database', 'database_source_dir'):
+                self.database_source_dir = config.get('pgbackman_database', 'database_source_dir')
 
             # pgbackman_dump section
-            if config.has_option('pgbackman_dump','tmp_dir'):
-                self.tmp_dir = config.get('pgbackman_dump','tmp_dir')
+            if config.has_option('pgbackman_dump', 'tmp_dir'):
+                self.tmp_dir = config.get('pgbackman_dump', 'tmp_dir')
 
-            if config.has_option('pgbackman_dump','pause_recovery_process_on_slave'):
-                self.pause_recovery_process_on_slave = config.get('pgbackman_dump','pause_recovery_process_on_slave').upper()
+            if config.has_option('pgbackman_dump', 'pause_recovery_process_on_slave'):
+                self.pause_recovery_process_on_slave = config.get('pgbackman_dump',
+                                                                  'pause_recovery_process_on_slave').upper()
 
             # pgbackman_maintenance section
-            if config.has_option('pgbackman_maintenance','maintenance_interval'):
-                self.maintenance_interval = int(config.get('pgbackman_maintenance','maintenance_interval'))    
+            if config.has_option('pgbackman_maintenance', 'maintenance_interval'):
+                self.maintenance_interval = int(config.get('pgbackman_maintenance', 'maintenance_interval'))
 
-            # pgbackman_alerts section
-            if config.has_option('pgbackman_alerts','smtp_alerts'):
-                self.smtp_alerts = config.get('pgbackman_alerts','smtp_alerts').upper()    
+                # pgbackman_alerts section
+            if config.has_option('pgbackman_alerts', 'smtp_alerts'):
+                self.smtp_alerts = config.get('pgbackman_alerts', 'smtp_alerts').upper()
 
-            if config.has_option('pgbackman_alerts','alerts_check_interval'):
-                self.alerts_check_interval = int(config.get('pgbackman_alerts','alerts_check_interval'))    
+            if config.has_option('pgbackman_alerts', 'alerts_check_interval'):
+                self.alerts_check_interval = int(config.get('pgbackman_alerts', 'alerts_check_interval'))
 
-            if config.has_option('pgbackman_alerts','smtp_server'):
-                self.smtp_server = config.get('pgbackman_alerts','smtp_server')    
+            if config.has_option('pgbackman_alerts', 'smtp_server'):
+                self.smtp_server = config.get('pgbackman_alerts', 'smtp_server')
 
-            if config.has_option('pgbackman_alerts','smtp_port'):
-                self.smtp_port = config.get('pgbackman_alerts','smtp_port')    
+            if config.has_option('pgbackman_alerts', 'smtp_port'):
+                self.smtp_port = config.get('pgbackman_alerts', 'smtp_port')
 
-            if config.has_option('pgbackman_alerts','smtp_ssl'):
-                self.smtp_ssl = config.get('pgbackman_alerts','smtp_ssl').upper()    
+            if config.has_option('pgbackman_alerts', 'smtp_ssl'):
+                self.smtp_ssl = config.get('pgbackman_alerts', 'smtp_ssl').upper()
 
-            if config.has_option('pgbackman_alerts','smtp_user'):
-                self.smtp_user = config.get('pgbackman_alerts','smtp_user')    
+            if config.has_option('pgbackman_alerts', 'smtp_user'):
+                self.smtp_user = config.get('pgbackman_alerts', 'smtp_user')
 
-            if config.has_option('pgbackman_alerts','smtp_password'):
-                self.smtp_password = config.get('pgbackman_alerts','smtp_password')    
+            if config.has_option('pgbackman_alerts', 'smtp_password'):
+                self.smtp_password = config.get('pgbackman_alerts', 'smtp_password')
 
-            if config.has_option('pgbackman_alerts','smtp_from_address'):
-                self.smtp_from_address = config.get('pgbackman_alerts','smtp_from_address')    
+            if config.has_option('pgbackman_alerts', 'smtp_from_address'):
+                self.smtp_from_address = config.get('pgbackman_alerts', 'smtp_from_address')
 
-            if config.has_option('pgbackman_alerts','alerts_template'):
-                self.alerts_template = config.get('pgbackman_alerts','alerts_template')    
-                   
-            # Logging section
-            if config.has_option('logging','log_level'):
-                self.log_level = config.get('logging','log_level').upper()
+            if config.has_option('pgbackman_alerts', 'alerts_template'):
+                self.alerts_template = config.get('pgbackman_alerts', 'alerts_template')
 
-            if config.has_option('logging','log_file'):
-                self.log_file = config.get('logging','log_file')
-            
+                # Logging section
+            if config.has_option('logging', 'log_level'):
+                self.log_level = config.get('logging', 'log_level').upper()
+
+            if config.has_option('logging', 'log_file'):
+                self.log_file = config.get('logging', 'log_file')
 
         # Generate the DSN string 
 
@@ -197,10 +195,9 @@ class configuration():
 
         if self.dbuser != '':
             dsn_parameters.append('user=''' + self.dbuser + '')
-    
+
         if self.dbpassword != '':
             dsn_parameters.append('password=''' + self.dbpassword + '')
-          
+
         for parameter in dsn_parameters:
             self.dsn = self.dsn + parameter + ' '
-

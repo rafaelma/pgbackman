@@ -58,7 +58,7 @@ if __name__ == '__main__':
             input_file = args.input_file
 
 
-        logs = logs("pgbackman-bulk-update","","")
+        logs = PgbackmanLogs("pgbackman-bulk-update", "", "")
         
         logs.logger.debug('**** pgbackman-bulk-update startet. ****')
 

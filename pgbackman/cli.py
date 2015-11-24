@@ -44,14 +44,14 @@ import pgbackman.version
 
 
 # ############################################
-# class pgbackman_cli
+# class PgbackmanCli
 # ############################################
 
 
-class pgbackman_cli(cmd.Cmd):
-    '''
+class PgbackmanCli(cmd.Cmd):
+    """
     This class implements the pgbackman shell. It is based on the python module cmd
-    '''
+    """
   
     # ###############################
     # Constructor
@@ -81,12 +81,12 @@ class pgbackman_cli(cmd.Cmd):
         self.prompt = '[pgbackman]$ '
         self.file = None
 
-        self.conf = configuration() 
+        self.conf = PgbackmanConfiguration()
         self.dsn = self.conf.dsn
         
-        self.logs = logs('pgbackman_cli','','')
+        self.logs = PgbackmanLogs('pgbackman_cli', '', '')
 
-        self.db = pgbackman_db(self.dsn,'pgbackman_cli')
+        self.db = PgbackmanDB(self.dsn, 'pgbackman_cli')
         self.output_format = 'table'
 
         self.backup_server_id = ''
@@ -1015,7 +1015,7 @@ class pgbackman_cli(cmd.Cmd):
 
                 try:
                     dsn_value = self.db.get_pgsql_node_dsn(pgsql_node_id)
-                    db_node = pgbackman_db(dsn_value,'pgbackman_cli')
+                    db_node = PgbackmanDB(dsn_value, 'pgbackman_cli')
 
                     dbname_exceptions_list = dbname_exceptions.replace(' ','').split(',')
 
@@ -1224,7 +1224,7 @@ class pgbackman_cli(cmd.Cmd):
               
             try:
                 dsn_value = self.db.get_pgsql_node_dsn(pgsql_node_id)
-                db_node = pgbackman_db(dsn_value,'pgbackman_cli')
+                db_node = PgbackmanDB(dsn_value, 'pgbackman_cli')
                 
                 dbname_exceptions_list = dbname_exceptions.replace(' ','').split(',')
 
@@ -2111,7 +2111,7 @@ class pgbackman_cli(cmd.Cmd):
                     self.db.check_pgsql_node_status(pgsql_node_id)
                 
                     dsn_value = self.db.get_pgsql_node_dsn(pgsql_node_id)
-                    db_node = pgbackman_db(dsn_value,'pgbackman_cli')
+                    db_node = PgbackmanDB(dsn_value, 'pgbackman_cli')
                 
                     if dbname != '':
                         if not db_node.database_exists(dbname):
@@ -2220,7 +2220,7 @@ class pgbackman_cli(cmd.Cmd):
                 self.db.check_pgsql_node_status(pgsql_node_id)
 
                 dsn_value = self.db.get_pgsql_node_dsn(pgsql_node_id)
-                db_node = pgbackman_db(dsn_value,'pgbackman_cli')
+                db_node = PgbackmanDB(dsn_value, 'pgbackman_cli')
 
                 if dbname != '':
                     if not db_node.database_exists(dbname):
@@ -2582,7 +2582,7 @@ class pgbackman_cli(cmd.Cmd):
                     self.db.check_pgsql_node_status(pgsql_node_id)
 
                     dsn_value = self.db.get_pgsql_node_dsn(pgsql_node_id)
-                    db_node = pgbackman_db(dsn_value,'pgbackman_cli')
+                    db_node = PgbackmanDB(dsn_value, 'pgbackman_cli')
 
                     if target_dbname == '':
                         target_dbname = target_dbname_default
@@ -5939,7 +5939,7 @@ of the software and the version of the database.
 
 if __name__ == '__main__':
 
-    signal.signal(signal.SIGINT, pgbackman_cli().signal_handler_sigint)
-    signal.signal(signal.SIGTERM,pgbackman_cli().signal_handler_sigint)
-    pgbackman_cli().cmdloop()
+    signal.signal(signal.SIGINT, PgbackmanCli().signal_handler_sigint)
+    signal.signal(signal.SIGTERM, PgbackmanCli().signal_handler_sigint)
+    PgbackmanCli().cmdloop()
 

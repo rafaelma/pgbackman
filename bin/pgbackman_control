@@ -591,7 +591,7 @@ def main():
     global listen_list
     global last_crontab_update
 
-    conf = configuration()
+    conf = PgbackmanConfiguration()
     dsn = conf.dsn
     tmp_dir = conf.tmp_dir
 
@@ -599,7 +599,7 @@ def main():
     logs.logger.debug('Backup server FQDN: %s',socket.getfqdn())
     logs.logger.debug('DSN: host=%s hostaddr=%s port=%s database=%s user=%s ',conf.dbhost,conf.dbhostaddr,conf.dbport,conf.dbname,conf.dbuser)
 
-    db = pgbackman_db(dsn,'pgbackman_control')
+    db = PgbackmanDB(dsn, 'pgbackman_control')
 
     #
     # We check before starting if the database is available. 
@@ -620,7 +620,7 @@ def main():
     # Instance used to have a persistance connection to the database 
     # So we can use LISTEN/NOTIFY
     #
-    db_notify = pgbackman_db(dsn,'pgbackman_notify')
+    db_notify = PgbackmanDB(dsn, 'pgbackman_notify')
     
     try:
         db_notify.pg_connect()
@@ -839,7 +839,7 @@ def main():
                 check_db = check_database_connection(db)
 
             db_notify = None
-            db_notify = pgbackman_db(dsn,'pgbackman_notify')
+            db_notify = PgbackmanDB(dsn, 'pgbackman_notify')
             
             try:
                 db_notify.pg_connect()
@@ -876,7 +876,7 @@ def signal_handler(signum, frame):
 
 if __name__ == '__main__':
 
-    logs = logs("pgbackman_control","","")
+    logs = PgbackmanLogs("pgbackman_control", "", "")
     logs.logger.info('**** pgbackman_control started. ****')
 
     signal.signal(signal.SIGINT,signal_handler)

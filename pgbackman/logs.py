@@ -27,7 +27,7 @@ import logging
 
 from pgbackman.config import *
 
-class logs(logging.Logger):
+class PgbackmanLogs(logging.Logger):
 
     # ############################################
     # Constructor    
@@ -40,7 +40,7 @@ class logs(logging.Logger):
         self.pgsql_node = pgsql_node
         self.dbname = dbname
 
-        self.conf = configuration()
+        self.conf = PgbackmanConfiguration()
         
         self.logger = logging.getLogger(logger_name)
         self.level = logging.getLevelName(self.conf.log_level.upper())

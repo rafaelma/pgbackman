@@ -1145,7 +1145,7 @@ def main():
     
     global global_parameters
 
-    conf = configuration()
+    conf = PgbackmanConfiguration()
     pgbackman_dsn = conf.dsn
 
     global_parameters['tmp_dir'] = conf.tmp_dir
@@ -1169,10 +1169,10 @@ def main():
 
     global_parameters['pgsql_node_release'] = ''
        
-    db = pgbackman_db(pgbackman_dsn,'pgbackman_dump')
+    db = PgbackmanDB(pgbackman_dsn, 'pgbackman_dump')
  
     pgsql_node_dsn = get_pgsql_node_dsn()
-    db_pgnode = pgbackman_db(pgsql_node_dsn,'pgbackman_dump')
+    db_pgnode = PgbackmanDB(pgsql_node_dsn, 'pgbackman_dump')
 
     # 
     # The backup server FQDN to be used can be defined in the
@@ -1422,7 +1422,7 @@ if __name__ == '__main__':
     # Initializing logging
     #
 
-    logs = logs("pgbackman_dump","[" + global_parameters['pgsql_node_fqdn'] + "]","[" + global_parameters['dbname'] + "]")
+    logs = PgbackmanLogs("pgbackman_dump", "[" + global_parameters['pgsql_node_fqdn'] + "]", "[" + global_parameters['dbname'] + "]")
     logs.logger.info('**** pgbackman_dump started. ****')
     
     main()
