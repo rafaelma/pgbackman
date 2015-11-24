@@ -21,11 +21,8 @@
 # You should have received a copy of the GNU General Public License
 # along with Pgbackman.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
-import os
 import argparse
-
-from pgbackman.cli import * 
+from pgbackman.cli import *
 
 if __name__ == '__main__':
 
@@ -38,10 +35,12 @@ if __name__ == '__main__':
         output_format = ''
         pgbackman_command = ''
 
-        parser = argparse.ArgumentParser(prog=sys.argv[0],description='zabbix-cli - Zabbix client')
+        parser = argparse.ArgumentParser(prog=sys.argv[0], description='zabbix-cli - Zabbix client')
 
-        parser.add_argument('--output','-o',  metavar='[csv|json|plain]', choices=['csv','json','table'], required=False, dest='output_format')
-        parser.add_argument('--command','-C', metavar='<PgBackMan command>',required=False,dest='pgbackman_command')
+        parser.add_argument('--output', '-o',  metavar='[csv|json|plain]', choices=['csv', 'json', 'table'],
+                            required=False, dest='output_format')
+        
+        parser.add_argument('--command', '-C', metavar='<PgBackMan command>', required=False, dest='pgbackman_command')
         
         args = parser.parse_args()  
         
