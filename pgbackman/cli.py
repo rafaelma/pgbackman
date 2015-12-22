@@ -5137,88 +5137,111 @@ class PgbackmanCli(cmd.Cmd):
         print
 
     # ############################################
-    # Method do_set_output_format
+    # Method do_set
     # ############################################
 
-    def do_set_output_format(self,args):
+    def do_set(self,args):
         '''
-        DESCRIPTION: 
+        DESCRIPTION:
 
-        This command sets the output format of show_* commands. The
-        default format is 'table'
-        
+        This command can be used to change the value of some
+        internal parameters used to configurate the behavior
+        of PgBackMan
+
         COMMAND:
-        set_output_format [format]
+        set [parameter = value]
 
-        [format]
-        --------
-        * TABLE
-        * JSON
-        * CSV
+        [parameter = value]
+        -------------------
+        * output_format = [TABLE | JSON | CSV]
 
         '''
-               
-        try: 
+
+        try:
             arg_list = shlex.split(args)
-            
+
         except ValueError as e:
-            print '--------------------------------------------------------' 
+            print '--------------------------------------------------------'
             self.processing_error('[ERROR]: ' + str(e) + '\n')
             return False
-        
+
         if len(arg_list) == 0:
 
             print '--------------------------------------------------------'
 
             try:
-                format_type = raw_input('# Format [table]: ')
-                
+                input = raw_input('# Parameter=value: ')
+
             except Exception as e:
-                print '\n--------------------------------------------------------' 
-                print '[ABORTED] Command interrupted by the user.\n',e,'\n' 
+                print '\n--------------------------------------------------------'
+                print '[ABORTED] Command interrupted by the user.\n',e,'\n'
                 return False
 
-            if format_type == '':
-                format_type = 'table'
-
-            if format_type.lower() not in ['table','csv','json']:
-                self.processing_error('[ERROR]: Format [' + format_type + '] is not a valid option\n') 
-                return False
-                
             try:
-                self.output_format = format_type.lower()
-                
-                print '[DONE] Output format changed to [' + self.output_format + ']'
+                parameter, value = input.strip().replace(' ', '').split('=')
 
             except Exception as e:
-                print '--------------------------------------------------------' 
-                self.processing_error('[ERROR]: ' + str(e) + '\n')
+                print '--------------------------------------------------------'
+                self.processing_error('[ERROR]: The format used is not correct')
+                return False
+
+            if parameter == 'output_format':
+
+                if value == '':
+                    value = 'table'
+
+                if value.lower() not in ['table', 'csv', 'json']:
+                    self.processing_error('[ERROR]: Output format [' + value.lower() + '] is not a valid value\n')
+                    return False
+
+                try:
+                    self.output_format = value.lower()
+
+                    print '[DONE] Output format changed to [' + self.output_format + ']'
+
+                except Exception as e:
+                    print '--------------------------------------------------------'
+                    self.processing_error('[ERROR]: ' + str(e) + '\n')
+
+            else:
+                self.processing_error('[ERROR]: Parameter [' + parameter.lower() + '] is not a valid parameter\n')
 
         elif len(arg_list) == 1:
 
-            format_type = arg_list[0]
-
-            if format_type == '':
-                format_type = 'table'
-
-            if format_type.lower() not in ['table','csv','json']:
-                self.processing_error('[ERROR]: Format [' + format_type + '] is not a valid option\n') 
-                
-                return False
+            input = arg_list[0]
 
             try:
-                self.output_format = format_type.lower()
-                
-                print '[DONE] Output format changed to [' + self.output_format + ']'
+                parameter, value = input.strip().replace(' ', '').split('=')
 
             except Exception as e:
-                print '--------------------------------------------------------' 
-                self.processing_error('[ERROR]: ' + str(e) + '\n')
+                print '--------------------------------------------------------'
+                self.processing_error('[ERROR]: The format used is not correct')
+                return False
 
-            
+            if parameter == 'output_format':
+
+                if value == '':
+                    value = 'table'
+
+                if value.lower() not in ['table', 'csv', 'json']:
+                    self.processing_error('[ERROR]: Output format [' + value.lower() + '] is not a valid value\n')
+                    return False
+
+                try:
+                    self.output_format = value.lower()
+
+                    print '[DONE] Output format changed to [' + self.output_format + ']'
+
+                except Exception as e:
+                    print '--------------------------------------------------------'
+                    self.processing_error('[ERROR]: ' + str(e) + '\n')
+
+            else:
+                self.processing_error('[ERROR]: Parameter [' + parameter.lower() + '] is not a valid parameter\n')
+
         else:
             self.processing_error('\n[ERROR] - Wrong number of parameters used.\n          Type help or \? to list commands\n')
-                                 
+
         print
 
 
