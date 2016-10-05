@@ -4213,7 +4213,7 @@ SELECT a.id AS "JobID",
        a.backup_server_id AS "SrvID",
        b.hostname || '.' || b.domain_name AS "Backup server",
        a.pgsql_node_id AS "NodeID",
-       c.hostname || '.' || b.domain_name AS "PgSQL node",
+       c.hostname || '.' || c.domain_name AS "PgSQL node",
        a.is_assigned AS "Assigned"
 FROM job_queue a
 INNER JOIN backup_server b ON a.backup_server_id = b.server_id

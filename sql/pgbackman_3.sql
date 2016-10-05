@@ -84,8 +84,24 @@ $$;
 
 ALTER FUNCTION update_backup_server_config(INTEGER,TEXT,TEXT,TEXT,TEXT,TEXT,TEXT,TEXT) OWNER TO pgbackman_role_rw;
 
+-- Update view show_jobs_queue
 
--- Update backup_server_config with a new parameter (pgsql_bin_9.5) for all Backup servers in the system
+CREATE OR REPLACE VIEW show_jobs_queue AS 
+SELECT a.id AS "JobID",
+       date_trunc('seconds',a.registered) AS "Registered",
+       a.backup_server_id AS "SrvID",
+       b.hostname || '.' || b.domain_name AS "Backup server",
+       a.pgsql_node_id AS "NodeID",
+       c.hostname || '.' || c.domain_name AS "PgSQL node",
+       a.is_assigned AS "Assigned"
+FROM job_queue a
+INNER JOIN backup_server b ON a.backup_server_id = b.server_id
+INNER JOIN pgsql_node c ON a.pgsql_node_id = c.node_id
+ORDER BY a.registered ASC;
+
+ALTER VIEW show_jobs_queue OWNER TO pgbackman_role_rw;
+
+-- Update server_config with a new parameter (pgsql_bin_9.5) for all Backup servers in the system
 
 INSERT INTO backup_server_config (server_id,parameter,value,description) 
 SELECT server_id,
@@ -94,7 +110,6 @@ SELECT server_id,
 'postgreSQL 9.5 bin directory'::text 
 FROM backup_server
 ORDER BY server_id;
-
 
 -- Update backup_server_default_config with postgresql 9.5 information
 
