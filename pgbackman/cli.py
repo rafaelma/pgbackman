@@ -2025,10 +2025,10 @@ class PgbackmanCli(cmd.Cmd):
         [pg_dump/all release]
         ---------------------
         Release of pg_dump / pg_dumpall to use when taking the
-        snapshot, e.g. 9.0, 9.1, 9.2, 9.3 or 9.4, 9.5. This parameter can
-        be necessary if we are going to restore the snapshot in a
-        postgreSQL installation running a newer release than the
-        source.
+        snapshot, e.g. 9.0, 9.1, 9.2, 9.3 or 9.4, 9.5, 9.6. This
+        parameter can be necessary if we are going to restore the
+        snapshot in a postgreSQL installation running a newer release
+        than the source.
 
         This release version cannot be lower than the one used in the
         source installation running the database we are going to
@@ -2159,7 +2159,7 @@ class PgbackmanCli(cmd.Cmd):
                 if pg_dump_release.strip() == '':
                     pg_dump_release = None
 
-                elif pg_dump_release not in ('9.0', '9.1', '9.2', '9.3', '9.4', '9.5'):
+                elif pg_dump_release not in ('9.0', '9.1', '9.2', '9.3', '9.4', '9.5', '9.6'):
                     self.processing_error('[ERROR]: pg_dump/all release [' + str(pg_dump_release).strip() + '] is not valid\n')
 
                 try:
@@ -2300,7 +2300,7 @@ class PgbackmanCli(cmd.Cmd):
             if pg_dump_release.strip() == '':
                 pg_dump_release = None
 
-            elif pg_dump_release not in ('9.0', '9.1', '9.2', '9.3', '9.4', '9.5'):
+            elif pg_dump_release not in ('9.0', '9.1', '9.2', '9.3', '9.4', '9.5', '9.6'):
                 self.processing_error('[ERROR]: pg_dump/all release [' + str(pg_dump_release).strip() + '] is not valid\n')
 
             try:
@@ -4686,6 +4686,7 @@ class PgbackmanCli(cmd.Cmd):
                                     [PgSQL_bin_9.3]
                                     [PgSQL_bin_9.4]
                                     [PgSQL_bin_9.5]
+                                    [PgSQL_bin_9.6]
                                     [root_backup_dir]
                                     
         '''    
@@ -4744,6 +4745,7 @@ class PgbackmanCli(cmd.Cmd):
                 pgsql_bin_9_3_default = self.db.get_backup_server_config_value(backup_server_id,'pgsql_bin_9_3')
                 pgsql_bin_9_4_default = self.db.get_backup_server_config_value(backup_server_id,'pgsql_bin_9_4')
                 pgsql_bin_9_5_default = self.db.get_backup_server_config_value(backup_server_id,'pgsql_bin_9_5')
+                pgsql_bin_9_6_default = self.db.get_backup_server_config_value(backup_server_id,'pgsql_bin_9_6')
                 root_backup_partition_default = self.db.get_backup_server_config_value(backup_server_id,'root_backup_partition')
                                                 
             except Exception as e:
@@ -4758,6 +4760,7 @@ class PgbackmanCli(cmd.Cmd):
                 pgsql_bin_9_3 = raw_input('# PgSQL bindir 9.3 [' + pgsql_bin_9_3_default + ']: ').strip()
                 pgsql_bin_9_4 = raw_input('# PgSQL bindir 9.4 [' + pgsql_bin_9_4_default + ']: ').strip()
                 pgsql_bin_9_5 = raw_input('# PgSQL bindir 9.5 [' + pgsql_bin_9_5_default + ']: ').strip()
+                pgsql_bin_9_6 = raw_input('# PgSQL bindir 9.6 [' + pgsql_bin_9_6_default + ']: ').strip()
                 root_backup_partition = raw_input('# Main backup dir [' + root_backup_partition_default + ']: ').strip()
                 print
 
@@ -4789,13 +4792,16 @@ class PgbackmanCli(cmd.Cmd):
             if pgsql_bin_9_5  == '': 
                 pgsql_bin_9_5 = pgsql_bin_9_5_default
 
+            if pgsql_bin_9_6  == '': 
+                pgsql_bin_9_6 = pgsql_bin_9_6_default
+
             if root_backup_partition == '':
                 root_backup_partition = root_backup_partition_default
 
 
             if ack.lower() == 'yes':
                 try:
-                    self.db.update_backup_server_config(backup_server_id,pgsql_bin_9_0,pgsql_bin_9_1,pgsql_bin_9_2,pgsql_bin_9_3,pgsql_bin_9_4,pgsql_bin_9_5,root_backup_partition)
+                    self.db.update_backup_server_config(backup_server_id,pgsql_bin_9_0,pgsql_bin_9_1,pgsql_bin_9_2,pgsql_bin_9_3,pgsql_bin_9_4,pgsql_bin_9_5,pgsql_bin_9_6,root_backup_partition)
                     
                     print '[DONE] Configuration parameters for SrvID: ' + str(backup_server_id) + ' updated.\n'
 
@@ -4809,7 +4815,7 @@ class PgbackmanCli(cmd.Cmd):
         # Command with parameters
         #
                 
-        elif len(arg_list) == 8:
+        elif len(arg_list) == 9:
             
             backup_server = arg_list[0]
 
@@ -4834,6 +4840,7 @@ class PgbackmanCli(cmd.Cmd):
                 pgsql_bin_9_3_default = self.db.get_backup_server_config_value(backup_server_id,'pgsql_bin_9_3')
                 pgsql_bin_9_4_default = self.db.get_backup_server_config_value(backup_server_id,'pgsql_bin_9_4')
                 pgsql_bin_9_5_default = self.db.get_backup_server_config_value(backup_server_id,'pgsql_bin_9_5')
+                pgsql_bin_9_6_default = self.db.get_backup_server_config_value(backup_server_id,'pgsql_bin_9_6')
                 root_backup_partition_default = self.db.get_backup_server_config_value(backup_server_id,'root_backup_partition')
                 
             except Exception as e:
@@ -4846,7 +4853,8 @@ class PgbackmanCli(cmd.Cmd):
             pgsql_bin_9_3 = arg_list[4]
             pgsql_bin_9_4 = arg_list[5]
             pgsql_bin_9_5 = arg_list[6]
-            root_backup_partition = arg_list[7]
+            pgsql_bin_9_6 = arg_list[7]
+            root_backup_partition = arg_list[8]
 
             if pgsql_bin_9_0  == '': 
                 pgsql_bin_9_0 = pgsql_bin_9_0_default
@@ -4866,11 +4874,14 @@ class PgbackmanCli(cmd.Cmd):
             if pgsql_bin_9_5  == '': 
                 pgsql_bin_9_5 = pgsql_bin_9_5_default
 
+            if pgsql_bin_9_6  == '': 
+                pgsql_bin_9_6 = pgsql_bin_9_6_default
+
             if root_backup_partition == '':
                 root_backup_partition = root_backup_partition_default
 
             try:
-                self.db.update_backup_server_config(backup_server_id,pgsql_bin_9_0,pgsql_bin_9_1,pgsql_bin_9_2,pgsql_bin_9_3,pgsql_bin_9_4,pgsql_bin_9_5,root_backup_partition)
+                self.db.update_backup_server_config(backup_server_id,pgsql_bin_9_0,pgsql_bin_9_1,pgsql_bin_9_2,pgsql_bin_9_3,pgsql_bin_9_4,pgsql_bin_9_5,pgsql_bin_9_6,root_backup_partition)
                 
                 print '[DONE] Configuration parameters for SrvID: ' + str(backup_server_id) + ' updated.\n'
 

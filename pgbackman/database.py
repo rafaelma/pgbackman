@@ -2436,7 +2436,7 @@ class PgbackmanDB():
     # Method 
     # ############################################
                       
-    def update_backup_server_config(self,backup_server_id,pgsql_bin_9_0,pgsql_bin_9_1,pgsql_bin_9_2,pgsql_bin_9_3,pgsql_bin_9_4,pgsql_bin_9_5,root_backup_partition):
+    def update_backup_server_config(self,backup_server_id,pgsql_bin_9_0,pgsql_bin_9_1,pgsql_bin_9_2,pgsql_bin_9_3,pgsql_bin_9_4,pgsql_bin_9_5,pgsql_bin_9_6,root_backup_partition):
         """A function to update the configuration of a backup server"""
 
         try:
@@ -2444,14 +2444,15 @@ class PgbackmanDB():
 
             if self.cur:
                 try:
-                    self.cur.execute('SELECT update_backup_server_config(%s,%s,%s,%s,%s,%s,%s,%s)',(backup_server_id,
-                                                                                                    pgsql_bin_9_0,
-                                                                                                    pgsql_bin_9_1,
-                                                                                                    pgsql_bin_9_2,
-                                                                                                    pgsql_bin_9_3,
-                                                                                                    pgsql_bin_9_4,
-                                                                                                    pgsql_bin_9_5,
-                                                                                                    root_backup_partition))
+                    self.cur.execute('SELECT update_backup_server_config(%s,%s,%s,%s,%s,%s,%s,%s,%s)',(backup_server_id,
+                                                                                                       pgsql_bin_9_0,
+                                                                                                       pgsql_bin_9_1,
+                                                                                                       pgsql_bin_9_2,
+                                                                                                       pgsql_bin_9_3,
+                                                                                                       pgsql_bin_9_4,
+                                                                                                       pgsql_bin_9_5,
+                                                                                                       pgsql_bin_9_6,
+                                                                                                       root_backup_partition))
                     self.conn.commit()                        
               
                 except psycopg2.Error as e:

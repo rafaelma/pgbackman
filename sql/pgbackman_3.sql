@@ -12,11 +12,11 @@
 
 BEGIN;
 
---Update function update_backup_server_config with a new parameter (pgsql_bin_9_5)
+--Update function update_backup_server_config with two new parameters (pgsql_bin_9_5,pgsql_bin_9_6)
 
 DROP FUNCTION update_backup_server_config(INTEGER,TEXT,TEXT,TEXT,TEXT,TEXT,TEXT);
 
-CREATE OR REPLACE FUNCTION update_backup_server_config(INTEGER,TEXT,TEXT,TEXT,TEXT,TEXT,TEXT,TEXT) RETURNS VOID
+CREATE OR REPLACE FUNCTION update_backup_server_config(INTEGER,TEXT,TEXT,TEXT,TEXT,TEXT,TEXT,TEXT,TEXT) RETURNS VOID
  LANGUAGE plpgsql 
  SECURITY INVOKER 
  SET search_path = public, pg_temp
@@ -29,7 +29,8 @@ CREATE OR REPLACE FUNCTION update_backup_server_config(INTEGER,TEXT,TEXT,TEXT,TE
   pgsql_bin_9_3_ ALIAS FOR $5;
   pgsql_bin_9_4_ ALIAS FOR $6;
   pgsql_bin_9_5_ ALIAS FOR $7;
-  root_backup_partition_ ALIAS FOR $8;
+  pgsql_bin_9_6_ ALIAS FOR $8;
+  root_backup_partition_ ALIAS FOR $9;
 
   server_cnt INTEGER;
   v_msg     TEXT;
@@ -49,21 +50,25 @@ CREATE OR REPLACE FUNCTION update_backup_server_config(INTEGER,TEXT,TEXT,TEXT,TE
      USING backup_server_id_,
      	   pgsql_bin_9_1_;
    				
-    EXECUTE 'UPDATE backup_server_config SET value = $2 WHERE server_id = $1 AND parameter = ''pgsql_bin_9_2'''
+     EXECUTE 'UPDATE backup_server_config SET value = $2 WHERE server_id = $1 AND parameter = ''pgsql_bin_9_2'''
      USING backup_server_id_,
      	   pgsql_bin_9_2_;
 
-    EXECUTE 'UPDATE backup_server_config SET value = $2 WHERE server_id = $1 AND parameter = ''pgsql_bin_9_3'''
+     EXECUTE 'UPDATE backup_server_config SET value = $2 WHERE server_id = $1 AND parameter = ''pgsql_bin_9_3'''
      USING backup_server_id_,
      	   pgsql_bin_9_3_;
 
-    EXECUTE 'UPDATE backup_server_config SET value = $2 WHERE server_id = $1 AND parameter = ''pgsql_bin_9_4'''
+     EXECUTE 'UPDATE backup_server_config SET value = $2 WHERE server_id = $1 AND parameter = ''pgsql_bin_9_4'''
      USING backup_server_id_,
      	   pgsql_bin_9_4_;
 
      EXECUTE 'UPDATE backup_server_config SET value = $2 WHERE server_id = $1 AND parameter = ''pgsql_bin_9_5'''
      USING backup_server_id_,
      	   pgsql_bin_9_5_;
+
+     EXECUTE 'UPDATE backup_server_config SET value = $2 WHERE server_id = $1 AND parameter = ''pgsql_bin_9_6'''
+     USING backup_server_id_,
+     	   pgsql_bin_9_6_;
 
    EXECUTE 'UPDATE backup_server_config SET value = $2 WHERE server_id = $1 AND parameter = ''root_backup_partition'''
      USING backup_server_id_,
@@ -82,7 +87,7 @@ CREATE OR REPLACE FUNCTION update_backup_server_config(INTEGER,TEXT,TEXT,TEXT,TE
   END;
 $$;
 
-ALTER FUNCTION update_backup_server_config(INTEGER,TEXT,TEXT,TEXT,TEXT,TEXT,TEXT,TEXT) OWNER TO pgbackman_role_rw;
+ALTER FUNCTION update_backup_server_config(INTEGER,TEXT,TEXT,TEXT,TEXT,TEXT,TEXT,TEXT,TEXT) OWNER TO pgbackman_role_rw;
 
 -- Update view show_jobs_queue
 
@@ -111,10 +116,23 @@ SELECT server_id,
 FROM backup_server
 ORDER BY server_id;
 
+-- Update server_config with a new parameter (pgsql_bin_9.6) for all Backup servers in the system
+
+INSERT INTO backup_server_config (server_id,parameter,value,description) 
+SELECT server_id,
+'pgsql_bin_9_6'::text,
+'/usr/pgsql-9.6/bin'::text,
+'postgreSQL 9.6 bin directory'::text 
+FROM backup_server
+ORDER BY server_id;
+
 -- Update backup_server_default_config with postgresql 9.5 information
 
 INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('pgsql_bin_9_5','/usr/pgsql-9.5/bin','postgreSQL 9.5 bin directory');
 
+-- Update backup_server_default_config with postgresql 9.6 information
+
+INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('pgsql_bin_9_6','/usr/pgsql-9.6/bin','postgreSQL 9.6 bin directory');
 
 -- Update pgbackman_version with information about version 3:1_2_0
 
