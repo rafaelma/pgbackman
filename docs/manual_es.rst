@@ -3,7 +3,7 @@ PgBackMan - Administrador de copias de seguridad
 ================================================
 
 |
-| Versión-1.1.0
+| Versión-1.2.0
 |
 | Autor: Rafael Martinez Guerrero (Universidad de Oslo)
 | Correo electrónico: rafael@postgresql.org.es
@@ -85,6 +85,7 @@ Las características principales de PgBackMan son:
 * Posibilidad det pausar/reanudar el proceso de replicación en nodos esclavos/standby cuando se estén realizando copias de seguridad grandes.  
 * Programa pgbackman_dump autónomo que funciona incluso si la base de datos central con información de metadatos no está disponible.
 * Posibilidad de mandar alertas via SMTP cuando ocurre un error.
+* Posibilidad de mover en lote definiciones de backups entre servidores de backups. 
 * Manejo de situaciones de error.
 * Programado en Python y PL/pgSQL.
 * Distribuido bajo la GNU General Public License 3. 
@@ -171,7 +172,7 @@ Requerimientos del sistema
   * argparse >= 1.2.1
     
 * PostgreSQL >= 9.2 para la base de datos ``pgbackman``
-* PostgreSQL >= 9.0 y <= 9.4 en todos los servidores PgSQL que vayan a
+* PostgreSQL >= 9.0 y <= 9.6 en todos los servidores PgSQL que vayan a
   utilizar PgBackMan para administrar sus copias de seguridad lógicas.
 * AT y CRON instalados y ejecutandose.
 
@@ -503,6 +504,8 @@ de backups en PgBackMan:
      # PgSQL bindir 9.2 [/usr/pgsql-9.2/bin]: /usr/lib/postgresql/9.2/bin
      # PgSQL bindir 9.3 [/usr/pgsql-9.3/bin]: /usr/lib/postgresql/9.3/bin
      # PgSQL bindir 9.4 [/usr/pgsql-9.4/bin]: /usr/lib/postgresql/9.4/bin
+     # PgSQL bindir 9.5 [/usr/pgsql-9.5/bin]: /usr/lib/postgresql/9.5/bin
+     # PgSQL bindir 9.6 [/usr/pgsql-9.6/bin]: /usr/lib/postgresql/9.6/bin
      # Main backup dir [/srv/pgbackman]: 
 
      # Are all values to update correct (yes/no): yes
@@ -527,6 +530,8 @@ de backups en PgBackMan:
      | pgsql_bin_9_2         | /usr/lib/postgresql/9.2/bin | postgreSQL 9.2 bin directory                |
      | pgsql_bin_9_3         | /usr/lib/postgresql/9.3/bin | postgreSQL 9.3 bin directory                |
      | pgsql_bin_9_4         | /usr/lib/postgresql/9.4/bin | postgreSQL 9.4 bin directory                |
+     | pgsql_bin_9_5         | /usr/lib/postgresql/9.5/bin | postgreSQL 9.5 bin directory                |
+     | pgsql_bin_9_6         | /usr/lib/postgresql/9.6/bin | postgreSQL 9.6 bin directory                |
      | root_backup_partition | /srv/pgbackman              | Main partition used by pgbackman            |
      | root_cron_file        | /etc/cron.d/pgbackman       | Crontab file used by pgbackman - *Not used* |
      +-----------------------+-----------------------------+---------------------------------------------+
@@ -741,56 +746,59 @@ programa ``/usr/bin/pgbackman``
 
    [pgbackman@pg-backup01]# pgbackman
 
-   #############################################################
-   Welcome to the PostgreSQL Backup Manager shell (v.1.1.0)
-   #############################################################
+   ####################################################################
+   Welcome to the PostgreSQL Backup Manager shell ver.1.2.0
+   ####################################################################
    Type help or \? to list commands.
-
+   
    [pgbackman]$ help
-
+   
    Documented commands (type help <topic>):
    ========================================
-   EOF                              show_empty_backup_catalogs 
-   clear                            show_history               
-   delete_backup_definition_dbname  show_jobs_queue            
-   delete_backup_definition_id      show_pgbackman_config      
-   delete_backup_server             show_pgbackman_stats       
-   delete_pgsql_node                show_pgsql_node_config     
-   quit                             show_pgsql_node_stats      
-   register_backup_definition       show_pgsql_nodes           
-   register_backup_server           show_restore_catalog       
-   register_pgsql_node              show_restore_definitions   
-   register_restore_definition      show_restore_details       
-   register_snapshot_definition     show_restores_in_progress  
-   shell                            show_snapshot_definitions  
-   show_backup_catalog              show_snapshots_in_progress 
-   show_backup_definitions          update_backup_definition   
-   show_backup_details              update_backup_server       
-   show_backup_server_config        update_backup_server_config
-   show_backup_server_stats         update_pgsql_node          
-   show_backup_servers              update_pgsql_node_config   
+   EOF                              show_databases_without_backup_definitions
+   clear                            show_empty_backup_catalogs               
+   delete_backup_definition_dbname  show_history                             
+   delete_backup_definition_id      show_jobs_queue                          
+   delete_backup_server             show_pgbackman_config                    
+   delete_pgsql_node                show_pgbackman_stats                     
+   move_backup_definition           show_pgsql_node_config                   
+   quit                             show_pgsql_node_stats                    
+   register_backup_definition       show_pgsql_nodes                         
+   register_backup_server           show_restore_catalog                     
+   register_pgsql_node              show_restore_definitions                 
+   register_restore_definition      show_restore_details                     
+   register_snapshot_definition     show_restores_in_progress                
+   set                              show_snapshot_definitions                
+   shell                            show_snapshots_in_progress               
+   show_backup_catalog              update_backup_definition                 
+   show_backup_definitions          update_backup_server                     
+   show_backup_details              update_backup_server_config              
+   show_backup_server_config        update_pgsql_node                        
+   show_backup_server_stats         update_pgsql_node_config                 
+   show_backup_servers            
 
    Miscellaneous help topics:
    ==========================
-   shortcuts
-
+   shortcuts  support
+   
    Undocumented commands:
    ======================
    help
 
 **NOTA** Es posible usar el shell PgBackMan en modo no interactivo
 ejecutando en el shell del sistema operativo ``/usr/bin/pgbackman``
-con un comando PgBackMan como parámetro. Este metodo puede utilizarse
-para ejecutar comandos PgBackMan desde shell scripts. e.g.::
+con el parámetro ``--command <pgbackman_command>`` o ``-C
+<pgbackman_command>``. Este metodo puede utilizarse para ejecutar
+comandos PgBackMan desde shell scripts. e.g.::
 
-   [pgbackman@pg-backup01 ~]# pgbackman show_backup_servers
-   +-------+------------------+----------------------+
-   | SrvID | FQDN               | Remarks            |
-   +-------+--------------------+--------------------+
-   | 00001 | pg-backup01.uio.no | Main backup server |
-   +-------+------------------+----------------------+
+   [pgbackman@pg-backup01 ~]# pgbackman -C "show_backup_servers"
+   +-------+-------------------------+----------------------+
+   | SrvID | FQDN                    | Remarks              |
+   +-------+-------------------------+----------------------+
+   | 00001 | pg-backup01.example.net | Main backup server   |
+   +-------+------------------+-----------------------------+
 
-   [pgbackman@pg-backup01 ~]# pgbackman show_backup_definitions all all pgbackman
+   [pgbackman@pg-backup01 ~]# pgbackman -C "show_backup_definitions all all pgbackman"
    --------------------------------------------------------
    # SrvID / FQDN: all
    # NodeID / FQDN: all
@@ -803,6 +811,22 @@ para ejecutar comandos PgBackMan desde shell scripts. e.g.::
    | 00000000011 |  1  | pg-backup01.example.net | 1  | pgbackmandb.example.net | pgbackman | * * * * *   | FULL   | 7 days (1) | ACTIVE | --inserts  |
    | 00000000013 |  1  | pg-backup01.example.net | 1  | pgbackmandb.example.net | pgbackman | 41 01 * * * | SCHEMA | 7 days (1) | ACTIVE |            |
    +-------------+-----+-------------------------+----+-------------------------+-----------+-------------+--------+------------+--------+------------+
+
+También podemos usar los parámetros ``--output/-o csv`` o
+``--output/-o json`` cuando ejecutemos ``pgbackman`` en modo no
+interactivo para mostrar el resultado del comando en formato JSON o
+CSV.::
+
+   [pgbackman@pg-backup01 ~]# pgbackman -o json -C "show_backup_servers"
+   {
+     "backup_servers": [
+       {
+          "srvid": "00001", 
+          "fqdn": "pg-backup01.example.net", 
+          "remarks": "testing"
+       } 
+     ]
+   }
 
 
 clear
