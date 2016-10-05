@@ -5246,6 +5246,176 @@ class PgbackmanCli(cmd.Cmd):
 
 
     # ############################################
+    # Method do_move_backup_definition
+    # ############################################
+
+    def do_move_backup_definition(self,args):
+        '''DESCRIPTION:
+  
+        This command moves backup definitions between backup servers
+        for a particular combination of search values.
+
+        COMMAND:
+        move_backup_definition [From SrvID|FQDN]
+                               [To SrvID|FQDN]
+                               [NodeID|FQDN] 
+                               [DBname] 
+                               [DefID] 
+
+
+        [From SrvID | FQDN]:
+        -------------------
+        SrvID in PgBackMan or FQDN of the backup server running the
+        backup jobs that will be move to another backup server.
+
+        [To SrvID | FQDN]:
+        -------------------
+        SrvID in PgBackMan or FQDN of the backup server where we will
+        move the backup jobs.
+
+        [NodeID | FQDN]:
+        ----------------
+        NodeID in PgBackMan or FQDN of the PgSQL node running the
+        backup jobs we want to move.  
+
+        One can use 'all' or '*' with this parameter.
+                                   
+        [Dbname]:
+        ---------
+        Database name in the backup jobs we want to move. 
+
+        One can use 'all' or '*' with this parameter.
+                    
+        [DefID]:
+        --------
+        Backup definition ID we want to move.
+
+        '''
+
+        try: 
+            arg_list = shlex.split(args)
+            
+        except ValueError as e:
+            print '--------------------------------------------------------' 
+            self.processing_error('[ERROR]: ' + str(e) + '\n')
+            return False
+
+        #
+        # Default backup server
+        #
+            
+        default_backup_server = self.get_default_backup_server()
+
+        #
+        # Command without parameters
+        #             
+        
+        if len(arg_list) == 0:
+
+            ack = ''
+                        
+            try:
+                print '--------------------------------------------------------'
+                from_server_id = raw_input('# From backup server SrvID / FQDN [' + default_backup_server + ']: ')
+                to_server_id = raw_input('# To Backup server SrvID / FQDN [' + default_backup_server + ']: ')
+                node_id = raw_input('# PgSQL node NodeID / FQDN [all]: ')
+                dbname = raw_input('# DBname [all]: ')
+                def_id = raw_input('# DefID []: ')
+                
+                while ack.lower() != 'yes' and ack.lower() != 'no':
+                    ack = raw_input('# Are all values correct (yes/no): ')
+
+                print '--------------------------------------------------------'
+
+            except Exception as e:
+                print '\n--------------------------------------------------------' 
+                print '[ABORTED] Command interrupted by the user.\n'
+                return False
+                
+            if from_server_id == '':
+                from_server_id = default_backup_server
+
+            if to_server_id == '':
+                to_server_id = default_backup_server
+
+            if node_id.lower() in ['all','*','']:
+                node_list = None
+            else:
+                node_list = node_id.strip().replace(' ','').split(',')
+
+            if dbname.lower() in ['all','*','']:
+                dbname_list = None
+            else:
+                dbname_list = dbname.strip().replace(' ','').split(',')
+                
+            if def_id.lower() in ['all','*','']:
+                def_id_list = None
+            else:
+                def_id_list = def_id.strip().replace(' ','').split(',')
+              
+            if ack.lower() == 'yes':
+
+                try:
+                    self.db.move_backup_definition(from_server_id,to_server_id,node_list,dbname_list,def_id_list)  
+
+                    print '[DONE] Moving backup definitions from backup server [' + from_server_id + '] to backup server [' + to_server_id + ']\n'
+
+                except Exception as e:
+                    self.processing_error('[ERROR]: Could not move backup definitions from backup server [' + from_server_id + '] to backup server [' + to_server_id + ']\n')
+
+            elif ack.lower() == 'no':
+
+                print '[ABORTED] Command interrupted by the user.\n'
+
+
+        #
+        # Command with parameters
+        #             
+
+        elif len(arg_list) == 5:
+
+            from_server_id = arg_list[0]
+            to_server_id = arg_list[1]
+            node_id = arg_list[2]
+            dbname = arg_list[3]
+            def_id = arg_list[4]
+
+            if from_server_id == '':
+                from_server_id = default_backup_server
+
+            if to_server_id == '':
+                to_server_id = default_backup_server
+
+            if node_id.lower() in ['all','*','']:
+                node_list = None
+            else:
+                node_list = node_id.strip().replace(' ','').split(',')
+
+            if dbname.lower() in ['all','*','']:
+                dbname_list = None
+            else:
+                dbname_list = dbname.strip().replace(' ','').split(',')
+                
+            if def_id.lower() in ['all','*','']:
+                def_id_list = None
+            else:
+                def_id_list = def_id.strip().replace(' ','').split(',')
+
+            try:
+                self.db.move_backup_definition(from_server_id,to_server_id,node_list,dbname_list,def_id_list)  
+                
+                print '[DONE] Moving backup definitions from backup server [' + from_server_id + '] to backup server [' + to_server_id + ']\n'
+
+            except Exception as e:
+                self.processing_error('[ERROR]: Could not move backup definitions from backup server [' + from_server_id + '] to backup server [' + to_server_id + ']\n')
+
+        else:
+            self.processing_error('\n[ERROR] - Wrong number of parameters used.\n          Type help or ? to list commands\n')
+            
+        print
+
+
+    # ############################################
     # Method do_clear
     # ############################################
 

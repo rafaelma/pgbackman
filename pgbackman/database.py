@@ -2811,6 +2811,79 @@ class PgbackmanDB():
     # ############################################
     # Method 
     # ############################################
+
+    def move_backup_definition(self,from_backup_server, to_backup_server,pgsql_node_list,dbname_list,def_id_list):
+        """A function to move backup definitions between backup servers"""
+
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+
+                    if from_backup_server.isdigit():
+                        from_server_id = str(from_backup_server)
+                    else:
+                        from_server_id = str(self.get_backup_server_id(from_backup_server.lower()))
+
+                    if to_backup_server.isdigit():
+                        to_server_id = str(to_backup_server)
+                    else:
+                        to_server_id = str(self.get_backup_server_id(to_backup_server.lower()))
+
+                    if pgsql_node_list != None:
+                        node_sql = 'AND (FALSE '
+                        
+                        for node in pgsql_node_list:
+                            if node.isdigit():
+                                node_sql = node_sql + 'OR pgsql_node_id = ' + str(node) + ' '
+                            else:
+                                node_sql = node_sql + 'OR pgsql_node_id = ' +  str(self.get_pgsql_node_id(node.lower())) + ' '
+                                                                                   
+                        node_sql = node_sql + ') '
+                        
+                    else:
+                        node_sql = ''   
+
+                    if dbname_list != None:
+                        dbname_sql = 'AND (FALSE '
+                        
+                        for dbname in dbname_list:
+                            dbname_sql = dbname_sql + 'OR "dbname" = \'' + dbname + '\' '
+                                                                                   
+                        dbname_sql = dbname_sql + ') '
+                        
+                    else:
+                        dbname_sql = ''
+    
+                    if def_id_list != None:
+                        def_id_sql = 'AND (FALSE '
+                        
+                        for def_id in def_id_list:
+                            def_id_sql = def_id_sql + 'OR def_id = \'' + def_id + '\' '
+                                                                                   
+                        def_id_sql = def_id_sql + ') '
+                        
+                    else:
+                        def_id_sql = ''
+
+                  
+                    self.cur.execute('UPDATE backup_definition SET backup_server_id = ' + to_server_id + ' WHERE backup_server_id = ' + from_server_id + ' ' + node_sql + dbname_sql + def_id_sql)
+                                     
+                    self.conn.commit()                        
+
+                except psycopg2.Error as e:
+                    raise e
+                
+            self.pg_close()
+    
+        except psycopg2.Error as e:
+            raise e
+
+
+    # ############################################
+    # Method 
+    # ############################################
            
     def get_backup_definition_def_value(self,def_id,parameter):
         """A function to get the value of an attribute from a backup_definition"""
