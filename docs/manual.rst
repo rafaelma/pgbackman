@@ -782,9 +782,9 @@ This command can be run only without parameters. e.g.:
 
    [pgbackman]$ clear
 
-   #############################################################
-   Welcome to the PostgreSQL Backup Manager shell (v.1.1.0)
-   #############################################################
+   ####################################################################
+   Welcome to the PostgreSQL Backup Manager shell ver.1.2.0
+   ####################################################################
    Type help or \? to list commands.
    
    [pgbackman]$ 
@@ -1045,6 +1045,66 @@ This command can be run with or without parameters. e.g.:
    "backup_definition".  
    --------------------------------------------
 
+move_backup_definition 
+----------------------
+
+This command moves backup definitions between backup servers for a
+particular combination of search values.
+
+::
+
+   move_backup_definition [From SrvID|FQDN]
+                          [To SrvID|FQDN]
+                          [NodeID|FQDN] 
+                          [DBname] 
+                          [DefID] 
+
+Parameters:
+
+* **[From SrvID | FQDN]**: SrvID in PgBackMan or FQDN of the backup
+  server running the backup jobs that will be move to another backup
+  server.
+
+* **[To SrvID | FQDN]**: SrvID in PgBackMan or FQDN of the backup server
+  where we will move the backup jobs.
+
+* **[NodeID | FQDN]**: NodeID in PgBackMan or FQDN of the PgSQL node
+  where we take the backup jobs we want to move.
+
+  One can use 'all' or '*' with this parameter.
+                                   
+* **[Dbname]**: Database name in the backup jobs we want to move.
+
+  One can use 'all' or '*' with this parameter.
+                    
+* **[DefID]: Backup definition ID we want to move.
+
+The default value for a parameter is shown between brackets ``[]``. If
+the user does not define any value, the default value will be
+used. 
+
+This command can be run with or without parameters. e.g.:
+
+::
+
+   [pgbackman]$ move_backup_definition pg-backup01.example.net pg-backup02.example.net * * ''
+   
+   [DONE] Moving backup definitions from backup server [pg-backup01.example.net] to backup server [pg-backup02.example.net]
+
+::
+
+   [pgbackman]$ move_backup_definition
+   --------------------------------------------------------
+   # From backup server SrvID / FQDN [pg-backup01.example.net]: 
+   # To Backup server SrvID / FQDN [pg-backup0.example.net]: 
+   # PgSQL node NodeID / FQDN [all]: 
+   # DBname [all]: 
+   # DefID []: 
+   # Are all values correct (yes/no): yes
+   --------------------------------------------------------
+   [DONE] Moving backup definitions from backup server [pg-backup01.example.net] to backup server [pg-backup02.example.net]
+
+
 
 quit
 ----
@@ -1077,6 +1137,7 @@ periodically by PgBackMan.::
   register_backup_definition [SrvID | FQDN] 
                              [NodeID | FQDN] 
                              [DBname] 
+			     [DBname exceptions]
                              [min_cron] 
 			     [hour_cron] 
 			     [daymonth_cron]
@@ -1109,7 +1170,16 @@ Parameters:
     definition for all databases in the cluster *without a backup
     definition* (Except 'template0','template1' and 'postgres').
 
-* **[\*_cron]:** Schedule definition using the cron expression.
+* **[DBname exceptions]**: Databases that will not be considered when
+  using the values '#all_databases#' or
+  '#databases_without_backup_definitions#' in [DBname].[DBname
+  exceptions]
+  
+  One can define several DBnames in a comma separated list.
+
+* **[\*_cron]:** Schedule definition using the cron expression. Check
+  http://en.wikipedia.org/wiki/Cron#CRON_expression for more
+  information.
 
 * **[backup code]:** 
 
@@ -1144,7 +1214,7 @@ used. This command can be run with or without parameters. e.g.:
 
 ::
 
-   [pgbackman]$ register_backup_definition 1 1 test02 41 01 * * * schema false "7 days" 1 "" active "Testing reg"
+   [pgbackman]$ register_backup_definition 1 1 test02 "" 41 01 * * * schema false "7 days" 1 "" active "Testing reg"
 
    [Done] Backup definition for dbname: test02 registered.
 
@@ -1155,6 +1225,7 @@ used. This command can be run with or without parameters. e.g.:
    # Backup server SrvID / FQDN []: pg-backup01.example.net
    # PgSQL node NodeID / FQDN []: pg-node01.example.net
    # DBname []: test02
+   # DBname exceptions []: 
    # Minutes cron [41]: 
    # Hours cron [01]: 
    # Day-month cron [*]: 
@@ -1350,11 +1421,12 @@ This command registers a one time snapshot backup of a database.
    register_snapshot [SrvID | FQDN] 
                      [NodeID | FQDN] 
                      [DBname] 
+		     [DBname exceptions]
                      [AT time]
                      [backup code] 
                      [retention period] 
                      [extra backup parameters] 
-                     [remarks] 
+                     [tag] 
 		     [pg_dump/all release]
 
 
@@ -1367,6 +1439,16 @@ Parameters:
   running the database to backup.
 
 * **[DBname]:** Database name
+
+  One can use this special value, '#all_databases#' if you want to
+  register the snapshot backup for *all databases* in the cluster
+  (except 'template0','template1' and 'postgres').
+
+* **[DBname exceptions]:** Databases that will not be considered when
+  using '#all_databases#' in [DBname].
+
+  One can define several DBnames in a comma separated list.
+
 * **[AT time]:**  Timestamp to run the snapshot
 * **[backup code]:** 
 
@@ -1381,11 +1463,19 @@ Parameters:
 * **[extra backup parameters]:** Extra parameters that can be used
   with pg_dump / pg_dumpall
 
+* **[tag]:** Define a tag for this snapshot registration. This value
+  can be helpful when we register a snapshot for many databases at the
+  same time. This tag could be used in the future when registering a
+  backup recovery for all the databases from the same snapshot
+  registration.
+
+  If no value is defined, the system will generate a random alphanumeric tag.
+
 * **[pg_dump/all release]:** Release of pg_dump / pg_dumpall to use
-  when taking the snapshot, e.g. 9.0, 9.1, 9.2, 9.3 or 9.4. This
-  parameter can be necessary if we are going to restore the snapshot
-  in a postgreSQL installation running a newer release than the
-  source.
+  when taking the snapshot, e.g. 9.0, 9.1, 9.2, 9.3, 9.4, 9.5 or
+  9.6. This parameter can be necessary if we are going to restore the
+  snapshot in a postgreSQL installation running a newer release than
+  the source.
 
   This release version cannot be lower than the one used in the source
   installation running the database we are going to backup.
@@ -1399,7 +1489,7 @@ command can be run with or without parameters. e.g.:
 
 ::
 
-   [pgbackman]$ register_snapshot_definition 1 1 test02 2014-05-31 full "7 days" "" "Test snapshot" ""
+   [pgbackman]$ register_snapshot_definition 1 1 test02 "" 2014-05-31 full "7 days" "" "Test snapshot" ""
 
    [Done] Snapshot for dbname: test02 defined.
 
@@ -1414,7 +1504,7 @@ command can be run with or without parameters. e.g.:
    # Backup code [FULL]: 
    # Retention period [7 days]: 
    # Extra parameters []: 
-   # Remarks []: 
+   # Tag [5D9012AA3]: 
    # pg_dump/all release [Same as pgSQL node running dbname]:
    
    # Are all values correct (yes/no): yes

@@ -852,8 +852,8 @@ class PgbackmanCli(cmd.Cmd):
             
         [DBname exceptions]
         -------------------
-        Databases that will not be considered when using
-        '#all_databases#' and '#databases_without_backup_definitions#'
+        Databases that will not be considered when using the values
+        '#all_databases#' or '#databases_without_backup_definitions#'
         in [DBname]. 
 
         One can define several DBnames in a comma separated list.
@@ -2025,7 +2025,7 @@ class PgbackmanCli(cmd.Cmd):
         [pg_dump/all release]
         ---------------------
         Release of pg_dump / pg_dumpall to use when taking the
-        snapshot, e.g. 9.0, 9.1, 9.2, 9.3 or 9.4, 9.5, 9.6. This
+        snapshot, e.g. 9.0, 9.1, 9.2, 9.3 or 9.4, 9.5 or 9.6. This
         parameter can be necessary if we are going to restore the
         snapshot in a postgreSQL installation running a newer release
         than the source.
@@ -5286,8 +5286,8 @@ class PgbackmanCli(cmd.Cmd):
 
         [NodeID | FQDN]:
         ----------------
-        NodeID in PgBackMan or FQDN of the PgSQL node running the
-        backup jobs we want to move.  
+        NodeID in PgBackMan or FQDN of the PgSQL node where we take
+        the backup jobs we want to move.
 
         One can use 'all' or '*' with this parameter.
                                    
