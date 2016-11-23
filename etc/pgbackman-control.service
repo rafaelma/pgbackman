@@ -1,0 +1,11 @@
+[Unit]
+Description=pgbackman control service
+
+[Service]
+User=pgbackman
+Group=pgbackman
+Restart=always
+ExecStart=/usr/bin/pgbackman_control
+
+[Install]
+WantedBy=multi-user.target
