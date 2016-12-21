@@ -1,0 +1,31 @@
+#
+# It's not recommended to modify this file in-place, because it will
+# be overwritten during package upgrades.  If you want to customize,
+# the best way is to create a file
+# "/etc/systemd/system/pgbackman_alerts.service", containing
+#
+#       .include /lib/systemd/system/pgbackman_alerts.service
+#       ...make your changes here...
+#
+
+
+[Unit]
+Description=PgBackMan alerts service
+After=syslog.target
+After=network.target
+
+[Service]
+Type=simple
+
+User=pgbackman
+Group=pgbackman
+Restart=always
+ExecStart=/usr/bin/pgbackman_alerts
+KillMode=process
+Killsignal=SIGTERM
+
+TimeoutSec=300
+
+[Install]
+WantedBy=multi-user.target
+
