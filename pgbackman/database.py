@@ -27,16 +27,17 @@ import psycopg2.extensions
 import psycopg2.extras
 
 from pgbackman.prettytable import *
+from pgbackman.ordereddict import OrderedDict
 
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
 
 # #####################
-# Class: pg_database
+# Class: PgbackmanDB
 # ######################
 
 
-class pgbackman_db():
+class PgbackmanDB():
     """This class is used by PgBackman to interact with a postgreSQL database"""
 
     # ############################################
@@ -134,8 +135,7 @@ class pgbackman_db():
                     self.cur.execute('SELECT "SrvID","FQDN","Remarks" FROM show_backup_servers')
                     self.conn.commit()
 
-                    colnames = [desc[0] for desc in self.cur.description]
-                    self.print_results_table(self.cur,colnames,["FQDN","Remarks"])
+                    return self.cur
 
                 except psycopg2.Error as e:
                     raise e
@@ -209,9 +209,8 @@ class pgbackman_db():
                     self.cur.execute('SELECT * FROM show_pgsql_nodes')
                     self.conn.commit()
 
-                    colnames = [desc[0] for desc in self.cur.description]
-                    self.print_results_table(self.cur,colnames,["FQDN","Remarks"])
-                    
+                    return self.cur 
+
                 except psycopg2.Error as e:
                     raise e
 
@@ -448,8 +447,7 @@ class pgbackman_db():
     
                     self.cur.execute('SELECT \"DefID\",backup_server_id AS \"ID.\",\"Backup server\",pgsql_node_id AS \"ID\",\"PgSQL node\",\"DBname\",\"Schedule\",\"Code\",\"Retention\",\"Status\",\"Parameters\" FROM show_backup_definitions WHERE TRUE ' + server_sql + node_sql + dbname_sql)
                                      
-                    colnames = [desc[0] for desc in self.cur.description]
-                    self.print_results_table(self.cur,colnames,["Backup server","PgSQL node","DBname","Schedule","Code","Parameters"])
+                    return self.cur
             
                 except psycopg2.Error as e:
                     raise e
@@ -539,10 +537,9 @@ class pgbackman_db():
                         dbname_sql = ''
     
                     self.cur.execute('SELECT \"SnapshotID\",\"Registered\",backup_server_id AS \"ID.\",\"Backup server\",pgsql_node_id AS \"ID\",\"PgSQL node\",\"DBname\",\"AT time\",\"Code\",\"Retention\",\"Parameters\",\"Status\" FROM show_snapshot_definitions WHERE TRUE ' + server_sql + node_sql + dbname_sql)
-                                     
-                    colnames = [desc[0] for desc in self.cur.description]
-                    self.print_results_table(self.cur,colnames,["Backup server","PgSQL node","DBname","AT time","Parameters"])
-            
+
+                    return self.cur
+                    
                 except psycopg2.Error as e:
                     raise e
                 
@@ -605,10 +602,9 @@ class pgbackman_db():
                         dbname_sql = ''
     
                     self.cur.execute('SELECT \"RestoreDef\",\"Registered\",\"BckID\",target_pgsql_node_id AS \"ID\",\"Target PgSQL node\",\"Target DBname\",\"Renamed database\",\"AT time\",\"Extra parameters\",\"Status\" FROM show_restore_definitions WHERE TRUE ' + server_sql + node_sql + dbname_sql)
-                                     
-                    colnames = [desc[0] for desc in self.cur.description]
-                    self.print_results_table(self.cur,colnames,["Backup server","Target PgSQL node","Target DBname","AT time"])
-            
+
+                    return self.cur
+
                 except psycopg2.Error as e:
                     raise e
                 
@@ -695,9 +691,8 @@ class pgbackman_db():
                   
                     self.cur.execute('SELECT \"BckID\",\"DefID\",\"SnapshotID\",\"Finished\",backup_server_id AS \"ID.\",\"Backup server\",pgsql_node_id AS \"ID\",\"PgSQL node\",\"DBname\",\"Duration\",\"Size\",\"Code\",\"Execution\",\"Status\" FROM show_backup_catalog WHERE TRUE ' + server_sql + node_sql + dbname_sql + def_id_sql + status_sql)
                                      
-                    colnames = [desc[0] for desc in self.cur.description]
-                    self.print_results_table(self.cur,colnames,["Finished","Backup server","PgSQL node","DBname","Size"])
-            
+                    return self.cur
+
                 except psycopg2.Error as e:
                     raise e
                 
@@ -759,10 +754,9 @@ class pgbackman_db():
                         dbname_sql = ''
                       
                     self.cur.execute('SELECT \"RestoreID\",\"RestoreDef\",\"BckID\",\"Finished\",backup_server_id AS \"ID.\",\"Backup server\",target_pgsql_node_id AS \"ID\",\"Target PgSQL node\",\"Target DBname\",\"Duration\",\"Status\" FROM show_restore_catalog WHERE TRUE ' + server_sql + node_sql + dbname_sql)
-                                     
-                    colnames = [desc[0] for desc in self.cur.description]
-                    self.print_results_table(self.cur,colnames,["Finished","Backup server","Target PgSQL node","Target DBname"])
-            
+
+                    return self.cur
+
                 except psycopg2.Error as e:
                     raise e
                 
@@ -785,54 +779,51 @@ class pgbackman_db():
             if self.cur:
                 try:
                     self.cur.execute("SELECT * FROM show_backup_details WHERE bck_id= %s",(bck_id,))
-   
-                    x = PrettyTable([".",".."],header = False)
-                    x.align["."] = "r"
-                    x.align[".."] = "l"
-                    x.padding_width = 1
+                    
+                    result =  OrderedDict()
 
                     for record in self.cur:
-                        
-                        x.add_row(["BckID:",record[0]])
-                        x.add_row(["ProcPID:",str(record[9])])
-                        x.add_row(["Registered:",str(record[2])])
-                        x.add_row(["",""])
-                        x.add_row(["Started:",str(record[3])])
-                        x.add_row(["Finished:",str(record[4])])
-                        x.add_row(["Duration:",str(record[6])])
-                        x.add_row(["Total size:",record[29]])
-                        x.add_row(["Execution method:",record[32]])
-                        x.add_row(["Execution status:",record[31]])
-                        x.add_row(["",""])
-                        x.add_row(["DefID:",record[7]])
-                        x.add_row(["SnapshotID:",record[8]])
-                        x.add_row(["DBname:",record[19]])
-                        x.add_row(["Backup server (ID/FQDN):","[" + str(record[15]) + "] / " + record[16]])
-                        x.add_row(["PgSQL node (ID/FQDN):","[" + str(record[17]) + "] / " + record[18]])
-                        x.add_row(["PgSQL node release:",record[35]])
-                        x.add_row(["Pg_dump/all release:",record[36]])
-                        x.add_row(["",""])
-                        x.add_row(["Schedule:",record[11] + " [min hour day_month month weekday]"])
-                        x.add_row(["AT time:",record[12]])
-                        x.add_row(["Retention:",record[10]])
-                        x.add_row(["Backup code:",record[30]])
-                        x.add_row(["Extra parameters:",record[14]])
-                        x.add_row(["",""])
-                        x.add_row(["DB dump file:", record[20] + " (" + record[22] + ")"])
-                        x.add_row(["DB log file:",record[21]])
-                        x.add_row(["",""])
-                        x.add_row(["Role list:",str(record[34])])
-                        x.add_row(["",""])
-                        x.add_row(["DB roles dump file:", record[23] + " (" + record[25] + ")"])
-                        x.add_row(["DB roles log file:",record[24]])
-                        x.add_row(["",""])
-                        x.add_row(["DB config dump file:", record[26] + " (" + record[28] + ")"])
-                        x.add_row(["DB config log file:",record[27]])
-                        x.add_row(["",""])
-                        x.add_row(["On disk until:",str(record[5])])
-                        x.add_row(["Error message:",str(record[33])])
-                        
-                        print x
+
+                        result['BckID'] = str(record[1])
+                        result['ProcPID'] = str(record[9])
+                        result['Registered'] = str(record[2])
+                        result['#'] = ''
+                        result['Started'] = str(record[3])
+                        result['Finished'] = str(record[4])
+                        result['Duration'] = str(record[6])
+                        result['Total size'] = str(record[29])
+                        result['Execution method'] = str(record[32])
+                        result['Execution status'] = str(record[31])
+                        result['##'] = ''
+                        result['DefID'] = str(record[7])
+                        result['SnapshotID'] = str(record[8])
+                        result['DBname'] = str(record[19])
+                        result['Backup server'] = str(record[16])
+                        result['PgSQL node'] = str(record[18])
+                        result['PgSQL node release'] = str(record[35])
+                        result['Pg_dump release'] = str(record[36])
+                        result['###'] = ''
+                        result['Schedule'] = str(record[11]) + ' [min hour day_month month weekday]'
+                        result['AT time'] = str(record[12])
+                        result['Retention'] = str(record[10])
+                        result['Backup code'] = str(record[30])
+                        result['Extra parameters'] = str(record[14])
+                        result['####'] = ''
+                        result['DB dump file'] = str(record[20]) + " (" + str(record[22]) + ")"
+                        result['DB log file'] = str(record[21])
+                        result['#####'] = ''
+                        result['Role list'] = str(record[34])
+                        result['######'] = ''
+                        result['DB roles dump file'] = str(record[23]) + " (" + str(record[25]) + ")"
+                        result['DB roles log file'] = str(record[24])
+                        result['#######'] = ''
+                        result['DB config dump file'] = str(record[26]) + " (" + str(record[28]) + ")"
+                        result['DB config log file'] = str(record[27])
+                        result['########'] = ''
+                        result['On disk until'] = str(record[5])
+                        result['Error message'] = str(record[33])
+
+                    return result
 
                 except psycopg2.Error as e:
                     raise e
@@ -856,42 +847,39 @@ class pgbackman_db():
                 try:
                     self.cur.execute("SELECT * FROM show_restore_details WHERE restore_id= %s",(restore_id,))
    
-                    x = PrettyTable([".",".."],header = False)
-                    x.align["."] = "r"
-                    x.align[".."] = "l"
-                    x.padding_width = 1
+                    result =  OrderedDict()
 
                     for record in self.cur:
                         
-                        x.add_row(["RestoreID:",str(record[1])])
-                        x.add_row(["ProcPID:",str(record[5])])
-                        x.add_row(["Registered:",str(record[2])])
-                        x.add_row(["",""])
-                        x.add_row(["Started:",str(record[6])])
-                        x.add_row(["Finished:",str(record[7])])
-                        x.add_row(["Duration:",str(record[8])])
-                        x.add_row(["Execution status:",str(record[9])])
-                        x.add_row(["",""])
-                        x.add_row(["BckID:",str(record[10])])
-                        x.add_row(["Source DBname:",str(record[11])])
-                        x.add_row(["Target DBname:",str(record[12])])
-                        x.add_row(["Renamed DBname:",str(record[13])])
-                        x.add_row(["Roles restored:",str(record[23])])
-                        x.add_row(["",""])
-                        x.add_row(["Backup server (ID/FQDN):","[" + str(record[14]) + "] / " + str(record[15])])
-                        x.add_row(["Target PgSQL node (ID/FQDN):","[" + str(record[16]) + "] / " + str(record[17])])
-                        x.add_row(["Pg_dump/all backup release:",str(record[18])])
-                        x.add_row(["Target PgSQL node release:",str(record[19])])
-                        x.add_row(["",""])
-                        x.add_row(["AT time:",str(record[20])])
-                        x.add_row(["Extra parameters:",str(record[25])])
-                        x.add_row(["",""])
-                        x.add_row(["Restore log file:",str(record[21])])
-                        x.add_row(["Global log file:",str(record[22])])
-                        x.add_row(["",""])
-                        x.add_row(["Error message:",str(record[24])])
-                        
-                        print x
+                        result['RestoreID'] = str(record[0])
+                        result['ProcPID'] = str(record[5])
+                        result['Registered'] = str(record[2])
+                        result['#'] = ''
+                        result['Started'] = str(record[6])
+                        result['Finished'] = str(record[7])
+                        result['Duration'] = str(record[8])
+                        result['Execution status'] = str(record[9])
+                        result['##'] = ''
+                        result['BckID'] = str(record[10])
+                        result['Source DBname'] = str(record[11])
+                        result['Target DBname'] = str(record[12])
+                        result['Renamed DBname'] = str(record[13])
+                        result['Roles restored'] = str(record[23])
+                        result['###'] = ''
+                        result['Backup server'] = str(record[15])
+                        result['Target_PgSQL node'] = str(record[17])
+                        result['Pg_dump backup release'] = str(record[18])
+                        result['Target PgSQL node release'] = str(record[19])
+                        result['####'] = ''
+                        result['AT time'] = str(record[20])
+                        result['Extra parameters'] = str(record[25])
+                        result['#####'] = ''
+                        result['Retore log file'] = str(record[21])
+                        result['Global log file'] = str(record[22])
+                        result['######'] = ''
+                        result['Error message'] = str(record[24])
+
+                    return result
 
                 except psycopg2.Error as e:
                     raise e
@@ -901,6 +889,72 @@ class pgbackman_db():
         except psycopg2.Error as e:
             raise e    
 
+
+    # ############################################
+    # Method 
+    # ############################################
+
+    def show_databases_without_backup_definitions(self,pgsql_node):
+        """A function to get all databases in a PgSQL node without a backup definition"""
+
+        try:
+
+            result = []
+                
+            pgsql_node_list = []
+
+            if pgsql_node.lower() in ['all','*']:
+                
+                for id,fqdn in self.get_pgsql_nodes_list():
+                    pgsql_node_list.append(str(id))
+
+            else:
+                pgsql_node_list.append(pgsql_node)
+
+            for pgsql_node in pgsql_node_list:
+
+                if pgsql_node.isdigit():
+                    pgsql_node_id = pgsql_node
+                    pgsql_node_fqdn = self.get_pgsql_node_fqdn(pgsql_node)
+                else:
+                    pgsql_node_id = self.get_pgsql_node_id(pgsql_node)
+                    pgsql_node_fqdn = pgsql_node
+
+                dsn_value = self.get_pgsql_node_dsn(pgsql_node_id)
+                db_node = self.__class__(dsn_value,'pgbackman_cli')
+                    
+                database_list = []
+                all_databases = []
+                databases_with_bckdef = []
+
+                #
+                # We need to catch the exception just in case the
+                # PgSQL node in this interaction is down
+                #
+                # If it is down, we continue with the next one in
+                # pgsql_node_list
+                #
+                
+                try:
+                    for database in db_node.get_pgsql_node_database_list():
+                        all_databases.append(database[0])
+                        
+                except Exception as e:
+                    continue
+
+                for database in self.get_pgsql_node_database_with_bckdef_list(pgsql_node_id):
+                    databases_with_bckdef.append(database[0])
+
+                database_list = set(all_databases) - set(databases_with_bckdef)
+
+                for database in sorted(database_list):
+                    result.append((pgsql_node_fqdn,database))
+
+            return result
+                                    
+        except Exception as e:
+            raise e
+        
 
     # ############################################
     # Method 
@@ -916,9 +970,8 @@ class pgbackman_db():
                 try:
     
                     self.cur.execute('SELECT \"SnapshotID\",\"Registered\",backup_server_id AS \"ID.\",\"Backup server\",pgsql_node_id AS \"ID\",\"PgSQL node\",\"DBname\",\"AT time\",\"Code\",\"Elapsed time\" FROM show_snapshots_in_progress')
-                                     
-                    colnames = [desc[0] for desc in self.cur.description]
-                    self.print_results_table(self.cur,colnames,["Backup server","PgSQL node","DBname","AT time","Code"])
+
+                    return self.cur
             
                 except psycopg2.Error as e:
                     raise e
@@ -944,9 +997,8 @@ class pgbackman_db():
     
                     self.cur.execute('SELECT \"RestoreDef\",\"Registered\",\"BckID\",backup_server_id AS \"ID.\",\"Backup server\",target_pgsql_node_id AS \"ID\",\"Target PgSQL node\",\"Target DBname\",\"AT time\",\"Elapsed time\" FROM show_restores_in_progress')
                                      
-                    colnames = [desc[0] for desc in self.cur.description]
-                    self.print_results_table(self.cur,colnames,["Backup server","Target PgSQL node","Target DBname","AT time"])
-            
+                    return self.cur
+
                 except psycopg2.Error as e:
                     raise e
                 
@@ -1735,8 +1787,7 @@ class pgbackman_db():
                     self.cur.execute('SELECT * FROM show_jobs_queue')
                     self.conn.commit()
 
-                    colnames = [desc[0] for desc in self.cur.description]
-                    self.print_results_table(self.cur,colnames,["JobID","Registered","Backup server","PgSQL node"])
+                    return self.cur
                     
                 except psycopg2.Error as e:
                     raise e
@@ -1762,9 +1813,8 @@ class pgbackman_db():
                     self.cur.execute('SELECT "Parameter","Value","Description" FROM show_backup_server_config WHERE server_id = %s',(backup_server_id,))
                     self.conn.commit()
 
-                    colnames = [desc[0] for desc in self.cur.description]
-                    self.print_results_table(self.cur,colnames,["Parameter","Value","Description"])
-                    
+                    return self.cur
+
                 except psycopg2.Error as e:
                     raise e
 
@@ -1788,8 +1838,7 @@ class pgbackman_db():
                     self.cur.execute('SELECT "Parameter","Value","Description" FROM show_pgsql_node_config WHERE node_id = %s',(pgsql_node_id,))
                     self.conn.commit()
 
-                    colnames = [desc[0] for desc in self.cur.description]
-                    self.print_results_table(self.cur,colnames,["Parameter","Value","Description"])
+                    return self.cur
                     
                 except psycopg2.Error as e:
                     raise e
@@ -1868,38 +1917,34 @@ class pgbackman_db():
                      
                     self.cur.execute("SELECT count(*) FROM catalog_entries_to_delete")
                     defid_force_deletion_cnt = self.cur.fetchone()[0]
+
+                    result =  OrderedDict()
+
+                    result['Running Backup servers'] = str(backup_server_running_cnt)
+                    result['Stopped Backup servers'] = str(backup_server_stopped_cnt)
+                    result['#'] = ''
+                    result['Running PgSQL nodes'] = str(pgsql_node_running_cnt)
+                    result['Stopped PgSQL nodes'] = str(pgsql_node_stopped_cnt)
+                    result['##'] = ''
+                    result['Different databases'] = str(dbname_cnt)
+                    result['Active Backup job defs'] = str(backup_jobs_active_cnt)
+                    result['Stopped Backup job defs'] = str(backup_jobs_stopped_cnt)
+                    result['Backup job defs with CLUSTER code'] = str(backup_jobs_cluster_cnt)
+                    result['Backup job defs with DATA code'] = str(backup_jobs_data_cnt)
+                    result['Backup job defs with FULL code'] = str(backup_jobs_full_cnt)
+                    result['Backup job defs with SCHEMA code'] = str(backup_jobs_schema_cnt)
+                    result['###'] = ''
+                    result['Succeeded backups in catalog'] = str(backup_catalog_succeeded_cnt)
+                    result['Faulty backups in catalog'] = str(backup_catalog_error_cnt)
+                    result['Total size of backups in catalog'] = str(backup_space)
+                    result['Total running time of backups in catalog'] = str(backup_duration)
+                    result['Oldest backup in catalog'] = str(oldest_backup_job)
+                    result['Newest backup in catalog'] = str(newest_backup_job)
+                    result['####'] = ''
+                    result['Jobs waiting to be processed by pgbackman_control'] = str(job_queue_cnt)
+                    result['Forced deletion of backups waiting to be processed'] = str(defid_force_deletion_cnt)
                     
-                    x = PrettyTable([".",".."],header = False)
-                    x.align["."] = "r"
-                    x.align[".."] = "l"
-                    x.padding_width = 1
-                        
-                    x.add_row(["Running Backup servers:",str(backup_server_running_cnt)])
-                    x.add_row(["Stopped Backup servers:",str(backup_server_stopped_cnt)])
-                    x.add_row(["",""])
-                    x.add_row(["Running PgSQL nodes:",str(pgsql_node_running_cnt)])
-                    x.add_row(["Stopped PgSQL nodes:",str(pgsql_node_stopped_cnt)])
-                    x.add_row(["",""])
-                    x.add_row(["Different databases:",str(dbname_cnt)])
-                    x.add_row(["Active Backup job defs:",str(backup_jobs_active_cnt)])
-                    x.add_row(["Stopped Backup job defs:",str(backup_jobs_stopped_cnt)])
-                    x.add_row(["Backup job defs with CLUSTER code:",str(backup_jobs_cluster_cnt)])
-                    x.add_row(["Backup job defs with DATA code:",str(backup_jobs_data_cnt)])
-                    x.add_row(["Backup job defs with FULL code:",str(backup_jobs_full_cnt)])
-                    x.add_row(["Backup job defs with SCHEMA code:",str(backup_jobs_schema_cnt)])
-                    x.add_row(["",""])
-                    x.add_row(["Succeeded backups in catalog:",str(backup_catalog_succeeded_cnt)])
-                    x.add_row(["Faulty backups in catalog:",str(backup_catalog_error_cnt)])
-                    x.add_row(["Total size of backups in catalog:",str(backup_space)])
-                    x.add_row(["Total running time of backups in catalog:",str(backup_duration)])
-                    x.add_row(["Oldest backup in catalog:",str(oldest_backup_job)])
-                    x.add_row(["Newest backup in catalog:",str(newest_backup_job)])
-                    x.add_row(["",""])
-                    x.add_row(["Jobs waiting to be processed by pgbackman_control:",str(job_queue_cnt)])
-                    x.add_row(["Forced deletion of backups waiting to be processed:",str(defid_force_deletion_cnt)])
-                    
-                    print x
-                    print
+                    return result
 
                 except psycopg2.Error as e:
                     raise e
@@ -1973,36 +2018,32 @@ class pgbackman_db():
                     self.cur.execute("SELECT count(*) FROM catalog_entries_to_delete WHERE backup_server_id = %s",(backup_server_id,))
                     defid_force_deletion_cnt = self.cur.fetchone()[0]
                     
-                    x = PrettyTable([".",".."],header = False)
-                    x.align["."] = "r"
-                    x.align[".."] = "l"
-                    x.padding_width = 1
-                        
-                    x.add_row(["Backup server:","[" + str(backup_server_id) + "] " + backup_server_fqdn])
-                    x.add_row(["",""])
-                    x.add_row(["PgSQL nodes using this backup server:",str(pgsql_node_cnt)])
-                    x.add_row(["",""])
-                    x.add_row(["Different databases:",str(dbname_cnt)])
-                    x.add_row(["Active Backup job defs:",str(backup_jobs_active_cnt)])
-                    x.add_row(["Stopped Backup job defs:",str(backup_jobs_stopped_cnt)])
-                    x.add_row(["Backup job defs with CLUSTER code:",str(backup_jobs_cluster_cnt)])
-                    x.add_row(["Backup job defs with DATA code:",str(backup_jobs_data_cnt)])
-                    x.add_row(["Backup job defs with FULL code:",str(backup_jobs_full_cnt)])
-                    x.add_row(["Backup job defs with SCHEMA code:",str(backup_jobs_schema_cnt)])
-                    x.add_row(["",""])
-                    x.add_row(["Succeeded backups in catalog:",str(backup_catalog_succeeded_cnt)])
-                    x.add_row(["Faulty backups in catalog:",str(backup_catalog_error_cnt)])
-                    x.add_row(["Total size of backups in catalog:",str(backup_space)])
-                    x.add_row(["Total running time of backups in catalog:",str(backup_duration)])
-                    x.add_row(["Oldest backup in catalog:",str(oldest_backup_job)])
-                    x.add_row(["Newest backup in catalog:",str(newest_backup_job)])
-                    x.add_row(["",""])
-                    x.add_row(["Jobs waiting to be processed by pgbackman_control:",str(job_queue_cnt)])
-                    x.add_row(["Forced deletion of backups waiting to be processed:",str(defid_force_deletion_cnt)])
+                    result =  OrderedDict()
                     
-                    print x
-                    print
+                    result['Backup server'] = backup_server_fqdn
+                    result['#'] = ''
+                    result['PgSQL nodes using this backup server'] = str(pgsql_node_cnt)
+                    result['##'] = ''
+                    result['Different databases'] = str(dbname_cnt)
+                    result['Active Backup job defs'] = str(backup_jobs_active_cnt)
+                    result['Stopped Backup job defs'] = str(backup_jobs_stopped_cnt)
+                    result['Backup job defs with CLUSTER code'] = str(backup_jobs_cluster_cnt)
+                    result['Backup job defs with DATA code'] = str(backup_jobs_data_cnt)
+                    result['Backup job defs with FULL code'] = str(backup_jobs_full_cnt)
+                    result['Backup job defs with SCHEMA code'] = str(backup_jobs_schema_cnt)
+                    result['###'] = ''
+                    result['Succeeded backups in catalog'] = str(backup_catalog_succeeded_cnt)
+                    result['Faulty backups in catalog'] = str(backup_catalog_error_cnt)
+                    result['Total size of backups in catalog'] = str(backup_space)
+                    result['Total running time of backups in catalog'] = str(backup_duration)
+                    result['Oldest backup in catalog'] = str(oldest_backup_job)
+                    result['Newest backup in catalog'] = str(newest_backup_job)
+                    result['####'] = ''
+                    result['Jobs waiting to be processed by pgbackman_control'] = str(job_queue_cnt)
+                    result['Forced deletion of backups waiting to be processed'] = str(defid_force_deletion_cnt)
 
+                    return result
+                    
                 except psycopg2.Error as e:
                     raise e
                 
@@ -2072,34 +2113,30 @@ class pgbackman_db():
                     self.cur.execute("SELECT count(*) FROM job_queue WHERE pgsql_node_id = %s",(pgsql_node_id,))
                     job_queue_cnt = self.cur.fetchone()[0]
                     
-                    x = PrettyTable([".",".."],header = False)
-                    x.align["."] = "r"
-                    x.align[".."] = "l"
-                    x.padding_width = 1
+                    result =  OrderedDict()
                         
-                    x.add_row(["PgSQL node:","[" + str(pgsql_node_id) + "] " + pgsql_node_fqdn])
-                    x.add_row(["",""])
-                    x.add_row(["Backup servers running backups for this Node:",str(backup_server_cnt)])
-                    x.add_row(["",""])
-                    x.add_row(["Different databases:",str(dbname_cnt)])
-                    x.add_row(["Active Backup job defs:",str(backup_jobs_active_cnt)])
-                    x.add_row(["Stopped Backup job defs:",str(backup_jobs_stopped_cnt)])
-                    x.add_row(["Backup job defs with CLUSTER code:",str(backup_jobs_cluster_cnt)])
-                    x.add_row(["Backup job defs with DATA code:",str(backup_jobs_data_cnt)])
-                    x.add_row(["Backup job defs with FULL code:",str(backup_jobs_full_cnt)])
-                    x.add_row(["Backup job defs with SCHEMA code:",str(backup_jobs_schema_cnt)])
-                    x.add_row(["",""])
-                    x.add_row(["Succeeded backups in catalog:",str(backup_catalog_succeeded_cnt)])
-                    x.add_row(["Faulty backups in catalog:",str(backup_catalog_error_cnt)])
-                    x.add_row(["Total size of backups in catalog:",str(backup_space)])
-                    x.add_row(["Total running time of backups in catalog:",str(backup_duration)])
-                    x.add_row(["Oldest backup in catalog:",str(oldest_backup_job)])
-                    x.add_row(["Newest backup in catalog:",str(newest_backup_job)])
-                    x.add_row(["",""])
-                    x.add_row(["Jobs waiting to be processed by pgbackman_control:",str(job_queue_cnt)])
+                    result['PgSQL node'] = "[" + str(pgsql_node_id) + "] " + pgsql_node_fqdn
+                    result['#'] = ''
+                    result['Backup servers running backups for this Node'] = str(backup_server_cnt)
+                    result['##'] = ''
+                    result['Different databases'] = str(dbname_cnt)
+                    result['Active Backup job defs'] = str(backup_jobs_active_cnt)
+                    result['Stopped Backup job defs'] = str(backup_jobs_stopped_cnt)
+                    result['Backup job defs with CLUSTER code'] = str(backup_jobs_cluster_cnt)
+                    result['Backup job defs with DATA code'] = str(backup_jobs_data_cnt)
+                    result['Backup job defs with FULL code'] = str(backup_jobs_full_cnt)
+                    result['Backup job defs with SCHEMA code'] = str(backup_jobs_schema_cnt)
+                    result['###'] = ''
+                    result['Succeeded backups in catalog'] = str(backup_catalog_succeeded_cnt)
+                    result['Faulty backups in catalog'] = str(backup_catalog_error_cnt)
+                    result['Total size of backups in catalog'] = str(backup_space)
+                    result['Total running time of backups in catalog'] = str(backup_duration)
+                    result['Oldest backup in catalog'] = str(oldest_backup_job)
+                    result['Newest backup in catalog'] = str(newest_backup_job)
+                    result['####'] = ''
+                    result['Jobs waiting to be processed by pgbackman_control'] = str(job_queue_cnt)
                     
-                    print x
-                    print
+                    return result
 
                 except psycopg2.Error as e:
                     raise e
@@ -2200,8 +2237,7 @@ class pgbackman_db():
                     self.cur.execute('SELECT \"DefID\",\"Registered\",backup_server_id AS \"ID.\",\"Backup server\",pgsql_node_id AS \"ID\",\"PgSQL node\",\"DBname\",\"Schedule\",\"Code\",\"Retention\",\"Status\",\"Parameters\" FROM show_empty_backup_catalogs')
                     self.conn.commit()
 
-                    colnames = [desc[0] for desc in self.cur.description]
-                    self.print_results_table(self.cur,colnames,["Backup server","PgSQL node","Schedule","Retention","Parameters"])
+                    return self.cur
                     
                 except psycopg2.Error as e:
                     raise e
@@ -2400,7 +2436,7 @@ class pgbackman_db():
     # Method 
     # ############################################
                       
-    def update_backup_server_config(self,backup_server_id,pgsql_bin_9_0,pgsql_bin_9_1,pgsql_bin_9_2,pgsql_bin_9_3,pgsql_bin_9_4,root_backup_partition):
+    def update_backup_server_config(self,backup_server_id,pgsql_bin_9_0,pgsql_bin_9_1,pgsql_bin_9_2,pgsql_bin_9_3,pgsql_bin_9_4,pgsql_bin_9_5,pgsql_bin_9_6,root_backup_partition):
         """A function to update the configuration of a backup server"""
 
         try:
@@ -2408,13 +2444,15 @@ class pgbackman_db():
 
             if self.cur:
                 try:
-                    self.cur.execute('SELECT update_backup_server_config(%s,%s,%s,%s,%s,%s,%s)',(backup_server_id,
-                                                                                                 pgsql_bin_9_0,
-                                                                                                 pgsql_bin_9_1,
-                                                                                                 pgsql_bin_9_2,
-                                                                                                 pgsql_bin_9_3,
-                                                                                                 pgsql_bin_9_4,
-                                                                                                 root_backup_partition))
+                    self.cur.execute('SELECT update_backup_server_config(%s,%s,%s,%s,%s,%s,%s,%s,%s)',(backup_server_id,
+                                                                                                       pgsql_bin_9_0,
+                                                                                                       pgsql_bin_9_1,
+                                                                                                       pgsql_bin_9_2,
+                                                                                                       pgsql_bin_9_3,
+                                                                                                       pgsql_bin_9_4,
+                                                                                                       pgsql_bin_9_5,
+                                                                                                       pgsql_bin_9_6,
+                                                                                                       root_backup_partition))
                     self.conn.commit()                        
               
                 except psycopg2.Error as e:
@@ -2774,6 +2812,79 @@ class pgbackman_db():
     # ############################################
     # Method 
     # ############################################
+
+    def move_backup_definition(self,from_backup_server, to_backup_server,pgsql_node_list,dbname_list,def_id_list):
+        """A function to move backup definitions between backup servers"""
+
+        try:
+            self.pg_connect()
+
+            if self.cur:
+                try:
+
+                    if from_backup_server.isdigit():
+                        from_server_id = str(from_backup_server)
+                    else:
+                        from_server_id = str(self.get_backup_server_id(from_backup_server.lower()))
+
+                    if to_backup_server.isdigit():
+                        to_server_id = str(to_backup_server)
+                    else:
+                        to_server_id = str(self.get_backup_server_id(to_backup_server.lower()))
+
+                    if pgsql_node_list != None:
+                        node_sql = 'AND (FALSE '
+                        
+                        for node in pgsql_node_list:
+                            if node.isdigit():
+                                node_sql = node_sql + 'OR pgsql_node_id = ' + str(node) + ' '
+                            else:
+                                node_sql = node_sql + 'OR pgsql_node_id = ' +  str(self.get_pgsql_node_id(node.lower())) + ' '
+                                                                                   
+                        node_sql = node_sql + ') '
+                        
+                    else:
+                        node_sql = ''   
+
+                    if dbname_list != None:
+                        dbname_sql = 'AND (FALSE '
+                        
+                        for dbname in dbname_list:
+                            dbname_sql = dbname_sql + 'OR "dbname" = \'' + dbname + '\' '
+                                                                                   
+                        dbname_sql = dbname_sql + ') '
+                        
+                    else:
+                        dbname_sql = ''
+    
+                    if def_id_list != None:
+                        def_id_sql = 'AND (FALSE '
+                        
+                        for def_id in def_id_list:
+                            def_id_sql = def_id_sql + 'OR def_id = \'' + def_id + '\' '
+                                                                                   
+                        def_id_sql = def_id_sql + ') '
+                        
+                    else:
+                        def_id_sql = ''
+
+                  
+                    self.cur.execute('UPDATE backup_definition SET backup_server_id = ' + to_server_id + ' WHERE backup_server_id = ' + from_server_id + ' ' + node_sql + dbname_sql + def_id_sql)
+                                     
+                    self.conn.commit()                        
+
+                except psycopg2.Error as e:
+                    raise e
+                
+            self.pg_close()
+    
+        except psycopg2.Error as e:
+            raise e
+
+
+    # ############################################
+    # Method 
+    # ############################################
            
     def get_backup_definition_def_value(self,def_id,parameter):
         """A function to get the value of an attribute from a backup_definition"""
@@ -3029,7 +3140,7 @@ class pgbackman_db():
 
             if self.cur:
                 try:
-                    self.cur.execute('SELECT "DefID" FROM show_backup_definitions WHERE "Status" <> %s AND backup_server_id = %s AND pgsql_node_id = %s',('DELETED',
+                    self.cur.execute('SELECT "DefID" FROM show_backup_definitions WHERE "Status" <> %s AND backup_server_id = %s AND pgsql_node_id = %s AND "DBname" <> \'\'',('DELETED',
                                                                                                                                                           backup_server_id,
                                                                                                                                                           pgsql_node_id))
                     self.conn.commit()

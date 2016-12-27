@@ -56,10 +56,10 @@ def get_status_info(parameter_status,backup_server_fqdn,backup_def_id):
 
     try:
 
-        conf = configuration()
+        conf = PgbackmanConfiguration()
         pgbackman_dsn = conf.dsn
         
-        db = pgbackman_db(pgbackman_dsn,'pgbackman_status_info')
+        db = PgbackmanDB(pgbackman_dsn, 'pgbackman_status_info')
         
         if backup_server_fqdn != '':
             backup_server_id = db.get_backup_server_id(backup_server_fqdn)
@@ -89,7 +89,7 @@ if __name__ == '__main__':
     # Initializing logging
     #
 
-    logs = logs("pgbackman_status_info","","")
+    logs = PgbackmanLogs("pgbackman_status_info", "", "")
     logs.logger.debug('**** pgbackman_status_info started. ****')
 
     parser = argparse.ArgumentParser(prog=sys.argv[0])

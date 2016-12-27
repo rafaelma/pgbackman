@@ -489,7 +489,7 @@ def process_pgsql_node_stopped(db,backup_server_id):
 def update_backup_server_cache_data(db,backup_server_fqdn,backup_server_id):
     '''Update the cache data for the backup server'''
 
-    root_backup_partition = pgsql_bin_9_4 = pgsql_bin_9_3 = pgsql_bin_9_2 = pgsql_bin_9_1 = pgsql_bin_9_0 = None
+    root_backup_partition = pgsql_bin_9_6 = pgsql_bin_9_5 = pgsql_bin_9_4 = pgsql_bin_9_3 = pgsql_bin_9_2 = pgsql_bin_9_1 = pgsql_bin_9_0 = None
     
     try:
         uid = pwd.getpwnam('pgbackman').pw_uid
@@ -501,12 +501,13 @@ def update_backup_server_cache_data(db,backup_server_fqdn,backup_server_id):
     try:
         root_backup_partition = db.get_backup_server_config_value(backup_server_id,'root_backup_partition')
 
+        pgsql_bin_9_6 = db.get_backup_server_config_value(backup_server_id,'pgsql_bin_9_6')
+        pgsql_bin_9_5 = db.get_backup_server_config_value(backup_server_id,'pgsql_bin_9_5')
         pgsql_bin_9_4 = db.get_backup_server_config_value(backup_server_id,'pgsql_bin_9_4')
         pgsql_bin_9_3 = db.get_backup_server_config_value(backup_server_id,'pgsql_bin_9_3')
         pgsql_bin_9_2 = db.get_backup_server_config_value(backup_server_id,'pgsql_bin_9_2')
         pgsql_bin_9_1 = db.get_backup_server_config_value(backup_server_id,'pgsql_bin_9_1')
         pgsql_bin_9_0 = db.get_backup_server_config_value(backup_server_id,'pgsql_bin_9_0')
-        
         
         backup_server_cache_dir = root_backup_partition +  '/cache_dir'
         backup_server_cache_file = backup_server_cache_dir + '/backup_server_' + backup_server_fqdn + '.cache'
@@ -517,6 +518,8 @@ def update_backup_server_cache_data(db,backup_server_fqdn,backup_server_id):
                 backup_server_cache.write('backup_server_id::' + str(backup_server_id) + '\n' +
                                           'backup_server_fqdn::' + backup_server_fqdn + '\n' +
                                           'root_backup_partition::' + root_backup_partition + '\n' +
+                                          'pgsql_bin_9_6::' + pgsql_bin_9_6 + '\n' +
+                                          'pgsql_bin_9_5::' + pgsql_bin_9_5 + '\n' +
                                           'pgsql_bin_9_4::' + pgsql_bin_9_4 + '\n' +
                                           'pgsql_bin_9_3::' + pgsql_bin_9_3 + '\n' +
                                           'pgsql_bin_9_2::' + pgsql_bin_9_2 + '\n' +
@@ -590,7 +593,7 @@ def main():
     global listen_list
     global last_crontab_update
 
-    conf = configuration()
+    conf = PgbackmanConfiguration()
     dsn = conf.dsn
     tmp_dir = conf.tmp_dir
 
@@ -598,7 +601,7 @@ def main():
     logs.logger.debug('Backup server FQDN: %s',socket.getfqdn())
     logs.logger.debug('DSN: host=%s hostaddr=%s port=%s database=%s user=%s ',conf.dbhost,conf.dbhostaddr,conf.dbport,conf.dbname,conf.dbuser)
 
-    db = pgbackman_db(dsn,'pgbackman_control')
+    db = PgbackmanDB(dsn, 'pgbackman_control')
 
     #
     # We check before starting if the database is available. 
@@ -619,7 +622,7 @@ def main():
     # Instance used to have a persistance connection to the database 
     # So we can use LISTEN/NOTIFY
     #
-    db_notify = pgbackman_db(dsn,'pgbackman_notify')
+    db_notify = PgbackmanDB(dsn, 'pgbackman_notify')
     
     try:
         db_notify.pg_connect()
@@ -838,7 +841,7 @@ def main():
                 check_db = check_database_connection(db)
 
             db_notify = None
-            db_notify = pgbackman_db(dsn,'pgbackman_notify')
+            db_notify = PgbackmanDB(dsn, 'pgbackman_notify')
             
             try:
                 db_notify.pg_connect()
@@ -875,7 +878,7 @@ def signal_handler(signum, frame):
 
 if __name__ == '__main__':
 
-    logs = logs("pgbackman_control","","")
+    logs = PgbackmanLogs("pgbackman_control", "", "")
     logs.logger.info('**** pgbackman_control started. ****')
 
     signal.signal(signal.SIGINT,signal_handler)
