@@ -1,0 +1,11 @@
+[Unit]
+Description=pgbackman maintenance service
+
+[Service]
+User=pgbackman
+Group=pgbackman
+Restart=always
+ExecStart=/usr/bin/pgbackman_maintenance
+
+[Install]
+WantedBy=multi-user.target

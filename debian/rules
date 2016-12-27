@@ -11,8 +11,10 @@ export DH_VERBOSE=1
 
 override_dh_auto_install:	
 	python setup.py install --root=debian/pgbackman --install-layout=deb --prefix=/usr
+	mkdir -p debian/pgbackman/lib/systemd/system
+	install etc/pgbackman-*.service debian/pgbackman/lib/systemd/system
 
 override_dh_auto_build:
 
 %:
-	dh $@  --with python2
+	dh $@  --with python2,systemd
