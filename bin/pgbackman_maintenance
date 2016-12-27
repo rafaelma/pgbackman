@@ -466,7 +466,7 @@ def process_backup_definitions_from_deleted_databases(db,backup_server_id):
             logs.logger.debug('Proccesing backup definitions for deleted databases on: %s',pgsql_node_fqdn)
 
             dsn_value = db.get_pgsql_node_dsn(pgsql_node_id)
-            db_node = pgbackman_db(dsn_value,'pgbackman_maintenance')
+            db_node = PgbackmanDB(dsn_value, 'pgbackman_maintenance')
             
             #
             # Get all backup definitions for this Backup server - PgSQL node
@@ -551,7 +551,7 @@ def check_database_connection(db):
 
 def main():
 
-    conf = configuration()
+    conf = PgbackmanConfiguration()
     dsn = conf.dsn
 
     logs.logger.debug('Backup server ID from config file: %s',conf.backup_server)
@@ -559,7 +559,7 @@ def main():
     logs.logger.debug('DSN: host=%s hostaddr=%s port=%s database=%s user=%s ',conf.dbhost,conf.dbhostaddr,conf.dbport,conf.dbname,conf.dbuser)
     logs.logger.debug('Maintenance interval: %s',conf.maintenance_interval)
 
-    db = pgbackman_db(dsn,'pgbackman_maintenance')
+    db = PgbackmanDB(dsn, 'pgbackman_maintenance')
 
     #
     # We check before starting if the database is available. 
@@ -638,7 +638,7 @@ def main():
 
 if __name__ == '__main__':
 
-    logs = logs("pgbackman_maintenance","","")
+    logs = PgbackmanLogs("pgbackman_maintenance", "", "")
 
     signal.signal(signal.SIGINT,signal_handler)
     signal.signal(signal.SIGTERM,signal_handler)

@@ -3,7 +3,7 @@ PgBackMan - PostgreSQL Backup Manager
 =====================================
 
 |
-| Version-1.1.0
+| Version-1.2.0
 |
 | Author: Rafael Martinez Guerrero (University of Oslo)
 | E-mail: rafael@postgresql.org.es
@@ -78,6 +78,7 @@ The main features of PgBackMan are:
 * Possibility of pausing / resuming replication on slaves/standby nodes when taking large backups.
 * Autonomous pgbackman_dump program that functions even if the central database with metadata is not available.
 * Possibility of sending alerts via SMTP when an error happens.
+* Possibility of moving backup definitions between backup servers in a bulk operation.
 * Handling of error situations. 
 * Written in Python and PL/PgSQL. 
 * Distributed under the GNU General Public License 3.
@@ -154,7 +155,7 @@ System requirements
   * argparse >= 1.2.1
     
 * PostgreSQL >= 9.2 for the ``pgbackman`` database
-* PostgreSQL >= 9.0 and <=9.4 in all PgSQL nodes that are going to use
+* PostgreSQL >= 9.0 and <=9.6 in all PgSQL nodes that are going to use
   PgBackMan to manage logical backups.
 * AT and CRON installed and running.
 
@@ -319,7 +320,7 @@ follow:
    ``/etc/pgbackman/pgbackman.conf`` and that it has the information
    about where to find the ``pgbackman`` database.
 
-#. Start el shell ``pgbackman`` in one of the backup servers and
+#. Start the ``pgbackman`` shell in one of the backup servers and
    follow the instructions to upgrade the ``pgbackman`` database::
 
      [pgbackman@pg-backup01]# pgbackman
@@ -467,6 +468,8 @@ can be done as follows:
      # PgSQL bindir 9.2 [/usr/pgsql-9.2/bin]: /usr/lib/postgresql/9.2/bin
      # PgSQL bindir 9.3 [/usr/pgsql-9.3/bin]: /usr/lib/postgresql/9.3/bin
      # PgSQL bindir 9.4 [/usr/pgsql-9.4/bin]: /usr/lib/postgresql/9.4/bin
+     # PgSQL bindir 9.5 [/usr/pgsql-9.5/bin]: /usr/lib/postgresql/9.5/bin
+     # PgSQL bindir 9.6 [/usr/pgsql-9.6/bin]: /usr/lib/postgresql/9.6/bin
      # Main backup dir [/srv/pgbackman]: 
 
      # Are all values to update correct (yes/no): yes
@@ -491,6 +494,8 @@ can be done as follows:
      | pgsql_bin_9_2         | /usr/lib/postgresql/9.2/bin | postgreSQL 9.2 bin directory                |
      | pgsql_bin_9_3         | /usr/lib/postgresql/9.3/bin | postgreSQL 9.3 bin directory                |
      | pgsql_bin_9_4         | /usr/lib/postgresql/9.4/bin | postgreSQL 9.4 bin directory                |
+     | pgsql_bin_9_5         | /usr/lib/postgresql/9.5/bin | postgreSQL 9.5 bin directory                |
+     | pgsql_bin_9_6         | /usr/lib/postgresql/9.6/bin | postgreSQL 9.6 bin directory                |
      | root_backup_partition | /srv/pgbackman              | Main partition used by pgbackman            |
      | root_cron_file        | /etc/cron.d/pgbackman       | Crontab file used by pgbackman - *Not used* |
      +-----------------------+-----------------------------+---------------------------------------------+
@@ -680,56 +685,59 @@ The PgBackMan interactive shell can be started by running the program
 
    [pgbackman@pg-backup01]# pgbackman
 
-   #############################################################
-   Welcome to the PostgreSQL Backup Manager shell (v.1.0.0)
-   #############################################################
+   ####################################################################
+   Welcome to the PostgreSQL Backup Manager shell ver.1.2.0
+   ####################################################################
    Type help or \? to list commands.
-
+   
    [pgbackman]$ help
-
+   
    Documented commands (type help <topic>):
    ========================================
-   EOF                              show_empty_backup_catalogs 
-   clear                            show_history               
-   delete_backup_definition_dbname  show_jobs_queue            
-   delete_backup_definition_id      show_pgbackman_config      
-   delete_backup_server             show_pgbackman_stats       
-   delete_pgsql_node                show_pgsql_node_config     
-   quit                             show_pgsql_node_stats      
-   register_backup_definition       show_pgsql_nodes           
-   register_backup_server           show_restore_catalog       
-   register_pgsql_node              show_restore_definitions   
-   register_restore_definition      show_restore_details       
-   register_snapshot_definition     show_restores_in_progress  
-   shell                            show_snapshot_definitions  
-   show_backup_catalog              show_snapshots_in_progress 
-   show_backup_definitions          update_backup_definition   
-   show_backup_details              update_backup_server       
-   show_backup_server_config        update_backup_server_config
-   show_backup_server_stats         update_pgsql_node          
-   show_backup_servers              update_pgsql_node_config   
+   EOF                              show_databases_without_backup_definitions
+   clear                            show_empty_backup_catalogs               
+   delete_backup_definition_dbname  show_history                             
+   delete_backup_definition_id      show_jobs_queue                          
+   delete_backup_server             show_pgbackman_config                    
+   delete_pgsql_node                show_pgbackman_stats                     
+   move_backup_definition           show_pgsql_node_config                   
+   quit                             show_pgsql_node_stats                    
+   register_backup_definition       show_pgsql_nodes                         
+   register_backup_server           show_restore_catalog                     
+   register_pgsql_node              show_restore_definitions                 
+   register_restore_definition      show_restore_details                     
+   register_snapshot_definition     show_restores_in_progress                
+   set                              show_snapshot_definitions                
+   shell                            show_snapshots_in_progress               
+   show_backup_catalog              update_backup_definition                 
+   show_backup_definitions          update_backup_server                     
+   show_backup_details              update_backup_server_config              
+   show_backup_server_config        update_pgsql_node                        
+   show_backup_server_stats         update_pgsql_node_config                 
+   show_backup_servers            
 
    Miscellaneous help topics:
    ==========================
-   shortcuts
-
+   shortcuts  support
+   
    Undocumented commands:
    ======================
    help
 
 **NOTE:** It is possible to use the PgBackMan shell in a
-non-interactive modus by running ``/usr/bin/pgbackman`` with a command
-as a parameter in the OS shell. This can be used to run PgBackMan
-commands from shell scripts.e.g.::
+non-interactive modus by running ``/usr/bin/pgbackman`` with the
+parameter ``--command <pgbackman_command>`` or ``-C
+<pgbackman_command>`` in the OS shell. This can be used to run
+PgBackMan commands from shell scripts.e.g.::
 
-   [pgbackman@pg-backup01 ~]# pgbackman show_backup_servers
-   +-------+------------------+----------------------+
-   | SrvID | FQDN               | Remarks            |
-   +-------+--------------------+--------------------+
-   | 00001 | pg-backup01.uio.no | Main backup server |
-   +-------+------------------+----------------------+
+   [pgbackman@pg-backup01 ~]# pgbackman -C "show_backup_servers"
+   +-------+-------------------------+----------------------+
+   | SrvID | FQDN                    | Remarks              |
+   +-------+-------------------------+----------------------+
+   | 00001 | pg-backup01.example.net | Main backup server   |
+   +-------+------------------+-----------------------------+
 
-   [pgbackman@pg-backup01 ~]# pgbackman show_backup_definitions all all pgbackman
+   [pgbackman@pg-backup01 ~]# pgbackman -C "show_backup_definitions all all pgbackman"
    --------------------------------------------------------
    # SrvID / FQDN: all
    # NodeID / FQDN: all
@@ -742,6 +750,21 @@ commands from shell scripts.e.g.::
    | 00000000011 |  1  | pg-backup01.example.net | 1  | pgbackmandb.example.net | pgbackman | * * * * *   | FULL   | 7 days (1) | ACTIVE | --inserts  |
    | 00000000013 |  1  | pg-backup01.example.net | 1  | pgbackmandb.example.net | pgbackman | 41 01 * * * | SCHEMA | 7 days (1) | ACTIVE |            |
    +-------------+-----+-------------------------+----+-------------------------+-----------+-------------+--------+------------+--------+------------+
+
+One can also use the parameters ``--output/-o csv`` or ``--output/-o json``
+when running ``pgbackman`` in non-interactive modus to generate an
+output in CSV or JSON format.::
+
+   [pgbackman@pg-backup01 ~]# pgbackman -o json -C "show_backup_servers"
+   {
+     "backup_servers": [
+       {
+          "srvid": "00001", 
+          "fqdn": "pg-backup01.example.net", 
+          "remarks": "testing"
+       } 
+     ]
+   }
 
 
 clear
@@ -759,9 +782,9 @@ This command can be run only without parameters. e.g.:
 
    [pgbackman]$ clear
 
-   #############################################################
-   Welcome to the PostgreSQL Backup Manager shell (v.1.1.0)
-   #############################################################
+   ####################################################################
+   Welcome to the PostgreSQL Backup Manager shell ver.1.2.0
+   ####################################################################
    Type help or \? to list commands.
    
    [pgbackman]$ 
@@ -1022,6 +1045,66 @@ This command can be run with or without parameters. e.g.:
    "backup_definition".  
    --------------------------------------------
 
+move_backup_definition 
+----------------------
+
+This command moves backup definitions between backup servers for a
+particular combination of search values.
+
+::
+
+   move_backup_definition [From SrvID|FQDN]
+                          [To SrvID|FQDN]
+                          [NodeID|FQDN] 
+                          [DBname] 
+                          [DefID] 
+
+Parameters:
+
+* **[From SrvID | FQDN]**: SrvID in PgBackMan or FQDN of the backup
+  server running the backup jobs that will be move to another backup
+  server.
+
+* **[To SrvID | FQDN]**: SrvID in PgBackMan or FQDN of the backup server
+  where we will move the backup jobs.
+
+* **[NodeID | FQDN]**: NodeID in PgBackMan or FQDN of the PgSQL node
+  where we take the backup jobs we want to move.
+
+  One can use 'all' or '*' with this parameter.
+                                   
+* **[Dbname]**: Database name in the backup jobs we want to move.
+
+  One can use 'all' or '*' with this parameter.
+                    
+* **[DefID]: Backup definition ID we want to move.
+
+The default value for a parameter is shown between brackets ``[]``. If
+the user does not define any value, the default value will be
+used. 
+
+This command can be run with or without parameters. e.g.:
+
+::
+
+   [pgbackman]$ move_backup_definition pg-backup01.example.net pg-backup02.example.net * * ''
+   
+   [DONE] Moving backup definitions from backup server [pg-backup01.example.net] to backup server [pg-backup02.example.net]
+
+::
+
+   [pgbackman]$ move_backup_definition
+   --------------------------------------------------------
+   # From backup server SrvID / FQDN [pg-backup01.example.net]: 
+   # To Backup server SrvID / FQDN [pg-backup0.example.net]: 
+   # PgSQL node NodeID / FQDN [all]: 
+   # DBname [all]: 
+   # DefID []: 
+   # Are all values correct (yes/no): yes
+   --------------------------------------------------------
+   [DONE] Moving backup definitions from backup server [pg-backup01.example.net] to backup server [pg-backup02.example.net]
+
+
 
 quit
 ----
@@ -1054,6 +1137,7 @@ periodically by PgBackMan.::
   register_backup_definition [SrvID | FQDN] 
                              [NodeID | FQDN] 
                              [DBname] 
+			     [DBname exceptions]
                              [min_cron] 
 			     [hour_cron] 
 			     [daymonth_cron]
@@ -1086,7 +1170,16 @@ Parameters:
     definition for all databases in the cluster *without a backup
     definition* (Except 'template0','template1' and 'postgres').
 
-* **[\*_cron]:** Schedule definition using the cron expression.
+* **[DBname exceptions]**: Databases that will not be considered when
+  using the values '#all_databases#' or
+  '#databases_without_backup_definitions#' in [DBname].[DBname
+  exceptions]
+  
+  One can define several DBnames in a comma separated list.
+
+* **[\*_cron]:** Schedule definition using the cron expression. Check
+  http://en.wikipedia.org/wiki/Cron#CRON_expression for more
+  information.
 
 * **[backup code]:** 
 
@@ -1121,7 +1214,7 @@ used. This command can be run with or without parameters. e.g.:
 
 ::
 
-   [pgbackman]$ register_backup_definition 1 1 test02 41 01 * * * schema false "7 days" 1 "" active "Testing reg"
+   [pgbackman]$ register_backup_definition 1 1 test02 "" 41 01 * * * schema false "7 days" 1 "" active "Testing reg"
 
    [Done] Backup definition for dbname: test02 registered.
 
@@ -1132,6 +1225,7 @@ used. This command can be run with or without parameters. e.g.:
    # Backup server SrvID / FQDN []: pg-backup01.example.net
    # PgSQL node NodeID / FQDN []: pg-node01.example.net
    # DBname []: test02
+   # DBname exceptions []: 
    # Minutes cron [41]: 
    # Hours cron [01]: 
    # Day-month cron [*]: 
@@ -1327,11 +1421,12 @@ This command registers a one time snapshot backup of a database.
    register_snapshot [SrvID | FQDN] 
                      [NodeID | FQDN] 
                      [DBname] 
+		     [DBname exceptions]
                      [AT time]
                      [backup code] 
                      [retention period] 
                      [extra backup parameters] 
-                     [remarks] 
+                     [tag] 
 		     [pg_dump/all release]
 
 
@@ -1344,6 +1439,16 @@ Parameters:
   running the database to backup.
 
 * **[DBname]:** Database name
+
+  One can use this special value, '#all_databases#' if you want to
+  register the snapshot backup for *all databases* in the cluster
+  (except 'template0','template1' and 'postgres').
+
+* **[DBname exceptions]:** Databases that will not be considered when
+  using '#all_databases#' in [DBname].
+
+  One can define several DBnames in a comma separated list.
+
 * **[AT time]:**  Timestamp to run the snapshot
 * **[backup code]:** 
 
@@ -1358,11 +1463,19 @@ Parameters:
 * **[extra backup parameters]:** Extra parameters that can be used
   with pg_dump / pg_dumpall
 
+* **[tag]:** Define a tag for this snapshot registration. This value
+  can be helpful when we register a snapshot for many databases at the
+  same time. This tag could be used in the future when registering a
+  backup recovery for all the databases from the same snapshot
+  registration.
+
+  If no value is defined, the system will generate a random alphanumeric tag.
+
 * **[pg_dump/all release]:** Release of pg_dump / pg_dumpall to use
-  when taking the snapshot, e.g. 9.0, 9.1, 9.2, 9.3 or 9.4. This
-  parameter can be necessary if we are going to restore the snapshot
-  in a postgreSQL installation running a newer release than the
-  source.
+  when taking the snapshot, e.g. 9.0, 9.1, 9.2, 9.3, 9.4, 9.5 or
+  9.6. This parameter can be necessary if we are going to restore the
+  snapshot in a postgreSQL installation running a newer release than
+  the source.
 
   This release version cannot be lower than the one used in the source
   installation running the database we are going to backup.
@@ -1376,7 +1489,7 @@ command can be run with or without parameters. e.g.:
 
 ::
 
-   [pgbackman]$ register_snapshot_definition 1 1 test02 2014-05-31 full "7 days" "" "Test snapshot" ""
+   [pgbackman]$ register_snapshot_definition 1 1 test02 "" 2014-05-31 full "7 days" "" "Test snapshot" ""
 
    [Done] Snapshot for dbname: test02 defined.
 
@@ -1391,7 +1504,7 @@ command can be run with or without parameters. e.g.:
    # Backup code [FULL]: 
    # Retention period [7 days]: 
    # Extra parameters []: 
-   # Remarks []: 
+   # Tag [5D9012AA3]: 
    # pg_dump/all release [Same as pgSQL node running dbname]:
    
    # Are all values correct (yes/no): yes

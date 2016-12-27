@@ -43,23 +43,29 @@ try:
     else:
         install_requires = ['psycopg2>=2.4.0','argparse']
 
+    install_files = [('/etc/pgbackman', ['etc/pgbackman.conf']),
+                     ('/etc/pgbackman', ['etc/pgbackman_alerts.template']),
+                     ('/etc/logrotate.d', ['etc/pgbackman.logrotate']),
+                     ('/usr/share/pgbackman/', ['sql/pgbackman.sql']),
+                     ('/usr/share/pgbackman/', ['sql/pgbackman_2.sql']),
+                     ('/var/log/pgbackman',['README.md'])]
     #
     # Check linux distribution and define init script
     #
 
     distro = platform.linux_distribution()[0]
 
-    if distro == 'CentOS' or distro == 'Red Hat Enterprise Linux Server' or distro == 'Red Hat Enterprise Linux Workstation' or distro == 'Fedora':
+    if distro in ('CentOS', 'Red Hat Enterprise Linux Server', 'Red Hat Enterprise Linux Workstation', 'Fedora'):
         init_file = 'etc/pgbackman_init_rh.sh'
         shutil.copy2(init_file, '/tmp/pgbackman')
-    
-    elif distro == 'debian' or distro == 'Ubuntu':
+        install_files.append(('/etc/init.d', ['/tmp/pgbackman']))
+    elif distro in ('Ubuntu'):
         init_file = 'etc/pgbackman_init_debian.sh'
         shutil.copy2(init_file, '/tmp/pgbackman')
-
-    else:
+    elif distro != 'debian':
         init_file = 'etc/pgbackman_init_rh.sh'
         shutil.copy2(init_file, '/tmp/pgbackman') 
+        install_files.append(('/etc/init.d', ['/tmp/pgbackman']))
                 
     #
     # Setup
@@ -73,13 +79,7 @@ try:
           url='http://www.pgbackman.org/',
           packages=['pgbackman',],
           scripts=['bin/pgbackman','bin/pgbackman_control','bin/pgbackman_maintenance','bin/pgbackman_dump','bin/pgbackman_restore','bin/pgbackman_zabbix_autodiscovery','bin/pgbackman_status_info','bin/pgbackman_alerts'],
-          data_files=[('/etc/init.d', ['/tmp/pgbackman']),
-                      ('/etc/pgbackman', ['etc/pgbackman.conf']),
-                      ('/etc/pgbackman', ['etc/pgbackman_alerts.template']),
-                      ('/etc/logrotate.d', ['etc/pgbackman.logrotate']),
-                      ('/usr/share/pgbackman/', ['sql/pgbackman.sql']),
-                      ('/usr/share/pgbackman/', ['sql/pgbackman_2.sql']),
-                      ('/var/log/pgbackman',['README.md'])],
+          data_files=install_files,
           install_requires=install_requires,
           platforms=['Linux'],
           classifiers=[

@@ -12,8 +12,12 @@ PGBACKMAN_LOGDIR=/var/log/pgbackman
 
 case "$1" in
     configure)
-	groupadd -f -r $PGBACKMAN_GROUP
-	useradd -m -N -g $PGBACKMAN_GROUP -r -d /var/lib/pgbackman -s /bin/bash -c "PostgreSQL Backup Manager" $PGBACKMAN_USER
+	if ! getent group $PGBACKMAN_GROUP > /dev/null; then
+	    groupadd -f -r $PGBACKMAN_GROUP
+        fi
+	if ! getent passwd $PGBACKMAN_GROUP > /dev/null; then
+	    useradd -m -N -g $PGBACKMAN_GROUP -r -d /var/lib/pgbackman -s /bin/bash -c "PostgreSQL Backup Manager" $PGBACKMAN_USER
+	fi
 
 	if [ -d "$PGBACKMAN_LOGDIR" ]
 	then

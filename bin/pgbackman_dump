@@ -52,12 +52,25 @@ def pg_dumpall(db):
     
     global global_parameters
 
-    pg_dumpall_command = global_parameters['backup_server_pgsql_bin_dir'] + '/pg_dumpall' + \
-        ' -h ' + global_parameters['pgsql_node_fqdn'] + \
-        ' -p ' + global_parameters['pgsql_node_port'] + \
-        ' -U ' + global_parameters['pgsql_node_admin_user'] + \
-        ' --file=' + global_parameters['cluster_dump_file'] + \
-        ' ' + global_parameters['extra_backup_parameters']
+    #
+    # Compress the CLUSTER dump if /bin/gzip is installed
+    #
+
+    if os.path.exists('/bin/gzip') == True:
+
+        pg_dumpall_command = global_parameters['backup_server_pgsql_bin_dir'] + '/pg_dumpall' + \
+                             ' -h ' + global_parameters['pgsql_node_fqdn'] + \
+                             ' -p ' + global_parameters['pgsql_node_port'] + \
+                             ' -U ' + global_parameters['pgsql_node_admin_user'] + \
+                             ' ' + global_parameters['extra_backup_parameters'] + \
+                             ' | /bin/gzip > ' + global_parameters['cluster_dump_file'] 
+    else:
+        pg_dumpall_command = global_parameters['backup_server_pgsql_bin_dir'] + '/pg_dumpall' + \
+                             ' -h ' + global_parameters['pgsql_node_fqdn'] + \
+                             ' -p ' + global_parameters['pgsql_node_port'] + \
+                             ' -U ' + global_parameters['pgsql_node_admin_user'] + \
+                             ' --file=' + global_parameters['cluster_dump_file'] + \
+                             ' ' + global_parameters['extra_backup_parameters']
 
     try:
         with open(global_parameters['cluster_log_file'],'w') as cluster_log_file:
@@ -584,7 +597,11 @@ def get_pgsql_node_release(db,db_pgnode):
              
     logs.logger.debug('PgSQL node version: %s',pgsql_node_version)
 
-    if pgsql_node_version == '904':
+    if pgsql_node_version == '906':
+        pgsql_node_release = '9_6'
+    elif pgsql_node_version == '905':
+        pgsql_node_release = '9_5'
+    elif pgsql_node_version == '904':
         pgsql_node_release = '9_4'
     elif pgsql_node_version == '903':
         pgsql_node_release = '9_3'
@@ -1130,7 +1147,7 @@ def main():
     
     global global_parameters
 
-    conf = configuration()
+    conf = PgbackmanConfiguration()
     pgbackman_dsn = conf.dsn
 
     global_parameters['tmp_dir'] = conf.tmp_dir
@@ -1154,10 +1171,10 @@ def main():
 
     global_parameters['pgsql_node_release'] = ''
        
-    db = pgbackman_db(pgbackman_dsn,'pgbackman_dump')
+    db = PgbackmanDB(pgbackman_dsn, 'pgbackman_dump')
  
     pgsql_node_dsn = get_pgsql_node_dsn()
-    db_pgnode = pgbackman_db(pgsql_node_dsn,'pgbackman_dump')
+    db_pgnode = PgbackmanDB(pgsql_node_dsn, 'pgbackman_dump')
 
     # 
     # The backup server FQDN to be used can be defined in the
@@ -1222,7 +1239,11 @@ def main():
     global_parameters['pg_dump_release'] = get_pg_dump_release(db)
     global_parameters['backup_server_pgsql_bin_dir'] = get_backup_server_pgsql_bin_dir(db)
     
-    global_parameters['cluster_dump_file'] = get_filename_id('CLUSTER','dump') + '.sql'
+    if os.path.exists('/bin/gzip') == True:
+        global_parameters['cluster_dump_file'] = get_filename_id('CLUSTER','dump') + '.sql.gz'
+    else:
+        global_parameters['cluster_dump_file'] = get_filename_id('CLUSTER','dump') + '.sql'
+
     global_parameters['cluster_log_file'] = get_filename_id('CLUSTER','log') + '.log'
 
     global_parameters['database_dump_file'] = get_filename_id('DATABASE','dump') + '.sql'
@@ -1403,7 +1424,7 @@ if __name__ == '__main__':
     # Initializing logging
     #
 
-    logs = logs("pgbackman_dump","[" + global_parameters['pgsql_node_fqdn'] + "]","[" + global_parameters['dbname'] + "]")
+    logs = PgbackmanLogs("pgbackman_dump", "[" + global_parameters['pgsql_node_fqdn'] + "]", "[" + global_parameters['dbname'] + "]")
     logs.logger.info('**** pgbackman_dump started. ****')
     
     main()

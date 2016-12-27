@@ -203,7 +203,7 @@ def check_database_connection(db):
 
 def main():
 
-    conf = configuration()
+    conf = PgbackmanConfiguration()
     dsn = conf.dsn
 
     if conf.smtp_alerts == 'OFF':
@@ -218,7 +218,7 @@ def main():
     logs.logger.debug('Backup server FQDN: %s',socket.getfqdn())
     logs.logger.debug('DSN: host=%s hostaddr=%s port=%s database=%s user=%s ',conf.dbhost,conf.dbhostaddr,conf.dbport,conf.dbname,conf.dbuser)
 
-    db = pgbackman_db(dsn,'pgbackman_alerts')
+    db = PgbackmanDB(dsn, 'pgbackman_alerts')
 
     #
     # We check before starting if the database is available. 
@@ -288,7 +288,7 @@ def main():
 
 if __name__ == '__main__':
 
-    logs = logs("pgbackman_alerts","","")
+    logs = PgbackmanLogs("pgbackman_alerts", "", "")
 
     signal.signal(signal.SIGINT,signal_handler)
     signal.signal(signal.SIGTERM,signal_handler)
