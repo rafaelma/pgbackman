@@ -60,10 +60,10 @@ def get_pgbackman_zabbix_autodiscovery(backup_server_fqdn):
 
     try:
 
-        conf = configuration()
+        conf = PgbackmanConfiguration()
         pgbackman_dsn = conf.dsn
         
-        db = pgbackman_db(pgbackman_dsn,'pgbackman_zabbix_autodiscovery')
+        db = PgbackmanDB(pgbackman_dsn, 'pgbackman_zabbix_autodiscovery')
 
         backup_server_id = db.get_backup_server_id(backup_server_fqdn)
         
@@ -96,7 +96,7 @@ if __name__ == '__main__':
     # Initializing logging
     #
 
-    logs = logs("pgbackman_zabbix_autodiscovery","","")
+    logs = PgbackmanLogs("pgbackman_zabbix_autodiscovery", "", "")
     logs.logger.info('**** pgbackman_zabbix_autodiscovery started. ****')
 
     parser = argparse.ArgumentParser(prog=sys.argv[0])

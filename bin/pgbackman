@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 #
-# Copyright (c) 2013-2014 Rafael Martinez Guerrero / PostgreSQL-es
+# Copyright (c) 2013-2015 Rafael Martinez Guerrero / PostgreSQL-es
 # rafael@postgresql.org.es / http://www.postgresql.org.es/
 #
-# Copyright (c) 2014 USIT-University of Oslo
+# Copyright (c) 2015 USIT-University of Oslo
 #
 # This file is part of Pgbackman
 # https://github.com/rafaelma/pgbackman
@@ -21,33 +21,75 @@
 # You should have received a copy of the GNU General Public License
 # along with Pgbackman.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
-import os
-
-from pgbackman.cli import * 
+import argparse
+from pgbackman.cli import *
 
 if __name__ == '__main__':
 
     try:
+
+        #
+        # Processing command line parameters
+        #
+
+        output_format = ''
+        pgbackman_command = ''
+
+        parser = argparse.ArgumentParser(prog=sys.argv[0], description='zabbix-cli - Zabbix client')
+
+        parser.add_argument('--output', '-o',  metavar='[csv|json|plain]', choices=['csv', 'json', 'table'],
+                            required=False, dest='output_format')
+
+        parser.add_argument('--command', '-C', metavar='<PgBackMan command>', required=False, dest='pgbackman_command')
         
-        if len(sys.argv) > 1:
-            if sys.argv[1] =='--use-csv-format':
+        args = parser.parse_args()  
+        
+        if args.output_format:
+            output_format = args.output_format 
+    
+        if args.pgbackman_command:
+            pgbackman_command = args.pgbackman_command 
 
-                cli = pgbackman_cli()
-                cli.output_format = 'csv'
-                cli.db.output_format = 'csv'
-                    
-                cli.onecmd(' '.join(sys.argv[2:]))
+        #
+        # pgbackman cli initialization
+        #
 
-            else:
-                cli = pgbackman_cli()
-                cli.onecmd(' '.join(sys.argv[1:]))
+        cli = PgbackmanCli()
+        
+        #
+        # Processing output format
+        #
+    
+        if output_format == 'csv':
+            cli.output_format = 'csv'
+            
+        elif output_format == 'json':
+            cli.output_format = 'json'
+            
+        else:
+            cli.output_format = 'table'
 
-        elif len(sys.argv) == 1:
+        #
+        # PgBackMan in non-interactive modus
+        #
+
+        if pgbackman_command != '':
+            
+            cli.execution_modus = 'non-interactive'
+            cli.onecmd(pgbackman_command)
+
+        #
+        # PgBackMan in interactive modus (pgbackman-shell)
+        #
+
+        elif pgbackman_command == '':
             os.system('clear')
 
-            pgbackman_cli().check_pgbackman_database_version()
-            pgbackman_cli().cmdloop()
+            cli.execution_modus = 'interactive'
+
+            cli.check_pgbackman_database_version()
+            cli.cmdloop()
+        
         else:
             raise NotImplementedError
         
