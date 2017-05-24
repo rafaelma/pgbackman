@@ -1159,8 +1159,10 @@ Parameters:
 * **[NodeID | FQDN]:** NodeID in PgBackMan or FQDN of the PgSQL node
   running the database to backup.
 
-* **[DBname]:** Database name. One can use two special values insteed
-  of a database name:
+* **[DBname]:** Database name. This parameter can be empty if defining
+  a backup definition with code CLUSTER.
+
+  One can use two special values insteed of a database name:
 
   * ``#all_databases#``: if you want to register the backup definition
   for *all databases* in the cluster (Except 'template0', 'template1' and
@@ -1172,8 +1174,7 @@ Parameters:
 
 * **[DBname exceptions]**: Databases that will not be considered when
   using the values '#all_databases#' or
-  '#databases_without_backup_definitions#' in [DBname].[DBname
-  exceptions]
+  '#databases_without_backup_definitions#' in [DBname].
   
   One can define several DBnames in a comma separated list.
 
@@ -1183,7 +1184,9 @@ Parameters:
 
 * **[backup code]:** 
 
-  * CLUSTER: Backup of all databases in a PgSQL node using ``pg_dumpall``
+  * CLUSTER: Backup of all databases in a PgSQL node using
+    ``pg_dumpall``. The backup file will be compressed with gzip if
+    gzip is installed.
   * FULL: Full Backup of a database. Schema + data + owner globals + DB globals.
   * SCHEMA: Schema backup of a database. Schema + owner globals + DB globals.
   * DATA: Data backup of the database.

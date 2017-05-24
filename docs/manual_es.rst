@@ -1229,8 +1229,12 @@ Parámetros:
   ejecutando la base de datos a la que se la va a realizar una copia
   de seguridad.
 
-* **[DBname]:** Nombre de la base de datos. Se pueden utilizar dos valores
-  especiales en vez del nombre de la base de datos:
+* **[DBname]:** Nombre de la base de datos. Este parámetro se puede
+  dejar sin definir si estamos definiendo una copia de seguridad con
+  código CLUSTER.
+
+  Se pueden utilizar dos valores especiales en vez del nombre de la
+  base de datos:
 
   * ``#all_databases#``: si se quiere definir una definición de copia
     de seguridad para *todas las bases de datos existentes* en el nodo
@@ -1251,7 +1255,8 @@ Parámetros:
 * **[backup code]:** 
 
   * CLUSTER: copia de seguridad de todas las bases de datos en el nodo
-    PgSQL usando ``pg_dumpall``
+    PgSQL usando ``pg_dumpall``. La copia de seguridad se comprime con
+    gzip si gzip está instalado.
   * FULL: copia de seguridad completa de una base de datos. Esquema +
     datos + globales de usuarios + globales de la base de datos.
   * SCHEMA: copia de seguridad de solamente el esquema de una base de
