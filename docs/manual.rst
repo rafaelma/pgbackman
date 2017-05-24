@@ -1515,6 +1515,20 @@ command can be run with or without parameters. e.g.:
    
    [Done] Snapshot for dbname: test02 defined.
 
+set
+---
+
+This command can be used to change the value of some internal
+parameters used to configurate the behavior of PgBackMan
+
+::
+
+   set [parameter=value]
+
+* **[parameter = value]**:
+  
+  - output_format: [TABLE | JSON | CSV]
+
 
 shell
 -----

@@ -1609,6 +1609,21 @@ Este comando se puede ejecutar con o sin parámetros, e.g.:
    [Done] Snapshot for dbname: test02 defined.
 
 
+set
+---
+
+Este comando se puede utilizar para cambiar el valor de ciertos
+parámetros internos usados para configurar PgBackMan.
+
+::
+
+   set [parameter=value]
+
+* **[parameter = value]**:
+  
+  - output_format: [TABLE | JSON | CSV]
+
+
 shell
 -----
 
