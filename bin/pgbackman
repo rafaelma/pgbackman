@@ -37,7 +37,7 @@ if __name__ == '__main__':
 
         parser = argparse.ArgumentParser(prog=sys.argv[0], description='zabbix-cli - Zabbix client')
 
-        parser.add_argument('--output', '-o',  metavar='[csv|json|plain]', choices=['csv', 'json', 'table'],
+        parser.add_argument('--output', '-o',  metavar='[csv|json]', choices=['csv', 'json'],
                             required=False, dest='output_format')
 
         parser.add_argument('--command', '-C', metavar='<PgBackMan command>', required=False, dest='pgbackman_command')
