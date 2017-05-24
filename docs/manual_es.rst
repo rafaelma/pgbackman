@@ -2132,30 +2132,48 @@ Este comando se puede ejecutar solamente sin parámetros, e.g.:
 ::
 
    [pgbackman]$ show_pgbackman_config
-   +---------------------------------------+----------------------------------+
-   |              Configuration file used: | /etc/pgbackman/pgbackman.conf    |
-   |                                       |                                  |
-   |                    PGBACKMAN DATABASE |                                  |
-   |                               DBhost: | pgbackmandb.example.net          |
-   |                           DBhostaddr: |                                  |
-   |                               DBport: | 5432                             |
-   |                               DBname: | pgbackman                        |
-   |                               DBuser: | pgbackman_role_rw                |
-   |            Connection retry interval: | 10 sec.                          |
-   |                                       |                                  |
-   |                     PGBACKMAN_CONTROL |                                  |
-   | LISTEN/NOTIFY channel check interval: | 60 sec.                          |
-   |                                       |                                  |
-   |                        PGBACKMAN_DUMP |                                  |
-   |                       Temp directory: | /tmp                             |
-   |                                       |                                  |
-   |                 PGBACKMAN_MAINTENANCE |                                  |
-   |                 Maintenance interval: | 70 sec.                          |
-   |                                       |                                  |
-   |                               LOGGING |                                  |
-   |                            Log level: | INFO                             |
-   |                             Log file: | /var/log/pgbackman/pgbackman.log |
-   +---------------------------------------+----------------------------------+
+   +-------------------------------+------------------------------------------+
+   |                Running modus: | interactive                              |
+   |                Backup server: | pgbackup.example.org                     |
+   |             Software version: | [3]:1_2_0                                |
+   |      Configuration file used: | /etc/pgbackman/pgbackman.conf            |
+   |                               |                                          |
+   |           PGBACKMAN DATABASE: |                                          |
+   |                       DBhost: | pgbackmandb.example.org                  |
+   |                   DBhostaddr: |                                          |
+   |                       DBport: | 5432                                     |
+   |                       DBname: | pgbackman                                |
+   |                       DBuser: | pgbackman_role_rw                        |
+   |    Connection retry interval: | 10 sec.                                  |
+   |                               |                                          |
+   |          Database source dir: | /usr/share/pgbackman                     |
+   |         DB version installed: | 2017-05-24 17:48:43.308920+02:00         |
+   |                   DB version: | [3]:1_2_0                                |
+   |                               |                                          |
+   |               PGBACKMAN_DUMP: |                                          |
+   |               Temp directory: | /tmp                                     |
+   | Pause recovery on slave node: | OFF                                      |
+   |                               |                                          |
+   |        PGBACKMAN_MAINTENANCE: |                                          |
+   |         Maintenance interval: | 70 sec.                                  |
+   |                               |                                          |
+   |             PGBACKMAN_ALERTS: |                                          |
+   |        SMTP alerts activated: | OFF                                      |
+   |        Alerts check interval: | 300 sec.                                 |
+   |                  SMTP server: | localhost                                |
+   |                    SMTP port: | 25                                       |
+   |                 Use SMTP SSL: | ON                                       |
+   |                    SMTP user: |                                          |
+   |         Default From address: |                                          |
+   |       Alerts e-mail template: | /etc/pgbackman/pgbackman_alerts.template |
+   |                               |                                          |
+   |                      LOGGING: |                                          |
+   |                    Log level: | INFO                                     |
+   |                     Log file: | /var/log/pgbackman/pgbackman.log         |
+   |                               |                                          |
+   |                       OUTPUT: |                                          |
+   |        Default output format: | table                                    |
+   +-------------------------------+------------------------------------------+
 
 
 show_pgbackman_stats 
