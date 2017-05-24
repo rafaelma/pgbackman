@@ -977,7 +977,7 @@ INSERT INTO alert_type (code,description) VALUES ('Restore-def','Alerts from fai
 
 \echo '# [Update: pgbackman_version]\n'
 
-INSERT INTO pgbackman_version (version,tag) VALUES ('2','v_1_1_0');
+INSERT INTO pgbackman_version (version,tag) VALUES ('3','v_1_2_0');
 
 
 -- ------------------------------------------------------------
