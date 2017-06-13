@@ -4,7 +4,7 @@
 # Autor: Rafael Martinez <rafael@postgreslq.org.es>
 #  
 
-%define majorversion 1.1
+%define majorversion 1.2
 %define minorversion 0
 %define pbm_owner pgbackman
 %define pbm_group pgbackman
@@ -72,5 +72,8 @@ useradd -M -N -g pgbackman -r -d /var/lib/pgbackman -s /bin/bash \
         -c "PostgreSQL Backup Manager" pgbackman >/dev/null 2>&1 || :
 
 %changelog
+* Tue Jun 13 2017 - Rafael Martinez Guerrero <rafael@postgresql.org.es> 1.2.0-1
+- New release 1.0.0
+
 * Mon Jun 24 2014 - Rafael Martinez Guerrero <rafael@postgresql.org.es> 1.0.0-1
 - New release 1.0.0

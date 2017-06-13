@@ -1,4 +1,8 @@
-pgbackman (1.1.0) unstable; urgency=low
+pgbackman (1.2.0) unstable; urgency=low
+
+  * New release 1.2.0
+
+ -- Rafael Martinez Guerrero <rafael@postgresql.org.es>  Tue, 13 Jun 2017 14:14:05 +0000
 
   * New release 1.1.0
 

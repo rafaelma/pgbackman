@@ -6,7 +6,7 @@ Build-Depends: debhelper (>= 8.0.0),
 	       python, 
 	       python-dev, 
 	       python-setuptools
-Standards-Version: 3.9.5
+Standards-Version: 3.9.8
 Vcs-Browser: https://github.com/rafaelma/pgbackman
 Vcs-Git: git://github.com/rafaelma/pgbackman.git
 Homepage: http://www.pgbackman.org/
