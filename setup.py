@@ -48,6 +48,7 @@ try:
                      ('/etc/logrotate.d', ['etc/pgbackman.logrotate']),
                      ('/usr/share/pgbackman/', ['sql/pgbackman.sql']),
                      ('/usr/share/pgbackman/', ['sql/pgbackman_2.sql']),
+                     ('/usr/share/pgbackman/', ['sql/pgbackman_3.sql']),
                      ('/var/log/pgbackman',['README.md'])]
     #
     # Check linux distribution and define init script
@@ -78,7 +79,7 @@ try:
           author_email='rafael@postgresql.org.es',
           url='http://www.pgbackman.org/',
           packages=['pgbackman',],
-          scripts=['bin/pgbackman','bin/pgbackman_control','bin/pgbackman_maintenance','bin/pgbackman_dump','bin/pgbackman_restore','bin/pgbackman_zabbix_autodiscovery','bin/pgbackman_status_info','bin/pgbackman_alerts'],
+          scripts=['bin/pgbackman','bin/pgbackman_control','bin/pgbackman_maintenance','bin/pgbackman_dump','bin/pgbackman_restore','bin/pgbackman_zabbix_autodiscovery','bin/pgbackman_status_info','bin/pgbackman_alerts','bin/pgbackman-bulk-update'],
           data_files=install_files,
           install_requires=install_requires,
           platforms=['Linux'],
