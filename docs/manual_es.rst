@@ -1506,15 +1506,16 @@ Este comando registra una copia de seguridad de tipo snapshot
 
 ::
 
-   register_snapshot [SrvID | FQDN] 
-                     [NodeID | FQDN] 
-                     [DBname] 
-                     [AT time]
-                     [backup code] 
-                     [retention period] 
-                     [extra backup parameters] 
-                     [tag] 
-		     [pg_dump/all release]
+   register_snapshot_definition [SrvID | FQDN] 
+                                [NodeID | FQDN] 
+                                [DBname]
+                                [DBname exceptions] 
+                                [AT time]
+                                [backup code] 
+                                [retention period] 
+                                [extra backup parameters] 
+                                [tag]
+                                [pg_dump/all release]
 
 Parámetros:
 
@@ -1525,12 +1526,22 @@ Parámetros:
   ejecutando la base de datos a la que se la va a realizar una copia
   de seguridad.
 
-* **[DBname]:** Nombre de la base de datos.
+* **[DBname]:** Nombre de la base de datos. 
+
+  Se pueden definir multiples bases de datos separadas por comas.
+
+  Se puede utilizar el valor especial '#all_databases#' si se quiere
+  registrar una copia de seguridad instantanea para *todas* las bases
+  de datos existentes (excepto, 'template0','template1' y 'postgres')
+
+  Este valor será ignorado si utilizamos backup-code=CLUSTER.
 
 * **[DBname exceptions]:** Bases de datos que no se tendrán en cuenta
   cuando usemos el valor '#all_databases#' en [DBname].
 
   Se pueden definir multiples bases de datos separadas por comas.
+
+  Este valor será ignorado si utilizamos backup-code=CLUSTER.
   
 * **[AT time]:** Momento en el que se ejecutará la copia de seguridad.
 * **[backup code]:** 

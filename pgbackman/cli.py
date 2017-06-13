@@ -2127,7 +2127,6 @@ class PgbackmanCli(cmd.Cmd):
                 remarks = raw_input('# Tag [' + tag_default + ']: ')
                 pg_dump_release = raw_input('# pg_dump/all release [Same as pgSQL node running dbname]: ')
                 print
-                print '#' + pg_dump_release + '#'
 
                 while ack != 'yes' and ack != 'no':
                     ack = raw_input('# Are all values correct (yes/no): ')

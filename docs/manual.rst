@@ -1421,16 +1421,16 @@ This command registers a one time snapshot backup of a database.
 
 ::
 
-   register_snapshot [SrvID | FQDN] 
-                     [NodeID | FQDN] 
-                     [DBname] 
-		     [DBname exceptions]
-                     [AT time]
-                     [backup code] 
-                     [retention period] 
-                     [extra backup parameters] 
-                     [tag] 
-		     [pg_dump/all release]
+   register_snapshot_definition [SrvID | FQDN] 
+                                [NodeID | FQDN] 
+                                [DBname] 
+                                [DBname exceptions]
+                                [AT time]
+                                [backup code] 
+                                [retention period] 
+                                [extra backup parameters] 
+                                [tag] 
+		                [pg_dump/all release]
 
 
 Parameters:
@@ -1443,14 +1443,20 @@ Parameters:
 
 * **[DBname]:** Database name
 
-  One can use this special value, '#all_databases#' if you want to
+  One can define several DBnames in a comma separated list.
+
+  One can use the special value, '#all_databases#' if you want to
   register the snapshot backup for *all databases* in the cluster
   (except 'template0','template1' and 'postgres').
+
+  This parameter will be ignored if backup-code=CLUSTER.
 
 * **[DBname exceptions]:** Databases that will not be considered when
   using '#all_databases#' in [DBname].
 
   One can define several DBnames in a comma separated list.
+
+  This parameter will be ignored if backup-code=CLUSTER.
 
 * **[AT time]:**  Timestamp to run the snapshot
 * **[backup code]:** 
