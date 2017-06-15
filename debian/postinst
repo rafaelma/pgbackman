@@ -25,6 +25,8 @@ case "$1" in
 	    chown -R ${PGBACKMAN_USER}:${PGBACKMAN_GROUP} ${PGBACKMAN_LOGDIR}
 	    chmod -R 775 ${PGBACKMAN_LOGDIR}
 	fi
+
+	systemctl daemon-reload
 	;;
 
     abort-upgrade|abort-remove|abort-deconfigure)

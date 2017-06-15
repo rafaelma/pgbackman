@@ -1,17 +1,13 @@
 Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 
-Upstream-Name: pgbackman
-Source: http://www.pgbackman.org/
-Upstream-Contact: Rafael Martinez Guerrero <rafael@postgresql.org.es>
-
-Files: *
-Copyright: 2013-2015, Rafael Martinez Guerrero <rafael@postgresql.org.es>
+Files:     *
+Copyright: 2013-2017, Rafael Martinez Guerrero <rafael@postgresql.org.es>
 	   2014-2015, USIT / University of Oslo
-License: GPL-3.0+
+License:   GPL-3.0+
 
-Files: pgbackman/prettytable.py 
+Files:     pgbackman/prettytable.py 
 Copyright: 2009-2013, Luke Maurits <luke@maurits.id.au>
-License: BSD-3
+License:   BSD-3
 
 License: GPL-3.0+
  This program is free software: you can redistribute it and/or modify
