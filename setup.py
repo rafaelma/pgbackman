@@ -48,25 +48,26 @@ try:
                      ('/etc/logrotate.d', ['etc/pgbackman.logrotate']),
                      ('/usr/share/pgbackman/', ['sql/pgbackman.sql']),
                      ('/usr/share/pgbackman/', ['sql/pgbackman_2.sql']),
-                     ('/usr/share/pgbackman/', ['sql/pgbackman_3.sql']),
-                     ('/var/log/pgbackman',['README.md'])]
+                     ('/usr/share/pgbackman/', ['sql/pgbackman_3.sql'])]
     #
     # Check linux distribution and define init script
     #
 
     distro = platform.linux_distribution()[0]
 
-    if distro in ('CentOS', 'Red Hat Enterprise Linux Server', 'Red Hat Enterprise Linux Workstation', 'Fedora'):
-        init_file = 'etc/pgbackman_init_rh.sh'
-        shutil.copy2(init_file, '/tmp/pgbackman')
-        install_files.append(('/etc/init.d', ['/tmp/pgbackman']))
-    elif distro in ('Ubuntu'):
-        init_file = 'etc/pgbackman_init_debian.sh'
-        shutil.copy2(init_file, '/tmp/pgbackman')
-    elif distro != 'debian':
-        init_file = 'etc/pgbackman_init_rh.sh'
-        shutil.copy2(init_file, '/tmp/pgbackman') 
-        install_files.append(('/etc/init.d', ['/tmp/pgbackman']))
+    if distro in ('CentOS Linux', 'Red Hat Enterprise Linux Server', 'Red Hat Enterprise Linux Workstation', 'Fedora'):
+
+        install_files.append(('/etc/init.d', ['etc/pgbackman_init_rh.sh']))
+
+    elif distro in ('Ubuntu','debian'):
+
+        install_files.append(('/lib/systemd/system', ['etc/pgbackman-alerts.service']))
+        install_files.append(('/lib/systemd/system', ['etc/pgbackman-control.service']))
+        install_files.append(('/lib/systemd/system', ['etc/pgbackman-maintenance.service']))
+
+    else:
+        
+        install_files.append(('/etc/init.d', ['etc/pgbackman_init_rh.sh']))
                 
     #
     # Setup
