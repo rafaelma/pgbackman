@@ -597,7 +597,9 @@ def get_pgsql_node_release(db,db_pgnode):
              
     logs.logger.debug('PgSQL node version: %s',pgsql_node_version)
 
-    if pgsql_node_version == '906':
+    if pgsql_node_version == '100':
+        pgsql_node_release = '10'
+    elif pgsql_node_version == '906':
         pgsql_node_release = '9_6'
     elif pgsql_node_version == '905':
         pgsql_node_release = '9_5'

@@ -155,7 +155,7 @@ System requirements
   * argparse >= 1.2.1
     
 * PostgreSQL >= 9.2 for the ``pgbackman`` database
-* PostgreSQL >= 9.0 and <=9.6 in all PgSQL nodes that are going to use
+* PostgreSQL >= 9.0 and <=10 in all PgSQL nodes that are going to use
   PgBackMan to manage logical backups.
 * AT and CRON installed and running.
 
@@ -470,6 +470,7 @@ can be done as follows:
      # PgSQL bindir 9.4 [/usr/pgsql-9.4/bin]: /usr/lib/postgresql/9.4/bin
      # PgSQL bindir 9.5 [/usr/pgsql-9.5/bin]: /usr/lib/postgresql/9.5/bin
      # PgSQL bindir 9.6 [/usr/pgsql-9.6/bin]: /usr/lib/postgresql/9.6/bin
+     # PgSQL bindir 10 [/usr/pgsql-10/bin]: /usr/lib/postgresql/10/bin
      # Main backup dir [/srv/pgbackman]: 
 
      # Are all values to update correct (yes/no): yes
@@ -496,6 +497,7 @@ can be done as follows:
      | pgsql_bin_9_4         | /usr/lib/postgresql/9.4/bin | postgreSQL 9.4 bin directory                |
      | pgsql_bin_9_5         | /usr/lib/postgresql/9.5/bin | postgreSQL 9.5 bin directory                |
      | pgsql_bin_9_6         | /usr/lib/postgresql/9.6/bin | postgreSQL 9.6 bin directory                |
+     | pgsql_bin_10          | /usr/lib/postgresql/10/bin  | postgreSQL 10 bin directory                 |
      | root_backup_partition | /srv/pgbackman              | Main partition used by pgbackman            |
      | root_cron_file        | /etc/cron.d/pgbackman       | Crontab file used by pgbackman - *Not used* |
      +-----------------------+-----------------------------+---------------------------------------------+
@@ -1481,10 +1483,10 @@ Parameters:
   If no value is defined, the system will generate a random alphanumeric tag.
 
 * **[pg_dump/all release]:** Release of pg_dump / pg_dumpall to use
-  when taking the snapshot, e.g. 9.0, 9.1, 9.2, 9.3, 9.4, 9.5 or
-  9.6. This parameter can be necessary if we are going to restore the
-  snapshot in a postgreSQL installation running a newer release than
-  the source.
+  when taking the snapshot, e.g. 9.0, 9.1, 9.2, 9.3, 9.4, 9.5, 9.6
+  or 10. This parameter can be necessary if we are going to restore
+  the snapshot in a postgreSQL installation running a newer release
+  than the source.
 
   This release version cannot be lower than the one used in the source
   installation running the database we are going to backup.
@@ -2591,6 +2593,9 @@ This command updates the default configuration of a backup server.
                                [PgSQL_bin_9.2]
                                [PgSQL_bin_9.3]
                                [PgSQL_bin_9.4]
+                               [PgSQL_bin_9.5]
+                               [PgSQL_bin_9.6]
+                               [PgSQL_bin_10]
 			       [root_backup_dir]
 
 Parameters:
@@ -2601,6 +2606,9 @@ Parameters:
 * **[PgSQL_bin_9.2]:** Directory with postgreSQL 9.2 bin software 
 * **[PgSQL_bin_9.3]:** Directory with postgreSQL 9.3 bin software 
 * **[PgSQL_bin_9.4]:** Directory with postgreSQL 9.4 bin software 
+* **[PgSQL_bin_9.5]:** Directory with postgreSQL 9.5 bin software 
+* **[PgSQL_bin_9.6]:** Directory with postgreSQL 9.6 bin software 
+* **[PgSQL_bin_10]:** Directory with postgreSQL 10 bin software 
 * **[root_backup_dir]:** Backup directory used by PgBackMan. 
 
 The default value for a parameter is shown between brackets ``[]``. If the
@@ -2614,11 +2622,15 @@ This command can be run with or without parameters. e.g.:
    --------------------------------------------------------
    # SrvID / FQDN []: 1
    
-   # PgSQL bindir 9.0 [/usr/pgsql-9.0/bin]: 
-   # PgSQL bindir 9.1 [/usr/pgsql-9.1/bin]: 
-   # PgSQL bindir 9.2 [/usr/pgsql-9.2/bin]: 
-   # PgSQL bindir 9.3 [/usr/pgsql-9.3/bin]: 
-   # PgSQL bindir 9.4 [/usr/pgsql-9.4/bin]: /usr/bin
+   # PgSQL bindir 9.0 [/usr/pgsql-9.0/bin]: /usr/lib/postgresql/9.0/bin 
+   # PgSQL bindir 9.1 [/usr/pgsql-9.1/bin]: /usr/lib/postgresql/9.1/bin
+   # PgSQL bindir 9.2 [/usr/pgsql-9.2/bin]: /usr/lib/postgresql/9.2/bin
+   # PgSQL bindir 9.3 [/usr/pgsql-9.3/bin]: /usr/lib/postgresql/9.3/bin
+   # PgSQL bindir 9.4 [/usr/pgsql-9.4/bin]: /usr/lib/postgresql/9.4/bin
+   # PgSQL bindir 9.5 [/usr/pgsql-9.5/bin]: /usr/lib/postgresql/9.5/bin
+   # PgSQL bindir 9.6 [/usr/pgsql-9.6/bin]: /usr/lib/postgresql/9.6/bin
+   # PgSQL bindir 10 [/usr/pgsql-10/bin]: /usr/lib/postgresql/10/bin
+
    # Main backup dir [/srv/pgbackman]: 
    
    # Are all values to update correct (yes/no): yes
