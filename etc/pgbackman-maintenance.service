@@ -2,8 +2,8 @@
 Description=pgbackman maintenance service
 
 [Service]
-User=pgbackman
-Group=pgbackman
+User=root
+Group=root
 Restart=always
 ExecStart=/usr/bin/pgbackman_maintenance
 
