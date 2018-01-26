@@ -902,7 +902,7 @@ INSERT INTO backup_code (code,description) VALUES ('SCHEMA','Schema backup of a 
 INSERT INTO backup_code (code,description) VALUES ('DATA','Data backup of the database.');
 INSERT INTO backup_code (code,description) VALUES ('CLUSTER','Full backup of the database cluster.');
 INSERT INTO backup_code (code,description) VALUES ('CONFIG','Backup of the configuration files');
-INSERT INTO backup_code (code,description) VALUES ('RDSDATA','Only runs a pg_dump of the data so that it does not try to access globals that postgres cannot access on RDS');
+INSERT INTO backup_code (code,description) VALUES ('RDS','Only runs a pg_dump of the data so that it does not try to access globals that postgres cannot access on RDS');
 \echo '# [Init: job_definition_status]\n'
 
 INSERT INTO job_definition_status (code,description) VALUES ('ACTIVE','Backup job activated and in production');

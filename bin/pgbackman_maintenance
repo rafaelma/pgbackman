@@ -43,7 +43,7 @@ This program is used by PgBackMan to run some maintenance tasks in this backup s
 These are the task implemented:
 
 * Delete restore logs files when restore definitions/catalogs are deleted.
-* Delete backup and log files from catalog entries associated to a backup definition after 
+* Delete backup and log files from catalog entries associated to a backup definition after
   this definition has been deleted with the force parameter.
 * Enforce retentions for backup definitions.
 * Enforce retentions of snapshot backups
@@ -60,10 +60,10 @@ def delete_restore_logs(db,backup_server_id):
     '''Delete restore log files after restore definitions/catalogs are deleted'''
 
     logs.logger.debug('## Deleting restore logs after restore definitions/catalogs are deleted ##')
-    
+
     try:
         for record in db.get_restore_logs_to_delete(backup_server_id):
-            
+
             error_cnt = 0
 
             #
@@ -73,7 +73,7 @@ def delete_restore_logs(db,backup_server_id):
             try:
                 os.unlink(record[2])
                 logs.logger.debug('File: %s deleted',record[2])
-            
+
             except OSError as e:
                 if e.errno != errno.ENOENT:
                     logs.logger.error('Problems deleting restore log files with DelID: %s - %s',record[0],e)
@@ -82,7 +82,7 @@ def delete_restore_logs(db,backup_server_id):
                     pass
 
             #
-            # We can delete the delID entry from the database only if we can 
+            # We can delete the delID entry from the database only if we can
             # delete all the files in the delID entry without errors
             #
 
@@ -90,18 +90,18 @@ def delete_restore_logs(db,backup_server_id):
                 try:
                     db.delete_restore_logs_to_delete(record[0])
                     logs.logger.info('Restore Log file for DelID: %s deleted',record[0])
-                    
+
                 except psycopg2.OperationalError as e:
                     raise e
                 except Exception as e:
                     logs.logger.error('Problems deleting restore logs to delete entry DelID: %s - %s',record[0],e)
-                    
+
     except psycopg2.OperationalError as e:
         raise e
     except Exception as e:
         logs.logger.error('Could not get the restore log to delete information - %s',e)
 
-            
+
 # ############################################
 # Function delete_files_from_force_deletes()
 # ############################################
@@ -110,10 +110,10 @@ def delete_files_from_force_deletes(db,backup_server_id):
     '''Delete dump and log files from force deletions of backup definitions'''
 
     logs.logger.debug('## Deleting files from forced DefID deletions ##')
-    
+
     try:
         for record in db.get_catalog_entries_to_delete(backup_server_id):
-            
+
             error_cnt = 0
 
             #
@@ -131,7 +131,7 @@ def delete_files_from_force_deletes(db,backup_server_id):
                     elif os.path.isdir(record[index]):
                         shutil.rmtree(record[index])
                         logs.logger.debug('Directory: %s deleted',record[index])
-                                                
+
                 except OSError as e:
                     if e.errno != errno.ENOENT:
                         logs.logger.error('Problems deleting files from force deletions of DefIDs: %s',e)
@@ -141,7 +141,7 @@ def delete_files_from_force_deletes(db,backup_server_id):
 
 
             #
-            # We can delete the delID entry from the database only if we can 
+            # We can delete the delID entry from the database only if we can
             # delete all the files in the delID entry without errors
             #
 
@@ -149,18 +149,18 @@ def delete_files_from_force_deletes(db,backup_server_id):
                 try:
                     db.delete_catalog_entries_to_delete(record[0])
                     logs.logger.info('Files for catalog ID: %s / DefID: %s deleted',record[3],record[2])
-                    
+
                 except psycopg2.OperationalError as e:
                     raise e
                 except Exception as e:
                     logs.logger.error('Problems deleting cataloginfo from force defid deletions - %s',e)
-    
+
     except psycopg2.OperationalError as e:
         raise e
     except Exception as e:
         logs.logger.error('Could not get the catalog information for defid force deletions - %s',e)
 
-            
+
 # ############################################
 # Function enforce_backup_retentions()
 # ############################################
@@ -174,7 +174,7 @@ def enforce_backup_retentions(db,backup_server_id):
         for record in db.get_cron_catalog_entries_to_delete_by_retention(backup_server_id):
 
             error_cnt = 0
-            
+
             #
             # record[9...14] are the files to delete
             #
@@ -190,16 +190,16 @@ def enforce_backup_retentions(db,backup_server_id):
                      elif os.path.isdir(record[index]):
                          shutil.rmtree(record[index])
                          logs.logger.debug('Directory: %s deleted',record[index])
-    
+
                  except OSError as e:
                     if e.errno != errno.ENOENT:
                         logs.logger.error('Problems deleting files from backup enforce retentions: %s',e)
                         error_cnt = error_cnt + 1
                     else:
                         pass
-    
+
             #
-            # We can delete the BckID entry from the catalog table only if we can 
+            # We can delete the BckID entry from the catalog table only if we can
             # delete all the files for the BckID entry without errors
             #
 
@@ -217,7 +217,7 @@ def enforce_backup_retentions(db,backup_server_id):
         raise e
     except Exception as e:
         logs.logger.error('Could not get information to enforce backup file retentions - %s',e)
-        
+
 
 # ############################################
 # Function enforce_snapshot_retentions()
@@ -232,7 +232,7 @@ def enforce_snapshot_retentions(db,backup_server_id):
         for record in db.get_at_catalog_entries_to_delete_by_retention(backup_server_id):
 
             error_cnt = 0
-            
+
             #
             # record[7...12] are the files to delete
             #
@@ -240,7 +240,7 @@ def enforce_snapshot_retentions(db,backup_server_id):
             for index in range(7,13):
 
                  try:
-                     
+
                      if os.path.isfile(record[index]):
                          os.unlink(record[index])
                          logs.logger.debug('File: %s deleted',record[index])
@@ -248,16 +248,16 @@ def enforce_snapshot_retentions(db,backup_server_id):
                      elif os.path.isdir(record[index]):
                          shutil.rmtree(record[index])
                          logs.logger.debug('Directory: %s deleted',record[index])
-    
+
                  except OSError as e:
                     if e.errno != errno.ENOENT:
                         logs.logger.error('Problems deleting files from snapshot enforce retentions: %s',e)
                         error_cnt = error_cnt + 1
                     else:
                         pass
-    
+
             #
-            # We can delete the snapshotID entry from the catalog and definition table only if we can 
+            # We can delete the snapshotID entry from the catalog and definition table only if we can
             # delete all the files for the SnapshotID entry without errors
             #
 
@@ -275,7 +275,7 @@ def enforce_snapshot_retentions(db,backup_server_id):
         raise e
     except Exception as e:
         logs.logger.error('Could not get information to enforce snapshot file retentions - %s',e)
-        
+
 
 # ##################################################
 # Function process_pending_backup_catalog_log_file()
@@ -287,19 +287,19 @@ def process_pending_backup_catalog_log_file(db,backup_server_id):
     role_list = []
 
     logs.logger.debug('## Processing pending backup catalog log files ##')
-    
+
     try:
         db.pg_connect()
-        
+
         root_backup_partition = db.get_backup_server_config_value(backup_server_id,'root_backup_partition')
         pending_catalog = root_backup_partition + '/pending_updates'
-        
+
         for pending_log_file in os.listdir(pending_catalog):
             if pending_log_file.find('backup_jobs_pending_log_updates_nodeid') != -1:
                 with open(pending_catalog + '/' + pending_log_file,'r') as pending_file:
                     for line in pending_file:
                         parameters = line.split('::')
-                    
+
                         if len(parameters) == 25:
 
                             #
@@ -309,13 +309,13 @@ def process_pending_backup_catalog_log_file(db,backup_server_id):
 
                             def_id = parameters[0]
                             snapshot_id = parameters[21]
-                        
+
                             if def_id == '':
                                 def_id = None
                             elif snapshot_id == '':
                                 snapshot_id = None
-                        
-                            # Generate role list    
+
+                            # Generate role list
 
                             role_list = parameters[22].split(' ')
 
@@ -350,15 +350,15 @@ def process_pending_backup_catalog_log_file(db,backup_server_id):
                                                        parameters[24].replace('\n',''))
 
                             logs.logger.info('Backup job catalog for DefID: %s or snapshotID: %s in pending file %s updated in the database',def_id,snapshot_id,pending_log_file)
-                            
+
                             #
                             # Deleting the pending file if we can update the database with
                             # the information in the file
                             #
-                        
+
                             os.unlink(pending_catalog + '/' + pending_log_file)
                             logs.logger.info('Pending backup file: %s deleted',pending_log_file)
-                                                        
+
                         else:
                             logs.logger.error('Wrong format in pending backup file: %s',pending_log_file)
 
@@ -378,19 +378,19 @@ def process_pending_restore_catalog_log_file(db,backup_server_id):
     role_list = []
 
     logs.logger.debug('## Processing pending restore catalog log files ##')
-    
+
     try:
         db.pg_connect()
-        
+
         root_backup_partition = db.get_backup_server_config_value(backup_server_id,'root_backup_partition')
         pending_catalog = root_backup_partition + '/pending_updates'
-        
+
         for pending_log_file in os.listdir(pending_catalog):
             if pending_log_file.find('restore_jobs_pending_log_updates_nodeid') != -1:
                 with open(pending_catalog + '/' + pending_log_file,'r') as pending_file:
                     for line in pending_file:
                         parameters = line.split('::')
-                    
+
                         if len(parameters) == 17:
 
                             #
@@ -416,15 +416,15 @@ def process_pending_restore_catalog_log_file(db,backup_server_id):
                                                         parameters[16].replace('\n',''))
 
                             logs.logger.info('Restore job catalog for restoreDef: %s in pending file %s updated in the database',parameters[0],pending_log_file)
-                            
+
                             #
                             # Deleting the pending file if we can update the database with
                             # the information in the file
                             #
-                        
+
                             os.unlink(pending_catalog + '/' + pending_log_file)
                             logs.logger.info('Pending restore file: %s deleted',pending_log_file)
-                                                        
+
                         else:
                             logs.logger.error('Wrong format in pending restore file: %s',pending_log_file)
 
@@ -438,15 +438,15 @@ def process_pending_restore_catalog_log_file(db,backup_server_id):
 # ############################################################
 # Function process_backup_definitions_from_deleted_databases()
 # ############################################################
-    
+
 def process_backup_definitions_from_deleted_databases(db,backup_server_id):
     '''
     This function stops backup definitions for databases that have been deleted
-    in the PgSQL nodes running them.     
+    in the PgSQL nodes running them.
     '''
 
     logs.logger.debug('## Processing backup definitions for deleted databases  ##')
-    
+
     #
     # Processing data for all PgSQL nodes with status "RUNNING"
     #
@@ -467,7 +467,7 @@ def process_backup_definitions_from_deleted_databases(db,backup_server_id):
 
             dsn_value = db.get_pgsql_node_dsn(pgsql_node_id)
             db_node = PgbackmanDB(dsn_value, 'pgbackman_maintenance')
-            
+
             #
             # Get all backup definitions for this Backup server - PgSQL node
             #
@@ -477,7 +477,7 @@ def process_backup_definitions_from_deleted_databases(db,backup_server_id):
             #
             # Get backup definitions for databases that exist in the PgSQL_node
             #
-            
+
             for database in db_node.get_pgsql_node_database_list():
 
                 for backup_def_id in db.get_database_backup_definitions(backup_server_id,pgsql_node_id,database[0]):
@@ -486,9 +486,9 @@ def process_backup_definitions_from_deleted_databases(db,backup_server_id):
             #
             # List of backup definitions to process
             #
-            
+
             backup_def_list_to_process =  set(backup_def_full_list) - set(backup_def_database_list)
-            
+
             #
             # Update the backup def status to "DELETED"
             #
@@ -508,7 +508,7 @@ def process_backup_definitions_from_deleted_databases(db,backup_server_id):
             # automatic_deletion_retention for the PgSQL node that was
             # running the deleted database.
             #
-            
+
             for backup_def_id in db.get_deleted_backup_definitions_to_delete_by_retention():
                 try:
                     db.delete_force_backup_definition_id(backup_def_id[0])
@@ -525,7 +525,7 @@ def process_backup_definitions_from_deleted_databases(db,backup_server_id):
 # ############################################
 # Function signal_handler()
 # ############################################
-    
+
 def signal_handler(signum, frame):
     logs.logger.info('**** pgbackman_maintenance stopped. ****')
     sys.exit(0)
@@ -534,14 +534,14 @@ def signal_handler(signum, frame):
 # ############################################
 # Function check_database_connection()
 # ############################################
-  
+
 def check_database_connection(db):
     '''Check if we can connect to the database server and the pgbackman database'''
 
     try:
         db.pg_connect()
         return True
-    except Exception as e:    
+    except Exception as e:
         return False
 
 
@@ -562,18 +562,18 @@ def main():
     db = PgbackmanDB(dsn, 'pgbackman_maintenance')
 
     #
-    # We check before starting if the database is available. 
-    # If it is not available we will wait conf.pg_connect_retry_interval 
-    # and try again 
+    # We check before starting if the database is available.
+    # If it is not available we will wait conf.pg_connect_retry_interval
+    # and try again
 
     check_db = check_database_connection(db)
 
     while not check_db:
         logs.logger.critical('The pgbackman database is not available. Waiting %s seconds before trying again',conf.pg_connect_retry_interval)
-        
+
         time.sleep(conf.pg_connect_retry_interval)
         check_db = check_database_connection(db)
-        
+
     logs.logger.debug('Database server is up and running and pgbackman database is available')
 
     #
@@ -588,12 +588,12 @@ def main():
     try:
         backup_server_id = db.get_backup_server_id(backup_server_fqdn)
         logs.logger.info('Backup server: %s is registered in pgbackman',backup_server_fqdn)
-            
+
     except psycopg2.Error as e:
         logs.logger.critical('Cannot find backup server %s in pgbackman. Stopping pgbackman2cron.',backup_server_fqdn)
         logs.logger.info('**** pgbackman_maintenance stopped. ****')
-        sys.exit(1)     
-    
+        sys.exit(1)
+
     loop = 0
 
     while loop == 0:
@@ -605,21 +605,21 @@ def main():
             process_pending_backup_catalog_log_file(db,backup_server_id)
             process_pending_restore_catalog_log_file(db,backup_server_id)
             process_backup_definitions_from_deleted_databases(db,backup_server_id)
-    
+
         except psycopg2.OperationalError as e:
 
             #
             # If we lose the connection to the database, we will wait conf.pg_connect_retry_interval
-            # before trying to connect again. 
+            # before trying to connect again.
             #
 
             logs.logger.critical('Operational error: %s',e)
 
             check_db = check_database_connection(db)
-            
+
             while not check_db:
                 logs.logger.critical('We have lost the connection to the database. Waiting %s seconds before trying again',conf.pg_connect_retry_interval)
-                
+
                 time.sleep(conf.pg_connect_retry_interval)
                 check_db = check_database_connection(db)
 
@@ -628,12 +628,12 @@ def main():
         else:
             # Wait for next maintenance run if in loop mode
             time.sleep(conf.maintenance_interval)
-    
+
     db.pg_close()
 
 
 # ############################################
-# 
+#
 # ############################################
 
 if __name__ == '__main__':
@@ -646,10 +646,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(prog=sys.argv[0])
     parser.add_argument('--cron', required=False, help='Single run to use via cron', action="store_true")
 
-    args = parser.parse_args()    
+    args = parser.parse_args()
 
     logs.logger.info('**** pgbackman_maintenance started. ****')
-    
+
     if args.cron:
         cron = True
         logs.logger.info('Running in cron mode')
