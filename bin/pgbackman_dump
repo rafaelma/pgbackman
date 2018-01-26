@@ -31,7 +31,7 @@ import signal
 import argparse
 
 from pgbackman.logs import *
-from pgbackman.database import * 
+from pgbackman.database import *
 from pgbackman.config import *
 
 '''
@@ -46,10 +46,10 @@ pgsql_node_cache_data = {}
 # ############################################
 # Function pg_dumpall()
 # ############################################
-    
+
 def pg_dumpall(db):
     '''Used to take backups with code CLUSTER'''
-    
+
     global global_parameters
 
     #
@@ -63,7 +63,7 @@ def pg_dumpall(db):
                              ' -p ' + global_parameters['pgsql_node_port'] + \
                              ' -U ' + global_parameters['pgsql_node_admin_user'] + \
                              ' ' + global_parameters['extra_backup_parameters'] + \
-                             ' | /bin/gzip > ' + global_parameters['cluster_dump_file'] 
+                             ' | /bin/gzip > ' + global_parameters['cluster_dump_file']
     else:
         pg_dumpall_command = global_parameters['backup_server_pgsql_bin_dir'] + '/pg_dumpall' + \
                              ' -h ' + global_parameters['pgsql_node_fqdn'] + \
@@ -74,7 +74,7 @@ def pg_dumpall(db):
 
     try:
         with open(global_parameters['cluster_log_file'],'w') as cluster_log_file:
-            
+
             cluster_log_file.write('------------------------------------\n')
             cluster_log_file.write('Timestamp:' + str(datetime.datetime.now()) + '\n')
             cluster_log_file.write('Command: ' + pg_dumpall_command + '\n')
@@ -84,41 +84,41 @@ def pg_dumpall(db):
 
             proc = subprocess.Popen([pg_dumpall_command],stdout=cluster_log_file,stderr=subprocess.STDOUT,shell=True)
             proc.wait()
-                
+
             if proc.returncode == 0:
                 logs.logger.info('Cluster dump file created - %s',global_parameters['cluster_dump_file'])
                 cluster_log_file.write('[OK] Cluster dump file created - ' + global_parameters['cluster_dump_file'] + '\n')
-                
+
                 global_parameters['execution_status'] = 'SUCCEEDED'
             else:
                 logs.logger.critical('Cluster dump file could not be created. Return code = %s. Check log file: %s',proc.returncode,global_parameters['cluster_log_file'])
                 cluster_log_file.write('[ERROR] Cluster dump file could not be created. Return code = ' + str(proc.returncode) + '. Check log file: ' + global_parameters['cluster_log_file'] + '\n')
-                
+
                 global_parameters['execution_status'] = 'ERROR'
                 global_parameters['error_message'] = 'pgdumpall returncode: ' + str(proc.returncode) + '. Check log file.'
                 register_backup_catalog(db)
                 sys.exit(1)
-                
+
     except Exception as e:
         logs.logger.critical('Could not generate the final cluster dump file %s - %s',global_parameters['cluster_dump_file'],e)
-        
+
         global_parameters['execution_status'] = 'ERROR'
         global_parameters['error_message'] = e
-        register_backup_catalog(db)  
+        register_backup_catalog(db)
         sys.exit(1)
-        
+
 
 # ############################################
 # Function pg_dump()
 # ############################################
-    
+
 def pg_dump(db):
     '''Used to take database backups with codes FULL, SCHEMA and DATA'''
 
     global global_parameters
 
     if global_parameters['backup_code'] == 'FULL':
-            
+
         pg_dump_command = global_parameters['backup_server_pgsql_bin_dir'] + '/pg_dump' + \
             ' -h ' + global_parameters['pgsql_node_fqdn'] + \
             ' -p ' + global_parameters['pgsql_node_port'] + \
@@ -128,10 +128,10 @@ def pg_dump(db):
             ' --blobs' + \
             ' --verbose' + \
             ' ' + global_parameters['extra_backup_parameters'] + \
-            ' ' + global_parameters['dbname']         
-           
+            ' ' + global_parameters['dbname']
+
     elif global_parameters['backup_code'] == 'SCHEMA':
-        
+
         pg_dump_command = global_parameters['backup_server_pgsql_bin_dir'] + '/pg_dump' + \
             ' -h ' + global_parameters['pgsql_node_fqdn'] + \
             ' -p ' + global_parameters['pgsql_node_port'] + \
@@ -142,7 +142,7 @@ def pg_dump(db):
             ' --verbose' + \
             ' ' + global_parameters['extra_backup_parameters'] + \
             ' ' + global_parameters['dbname']
-                        
+
     elif global_parameters['backup_code'] == 'DATA':
 
         pg_dump_command = global_parameters['backup_server_pgsql_bin_dir'] + '/pg_dump' + \
@@ -156,30 +156,30 @@ def pg_dump(db):
             ' --verbose' + \
             ' ' + global_parameters['extra_backup_parameters'] + \
             ' ' + global_parameters['dbname']
-        
+
     try:
         with open(global_parameters['database_log_file'],'w') as database_log_file:
-            
+
             database_log_file.write('------------------------------------\n')
             database_log_file.write('Timestamp:' + str(datetime.datetime.now()) + '\n')
             database_log_file.write('Command: ' + pg_dump_command + '\n')
             database_log_file.write('------------------------------------\n\n')
-            
+
             database_log_file.flush()
 
             proc = subprocess.Popen([pg_dump_command],stdout=database_log_file,stderr=subprocess.STDOUT,shell=True)
             proc.wait()
-                
+
             if proc.returncode != 0:
                 logs.logger.critical('Database dump file could not be created. Return code = %s. Check log file: %s',
                                      proc.returncode,
                                      global_parameters['database_log_file'])
-                
+
                 global_parameters['execution_status'] = 'ERROR'
                 global_parameters['error_message'] = 'pg_dump returncode: ' + str(proc.returncode) + '. Check log file.'
-                register_backup_catalog(db)  
+                register_backup_catalog(db)
                 sys.exit(1)
-                
+
             logs.logger.info('Database dump file created - %s',global_parameters['database_dump_file'])
 
             global_parameters['execution_status'] = 'SUCCEEDED'
@@ -189,17 +189,17 @@ def pg_dump(db):
 
         global_parameters['execution_status'] = 'ERROR'
         global_parameters['error_message'] = e
-        register_backup_catalog(db)  
+        register_backup_catalog(db)
         sys.exit(1)
-        
+
 
 # ############################################
 # Function pg_dump_users()
 # ############################################
-    
+
 def pg_dump_users(db):
     '''Used to backup roles information associated with a database.'''
-    
+
     global global_parameters
     roles = []
     grant_granted_by_roles= []
@@ -221,10 +221,10 @@ def pg_dump_users(db):
     # with huge sql dumps
     #
 
-    # 
+    #
     # Extracting roles from the schema dump of the database
     #
-    
+
     try:
 
         #
@@ -246,43 +246,43 @@ def pg_dump_users(db):
             ' ' + global_parameters['dbname']
 
         with open(global_parameters['roles_log_file'],'w') as roles_log_file:
-            
+
             roles_log_file.write('------------------------------------\n')
             roles_log_file.write('Timestamp:' + str(datetime.datetime.now()) + '\n')
             roles_log_file.write('Command: ' + pg_dump_command + '\n')
             roles_log_file.write('------------------------------------\n\n')
-            
+
             roles_log_file.flush()
 
             proc = subprocess.Popen([pg_dump_command],stdout=roles_log_file,stderr=subprocess.STDOUT,shell=True)
             proc.wait()
-        
+
             if proc.returncode != 0:
                 logs.logger.critical('The command used to generate the tmp schema dump of the database has a return value != 0')
 
                 global_parameters['execution_status'] = 'ERROR'
-                global_parameters['error_message'] = 'pg_dump returncode: ' + str(proc.returncode) + '. Check log file.' 
-                register_backup_catalog(db)  
+                global_parameters['error_message'] = 'pg_dump returncode: ' + str(proc.returncode) + '. Check log file.'
+                register_backup_catalog(db)
                 sys.exit(1)
-                
+
             with open(pg_dump_schema_temp_file.name, 'r') as sqldump:
                 for line in sqldump:
-                    
+
                     if 'OWNER TO' in line:
                         role = line.split(' OWNER TO ')
-                        
+
                         if len(role) == 2:
                             if role[1].replace(';\n','').find(' ') < 0:
                                 roles.append(role[1].replace(';\n',''))
-                            
+
                     if 'GRANT' in line:
                         role = line.split(' TO ')
-                        
+
                         if len(role) == 2:
                             if role[1].replace(';\n','').find(' ') < 0:
                                 if role[1].replace(';\n','') != 'PUBLIC':
                                     roles.append(role[1].replace(';\n',''))
-                             
+
 
         #
         # Find out all roles that grant privileges to some of the
@@ -304,45 +304,45 @@ def pg_dump_users(db):
             ' --file=' + pg_dumpall_schema_temp_file.name
 
         with open(global_parameters['roles_log_file'],'a') as roles_log_file:
-            
+
             proc = subprocess.Popen([pg_dumpall_command],stdout=roles_log_file,stderr=subprocess.STDOUT,shell=True)
             proc.wait()
-        
+
             if proc.returncode != 0:
                 logs.logger.critical('The command used to generate the tmp role dumpall of the database has a return value != 0')
 
                 global_parameters['execution_status'] = 'ERROR'
-                global_parameters['error_message'] = 'pg_dumpall returncode: ' + str(proc.returncode) + '. Check log file.' 
-                register_backup_catalog(db)  
+                global_parameters['error_message'] = 'pg_dumpall returncode: ' + str(proc.returncode) + '. Check log file.'
+                register_backup_catalog(db)
                 sys.exit(1)
-                
+
             with open(pg_dumpall_schema_temp_file.name, 'r') as sqldump:
                 for line in sqldump:
                     for role in roles_unique_tmp:
                         if 'GRANT ' in line:
                             if ' TO ' + role + ' GRANTED BY ' in line:
                                 roles.append(line.split(' TO' )[0].replace('GRANT ',''))
-                                                             
+
         unique_role_list = set(roles)
         logs.logger.debug('The list of roles we need to restore the database has been generated - %s',unique_role_list)
-                        
+
     except Exception as e:
         logs.logger.critical('pg_dump schema temp file could not be created in directory %s - %s',global_parameters['tmp_dir'],e)
-        
+
         global_parameters['execution_status'] = 'ERROR'
         global_parameters['error_message'] = e
-        register_backup_catalog(db)  
+        register_backup_catalog(db)
         sys.exit(1)
-        
+
     #
     # Extracting sql statements for our roles from the pg_dumpall -r
     # dump of the cluster
-    # 
-    
+    #
+
     try:
         pg_dumpall_roles_temp_file = tempfile.NamedTemporaryFile(delete=True,dir=global_parameters['tmp_dir'])
         logs.logger.debug('pg_dumpall roles temp file created %s',pg_dumpall_roles_temp_file.name)
-    
+
         pg_dumpall_command = global_parameters['backup_server_pgsql_bin_dir'] + '/pg_dumpall' + \
             ' -r' + \
             ' -h ' + global_parameters['pgsql_node_fqdn'] + \
@@ -356,18 +356,18 @@ def pg_dump_users(db):
             roles_log_file.write('Timestamp:' + str(datetime.datetime.now()) + '\n')
             roles_log_file.write('Command: ' + pg_dumpall_command + '\n')
             roles_log_file.write('------------------------------------\n\n')
-            
+
             roles_log_file.flush()
-            
+
             proc = subprocess.Popen([pg_dumpall_command],stdout=roles_log_file,stderr=subprocess.STDOUT,shell=True)
             proc.wait()
-        
+
             if proc.returncode != 0:
                 logs.logger.critical('The command used to generate the role dump for the PgSQL node running the database has a return value != 0')
-            
+
                 global_parameters['execution_status'] = 'ERROR'
                 global_parameters['error_message'] = 'pg_dumpall returncode: ' + str(proc.returncode) + '. Check log file.'
-                register_backup_catalog(db)  
+                register_backup_catalog(db)
                 sys.exit(1)
 
             with open(global_parameters['roles_dump_file'],'w') as roles_dump_file:
@@ -383,19 +383,19 @@ def pg_dump_users(db):
                     #
                     for line in sqldump_roles:
                         for role in unique_role_list:
-                        
+
                             #
                             # CREATE ROLE statements
                             #
                             if ' ROLE ' + role + ';' in line:
                                 roles_dump_file.write(line)
-                            
+
                             #
                             # ALTER ROLE statements
                             #
                             if ' ROLE ' + role + ' ' in line:
                                 roles_dump_file.write(line)
-                             
+
                             #
                             # Role memberships statements, GRANT ... TO ... GRANTED BY ..
                             #
@@ -404,10 +404,10 @@ def pg_dump_users(db):
                                     grant_granted_by_statements.append(line)
 
                                     #
-                                    # GRANT roleX TO role GRANTED BY ... We need the list 
-                                    # of roleX roles. If they do not own something or have privileges in 
+                                    # GRANT roleX TO role GRANTED BY ... We need the list
+                                    # of roleX roles. If they do not own something or have privileges in
                                     # the database we are backing up, this is the only place
-                                    # where we have information of them. 
+                                    # where we have information of them.
                                     #
                                     # We build a new role list with these roles so we can get
                                     # the CREATE ROLE and ALTER ROLE needed by them.
@@ -416,18 +416,18 @@ def pg_dump_users(db):
                                     grant_granted_by_roles.append(role[0].replace('GRANT ',''))
 
 
-                    unique_grant_granted_by_roles_list = set(grant_granted_by_roles) 
-                        
+                    unique_grant_granted_by_roles_list = set(grant_granted_by_roles)
+
                     #
                     # Get all statements for the roles not owning anything or without
-                    # privileges in the database we are backing up, but needed by 
+                    # privileges in the database we are backing up, but needed by
                     # GRANT ... TO ... GRANTED BY ... statements
                     #
 
                     sqldump_roles.seek(0, 0)
                     for line in sqldump_roles:
                         for role in unique_grant_granted_by_roles_list - unique_role_list:
-                            
+
                             print "#" + line
                             print "#" + role
 
@@ -436,46 +436,46 @@ def pg_dump_users(db):
                             #
                             if ' ROLE ' + role + ';' in line:
                                 roles_dump_file.write(line)
-                            
+
                             #
                             # ALTER ROLE statements
                             #
                             if ' ROLE ' + role + ' ' in line:
                                 roles_dump_file.write(line)
-                                
-                                
+
+
                     #
                     # Write to disk all GRANT ... TO ... GRANTED BY ... statements
                     #
                     for line in set(grant_granted_by_statements):
                         roles_dump_file.write(line)
 
-    
+
                     logs.logger.debug('The list of role statements we need from pg_dumpall has been generated')
 
                 roles_dump_file.write('\nCOMMIT;\n\n')
                 roles_dump_file.write('-- \n-- PgBackMan roles dump completed\n--\n\n')
-                    
+
             logs.logger.info('Final roles dump file created - %s',global_parameters['roles_dump_file'])
             global_parameters['execution_status'] = 'SUCCEEDED'
 
             unique_role_list_tmp = list(unique_role_list)
             unique_role_list_tmp.sort()
             global_parameters['role_list'] = unique_role_list_tmp
-            
+
     except Exception as e:
         logs.logger.critical('Could not generate the final roles dump file %s - %s',global_parameters['roles_dump_file'],e)
-        
+
         global_parameters['execution_status'] = 'ERROR'
         global_parameters['error_message'] = e
-        register_backup_catalog(db)  
+        register_backup_catalog(db)
         sys.exit(1)
-        
+
 
 # ############################################
 # Function pg_dump_database_config()
 # ############################################
-    
+
 def pg_dump_database_config(db):
     '''Used to backup database configuration information associated with a database'''
 
@@ -484,15 +484,15 @@ def pg_dump_database_config(db):
     #
     # Extracting sql statements for our database from the pg_dumpall
     # -s dump of the cluster
-    # 
+    #
     # We extract all the CREATE DATABASE, ALTER DATABASE and
     # GRANT/REVOKE ... ON DATABASE statements for our database
     #
-    
+
     try:
         pg_dumpall_dbconfig_temp_file = tempfile.NamedTemporaryFile(delete=True,dir=global_parameters['tmp_dir'])
         logs.logger.debug('pg_dumpall dbconfig temp file created %s',pg_dumpall_dbconfig_temp_file.name)
-    
+
         pg_dumpall_command = global_parameters['backup_server_pgsql_bin_dir'] + '/pg_dumpall' + \
             ' -s' + \
             ' -h ' + global_parameters['pgsql_node_fqdn'] + \
@@ -506,20 +506,20 @@ def pg_dump_database_config(db):
             dbconfig_log_file.write('Timestamp:' + str(datetime.datetime.now()) + '\n')
             dbconfig_log_file.write('Command: ' + pg_dumpall_command + '\n')
             dbconfig_log_file.write('------------------------------------\n\n')
-            
+
             dbconfig_log_file.flush()
-        
+
             proc = subprocess.Popen([pg_dumpall_command], stdout=dbconfig_log_file,stderr=subprocess.STDOUT,shell=True)
             proc.wait()
 
             if proc.returncode != 0:
                 logs.logger.critical('The command used to generate the dbconfig dump for the PgSQL node running the database has a return value != 0')
-            
+
                 global_parameters['execution_status'] = 'ERROR'
                 global_parameters['error_message'] = 'pg_dumpall returncode: ' + str(proc.returncode) + '. Check log file.'
-                register_backup_catalog(db)  
+                register_backup_catalog(db)
                 sys.exit(1)
-            
+
             with open(global_parameters['dbconfig_dump_file'],'w') as dbconfig_dump_file:
 
                 dbconfig_dump_file.write('-- \n-- PgBackMan \n-- \n-- Database attributes needed by the database: \n-- ' + global_parameters['dbname'] + '@' + global_parameters['pgsql_node_fqdn'] + ' \n--\n\n')
@@ -533,41 +533,41 @@ def pg_dump_database_config(db):
                         #
                         if 'CREATE DATABASE ' + global_parameters['dbname'] + ' ' in line:
                             dbconfig_dump_file.write(line)
-                                                         
+
                         #
                         # ALTER DATABASE statements
                         #
                         if 'ALTER DATABASE ' + global_parameters['dbname'] + ' SET ' in line:
                             dbconfig_dump_file.write(line)
-            
+
                         #
                         # GRANT/REVOKE ... ON DATABASE statements
                         #
 
                         if ' ON DATABASE ' + global_parameters['dbname'] + ' ' in line:
                             dbconfig_dump_file.write(line)
-                                                                                      
+
                 logs.logger.debug('The list of dbconfig statements we need from pg_dumpall has been generated')
 
                 dbconfig_dump_file.write('\nCOMMIT;\n\n')
                 dbconfig_dump_file.write('-- \n-- PgBackMan dbconfig dump completed\n--\n\n')
-                    
+
             logs.logger.info('Final dbconfig dump file created - %s',global_parameters['dbconfig_dump_file'])
             global_parameters['execution_status'] = 'SUCCEEDED'
-                
+
     except Exception as e:
         logs.logger.critical('Could not generate the final dbconfig dump file %s - %s',global_parameters['dbconfig_dump_file'],e)
-        
+
         global_parameters['execution_status'] = 'ERROR'
         global_parameters['error_message'] = e
-        register_backup_catalog(db)  
+        register_backup_catalog(db)
         sys.exit(1)
 
 
 # ############################################
 # Function get_pgsql_node_dsn()
 # ############################################
-    
+
 def get_pgsql_node_dsn():
     '''Get the DSN values needed to connect to a PgSQL node'''
 
@@ -577,15 +577,15 @@ def get_pgsql_node_dsn():
 
     logs.logger.debug('DSN value for PgSQL node is %s',dsn_value)
     return dsn_value
-    
+
 
 # ############################################
 # Function get_pgsql_node_release()
 # ############################################
-    
+
 def get_pgsql_node_release(db,db_pgnode):
     '''Get the postgreSQL release version a PgSQL node is running'''
-    
+
     pgsql_node_version = ''
 
     try:
@@ -594,7 +594,7 @@ def get_pgsql_node_release(db,db_pgnode):
         db_pgnode.pg_close()
     except Exception as e:
         logs.logger.critical('Problems getting the postgreSQL version running on Pgsql node - %s',e)
-             
+
     logs.logger.debug('PgSQL node version: %s',pgsql_node_version)
 
     if pgsql_node_version == '100':
@@ -626,12 +626,12 @@ def get_pgsql_node_release(db,db_pgnode):
         register_backup_catalog(db)
 
         sys.exit(1)
-    
+
 
 # ############################################
 # Function get_pg_dump_release()
 # ############################################
-    
+
 def get_pg_dump_release(db):
 
     '''
@@ -649,7 +649,7 @@ def get_pg_dump_release(db):
     [1] http://www.postgresql.org/docs/current/static/upgrading.html
 
     '''
-    
+
     pg_dump_release = ''
 
     try:
@@ -660,7 +660,7 @@ def get_pg_dump_release(db):
         #
 
         if global_parameters['pg_dump_release'] == '':
-            pg_dump_release = global_parameters['pgsql_node_release'] 
+            pg_dump_release = global_parameters['pgsql_node_release']
 
 
         #
@@ -669,7 +669,7 @@ def get_pg_dump_release(db):
         #
 
         elif global_parameters['pg_dump_release'] != '':
-            pg_dump_release = global_parameters['pg_dump_release'] 
+            pg_dump_release = global_parameters['pg_dump_release']
 
         #
         # pg_dump release defined by the user is lower than the
@@ -678,7 +678,7 @@ def get_pg_dump_release(db):
         #
 
         if int(pg_dump_release.replace('_','')) < int(global_parameters['pgsql_node_release'].replace('_','')):
-                    
+
             logs.logger.critical('The pg_dump/all release defined in the snapshot definition is lower than the release running in the pgSQL node: (%s < %s)',global_parameters['pg_dump_release'].replace('_','.'),global_parameters['pgsql_node_release'].replace('_','.'))
             global_parameters['execution_status'] = 'ERROR'
             global_parameters['error_message'] = 'pg_dump release defined is too old'
@@ -693,11 +693,11 @@ def get_pg_dump_release(db):
 
         sys.exit(1)
 
-    
+
 # ############################################
 # Function get_backup_server_pgsql_bin_dir()
 # ############################################
-    
+
 def get_backup_server_pgsql_bin_dir(db):
     '''Get the directory with postgreSQL binaries to use'''
 
@@ -706,24 +706,24 @@ def get_backup_server_pgsql_bin_dir(db):
     try:
         pgsql_bin_dir = db.get_backup_server_config_value(global_parameters['backup_server_id'],'pgsql_bin_' + global_parameters['pg_dump_release'])
         logs.logger.debug('pgsql bin directory to use: %s',pgsql_bin_dir)
-        
+
         return pgsql_bin_dir
 
     except Exception as e:
 
         pgsql_bin_dir = backup_server_cache_data['pgsql_bin_' + global_parameters['pg_dump_release']]
         logs.logger.debug('pgsql bin directory to use: %s',pgsql_bin_dir)
-        
+
         return pgsql_bin_dir
-        
+
 
 # ############################################
 # Function get_filename_id()
 # ############################################
-    
+
 def get_filename_id(dump_type,file_type):
     '''Generate the filename used for the backup and log files of a backup job'''
-    
+
     global global_parameters
 
     timestamp = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
@@ -737,7 +737,7 @@ def get_filename_id(dump_type,file_type):
         if dump_type == 'CLUSTER':
             filename_id = global_parameters['pgsql_node_backup_dir'] + '/' + file_type + '/' + dump_type + '-' + global_parameters['pgsql_node_fqdn'] + '-v' + global_parameters['pg_dump_release'] + '-defid' + global_parameters['def_id'] + '-c' + global_parameters['backup_code'] + '-' + timestamp
         else:
-            filename_id = global_parameters['pgsql_node_backup_dir'] + '/' + file_type + '/' + global_parameters['dbname'] + '-' + global_parameters['pgsql_node_fqdn'] + '-v' + global_parameters['pg_dump_release'] + '-defid' + global_parameters['def_id'] + '-c' + global_parameters['backup_code'] + '-' + timestamp + '-' + dump_type 
+            filename_id = global_parameters['pgsql_node_backup_dir'] + '/' + file_type + '/' + global_parameters['dbname'] + '-' + global_parameters['pgsql_node_fqdn'] + '-v' + global_parameters['pg_dump_release'] + '-defid' + global_parameters['def_id'] + '-c' + global_parameters['backup_code'] + '-' + timestamp + '-' + dump_type
 
     #
     # Dump generated by a CRON job
@@ -748,7 +748,7 @@ def get_filename_id(dump_type,file_type):
         if dump_type == 'CLUSTER':
             filename_id = global_parameters['pgsql_node_backup_dir'] + '/' + file_type + '/' + dump_type + '-' + global_parameters['pgsql_node_fqdn'] + '-v' + global_parameters['pg_dump_release'] + '-snapid' + global_parameters['snapshot_id'] + '-c' + global_parameters['backup_code'] + '-' + timestamp
         else:
-            filename_id = global_parameters['pgsql_node_backup_dir'] + '/' + file_type + '/' + global_parameters['dbname'] + '-' + global_parameters['pgsql_node_fqdn'] + '-v' + global_parameters['pg_dump_release'] + '-snapid' + global_parameters['snapshot_id'] + '-c' + global_parameters['backup_code'] + '-' + timestamp + '-' + dump_type 
+            filename_id = global_parameters['pgsql_node_backup_dir'] + '/' + file_type + '/' + global_parameters['dbname'] + '-' + global_parameters['pgsql_node_fqdn'] + '-v' + global_parameters['pg_dump_release'] + '-snapid' + global_parameters['snapshot_id'] + '-c' + global_parameters['backup_code'] + '-' + timestamp + '-' + dump_type
 
 
     return filename_id
@@ -758,7 +758,7 @@ def get_filename_id(dump_type,file_type):
 # ############################################
 # Function register_backup_catalog()
 # ############################################
-  
+
 def register_backup_catalog(db):
     '''Update the backup catalog information in the database'''
 
@@ -773,14 +773,14 @@ def register_backup_catalog(db):
 
     if global_parameters['def_id'] == None:
         global_parameters['execution_method'] = 'AT'
-        
+
     elif global_parameters['snapshot_id'] == None:
         global_parameters['execution_method'] = 'CRON'
 
     #
     # pg_dump_file information
     #
-    
+
     pg_dump_file_size = 0
 
     if os.path.exists(global_parameters['cluster_dump_file']):
@@ -802,7 +802,7 @@ def register_backup_catalog(db):
             # >= 1.1.0. We have to find out all files in the directory
             # to get the total size of the database dump.
             #
-                        
+
             if os.path.isdir(pg_dump_file):
                 for files in os.listdir(pg_dump_file):
                     pg_dump_file_size += os.path.getsize(pg_dump_file + '/' + files)
@@ -812,7 +812,7 @@ def register_backup_catalog(db):
 
     else:
         pg_dump_file = 'None'
-    
+
         if os.path.exists(global_parameters['cluster_log_file']):
             pg_dump_log_file = global_parameters['cluster_log_file']
         elif os.path.exists(global_parameters['database_log_file']):
@@ -836,7 +836,7 @@ def register_backup_catalog(db):
             logs.logger.error('Could not get size of pg_dump roles file: %s - %s',pg_dump_roles_file,e)
     else:
         pg_dump_roles_file = 'None'
-        
+
         if os.path.exists(global_parameters['roles_log_file']):
             pg_dump_roles_log_file = global_parameters['roles_log_file']
         else:
@@ -858,7 +858,7 @@ def register_backup_catalog(db):
             logs.logger.error('Could not get size of pg_dump dbconfig file: %s - %s',pg_dump_dbconfig_file,e)
     else:
         pg_dump_dbconfig_file = 'None'
-        
+
         if os.path.exists(global_parameters['dbconfig_log_file']):
             pg_dump_dbconfig_log_file = global_parameters['dbconfig_log_file']
         else:
@@ -872,7 +872,7 @@ def register_backup_catalog(db):
         procpid = os.getpid()
         db.register_backup_catalog(global_parameters['def_id'],
                                    procpid,
-                                   global_parameters['backup_server_id'],  
+                                   global_parameters['backup_server_id'],
                                    global_parameters['pgsql_node_id'],
                                    global_parameters['dbname'],
                                    global_parameters['backup_start'],
@@ -896,62 +896,62 @@ def register_backup_catalog(db):
                                    global_parameters['pgsql_node_release'].replace('_','.'),
                                    global_parameters['pg_dump_release'].replace('_','.')
                                )
-    
+
 
         logs.logger.info('Backup job catalog for DefID: %s or SnapshotID: %s updated in the database',str(global_parameters['def_id']),str(global_parameters['snapshot_id']))
-        
+
     except Exception as e:
 
         #
         # We create a pending log file if we can not update the
         # database.  This file will be processed by
         # pgbackman_maintenence later.
-        # 
+        #
 
         logs.logger.warning('Problems updating the backup job catalog for DefID: %s or SnapshotID: %s in the database - %s',str(global_parameters['def_id']),str(global_parameters['snapshot_id']),e)
 
         pending_log_file = ''
-        
+
         try:
             procpid = os.getpid()
             pending_log_file = global_parameters['backup_server_pending_registration_dir'] + '/backup_jobs_pending_log_updates_nodeid_' + str(global_parameters['pgsql_node_id']) + '_' + str(procpid) + '.log'
 
             if global_parameters['def_id'] == None:
                 global_parameters['def_id'] = ''
-        
+
             elif global_parameters['snapshot_id'] == None:
                 global_parameters['snapshot_id'] = ''
-                
+
             with open(pending_log_file,'w+') as catalog_pending:
                 catalog_pending.write(str(global_parameters['def_id']) + '::' +
                                       str(procpid) + '::' +
-                                      str(global_parameters['backup_server_id']) + '::' +   
-                                      str(global_parameters['pgsql_node_id']) + '::' +   
-                                      global_parameters['dbname'] + '::' +   
-                                      str(global_parameters['backup_start']) + '::' +   
-                                      str(global_parameters['backup_stop']) + '::' +   
-                                      str(duration) + '::' +   
-                                      pg_dump_file + '::' +   
-                                      str(pg_dump_file_size) + '::' +   
-                                      pg_dump_log_file + '::' +   
-                                      pg_dump_roles_file + '::' +   
-                                      str(pg_dump_roles_file_size) + '::' +   
-                                      pg_dump_roles_log_file + '::' +   
-                                      pg_dump_dbconfig_file + '::' +   
-                                      str(pg_dump_dbconfig_file_size) + '::' +   
-                                      pg_dump_dbconfig_log_file + '::' +   
-                                      global_parameters['global_log_file'] + '::' + 
+                                      str(global_parameters['backup_server_id']) + '::' +
+                                      str(global_parameters['pgsql_node_id']) + '::' +
+                                      global_parameters['dbname'] + '::' +
+                                      str(global_parameters['backup_start']) + '::' +
+                                      str(global_parameters['backup_stop']) + '::' +
+                                      str(duration) + '::' +
+                                      pg_dump_file + '::' +
+                                      str(pg_dump_file_size) + '::' +
+                                      pg_dump_log_file + '::' +
+                                      pg_dump_roles_file + '::' +
+                                      str(pg_dump_roles_file_size) + '::' +
+                                      pg_dump_roles_log_file + '::' +
+                                      pg_dump_dbconfig_file + '::' +
+                                      str(pg_dump_dbconfig_file_size) + '::' +
+                                      pg_dump_dbconfig_log_file + '::' +
+                                      global_parameters['global_log_file'] + '::' +
                                       global_parameters['execution_status'] + '::' +
                                       global_parameters['execution_method'] + '::' +
                                       global_parameters['error_message'] + '::' +
-                                      global_parameters['snapshot_id'] + '::' + 
+                                      global_parameters['snapshot_id'] + '::' +
                                       ' '.join(global_parameters['role_list']) + '::' +
-                                      global_parameters['pgsql_node_release'].replace('_','.') + '::' + 
+                                      global_parameters['pgsql_node_release'].replace('_','.') + '::' +
                                       global_parameters['pg_dump_release'].replace('_','.') +
                                       '\n')
-                
+
                 logs.logger.info('Catalog pending log file: %s created',pending_log_file)
-        
+
         except Exception as e:
             logs.logger.error('Could not generate the catalog pending log file: %s - %s',pending_log_file,e)
 
@@ -960,7 +960,7 @@ def register_backup_catalog(db):
 # Function get_backup_server_parameters_from_cache()
 # ##################################################
 
-def get_backup_server_parameters_from_cache(db,backup_server_fqdn):  
+def get_backup_server_parameters_from_cache(db,backup_server_fqdn):
     '''Get backup server parameters from cache file'''
 
     global backup_server_cache_data
@@ -968,12 +968,12 @@ def get_backup_server_parameters_from_cache(db,backup_server_fqdn):
 
     try:
         backup_server_cache_file = global_parameters['root_backup_dir'] + '/cache_dir/backup_server_' + backup_server_fqdn + '.cache'
-        
+
         with open(backup_server_cache_file,'r') as backup_server_cache:
             for line in backup_server_cache:
                 (key, val) = line.split('::')
                 backup_server_cache_data[key] = val.replace('\n','')
-                
+
     except Exception as e:
         logs.logger.error('Could not read the cache file for the backup server: %s - %s',backup_server_fqdn,e)
         global_parameters['execution_status'] = 'ERROR'
@@ -987,7 +987,7 @@ def get_backup_server_parameters_from_cache(db,backup_server_fqdn):
 # Function get_pgsql_node_parameters_from_cache()
 # ###############################################
 
-def get_pgsql_node_parameters_from_cache(db):  
+def get_pgsql_node_parameters_from_cache(db):
     '''Get pgsql_node parameters from cache file'''
 
     global pgsql_node_cache_data
@@ -1000,7 +1000,7 @@ def get_pgsql_node_parameters_from_cache(db):
             for line in pgsql_node_cache:
                 (key, val) = line.split('::')
                 pgsql_node_cache_data[key] = val.replace('\n','')
-                    
+
     except Exception as e:
         logs.logger.critical('Could not read the cache file for the PgSQL node - %s',e)
         global_parameters['execution_status'] = 'ERROR'
@@ -1013,7 +1013,7 @@ def get_pgsql_node_parameters_from_cache(db):
 # ##############################################
 # Function check_pgbackman_database_connection()
 # ##############################################
-  
+
 def check_pgbackman_database_connection(db):
     '''Check if we can connect to the pgbackman database'''
 
@@ -1022,14 +1022,14 @@ def check_pgbackman_database_connection(db):
         db.pg_close()
 
         return True
-    except Exception as e: 
+    except Exception as e:
         logs.logger.error('The pgbackman database is not available - %s',e)
         return False
 
 # ###############################################
 # Function check_pgsql_node_database_connection()
 # ###############################################
-  
+
 def check_pgsql_node_database_connection(db_pgnode):
     '''Check if we can connect to the pgsql node database'''
 
@@ -1038,7 +1038,7 @@ def check_pgsql_node_database_connection(db_pgnode):
         db_pgnode.pg_close()
 
         return True
-    except Exception as e: 
+    except Exception as e:
         logs.logger.critical('The PgSQL node is not available - %s',e)
         return False
 
@@ -1046,56 +1046,56 @@ def check_pgsql_node_database_connection(db_pgnode):
 # ##############################################
 # Function pause_pg_recovery()
 # ##############################################
-  
+
 def pause_pg_recovery(db_pgnode):
     '''Pause the postgres recovery in the PgSQL node'''
 
     try:
-        
+
         #
         # Check if the PgSQL node is in recovery modus
         #
         if db_pgnode.pg_recovery_in_progress() == True:
             logs.logger.info('(Pause recovery) PgSQL node is a slave node in recovery modus.')
-            
+
             #
             # Check if the postgres recovery is paused in this PgSQL
             # node. If it is running, pause it.
             #
             if db_pgnode.pg_recovery_paused() == False:
-                
+
                 try:
                     db_pgnode.pause_pg_recovery()
                     logs.logger.info('Recovery process paused on PgSQL node')
 
-                except Exception as e: 
+                except Exception as e:
                     logs.logger.error('Problems pausing the recovery process on PgSQL node - %s',e)
-            
+
             else:
                 logs.logger.info('The recovery process is already paused on PgSQL node')
-            
+
         else:
             logs.logger.debug('PgSQL node is not a slave node in recovery modus (pause).')
 
-    except Exception as e: 
+    except Exception as e:
         logs.logger.error('Problems getting recovery modus information on PgSQL node - %s',e)
 
 
 # ##############################################
 # Function resume_pg_recovery()
 # ##############################################
-  
+
 def resume_pg_recovery(db_pgnode):
     '''Resume the postgres recovery in the PgSQL node'''
 
     try:
-        
+
         #
         # Check if the PgSQL node is in recovery modus
         #
         if db_pgnode.pg_recovery_in_progress() == True:
             logs.logger.info('(Resume recovery) PgSQL node is a slave node in recovery modus.')
-            
+
             #
             # Check if the postgres recovery is paused in this PgSQL
             # node. If it is paused and no other pgbackman_dump
@@ -1111,13 +1111,13 @@ def resume_pg_recovery(db_pgnode):
 
             pgbackman_dump_process_count = db_pgnode.get_pgbackman_dump_count()
 
-            if db_pgnode.pg_recovery_paused() == True and pgbackman_dump_process_count == 1:                
+            if db_pgnode.pg_recovery_paused() == True and pgbackman_dump_process_count == 1:
 
                 try:
                     db_pgnode.resume_pg_recovery()
                     logs.logger.info('Recovery process resumed on PgSQL node')
 
-                except Exception as e: 
+                except Exception as e:
                     logs.logger.error('Problems resuming the recovery process on PgSQL node - %s',e)
 
             else:
@@ -1127,14 +1127,14 @@ def resume_pg_recovery(db_pgnode):
         else:
             logs.logger.debug('PgSQL node is not a slave node in recovery modus (resume).')
 
-    except Exception as e: 
+    except Exception as e:
         logs.logger.error('Problems getting recovery modus information on PgSQL node - %s',e)
 
 
 # ############################################
 # Function signal_handler()
 # ############################################
-    
+
 def signal_handler(signum, frame):
     logs.logger.info('**** pgbackman_dump stopped. ****')
     sys.exit(0)
@@ -1143,10 +1143,10 @@ def signal_handler(signum, frame):
 # ############################################
 # Function Main()
 # ############################################
-    
+
 def main():
     '''Main function'''
-    
+
     global global_parameters
 
     conf = PgbackmanConfiguration()
@@ -1164,21 +1164,21 @@ def main():
 
     global_parameters['roles_dump_file'] = ''
     global_parameters['roles_log_file'] = ''
- 
+
     global_parameters['dbconfig_dump_file'] = ''
     global_parameters['dbconfig_log_file'] = ''
 
     global_parameters['error_message'] = ''
-    global_parameters['role_list'] = [] 
+    global_parameters['role_list'] = []
 
     global_parameters['pgsql_node_release'] = ''
-       
+
     db = PgbackmanDB(pgbackman_dsn, 'pgbackman_dump')
- 
+
     pgsql_node_dsn = get_pgsql_node_dsn()
     db_pgnode = PgbackmanDB(pgsql_node_dsn, 'pgbackman_dump')
 
-    # 
+    #
     # The backup server FQDN to be used can be defined in the
     # pgbackman configuration file.  If the configuration parameter
     # 'backup_server' is not defined, the return value of
@@ -1220,27 +1220,27 @@ def main():
     # necessary parameters from the cache files saved in the backup
     # server
     #
-    
+
     check_pgnode_db = check_pgsql_node_database_connection(db_pgnode)
 
     if not check_pgnode_db:
         logs.logger.critical('The database is not available. Shutting down the backup job with DefID: %s',str(global_parameters['def_id']))
-        
+
         global_parameters['execution_status'] = 'ERROR'
         global_parameters['error_message'] = 'Database to backup not available'
         register_backup_catalog(db)
-        sys.exit(1) 
+        sys.exit(1)
 
     try:
         global_parameters['pgsql_node_backup_dir'] = db.get_pgsql_node_config_value(global_parameters['pgsql_node_id'],'pgnode_backup_partition')
 
     except psycopg2.Error as e:
         global_parameters['pgsql_node_backup_dir'] = pgsql_node_cache_data['pgnode_backup_partition']
-    
+
     global_parameters['pgsql_node_release'] = get_pgsql_node_release(db,db_pgnode)
     global_parameters['pg_dump_release'] = get_pg_dump_release(db)
     global_parameters['backup_server_pgsql_bin_dir'] = get_backup_server_pgsql_bin_dir(db)
-    
+
     if os.path.exists('/bin/gzip') == True:
         global_parameters['cluster_dump_file'] = get_filename_id('CLUSTER','dump') + '.sql.gz'
     else:
@@ -1253,7 +1253,7 @@ def main():
 
     global_parameters['roles_dump_file'] = get_filename_id('USERS','dump') + '.sql'
     global_parameters['roles_log_file'] = get_filename_id('USERS','log') + '.log'
- 
+
     global_parameters['dbconfig_dump_file'] = get_filename_id('DBCONFIG','dump') + '.sql'
     global_parameters['dbconfig_log_file'] = get_filename_id('DBCONFIG','log') + '.log'
 
@@ -1269,15 +1269,15 @@ def main():
     # By default postgreSQL will kill any backup running against a
     # slave node if the recovery process is running and the backup is
     # taking too long to finish because the database is large.
-    # 
+    #
 
     if conf.pause_recovery_process_on_slave == 'ON':
-        
+
         try:
             db_pgnode.pg_connect()
             logs.logger.info('Opening a persistant connection to the PgSQL node')
 
-        except Exception as e: 
+        except Exception as e:
             logs.logger.error('Problems opening a persistant connection to the PgSQL node')
 
     #
@@ -1285,16 +1285,18 @@ def main():
     # will stop the recovery process if necessary while pgbackman_dump
     # is running.
     #
-    
+
     if conf.pause_recovery_process_on_slave == 'ON':
         pause_pg_recovery(db_pgnode)
-        
+
     #
     # Running the backups
     #
 
     if global_parameters['backup_code'] == 'CLUSTER':
         pg_dumpall(db)
+    elif global_parameters['backup_code'] == 'RDSDATAONLY':
+        pg_dump(db)
     else:
         pg_dump(db)
         pg_dump_users(db)
@@ -1303,9 +1305,9 @@ def main():
     #
     # If the PgSQL node is a slave node in a replication system, we
     # will resume the recovery process if no other pgbackman_dump
-    # processes are running. 
+    # processes are running.
     #
-    
+
     if conf.pause_recovery_process_on_slave == 'ON':
         resume_pg_recovery(db_pgnode)
 
@@ -1320,7 +1322,7 @@ def main():
             db_pgnode.pg_connect()
             logs.logger.info('Closing a persistant connection to the PgSQL node')
 
-        except Exception as e: 
+        except Exception as e:
             logs.logger.error('Problems closing a persistant connection to the PgSQL node')
 
     #
@@ -1331,7 +1333,7 @@ def main():
 
 
 # ############################################
-# 
+#
 # ############################################
 
 if __name__ == '__main__':
@@ -1347,26 +1349,26 @@ if __name__ == '__main__':
     parser.add_argument('--def-id', metavar='JOBID', required=False, help='Backup job ID', dest='def_id')
     parser.add_argument('--snapshot-id', metavar='SNAPSHOT-ID', required=False, help='snapshot ID', dest='snapshot_id')
     parser.add_argument('--dbname', metavar='DBNAME', required=False, help='Database name', dest='dbname')
-    parser.add_argument('--backup-code', metavar='[FULL|SCHEMA|DATA|CLUSTER]', choices=['FULL', 'SCHEMA', 'DATA', 'CLUSTER'], required=True, help='Backup code', dest='backup_code')
+    parser.add_argument('--backup-code', metavar='[FULL|SCHEMA|DATA|CLUSTER|RDSDATAONLY]', choices=['FULL', 'SCHEMA', 'DATA', 'CLUSTER', 'RDSDATAONLY'], required=True, help='Backup code', dest='backup_code')
     parser.add_argument('--encryption', metavar='[false|true]', default=True, choices=['true', 'false'],required=True, help='Activate encryption', dest='encryption')
     parser.add_argument('--root-backup-dir', metavar='ROOT-BACKUP-DIR', default=True, required=True, help='Root backup dir', dest='root_backup_dir')
     parser.add_argument('--extra-backup-parameters', metavar='EXTRA-PARAMETERS', required=False, help='extra pg_dump parameters', dest='extra_backup_parameters')
     parser.add_argument('--pg-dump-release', metavar='PG-DUMP-RELEASE', required=False, help='pg_dump release', dest='pg_dump_release')
-    
-    args = parser.parse_args()    
-    
+
+    args = parser.parse_args()
+
     if args.pgsql_node_fqdn:
         global_parameters['pgsql_node_fqdn'] = args.pgsql_node_fqdn
     else:
         print('PgSQL node fqdn parameter not defined')
         sys.exit(1)
-        
+
     if args.pgsql_node_id:
         global_parameters['pgsql_node_id'] = args.pgsql_node_id
     else:
         print('PgSQL node id parameter not defined')
         sys.exit(1)
-        
+
     if args.pgsql_node_port:
         global_parameters['pgsql_node_port'] = args.pgsql_node_port
     else:
@@ -1378,7 +1380,7 @@ if __name__ == '__main__':
     else:
         print('PgSQL node admin user parameter not defined')
         sys.exit(1)
-        
+
     if args.def_id:
         global_parameters['def_id'] = args.def_id
     else:
@@ -1399,7 +1401,7 @@ if __name__ == '__main__':
     else:
         print('Encryption parameter not defined')
         sys.exit(1)
-        
+
     if args.backup_code:
         global_parameters['backup_code'] = args.backup_code
     else:
@@ -1428,7 +1430,7 @@ if __name__ == '__main__':
 
     logs = PgbackmanLogs("pgbackman_dump", "[" + global_parameters['pgsql_node_fqdn'] + "]", "[" + global_parameters['dbname'] + "]")
     logs.logger.info('**** pgbackman_dump started. ****')
-    
+
     main()
 
     logs.logger.info('**** pgbackman_dump finished. ****')
