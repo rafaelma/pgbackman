@@ -163,7 +163,7 @@ def pg_dump(db):
             ' -h ' + global_parameters['pgsql_node_fqdn'] + \
             ' -p ' + global_parameters['pgsql_node_port'] + \
             ' -U ' + global_parameters['pgsql_node_admin_user'] + \
-            ' --data-only' + \
+            #' --data-only' + \
             ' --file=' + global_parameters['database_dump_file'] + \
             ' --format=d' + \
             ' --blobs' + \
