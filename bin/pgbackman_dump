@@ -157,6 +157,20 @@ def pg_dump(db):
             ' ' + global_parameters['extra_backup_parameters'] + \
             ' ' + global_parameters['dbname']
 
+    elif global_parameters['backup_code'] == 'RDSDATA':
+
+        pg_dump_command = global_parameters['backup_server_pgsql_bin_dir'] + '/pg_dump' + \
+            ' -h ' + global_parameters['pgsql_node_fqdn'] + \
+            ' -p ' + global_parameters['pgsql_node_port'] + \
+            ' -U ' + global_parameters['pgsql_node_admin_user'] + \
+            ' --data-only' + \
+            ' --file=' + global_parameters['database_dump_file'] + \
+            ' --format=d' + \
+            ' --blobs' + \
+            ' --verbose' + \
+            ' ' + global_parameters['extra_backup_parameters'] + \
+            ' ' + global_parameters['dbname']
+
     try:
         with open(global_parameters['database_log_file'],'w') as database_log_file:
 
