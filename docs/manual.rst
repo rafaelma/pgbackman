@@ -70,7 +70,7 @@ The main features of PgBackMan are:
 * Manual and scheduled backups.
 * Management of retention policies for backups dumps.
 * Fully detailed backup reports.
-* Multiple predefined database backup types, CLUSTER, FULL, SCHEMA, DATA.
+* Multiple predefined database backup types, CLUSTER, FULL, SCHEMA, DATA, RDS.
 * Automatic definitions of backups for all databases running in a PgSQL node.
 * Automatic definitions of backups for all databases without definitions in a PgSQL node.
 * Automatic deletion after a quarantine period of backup definitions and associated files for databases than have been deleted in a PgSQL node.
@@ -1192,6 +1192,8 @@ Parameters:
   * FULL: Full Backup of a database. Schema + data + owner globals + DB globals.
   * SCHEMA: Schema backup of a database. Schema + owner globals + DB globals.
   * DATA: Data backup of the database.
+  * RDS: Backup in RDS instances. Schema + data without owner globals
+    and DB globals.
 
 * **[encryption]:** This parameter is not used at the moment. But it
   will be used in the future.
@@ -1467,6 +1469,8 @@ Parameters:
   * FULL: Full Backup of a database. Schema + data + owner globals + DB globals.
   * SCHEMA: Schema backup of a database. Schema + owner globals + DB globals.
   * DATA: Data backup of the database.
+  * RDS: Backup in RDS instances. Schema + data without owner globals
+    and DB globals.
 
 * **[retention period]:** Time interval a backup will be available in
   the catalog, e.g. 2 hours, 3 days, 1 week, 1 month, 2 years
