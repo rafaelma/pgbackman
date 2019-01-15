@@ -3332,7 +3332,7 @@ class PgbackmanDB():
 
         try:
             if self.cur:
-                if self.conn.version() >= 100000:
+                if self.conn.server_version >= 100000:
                     self.cur.execute('SELECT pg_is_wal_replay_paused()')
                     self.conn.commit()
 
@@ -3363,7 +3363,7 @@ class PgbackmanDB():
 
         try:
             if self.cur:
-                if self.conn.version() >= 100000:
+                if self.conn.server_version >= 100000:
                     self.cur.execute('SELECT pg_wal_replay_pause()')
                     self.conn.commit()
                 else:
@@ -3383,7 +3383,7 @@ class PgbackmanDB():
 
         try:
             if self.cur:
-                if self.conn.version() >= 100000:
+                if self.server_version >= 100000:
                     self.cur.execute('SELECT pg_wal_replay_resume()')
                     self.conn.commit()
                 else:
