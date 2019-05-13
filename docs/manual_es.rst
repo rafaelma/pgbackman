@@ -77,7 +77,7 @@ Las características principales de PgBackMan son:
 * Copias de seguridad inmediatas y programadas.
 * Gestión de políticas de retención para las copias de seguridad.
 * Informes detallados de las copias de seguridad.
-* Múltiples tipos de copias de seguridad predefinidos, CLUSTER,FULL,SCHEMA,DATA.
+* Múltiples tipos de copias de seguridad predefinidos, CLUSTER, FULL, SCHEMA, DATA, RDS.
 * Definiciones automáticas de copias de seguridad de todas las bases de datos disponibles en un servidor PostgreSQL.
 * Definiciones automáticas de copias de seguridad de todas las bases de datos sin definiciones en un servidor PostgreSQL.
 * Borrado automático despues de un período de cuarentena de las definiciones de backup de bases de datos que han sido borradas en un nodo PgSQL.
@@ -1266,6 +1266,8 @@ Parámetros:
     datos.
   * DATA: copia de seguridad de solamente los datos de una base de
     datos.
+  * RDS: copia de seguridad de solamente el esquema y los datos sin
+    globales de usuarios + globales de la base de datos.
 
 * **[encryption]:** Este parámetro no está activado actualmente pero
   se utilizará en un futuro próximo.
@@ -1557,6 +1559,8 @@ Parámetros:
     datos.
   * DATA: copia de seguridad de solamente los datos de una base de
     datos.
+  * RDS: copia de seguridad de solamente el esquema y los datos sin
+    globales de usuarios + globales de la base de datos.
 
 * **[retention period]:** Intervalo de tiempo que una copia de
   seguridad estará disponible en el catálogo, e.g. 2 hours, 3 days, 1

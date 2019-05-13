@@ -1308,7 +1308,11 @@ def main():
 
     if global_parameters['backup_code'] == 'CLUSTER':
         pg_dumpall(db)
+<<<<<<< HEAD
     elif global_parameters['backup_code'] == 'RDSDATA':
+=======
+    elif global_parameters['backup_code'] == 'RDS':
+>>>>>>> 7d6b4a293c3f8676f316a6c7ca3fac3f9f590097
         pg_dump(db)
     else:
         pg_dump(db)
@@ -1362,7 +1366,11 @@ if __name__ == '__main__':
     parser.add_argument('--def-id', metavar='JOBID', required=False, help='Backup job ID', dest='def_id')
     parser.add_argument('--snapshot-id', metavar='SNAPSHOT-ID', required=False, help='snapshot ID', dest='snapshot_id')
     parser.add_argument('--dbname', metavar='DBNAME', required=False, help='Database name', dest='dbname')
+<<<<<<< HEAD
     parser.add_argument('--backup-code', metavar='[FULL|SCHEMA|DATA|CLUSTER|RDSDATAONLY]', choices=['FULL', 'SCHEMA', 'DATA', 'CLUSTER', 'RDS'], required=True, help='Backup code', dest='backup_code')
+=======
+    parser.add_argument('--backup-code', metavar='[FULL|SCHEMA|DATA|CLUSTER|RDS]', choices=['FULL', 'SCHEMA', 'DATA', 'CLUSTER', 'RDS'], required=True, help='Backup code', dest='backup_code')
+>>>>>>> 7d6b4a293c3f8676f316a6c7ca3fac3f9f590097
     parser.add_argument('--encryption', metavar='[false|true]', default=True, choices=['true', 'false'],required=True, help='Activate encryption', dest='encryption')
     parser.add_argument('--root-backup-dir', metavar='ROOT-BACKUP-DIR', default=True, required=True, help='Root backup dir', dest='root_backup_dir')
     parser.add_argument('--extra-backup-parameters', metavar='EXTRA-PARAMETERS', required=False, help='extra pg_dump parameters', dest='extra_backup_parameters')

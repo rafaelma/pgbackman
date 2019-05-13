@@ -104,6 +104,10 @@ SELECT server_id,
 FROM backup_server
 ORDER BY server_id;
 
+-- Update backup_code with a new backup code (RDS) to take backups on RDS instances. 
+
+INSERT INTO backup_code (code,description) VALUES ('RDS','Only runs a pg_dump of the data so that it does not try to access globals that postgres cannot access on RDS');
+
 -- Update backup_server_default_config with postgresql 10 information
 
 INSERT INTO backup_server_default_config (parameter,value,description) VALUES ('pgsql_bin_10','/usr/pgsql-10/bin','postgreSQL 10 bin directory');
