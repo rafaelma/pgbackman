@@ -1,7 +1,10 @@
 PgBackMan
 =========
 
-PostgreSQL backup manager / http://www.pgbackman.org/
+PostgreSQL backup manager
+
+*NOTE: This project is no longer maintained due to lack of free time to do so.
+The source code is still available and it was supported up to PostgreSQL 9.6.*
 
 PgBackMan is a tool for managing PostgreSQL logical backups created
 with ``pg_dump`` and ``pg_dumpall``.
